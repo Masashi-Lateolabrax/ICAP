@@ -1,4 +1,3 @@
-import glfw
 import numpy
 from studyLib import optimizer, miscellaneous, wrap_mjc
 from environments.back_enemy import Environment
@@ -50,10 +49,10 @@ def optimize(
         # wrap_mjc.Camera((0, 0, 0), 120, 0, 90),
         # miscellaneous.Window(1200, 800)
     )
-    # opt = optimizer.CMAES(env, generation, population, 0.3, True)
-    # opt.optimize()
-    opt = optimizer.ServerCMAES(env, generation, population, 0.3, True)
-    opt.optimize(52325)
+    opt = optimizer.CMAES(env, generation, population, 0.3, True)
+    opt.optimize()
+    # opt = optimizer.ServerCMAES(env, generation, population, 0.3, True)
+    # opt.optimize(52325)
     return opt.get_best_para(), opt.get_history()
 
 
