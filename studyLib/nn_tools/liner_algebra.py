@@ -1,0 +1,3 @@
+import numpy
+
+la = numpy
