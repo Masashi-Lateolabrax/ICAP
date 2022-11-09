@@ -1,6 +1,8 @@
 /.idea/
+/RESULT/
 /main.py
 /best_para.npy
 /history.log
 /history.png
 /result.mp4
+

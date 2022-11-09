@@ -130,7 +130,7 @@ class WrappedModel:
 
     def draw_text(self, text: str, x: float, y: float, rgb: (float, float, float)):
         ctx = self.get_ctx()
-        mujoco.mjr_text(mujoco.mjtFont.mjFONT_NORMAL, text, ctx, x, y, rgb[0], rgb[1], rgb[2])
+        mujoco.mjr_text(mujoco.mjtFont.mjFONT_BIG, text, ctx, x, y, rgb[0], rgb[1], rgb[2])
 
     def get_names(self):
         split = self.model.names.split(b"\x00")
