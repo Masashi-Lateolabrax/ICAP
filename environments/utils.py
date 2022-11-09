@@ -20,10 +20,11 @@ def show_mujoco_env(
 def cmaes_optimize(
         generation: int,
         population: int,
+        sigma: float,
         env: optimizer.EnvInterface,
         minimalize: bool = True
 ) -> (numpy.ndarray, optimizer.Hist):
-    opt = optimizer.CMAES(env, generation, population, 0.3, minimalize)
+    opt = optimizer.CMAES(env, generation, population, sigma, minimalize)
     opt.optimize()
     return opt.get_best_para(), opt.get_history()
 
@@ -31,11 +32,12 @@ def cmaes_optimize(
 def cmaes_optimize_server(
         generation: int,
         population: int,
+        sigma: float,
         env: optimizer.EnvInterface,
         port: int = 52325,
         minimalize: bool = True
 ) -> (numpy.ndarray, optimizer.Hist):
-    opt = optimizer.ServerCMAES(env, generation, population, 0.3, minimalize)
+    opt = optimizer.ServerCMAES(env, generation, population, sigma, minimalize)
     opt.optimize(port)
     return opt.get_best_para(), opt.get_history()
 

@@ -26,7 +26,7 @@ if __name__ == "__main__":
             timestep,
         )
 
-        para, hist = utils.cmaes_optimize(generation, population, env)
+        para, hist = utils.cmaes_optimize(generation, population, 0.3, env)
         numpy.save("best_para.npy", para)
         hist.save("history.log")
 
