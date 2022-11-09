@@ -1,6 +1,6 @@
 import numpy
 from environments import utils, back_enemy
-from studyLib import wrap_mjc, miscellaneous
+from studyLib import wrap_mjc
 
 if __name__ == "__main__":
     def main():
