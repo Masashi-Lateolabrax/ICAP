@@ -79,8 +79,8 @@ class WrappedModel:
         self.data = mujoco.MjData(self.model)
         self.camera = mujoco.MjvCamera()
         self.deco_geoms: list[DecoGeom] = []
-        self.scn: mujoco.MjvScene = None
-        self.ctx: mujoco.MjrContext = None
+        self._scn: mujoco.MjvScene = None
+        self._ctx: mujoco.MjrContext = None
 
     def add_deco_geom(self, geom_type: mujoco.mjtGeom) -> DecoGeom:
         self.deco_geoms.append(DecoGeom(geom_type))
@@ -102,16 +102,16 @@ class WrappedModel:
         self.camera.azimuth = cam.horizontal_angle
 
     def get_ctx(self) -> mujoco.MjrContext:
-        if self.ctx is None:
-            self.ctx = mujoco.MjrContext(self.model, mujoco.mjtFontScale.mjFONTSCALE_100.value)
-        return self.ctx
+        if self._ctx is None:
+            self._ctx = mujoco.MjrContext(self.model, mujoco.mjtFontScale.mjFONTSCALE_100.value)
+        return self._ctx
 
     def get_scene(self, cam: Camera = None):
-        if self.scn is None:
-            self.scn = mujoco.MjvScene(self.model, maxgeom=self.model.ngeom + len(self.deco_geoms) + 1)
+        if self._scn is None:
+            self._scn = mujoco.MjvScene(self.model, maxgeom=self.model.ngeom + len(self.deco_geoms) + 1)
 
-        if self.scn.maxgeom != self.model.ngeom + len(self.deco_geoms) + 1:
-            self.scn = mujoco.MjvScene(self.model, maxgeom=self.model.ngeom + len(self.deco_geoms) + 1)
+        if self._scn.maxgeom != self.model.ngeom + len(self.deco_geoms) + 1:
+            self._scn = mujoco.MjvScene(self.model, maxgeom=self.model.ngeom + len(self.deco_geoms) + 1)
 
         if not (cam is None):
             self.set_camera(cam)
@@ -119,14 +119,18 @@ class WrappedModel:
         mujoco.mjv_updateScene(
             self.model, self.data,
             mujoco.MjvOption(), None, self.camera,
-            mujoco.mjtCatBit.mjCAT_ALL, self.scn
+            mujoco.mjtCatBit.mjCAT_ALL, self._scn
         )
 
-        for dest, src in zip(self.scn.geoms[self.model.ngeom:], self.deco_geoms):
+        for dest, src in zip(self._scn.geoms[self.model.ngeom:], self.deco_geoms):
             src.copy_to(dest)
-        self.scn.ngeom = self.model.ngeom + len(self.deco_geoms)
+        self._scn.ngeom = self.model.ngeom + len(self.deco_geoms)
 
-        return self.scn
+        return self._scn
+
+    def draw_text(self, text: str, x: float, y: float, rgb: (float, float, float)):
+        ctx = self.get_ctx()
+        mujoco.mjr_text(mujoco.mjtFont.mjFONT_NORMAL, text, ctx, x, y, rgb[0], rgb[1], rgb[2])
 
     def get_names(self):
         split = self.model.names.split(b"\x00")
@@ -136,9 +140,9 @@ class WrappedModel:
         return self.data.body(name)
 
     def get_num_geom(self):
-        if self.scn.ngeom is None:
+        if self._scn.ngeom is None:
             return self.model.ngeom
-        return self.scn.ngeom
+        return self._scn.ngeom
 
     def get_d_geom(self, name: str):
         return self.data.geom(name)

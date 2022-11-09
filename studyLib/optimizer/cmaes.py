@@ -65,7 +65,7 @@ class _BaseCMAES:
         avg /= self._strategy.lambda_
 
         if self._history.add(avg, min_value, max_value):
-            if self._history.is_minimalizing():
+            if self._history.is_minimalize():
                 self._best_para = min_para
             else:
                 self._best_para = max_para

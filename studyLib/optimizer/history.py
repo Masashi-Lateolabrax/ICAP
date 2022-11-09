@@ -19,7 +19,7 @@ class Hist:
         self.best = float("inf")
         self.minimalize = minimalize
 
-    def is_minimalizing(self) -> bool:
+    def is_minimalize(self) -> bool:
         return self.minimalize
 
     def add(self, avg: float, min_value: float, max_value: float) -> bool:

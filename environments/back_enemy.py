@@ -240,7 +240,7 @@ def evaluate(
         model.set_camera(camera)
 
     nest = Nest(model)
-    enemys = [Enemy(model, i) for i in range(0, len(enemy_pos))]
+    enemies = [Enemy(model, i) for i in range(0, len(enemy_pos))]
     robots = [Robot(model, brain, i) for i in range(0, len(robot_pos))]
 
     loss = 0
@@ -248,7 +248,7 @@ def evaluate(
     for t in range(0, timestep):
         nest_pos = nest.get_pos()
         robot_pos = [r.get_pos() for r in robots]
-        enemy_pos = [f.get_pos() for f in enemys]
+        enemy_pos = [f.get_pos() for f in enemies]
 
         # Simulate
         for r in robots:
@@ -271,6 +271,8 @@ def evaluate(
         if not (window is None):
             if not window.render(model, camera):
                 exit()
+            model.draw_text(f"{loss}", 0, 0, (0, 0, 0))
+            window.flush()
 
     return loss
 
@@ -282,7 +284,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
             robot_pos: list[list[(float, float)]],
             enemy_pos: list[(float, float)],
             enemy_weight: float,
-            timestep: int,
+            timestep: int
     ):
         """
         ロボットが前方にしか進めない状態で，後方の敵を押し巣から遠くに運ぶ環境．

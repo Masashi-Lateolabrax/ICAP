@@ -73,6 +73,12 @@ class Window:
         glfw.make_context_current(self.window)
         mujoco.mjr_render(rect, scn, ctx)
 
+        return True
+
+    def flush(self) -> bool:
+        if glfw.window_should_close(self.window):
+            return False
+
         if not (self.recorder is None):
             self.recorder.record(self.window)
 
