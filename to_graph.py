@@ -20,6 +20,7 @@ if __name__ == '__main__':
         # max_values = [q.max for q in hist.queues]
         # ax.plot(x, max_values, color="r")
 
+        fig.savefig("history.png")
         fig.show()
 
 
