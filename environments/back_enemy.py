@@ -1,6 +1,4 @@
 import struct
-
-import glfw
 import mujoco
 import numpy
 
@@ -277,7 +275,7 @@ def evaluate(
     return loss
 
 
-class Environment(optimizer.EnvInterface):
+class Environment(optimizer.MuJoCoEnvInterface):
     def __init__(
             self,
             nest_pos: (float, float),
@@ -285,8 +283,6 @@ class Environment(optimizer.EnvInterface):
             enemy_pos: list[(float, float)],
             enemy_weight: float,
             timestep: int,
-            camera: wrap_mjc.Camera = None,
-            window: miscellaneous.Window = None
     ):
         """
         ロボットが前方にしか進めない状態で，後方の敵を押し巣から遠くに運ぶ環境．
@@ -297,16 +293,14 @@ class Environment(optimizer.EnvInterface):
         :param enemy_pos: 餌の座標
         :param enemy_weight: 餌の重さ
         :param timestep: stepの実行回数
-        :param camera: Cameraの設定．オプション．
-        :param window: 表示先のウィンドウの指定．オプション．
         """
         self.nest_pos = nest_pos
         self.robot_pos = robot_pos
         self.enemy_pos = enemy_pos
         self.enemy_weight = enemy_weight
         self.timestep = timestep
-        self.camera = camera
-        self.window = window
+        self.camera = wrap_mjc.Camera((0, 0, 0), 10, 0, 0)
+        self.window: miscellaneous.Window = None
 
     def dim(self) -> int:
         return RobotBrain(None).num_dim()
@@ -393,3 +387,9 @@ class Environment(optimizer.EnvInterface):
         self.timestep = struct.unpack(f"<I", data[s:e])[0]
 
         return e - offset
+
+    def set_window(self, window: miscellaneous.Window) -> None:
+        self.window = window
+
+    def set_camera(self, camera: wrap_mjc.Camera) -> None:
+        self.camera = camera

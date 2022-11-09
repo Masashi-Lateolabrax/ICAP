@@ -169,7 +169,7 @@ class ServerCMAES:
         import threading
 
         soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        soc.bind(("localhost", port))
+        soc.bind(("0.0.0.0", port))
         soc.listen(2)
 
         start_time = datetime.datetime.now()
