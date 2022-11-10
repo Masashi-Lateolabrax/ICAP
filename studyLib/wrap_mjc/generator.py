@@ -80,67 +80,67 @@ class MuJoCoXMLGenerator:
 
     class MuJoCoBody(ToString):
         def __init__(self, is_world: bool, attributes):
-            self.worldbody = is_world
-            self.name = None
-            self.attributes = attributes
-            self.geoms = []
-            self.site = []
-            self.joint = []
-            self.child_body = []
+            self._worldbody = is_world
+            self._name = None
+            self._attributes = attributes
+            self._geoms = []
+            self._site = []
+            self._joint = []
+            self._child_body: list[MuJoCoXMLGenerator.MuJoCoBody] = []
 
-            if self.worldbody:
-                self.name = "worldbody"
+            if self._worldbody:
+                self._name = "worldbody"
             elif "name" in attributes:
-                self.name = attributes["name"]
+                self._name = attributes["name"]
 
         def add_body(self, attributes):
             child_body = MuJoCoXMLGenerator.MuJoCoBody(False, attributes)
-            self.child_body.append(child_body)
+            self._child_body.append(child_body)
             return child_body
 
         def add_geom(self, attributes):
-            self.geoms.append(attributes)
+            self._geoms.append(attributes)
 
         def add_site(self, attributes):
-            self.site.append(attributes)
+            self._site.append(attributes)
 
         def add_joint(self, attributes):
-            self.joint.append(attributes)
+            self._joint.append(attributes)
 
         def add_freejoint(self):
             self.add_joint({"type": "free", "stiffness": "0", "damping": "0", "frictionloss": "0", "armature": "0"})
 
         def to_string(self) -> str:
-            if self.worldbody:
+            if self._worldbody:
                 xml = "<worldbody>\n"
             else:
                 xml = "<body "
-                for k, v in self.attributes.items():
+                for k, v in self._attributes.items():
                     xml += f"{k}=\"{v}\" "
                 xml += ">\n"
 
-            for j in self.joint:
+            for j in self._joint:
                 xml += "<joint "
                 for k, v in j.items():
                     xml += f"{k}=\"{v}\" "
                 xml += "/>\n"
 
-            for g in self.geoms:
+            for g in self._geoms:
                 xml += "<geom "
                 for k, v in g.items():
                     xml += f"{k}=\"{v}\" "
                 xml += "/>\n"
 
-            for g in self.site:
+            for g in self._site:
                 xml += "<site "
                 for k, v in g.items():
                     xml += f"{k}=\"{v}\" "
                 xml += "/>\n"
 
-            for child in self.child_body:
+            for child in self._child_body:
                 xml += child.to_string()
 
-            if self.worldbody:
+            if self._worldbody:
                 xml += "</worldbody>\n"
             else:
                 xml += "</body>\n"
@@ -247,10 +247,10 @@ class MuJoCoXMLGenerator:
         index = 0
         candidate = [e for e in self.elements if type(e) == MuJoCoXMLGenerator.MuJoCoBody]
         while index < len(candidate):
-            if candidate[index].name == name:
+            if candidate[index]._name == name:
                 find = candidate[index]
                 break
-            for new_c in candidate[index].child_body:
+            for new_c in candidate[index]._child_body:
                 candidate.append(new_c)
             index += 1
         return find
