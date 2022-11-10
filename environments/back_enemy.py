@@ -140,10 +140,10 @@ def gen_env(
 
 class Nest:
     def __init__(self, model: wrap_mjc.WrappedModel):
-        self.geom = model.get_m_geom("nest")
+        self.geom = model.get_geom("nest")
 
     def get_pos(self):
-        return self.geom.pos.copy()
+        return self.geom.get_xpos().copy()
 
 
 class Enemy:
@@ -151,7 +151,7 @@ class Enemy:
         self.body = model.get_body(f"enemy{number}")
 
     def get_pos(self):
-        return self.body.xpos.copy()
+        return self.body.get_xpos().copy()
 
 
 class RobotBrain:
@@ -185,11 +185,11 @@ class Robot:
         self.right_act = model.get_act(f"a_robot{number}_right")
 
     def get_pos(self):
-        return self.body.xpos.copy()
+        return self.body.get_xpos().copy()
 
     def get_orientation(self):
         rot_mat = numpy.zeros(9).reshape(3, 3)
-        mujoco.mju_quat2Mat(rot_mat.ravel(), self.body.xquat)
+        mujoco.mju_quat2Mat(rot_mat.ravel(), self.body.get_xquat())
         return rot_mat
 
     def get_direction(self):
