@@ -261,13 +261,13 @@ def evaluate(
         # Calculate loss
         loss_dt = 0
         for fp in enemy_pos:
-            max_dist = -float("inf")
+            min_dist = float("inf")
             for rp in robot_pos:
                 d = numpy.linalg.norm(rp - fp, ord=2)
-                if d > max_dist:
-                    max_dist = d
+                if d < min_dist:
+                    min_dist = d
             enemy_dist = numpy.linalg.norm(nest_pos - fp, ord=2)
-            loss_dt += 0.1 * max_dist - enemy_dist
+            loss_dt += 0.001 * min_dist - enemy_dist
         loss += loss_dt
 
         # Render MuJoCo Scene
