@@ -331,9 +331,11 @@ class ClientCMAES:
             sock.send(struct.pack("<d", score))
             print(f"score : {score}")
 
+            sock.shutdown(socket.SHUT_RDWR)
             sock.close()
 
         except Exception as e:
+            sock.shutdown(socket.SHUT_RDWR)
             sock.close()
             return e
 
