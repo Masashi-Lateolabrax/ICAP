@@ -276,7 +276,7 @@ class ServerCMAES:
         import threading
 
         soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        soc.bind(("0.0.0.0", self.port))
+        soc.bind(("", self.port))
         soc.listen(self._base.get_lambda())
 
         class CH(_CalcHandler):
