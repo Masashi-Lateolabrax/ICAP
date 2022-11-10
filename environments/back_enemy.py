@@ -8,7 +8,7 @@ from studyLib import nn_tools, optimizer, wrap_mjc, miscellaneous
 
 def gen_env(
         nest_pos: (float, float), robot_pos: [(float, float)], enemy_pos: [(float, float)],
-        obstacle_weight: float
+        enemy_density: float
 ):
     generator = wrap_mjc.MuJoCoXMLGenerator("co-behavior")
 
@@ -51,7 +51,7 @@ def gen_env(
         enemy_body.add_geom({
             "type": "cylinder",
             "size": "10 1",
-            "mass": f"{obstacle_weight}",
+            "density": f"{enemy_density}",
             "rgba": "1 0 0 1",
             "condim": "3",
             "priority": "1",
@@ -73,7 +73,7 @@ def gen_env(
         robot_body.add_geom({
             "type": "cylinder",
             "size": "1.75 0.5",
-            "mass": "5000",
+            "density": "1000",
             "rgba": "1 1 0 0.3",
         })
         robot_body.add_site({
@@ -86,6 +86,7 @@ def gen_env(
         right_wheel_body.add_geom({
             "type": "cylinder",
             "size": "0.5 0.5",
+            "density": "1000",
             "axisangle": "0 1 0 90",
             "condim": "6",
             "priority": "1",
@@ -97,6 +98,7 @@ def gen_env(
         left_wheel_body.add_geom({
             "type": "cylinder",
             "size": "0.5 0.5",
+            "density": "1000",
             "axisangle": "0 1 0 90",
             "condim": "6",
             "priority": "1",
@@ -107,6 +109,7 @@ def gen_env(
             "type": "sphere",
             "pos": "0 1 -0.3",
             "size": "0.5",
+            "density": "1000",
             "condim": "1"
         })
 
@@ -114,6 +117,7 @@ def gen_env(
             "type": "sphere",
             "pos": "0 -1 -0.3",
             "size": "0.5",
+            "density": "1000",
             "condim": "1"
         })
 
@@ -231,12 +235,12 @@ def evaluate(
         nest_pos: (float, float),
         robot_pos: list,
         enemy_pos: list[(float, float)],
-        enemy_weight: float,
+        enemy_density: float,
         timestep: int,
         camera: wrap_mjc.Camera = None,
         window: miscellaneous.Window = None
 ) -> float:
-    xml = gen_env(nest_pos, robot_pos, enemy_pos, enemy_weight)
+    xml = gen_env(nest_pos, robot_pos, enemy_pos, enemy_density)
     model = wrap_mjc.WrappedModel(xml)
 
     if not (camera is None):
@@ -286,7 +290,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
             nest_pos: (float, float),
             robot_pos: list[list[(float, float)]],
             enemy_pos: list[(float, float)],
-            enemy_weight: float,
+            enemy_density: float,
             timestep: int
     ):
         """
@@ -296,13 +300,13 @@ class Environment(optimizer.MuJoCoEnvInterface):
         :param nest_pos: 巣の座標
         :param robot_pos: ロボットの座標．list[list[(float,float)]]となっており，ロボットの数が異なる複数のタスクを課すことができる．
         :param enemy_pos: 餌の座標
-        :param enemy_weight: 餌の重さ
+        :param enemy_density: 敵の密度
         :param timestep: stepの実行回数
         """
         self.nest_pos = nest_pos
         self.robot_pos = robot_pos
         self.enemy_pos = enemy_pos
-        self.enemy_weight = enemy_weight
+        self.enemy_density = enemy_density
         self.timestep = timestep
 
     def dim(self) -> int:
@@ -317,7 +321,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
                 self.nest_pos,
                 rp,
                 self.enemy_pos,
-                self.enemy_weight,
+                self.enemy_density,
                 self.timestep
             )
             if total_loss < score:
@@ -333,7 +337,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
                 self.nest_pos,
                 rp,
                 self.enemy_pos,
-                self.enemy_weight,
+                self.enemy_density,
                 self.timestep,
                 camera,
                 window
@@ -349,7 +353,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
         packed.extend([struct.pack("<dd", self.nest_pos[0], self.nest_pos[1])])  # 巣の座標
         packed.extend([struct.pack("<dd", x, y) for rp in self.robot_pos for (x, y) in rp])  # ロボットの座標
         packed.extend([struct.pack("<dd", x, y) for (x, y) in self.enemy_pos])  # 敵の座標
-        packed.extend([struct.pack("<d", self.enemy_weight)])  # 敵の重さ
+        packed.extend([struct.pack("<d", self.enemy_density)])  # 敵の密度
         packed.extend([struct.pack("<I", self.timestep)])  # タイムステップ
         return b"".join(packed)
 
@@ -395,10 +399,10 @@ class Environment(optimizer.MuJoCoEnvInterface):
             p = struct.unpack(f"<dd", data[s:e])
             self.enemy_pos.append((p[0], p[1]))
 
-        # 敵の重さ
+        # 敵の密度
         s = e
         e = s + 8
-        self.enemy_weight = struct.unpack(f"<d", data[s:e])[0]
+        self.enemy_density = struct.unpack(f"<d", data[s:e])[0]
 
         # タイムステップ
         s = e
