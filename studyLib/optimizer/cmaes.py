@@ -223,9 +223,10 @@ def _server_proc(env, individual, connection):
 
 
 class ServerCMAES:
-    def __init__(self, dim: int, generation, population, sigma=0.3, minimalize=True):
+    def __init__(self, port: int, dim: int, generation, population, sigma=0.3, minimalize=True):
         self._base = _BaseCMAES(dim, population, sigma, minimalize)
         self._generation = generation
+        self.port = port
 
     def get_best_para(self) -> numpy.ndarray:
         return self._base.get_best_para()
@@ -242,12 +243,12 @@ class ServerCMAES:
     def set_end_handler(self, handler=default_end_handler):
         self._base.set_end_handler(handler)
 
-    def optimize(self, port: int, env: EnvInterface):
+    def optimize(self, env: EnvInterface):
         import socket
         import threading
 
         soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        soc.bind(("0.0.0.0", port))
+        soc.bind(("0.0.0.0", self.port))
         soc.listen(2)
 
         class CH(_CalcHandler):
@@ -270,13 +271,13 @@ class ServerCMAES:
         for gen in range(1, self._generation + 1):
             self._base.optimize_current_generation(gen, self._generation, C())
 
-    def optimize_with_recoding_min(self, port: int, env: MuJoCoEnvInterface, window: Window, camera: Camera):
+    def optimize_with_recoding_min(self, env: MuJoCoEnvInterface, window: Window, camera: Camera):
         import socket
         import threading
 
         soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        soc.bind(("0.0.0.0", port))
-        soc.listen(2)
+        soc.bind(("0.0.0.0", self.port))
+        soc.listen(self._base.get_lambda())
 
         class CH(_CalcHandler):
             def __init__(self, index: int, ind, handle):
@@ -296,17 +297,22 @@ class ServerCMAES:
                 return CH(index, ind, handle)
 
         for gen in range(1, self._generation + 1):
-            self._base.optimize_current_generation(gen, self._generation, C())
+            good_para = self._base.optimize_current_generation(gen, self._generation, C())
+
+            time = datetime.datetime.now()
+            recorder = Recorder(f"{gen}({time.strftime('%y%m%d_%H%M%S')}).mp4", 30, 640, 480)
+            window.set_recorder(recorder)
+            env.calc_and_show(good_para, window, camera)
+            window.set_recorder(None)
 
 
 class ClientCMAES:
-    def __init__(self, address, port, env: EnvInterface, buf_size: int = 1024):
+    def __init__(self, address, port, buf_size: int = 1024):
         self._address = address
         self._port = port
         self._buf_size = buf_size
-        self._env = env
 
-    def optimize(self):
+    def optimize(self, env: EnvInterface):
         import socket
         import struct
 
@@ -317,10 +323,10 @@ class ClientCMAES:
             received = sock.recv(self._buf_size)
             print(f"receive data size : {len(received)}/{self._buf_size}")
 
-            env_size = self._env.load(received)
+            env_size = env.load(received)
             para = [struct.unpack("<d", received[i:i + 8])[0] for i in range(env_size, len(received), 8)]
 
-            score = self._env.calc(para)
+            score = env.calc(para)
 
             sock.send(struct.pack("<d", score))
             print(f"score : {score}")
