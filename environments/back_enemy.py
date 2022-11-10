@@ -301,8 +301,6 @@ class Environment(optimizer.MuJoCoEnvInterface):
         self.enemy_pos = enemy_pos
         self.enemy_weight = enemy_weight
         self.timestep = timestep
-        self.camera = wrap_mjc.Camera((0, 0, 0), 10, 0, 0)
-        self.window: miscellaneous.Window = None
 
     def dim(self) -> int:
         return RobotBrain(None).num_dim()
@@ -317,9 +315,25 @@ class Environment(optimizer.MuJoCoEnvInterface):
                 rp,
                 self.enemy_pos,
                 self.enemy_weight,
+                self.timestep
+            )
+            if total_loss < score:
+                total_loss = score
+        return total_loss
+
+    def calc_and_show(self, para, window: miscellaneous.Window, camera: wrap_mjc.Camera) -> float:
+        brain = RobotBrain(para)
+        total_loss = -float("inf")
+        for rp in self.robot_pos:
+            score = evaluate(
+                brain,
+                self.nest_pos,
+                rp,
+                self.enemy_pos,
+                self.enemy_weight,
                 self.timestep,
-                self.camera,
-                self.window
+                camera,
+                window
             )
             if total_loss < score:
                 total_loss = score
@@ -389,9 +403,3 @@ class Environment(optimizer.MuJoCoEnvInterface):
         self.timestep = struct.unpack(f"<I", data[s:e])[0]
 
         return e - offset
-
-    def set_window(self, window: miscellaneous.Window) -> None:
-        self.window = window
-
-    def set_camera(self, camera: wrap_mjc.Camera) -> None:
-        self.camera = camera

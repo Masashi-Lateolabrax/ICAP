@@ -22,9 +22,5 @@ class EnvInterface(metaclass=abc.ABCMeta):
 
 class MuJoCoEnvInterface(EnvInterface, abc.ABC):
     @abc.abstractmethod
-    def set_window(self, window: miscellaneous.Window) -> None:
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def set_camera(self, camera: wrap_mjc.Camera) -> None:
+    def calc_and_show(self, para, window: miscellaneous.Window, camera: wrap_mjc.Camera) -> float:
         raise NotImplementedError()

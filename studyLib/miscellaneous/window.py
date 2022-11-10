@@ -34,6 +34,9 @@ class Recorder:
             cv2.resize(numpy.flipud(self.buffer), dsize=(self.width, self.height), interpolation=cv2.INTER_NEAREST)
         )
 
+    def release(self):
+        self.writer.release()
+
 
 class Window:
     def __init__(self, width: int, height: int, title: str = "STUDY"):
@@ -58,7 +61,9 @@ class Window:
     def get_size(self) -> (int, int):
         return glfw.get_framebuffer_size(self.window)
 
-    def set_recorder(self, recorder: Recorder):
+    def set_recorder(self, recorder: Recorder = None):
+        if recorder is None:
+            self.recorder.release()
         self.recorder = recorder
 
     def render(self, model: WrappedModel, cam: Camera = None) -> bool:

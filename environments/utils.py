@@ -5,27 +5,29 @@ from studyLib import optimizer, miscellaneous, wrap_mjc
 def show_mujoco_env(
         env: optimizer.MuJoCoEnvInterface,
         para,
+        window: miscellaneous.Window,
         camera: wrap_mjc.Camera,
         width: int = 640,
-        height: int = 480,
-        scale: int = 2,
+        height: int = 480
 ) -> float:
-    window = miscellaneous.Window(width * scale, height * scale)
     window.set_recorder(miscellaneous.Recorder("result.mp4", 30, width, height))
-    env.set_window(window)
-    env.set_camera(camera)
-    return env.calc(para)
+    return env.calc_and_show(para, window, camera)
 
 
 def cmaes_optimize(
         generation: int,
         population: int,
         sigma: float,
-        env: optimizer.EnvInterface,
-        minimalize: bool = True
+        env: optimizer.MuJoCoEnvInterface,
+        minimalize: bool = True,
+        window_and_camera: (miscellaneous.Window, wrap_mjc.Camera) = None
 ) -> (numpy.ndarray, optimizer.Hist):
-    opt = optimizer.CMAES(env, generation, population, sigma, minimalize)
-    opt.optimize()
+    opt = optimizer.CMAES(env.dim(), generation, population, sigma, minimalize)
+    if window_and_camera is None:
+        opt.optimize(env)
+    else:
+        window, camera = window_and_camera
+        opt.optimize_with_recoding_min(env, window, camera)
     return opt.get_best_para(), opt.get_history()
 
 
@@ -37,8 +39,8 @@ def cmaes_optimize_server(
         port: int = 52325,
         minimalize: bool = True
 ) -> (numpy.ndarray, optimizer.Hist):
-    opt = optimizer.ServerCMAES(env, generation, population, sigma, minimalize)
-    opt.optimize(port)
+    opt = optimizer.ServerCMAES(env.dim(), generation, population, sigma, minimalize)
+    opt.optimize(port, env)
     return opt.get_best_para(), opt.get_history()
 
 

@@ -1,8 +1,8 @@
 /.idea/
 /RESULT/
+
 /main.py
 /best_para.npy
-/history.log
-/history.png
-/result.mp4
-
+/history.*
+/MUJOCO_LOG.TXT
+/*.mp4

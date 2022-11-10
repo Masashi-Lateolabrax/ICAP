@@ -1,12 +1,14 @@
-import math
+import abc
 import datetime
 import numpy
 import copy
 
 from deap import cma, creator, base
 
+from studyLib.wrap_mjc import Camera
+from studyLib.miscellaneous import Window, Recorder
 from studyLib.optimizer.history import Hist
-from studyLib.optimizer.env_interface import EnvInterface
+from studyLib.optimizer.env_interface import EnvInterface, MuJoCoEnvInterface
 
 
 def default_start_handler(gen, generation, start_time):
@@ -22,10 +24,29 @@ def default_end_handler(population, gen, generation, start_time, fin_time, avg, 
     )
 
 
+class _CalcHandler(metaclass=abc.ABCMeta):
+    def __init__(self, index: int):
+        self.index = index
+
+    def get_index(self) -> int:
+        return self.index
+
+    @abc.abstractmethod
+    def join(self) -> float:
+        raise NotImplementedError()
+
+
+class _Calculator(metaclass=abc.ABCMeta):
+    def create(self, index, ind) -> _CalcHandler:
+        raise NotImplementedError()
+
+
 class _BaseCMAES:
     def __init__(self, dim: int, population: int, sigma=0.3, minimalize=True):
         self._best_para = numpy.zeros(0)
         self._history = Hist(minimalize)
+        self._start_handler = default_start_handler
+        self._end_handler = default_end_handler
 
         if minimalize:
             creator.create("Fitness", base.Fitness, weights=(-1.0,))
@@ -42,33 +63,32 @@ class _BaseCMAES:
         for ind in self._individuals:
             ind.fitness.values = (float("nan"),)
 
-    def generate(self):
+    def _generate_new_generation(self) -> (float, float, float, numpy.ndarray, float):
         avg = 0.0
         min_value = float("inf")
         max_value = -float("inf")
-        min_para = None
-        max_para = None
+        good_para = numpy.zeros(0)
 
         for ind in self._individuals:
-            if math.isnan(ind.fitness.values[0]):
-                return False
+            if numpy.isnan(ind.fitness.values[0]):
+                return None
 
             avg += ind.fitness.values[0]
 
             if ind.fitness.values[0] < min_value:
                 min_value = ind.fitness.values[0]
-                min_para = ind
+                if self._history.is_minimalize():
+                    good_para = ind
+
             if ind.fitness.values[0] > max_value:
                 max_value = ind.fitness.values[0]
-                max_para = ind
+                if not self._history.is_minimalize():
+                    good_para = ind
 
         avg /= self._strategy.lambda_
 
         if self._history.add(avg, min_value, max_value):
-            if self._history.is_minimalize():
-                self._best_para = min_para
-            else:
-                self._best_para = max_para
+            self._best_para = good_para.copy()
 
         self._strategy.update(self._individuals)
         self._individuals = self._strategy.generate(creator.Individual)
@@ -76,7 +96,37 @@ class _BaseCMAES:
         for ind in self._individuals:
             ind.fitness.values = (float("nan"),)
 
-        return avg, min_value, max_value, self._history.best
+        return avg, min_value, max_value, good_para, self._history.best
+
+    def optimize_current_generation(self, gen: int, generation: int, calculator: _Calculator) -> numpy.ndarray:
+        start_time = datetime.datetime.now()
+        self._start_handler(gen, generation, start_time)
+
+        res = None
+        while res is None:
+            handles = []
+            for i, ind in enumerate(self._individuals):
+                if not numpy.isnan(ind.fitness.values[0]):
+                    print("CALCULATED", i, ind.fitness.values[0])
+                    continue
+                handles.append(calculator.create(i, ind))
+
+            for h in handles:
+                score = h.join()
+                self._individuals[h.get_index()].fitness.values = (score,)
+
+            res = self._generate_new_generation()
+
+        avg, min_value, max_value, good_para, best = res
+
+        finish_time = datetime.datetime.now()
+        self._end_handler(
+            self.get_lambda(), gen, generation,
+            start_time, finish_time,
+            avg, min_value, max_value, best
+        )
+
+        return good_para
 
     def get_ind(self, index: int):
         if index >= self._strategy.lambda_:
@@ -96,14 +146,17 @@ class _BaseCMAES:
     def get_lambda(self):
         return self._strategy.lambda_
 
+    def set_start_handler(self, handler=default_start_handler):
+        self._start_handler = handler
+
+    def set_end_handler(self, handler=default_end_handler):
+        self._end_handler = handler
+
 
 class CMAES:
-    def __init__(self, env: EnvInterface, generation, population, sigma=0.3, minimalize=True):
-        self._base = _BaseCMAES(env.dim(), population, sigma, minimalize)
-        self._env = env
+    def __init__(self, dim: int, generation, population, sigma=0.3, minimalize=True):
+        self._base = _BaseCMAES(dim, population, sigma, minimalize)
         self._generation = generation
-        self._start_handler = default_start_handler
-        self._end_handler = default_end_handler
 
     def get_best_para(self) -> numpy.ndarray:
         return self._base.get_best_para()
@@ -115,39 +168,64 @@ class CMAES:
         return self._base.get_history()
 
     def set_start_handler(self, handler=default_start_handler):
-        self._start_handler = handler
+        self._base.set_start_handler(handler)
 
     def set_end_handler(self, handler=default_end_handler):
-        self._end_handler = handler
+        self._base.set_end_handler(handler)
 
-    def optimize(self):
-        start_time = datetime.datetime.now()
+    def optimize(self, env: EnvInterface):
+        class CH(_CalcHandler):
+            def __init__(self, index: int, score: float):
+                super().__init__(index)
+                self.score = score
+
+            def join(self) -> float:
+                return self.score
+
+        class C(_Calculator):
+            def create(self, index, ind) -> _CalcHandler:
+                return CH(index, env.calc(ind))
+
         for gen in range(1, self._generation + 1):
-            self._start_handler(gen, self._generation, start_time)
+            self._base.optimize_current_generation(gen, self._generation, C())
 
-            for i in range(0, self._base.get_lambda()):
-                ind = self._base.get_ind(i)
-                score = self._env.calc(ind)
-                ind.fitness.values = (score,)
+    def optimize_with_recoding_min(self, env: MuJoCoEnvInterface, window: Window, camera: Camera):
+        class CH(_CalcHandler):
+            def __init__(self, index: int, score: float):
+                super().__init__(index)
+                self.score = score
 
-            avg, min_value, max_value, best = self._base.generate()
+            def join(self) -> float:
+                return self.score
 
-            finish_time = datetime.datetime.now()
-            self._end_handler(
-                self._base.get_lambda(), gen, self._generation,
-                start_time, finish_time,
-                avg, min_value, max_value, best
-            )
-            start_time = copy.copy(finish_time)
+        class C(_Calculator):
+            def create(self, index, ind) -> _CalcHandler:
+                return CH(index, env.calc(ind))
+
+        for gen in range(1, self._generation + 1):
+            good_para = self._base.optimize_current_generation(gen, self._generation, C())
+
+            time = datetime.datetime.now()
+            recorder = Recorder(f"{time.strftime('%y%m%d_%H%M%S')}.mp4", 30, 640, 480)
+            window.set_recorder(recorder)
+            env.calc_and_show(good_para, window, camera)
+            window.set_recorder(None)
+
+
+def _server_proc(env, individual, connection):
+    import struct
+    buf = [env.save()]
+    buf.extend([struct.pack("<d", x) for x in individual])
+    connection.send(b''.join(buf))
+    received = connection.recv(1024)
+    score = struct.unpack("<d", received)[0]
+    individual.fitness.values = (score,)
 
 
 class ServerCMAES:
-    def __init__(self, env: EnvInterface, generation, population, sigma=0.3, minimalize=True):
-        self._base = _BaseCMAES(env.dim(), population, sigma, minimalize)
-        self._env = env
+    def __init__(self, dim: int, generation, population, sigma=0.3, minimalize=True):
+        self._base = _BaseCMAES(dim, population, sigma, minimalize)
         self._generation = generation
-        self._start_handler = default_start_handler
-        self._end_handler = default_end_handler
 
     def get_best_para(self) -> numpy.ndarray:
         return self._base.get_best_para()
@@ -159,12 +237,12 @@ class ServerCMAES:
         return self._base.get_history()
 
     def set_start_handler(self, handler=default_start_handler):
-        self._start_handler = handler
+        self._base.set_start_handler(handler)
 
     def set_end_handler(self, handler=default_end_handler):
-        self._end_handler = handler
+        self._base.set_end_handler(handler)
 
-    def optimize(self, port):
+    def optimize(self, port: int, env: EnvInterface):
         import socket
         import threading
 
@@ -172,51 +250,53 @@ class ServerCMAES:
         soc.bind(("0.0.0.0", port))
         soc.listen(2)
 
-        start_time = datetime.datetime.now()
+        class CH(_CalcHandler):
+            def __init__(self, index: int, ind, handle):
+                super().__init__(index)
+                self.ind = ind
+                self.handle = handle
+
+            def join(self) -> float:
+                self.handle.join()
+                return self.ind.fitness.values[0]
+
+        class C(_Calculator):
+            def create(self, index, ind) -> _CalcHandler:
+                conn, _addr = soc.accept()
+                handle = threading.Thread(target=lambda: _server_proc(env, ind, conn))
+                handle.start()
+                return CH(index, ind, handle)
+
         for gen in range(1, self._generation + 1):
-            while True:
-                self._start_handler(gen, self._generation, start_time)
+            self._base.optimize_current_generation(gen, self._generation, C())
 
-                thread_handles = []
-                for i in range(0, self._base.get_lambda()):
-                    ind = self._base.get_ind(i)
-                    if not math.isnan(ind.fitness.values[0]):
-                        print("CALCULATED", i, ind.fitness.values[0])
-                        continue
+    def optimize_with_recoding_min(self, port: int, env: MuJoCoEnvInterface, window: Window, camera: Camera):
+        import socket
+        import threading
 
-                    conn, _addr = soc.accept()
+        soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        soc.bind(("0.0.0.0", port))
+        soc.listen(2)
 
-                    def server_proc(individual, connection):
-                        import struct
-                        buf = [self._env.save()]
-                        buf.extend([struct.pack("<d", x) for x in individual])
-                        connection.send(b''.join(buf))
-                        received = connection.recv(1024)
-                        score = struct.unpack("<d", received)[0]
-                        individual.fitness.values = (score,)
+        class CH(_CalcHandler):
+            def __init__(self, index: int, ind, handle):
+                super().__init__(index)
+                self.ind = ind
+                self.handle = handle
 
-                    handle = threading.Thread(target=lambda: server_proc(ind, conn))
-                    handle.start()
-                    thread_handles.append(handle)
+            def join(self) -> float:
+                self.handle.join()
+                return self.ind.fitness.values[0]
 
-                for th in thread_handles:
-                    th.join()
+        class C(_Calculator):
+            def create(self, index, ind) -> _CalcHandler:
+                conn, _addr = soc.accept()
+                handle = threading.Thread(target=lambda: _server_proc(env, ind, conn))
+                handle.start()
+                return CH(index, ind, handle)
 
-                gen_result = self._base.generate()
-                if gen_result is False:
-                    print("ERROR HAPPEN AT A CLIENT.")
-                    continue
-                avg, min_value, max_value, best = gen_result
-
-                finish_time = datetime.datetime.now()
-                self._end_handler(
-                    self._base.get_lambda(), gen, self._generation,
-                    start_time, finish_time,
-                    avg, min_value, max_value, best
-                )
-                start_time = copy.copy(finish_time)
-
-                break
+        for gen in range(1, self._generation + 1):
+            self._base.optimize_current_generation(gen, self._generation, C())
 
 
 class ClientCMAES:
