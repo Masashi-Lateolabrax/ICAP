@@ -158,8 +158,11 @@ class RobotBrain:
     def __init__(self, para):
         self.calculator = nn_tools.Calculator(6)
 
-        self.calculator.add_layer(nn_tools.AffineLayer(10))
-        self.calculator.add_layer(nn_tools.TanhLayer(10))
+        self.calculator.add_layer(nn_tools.AffineLayer(12))
+        self.calculator.add_layer(nn_tools.TanhLayer(12))
+
+        self.calculator.add_layer(nn_tools.AffineLayer(6))
+        self.calculator.add_layer(nn_tools.TanhLayer(6))
 
         self.calculator.add_layer(nn_tools.AffineLayer(2))
         self.calculator.add_layer(nn_tools.SigmoidLayer(2))
