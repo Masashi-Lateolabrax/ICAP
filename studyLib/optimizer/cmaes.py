@@ -206,7 +206,7 @@ class CMAES:
             good_para = self._base.optimize_current_generation(gen, self._generation, C())
 
             time = datetime.datetime.now()
-            recorder = Recorder(f"{time.strftime('%y%m%d_%H%M%S')}.mp4", 30, 640, 480)
+            recorder = Recorder(f"{gen}({time.strftime('%y%m%d_%H%M%S')}).mp4", 30, 640, 480)
             window.set_recorder(recorder)
             env.calc_and_show(good_para, window, camera)
             window.set_recorder(None)
