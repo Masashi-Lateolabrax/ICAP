@@ -6,3 +6,4 @@
 /history.*
 /MUJOCO_LOG.TXT
 /*.mp4
+/test.py
