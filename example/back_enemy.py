@@ -1,6 +1,6 @@
 import numpy
 from environments import utils, back_enemy
-from studyLib import wrap_mjc
+from studyLib import wrap_mjc, miscellaneous
 
 if __name__ == "__main__":
     def main():
@@ -12,7 +12,7 @@ if __name__ == "__main__":
             [(x, 0) for x in range(-2, 3, 4)]  # 2体
         ]
         enemy_pos = [(0, -30)]
-        enemy_weight = 1000
+        enemy_weight = 4500
 
         generation = 100
         population = 100
@@ -26,15 +26,21 @@ if __name__ == "__main__":
             timestep,
         )
 
-        para, hist = utils.cmaes_optimize(generation, population, 0.3, env)
+        width: int = 640
+        height: int = 480
+        scale: int = 2
+        window = miscellaneous.Window(width * scale, height * scale)
+        camera = wrap_mjc.Camera((0, 0, 0), 100, 0, 90)
+
+        # para, hist = utils.cmaes_optimize(generation, population, 3.0, env, True, (window, camera))
+        para, hist = utils.cmaes_optimize_server(generation, population, 3.0, env, 52325, True, (window, camera))
         numpy.save("best_para.npy", para)
         hist.save("history.log")
 
-        camera = wrap_mjc.Camera((0, 0, 0), 100, 0, 90)
         para = numpy.load("best_para.npy")
         print(
             "Result : ",
-            utils.show_mujoco_env(env, para, camera, 640, 480, 2)
+            utils.show_mujoco_env(env, para, window, camera)
         )
 
 
