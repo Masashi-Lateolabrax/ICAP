@@ -123,10 +123,10 @@ class WrappedBody:
     def get_xmat(self):
         return self._data_body.xmat
 
-    def get_xpos(self):
+    def get_xpos(self) -> numpy.ndarray:
         return self._data_body.xpos
 
-    def get_xquat(self):
+    def get_xquat(self) -> numpy.ndarray:
         return self._data_body.xquat
 
     def get_dofadr(self):
@@ -169,12 +169,6 @@ class WrappedBody:
     def get_parentid(self):
         return self._model_body.parentid
 
-    def get_pos(self):
-        return self._model_body.pos
-
-    def get_quat(self):
-        return self._model_body.quat
-
     def get_sameframe(self):
         return self._model_body.sameframe
 
@@ -199,7 +193,7 @@ class WrappedGeom:
     def get_xmat(self):
         return self.data_geom.xmat
 
-    def get_xpos(self):
+    def get_xpos(self) -> numpy.ndarray:
         return self.data_geom.xpos
 
     def get_conaffinity(self):
