@@ -1,3 +1,4 @@
+import array
 import copy
 import datetime
 from studyLib.wrap_mjc import Camera
@@ -11,7 +12,7 @@ class CMAES:
         self._base = BaseCMAES(dim, population, sigma, minimalize, max_thread)
         self._generation = generation
 
-    def get_best_para(self) -> list[float]:
+    def get_best_para(self) -> array.array:
         return self._base.get_best_para()
 
     def get_best_score(self) -> float:

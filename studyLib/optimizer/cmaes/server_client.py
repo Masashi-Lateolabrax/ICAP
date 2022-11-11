@@ -1,3 +1,4 @@
+import array
 import copy
 import datetime
 import multiprocessing as mp
@@ -39,7 +40,7 @@ class ServerCMAES:
         self._generation = generation
         self._port = port
 
-    def get_best_para(self) -> list[float]:
+    def get_best_para(self) -> array.array:
         return self._base.get_best_para()
 
     def get_best_score(self) -> float:

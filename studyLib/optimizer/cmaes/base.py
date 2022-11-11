@@ -1,4 +1,5 @@
 import abc
+import array
 import copy
 import datetime
 import multiprocessing as mp
@@ -34,22 +35,22 @@ class FitnessMin(base.Fitness):
         super().__init__(values)
 
 
-class Individual(list):
+class Individual(array.array):
     fitness: base.Fitness = None
 
-    def __init__(self, fitness: base.Fitness, seq=()):
-        super().__init__(seq)
+    def __init__(self, fitness: base.Fitness, a: numpy.ndarray):
+        super().__init__("d", a)
         self.fitness = fitness
 
 
 class MaximizeIndividual(Individual):
-    def __init__(self, seq=()):
-        super().__init__(FitnessMax((float("nan"),)), seq)
+    def __init__(self, a: numpy.ndarray):
+        super().__init__(FitnessMax((float("nan"),)), a)
 
 
 class MinimalizeIndividual(Individual):
-    def __init__(self, seq=()):
-        super().__init__(FitnessMin((float("nan"),)), seq)
+    def __init__(self, a: numpy.ndarray):
+        super().__init__(FitnessMin((float("nan"),)), a)
 
 
 class Proc(metaclass=abc.ABCMeta):
@@ -70,7 +71,7 @@ def proc_launcher(index: int, queue: mp.Queue, ind: Individual, proc: Proc):
 
 class BaseCMAES:
     def __init__(self, dim: int, population: int, sigma=0.3, minimalize=True, max_thread: int = 1):
-        self._best_para: list[float] = []
+        self._best_para: array.array = array.array("d", [0.0] * dim)
         self._history: Hist = Hist(minimalize)
         self._start_handler = default_start_handler
         self._end_handler = default_end_handler
@@ -87,11 +88,11 @@ class BaseCMAES:
         else:
             self._individuals: list[Individual] = self._strategy.generate(MaximizeIndividual)
 
-    def _generate_new_generation(self) -> (float, float, float, numpy.ndarray, float):
+    def _generate_new_generation(self) -> (float, float, float, array.array, float):
         avg = 0.0
         min_value = float("inf")
         max_value = -float("inf")
-        good_para = numpy.zeros(0)
+        good_para: array.array = None
 
         for ind in self._individuals:
             if numpy.isnan(ind.fitness.values[0]):
@@ -112,7 +113,7 @@ class BaseCMAES:
         avg /= self._strategy.lambda_
 
         if self._history.add(avg, min_value, max_value):
-            self._best_para = good_para.copy()
+            self._best_para = copy.deepcopy(good_para)
 
         self._strategy.update(self._individuals)
 
@@ -123,7 +124,7 @@ class BaseCMAES:
 
         return avg, min_value, max_value, good_para, self._history.best
 
-    def optimize_current_generation(self, gen: int, generation: int, proc: Proc) -> numpy.ndarray:
+    def optimize_current_generation(self, gen: int, generation: int, proc: Proc) -> array.array:
         import time
 
         start_time = datetime.datetime.now()
@@ -169,13 +170,13 @@ class BaseCMAES:
 
         return good_para
 
-    def get_ind(self, index: int) -> list[float]:
+    def get_ind(self, index: int) -> array.array:
         if index >= self._strategy.lambda_:
             raise "'index' >= self._strategy.lambda_"
         ind = self._individuals[index]
         return ind
 
-    def get_best_para(self) -> list[float]:
+    def get_best_para(self) -> array.array:
         return copy.deepcopy(self._best_para)
 
     def get_best_score(self) -> float:
