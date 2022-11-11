@@ -16,7 +16,7 @@ class ServerProc(Proc):
         self.soc: socket.socket = None
 
     def ready(self):
-        addr, soc = self.listener.accept()
+        soc, _addr = self.listener.accept()
         self.soc = soc
 
     def start(self, index: int, queue: mp.Queue, ind: Individual):
