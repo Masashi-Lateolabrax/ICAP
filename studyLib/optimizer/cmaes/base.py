@@ -38,19 +38,22 @@ class FitnessMin(base.Fitness):
 class Individual(array.array):
     fitness: base.Fitness = None
 
-    def __init__(self, fitness: base.Fitness, a: numpy.ndarray):
-        super().__init__("d", a)
-        self.fitness = fitness
+    def __new__(cls, fitness: base.Fitness, arr: numpy.ndarray):
+        this = super().__new__(cls, "d", arr)
+        this.fitness = fitness
+        return this
 
 
 class MaximizeIndividual(Individual):
-    def __init__(self, a: numpy.ndarray):
-        super().__init__(FitnessMax((float("nan"),)), a)
+    def __new__(cls, arr: numpy.ndarray):
+        this = super().__new__(cls, FitnessMax((float("nan"),)), arr)
+        return this
 
 
 class MinimalizeIndividual(Individual):
-    def __init__(self, a: numpy.ndarray):
-        super().__init__(FitnessMin((float("nan"),)), a)
+    def __new__(cls, arr: numpy.ndarray):
+        this = super().__new__(cls, FitnessMin((float("nan"),)), arr)
+        return this
 
 
 class Proc(metaclass=abc.ABCMeta):
