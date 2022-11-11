@@ -42,11 +42,12 @@ class _Calculator(metaclass=abc.ABCMeta):
 
 
 class _BaseCMAES:
-    def __init__(self, dim: int, population: int, sigma=0.3, minimalize=True):
+    def __init__(self, dim: int, population: int, sigma=0.3, minimalize=True, max_thread: int = 1):
         self._best_para = numpy.zeros(0)
         self._history = Hist(minimalize)
         self._start_handler = default_start_handler
         self._end_handler = default_end_handler
+        self.max_thread = max_thread
 
         if minimalize:
             creator.create("Fitness", base.Fitness, weights=(-1.0,))
@@ -99,6 +100,8 @@ class _BaseCMAES:
         return avg, min_value, max_value, good_para, self._history.best
 
     def optimize_current_generation(self, gen: int, generation: int, calculator: _Calculator) -> numpy.ndarray:
+        import random
+
         start_time = datetime.datetime.now()
         self._start_handler(gen, generation, start_time)
 
@@ -109,6 +112,12 @@ class _BaseCMAES:
                 if not numpy.isnan(ind.fitness.values[0]):
                     print("CALCULATED", i, ind.fitness.values[0])
                     continue
+
+                while len(handles) >= self.max_thread:
+                    h = handles.pop(random.randrange(0, len(handles)))
+                    score = h.join()
+                    self._individuals[h.get_index()].fitness.values = (score,)
+
                 handles.append(calculator.create(i, ind))
 
             for h in handles:
@@ -153,9 +162,14 @@ class _BaseCMAES:
         self._end_handler = handler
 
 
+def _thread_proc(env, ind):
+    score = env.calc(ind)
+    ind.fitness.values = (score,)
+
+
 class CMAES:
-    def __init__(self, dim: int, generation, population, sigma=0.3, minimalize=True):
-        self._base = _BaseCMAES(dim, population, sigma, minimalize)
+    def __init__(self, dim: int, generation, population, sigma=0.3, minimalize=True, max_thread: int = 1):
+        self._base = _BaseCMAES(dim, population, sigma, minimalize, max_thread)
         self._generation = generation
 
     def get_best_para(self) -> numpy.ndarray:
@@ -175,32 +189,44 @@ class CMAES:
 
     def optimize(self, env: EnvInterface):
         class CH(_CalcHandler):
-            def __init__(self, index: int, score: float):
+            def __init__(self, index: int, ind, handle):
                 super().__init__(index)
-                self.score = score
+                self.handle = handle
+                self.ind = ind
 
             def join(self) -> float:
-                return self.score
+                self.handle.join()
+                return self.ind.fitness.values[0]
 
         class C(_Calculator):
             def create(self, index, ind) -> _CalcHandler:
-                return CH(index, env.calc(ind))
+                from multiprocessing import Process
+                handle = Process(target=_thread_proc, args=(env, ind))
+                ch = CH(index, ind, handle)
+                handle.start()
+                return ch
 
         for gen in range(1, self._generation + 1):
             self._base.optimize_current_generation(gen, self._generation, C())
 
     def optimize_with_recoding_min(self, env: MuJoCoEnvInterface, window: Window, camera: Camera):
         class CH(_CalcHandler):
-            def __init__(self, index: int, score: float):
+            def __init__(self, index: int, ind, handle):
                 super().__init__(index)
-                self.score = score
+                self.handle = handle
+                self.ind = ind
 
             def join(self) -> float:
-                return self.score
+                self.handle.join()
+                return self.ind.fitness.values[0]
 
         class C(_Calculator):
             def create(self, index, ind) -> _CalcHandler:
-                return CH(index, env.calc(ind))
+                from multiprocessing import Process
+                handle = Process(target=_thread_proc, args=(env, ind))
+                ch = CH(index, ind, handle)
+                handle.start()
+                return ch
 
         for gen in range(1, self._generation + 1):
             good_para = self._base.optimize_current_generation(gen, self._generation, C())
@@ -216,17 +242,21 @@ def _server_proc(env, individual, connection):
     import struct
     buf = [env.save()]
     buf.extend([struct.pack("<d", x) for x in individual])
-    connection.send(b''.join(buf))
-    received = connection.recv(1024)
-    score = struct.unpack("<d", received)[0]
+    try:
+        connection.send(b''.join(buf))
+        received = connection.recv(1024)
+        score = struct.unpack("<d", received)[0]
+    except Exception as e:
+        print(e)
+        score = (float("nan"),)
     individual.fitness.values = (score,)
 
 
 class ServerCMAES:
-    def __init__(self, port: int, dim: int, generation, population, sigma=0.3, minimalize=True):
-        self._base = _BaseCMAES(dim, population, sigma, minimalize)
+    def __init__(self, port: int, dim: int, generation, population, sigma=0.3, minimalize=True, max_thread: int = 1):
+        self._base = _BaseCMAES(dim, population, sigma, minimalize, max_thread)
         self._generation = generation
-        self.port = port
+        self._port = port
 
     def get_best_para(self) -> numpy.ndarray:
         return self._base.get_best_para()
@@ -245,10 +275,9 @@ class ServerCMAES:
 
     def optimize(self, env: EnvInterface):
         import socket
-        import threading
 
         soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        soc.bind(("0.0.0.0", self.port))
+        soc.bind(("0.0.0.0", self._port))
         soc.listen(2)
 
         class CH(_CalcHandler):
@@ -263,6 +292,7 @@ class ServerCMAES:
 
         class C(_Calculator):
             def create(self, index, ind) -> _CalcHandler:
+                import threading
                 conn, _addr = soc.accept()
                 handle = threading.Thread(target=lambda: _server_proc(env, ind, conn))
                 handle.start()
@@ -276,7 +306,7 @@ class ServerCMAES:
         import threading
 
         soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        soc.bind(("", self.port))
+        soc.bind(("", self._port))
         soc.listen(self._base.get_lambda())
 
         class CH(_CalcHandler):
