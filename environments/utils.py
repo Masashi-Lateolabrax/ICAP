@@ -22,7 +22,7 @@ def cmaes_optimize(
         minimalize: bool = True,
         window_and_camera: (miscellaneous.Window, wrap_mjc.Camera) = None
 ) -> (numpy.ndarray, optimizer.Hist):
-    opt = optimizer.CMAES(env.dim(), generation, population, sigma, minimalize)
+    opt = optimizer.CMAES(env.dim(), generation, population, sigma, minimalize, 4)
     if window_and_camera is None:
         opt.optimize(env)
     else:
