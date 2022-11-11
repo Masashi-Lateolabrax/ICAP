@@ -253,8 +253,8 @@ def _server_proc(env, individual, connection):
 
 
 class ServerCMAES:
-    def __init__(self, port: int, dim: int, generation, population, sigma=0.3, minimalize=True, max_thread: int = 1):
-        self._base = _BaseCMAES(dim, population, sigma, minimalize, max_thread)
+    def __init__(self, port: int, dim: int, generation, population, sigma=0.3, minimalize=True):
+        self._base = _BaseCMAES(dim, population, sigma, minimalize, population)
         self._generation = generation
         self._port = port
 
