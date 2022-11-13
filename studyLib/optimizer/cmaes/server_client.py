@@ -30,7 +30,7 @@ class ServerProc(Proc):
             score = struct.unpack("<d", received)[0]
         except Exception as e:
             print(e)
-            score = (float("nan"),)
+            score = float("nan")
         queue.put((index, score))
 
 

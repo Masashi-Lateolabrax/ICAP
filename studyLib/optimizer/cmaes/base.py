@@ -146,7 +146,9 @@ class BaseCMAES:
                 handles[i].start()
 
                 while len(handles) - queue.qsize() >= self.max_thread:
-                    time.sleep(0.0001)
+                    if queue.empty():
+                        time.sleep(0.0001)
+                        continue
                     while not queue.empty():
                         index, score = queue.get()
                         self._individuals[index].fitness.values = (score,)
