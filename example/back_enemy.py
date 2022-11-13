@@ -11,11 +11,11 @@ if __name__ == "__main__":
             [(x, 0) for x in range(-4, 5, 4)],  # 3体
             [(x, 0) for x in range(-2, 3, 4)]  # 2体
         ]
-        enemy_pos = [(0, -30)]
-        enemy_weight = 4500
+        enemy_pos = [(0, -20)]
+        enemy_weight = 10000
 
-        generation = 100
-        population = 100
+        generation = 300
+        population = 300
         timestep = int(10 / 0.03333)
 
         env = back_enemy.Environment(
