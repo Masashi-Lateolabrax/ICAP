@@ -32,7 +32,7 @@ if __name__ == "__main__":
         window = miscellaneous.Window(width * scale, height * scale)
         camera = wrap_mjc.Camera((0, 0, 0), 100, 0, 90)
 
-        para, hist = utils.cmaes_optimize(generation, population, 3.0, env, True, (window, camera))
+        para, hist = utils.cmaes_optimize(generation, population, 3.0, env, 7, True, None)
         numpy.save("best_para.npy", para)
         hist.save("history.log")
 
