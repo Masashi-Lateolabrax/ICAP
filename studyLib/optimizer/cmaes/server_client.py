@@ -2,6 +2,7 @@ import array
 import copy
 import datetime
 import multiprocessing as mp
+import platform
 import socket
 from studyLib.miscellaneous import Window, Recorder
 from studyLib.wrap_mjc import Camera
@@ -108,9 +109,24 @@ class ClientCMAES:
             sock.shutdown(socket.SHUT_RDWR)
             sock.close()
 
-        except Exception as e:
+        except socket.error as e:
+            os = platform.system()
+            if os == "Windows":
+                if e.errno == 10054:  # [WinError 10054] 既存の接続はリモート ホストに強制的に切断されました。
+                    sock.close()
+                    return e, False
+                elif e.errno == 10057:  # [WinError 10057] ソケットが接続されていないか、sendto呼び出しを使ってデータグラムソケットで...
+                    sock.close()
+                    return e, False
+                elif e.errno == 10060:  # [WinError 10060] 接続済みの呼び出し先が一定時間を過ぎても正しく応答しなかったため...
+                    sock.close()
+                    return e, True
+                elif e.errno == 10061:  # [WinError 10061] 対象のコンピューターによって拒否されたため、接続できませんでした。
+                    sock.close()
+                    return e, True
+
             sock.shutdown(socket.SHUT_RDWR)
             sock.close()
-            return e
+            return e, False
 
-        return None
+        return None, True

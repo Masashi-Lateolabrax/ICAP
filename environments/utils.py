@@ -57,11 +57,18 @@ def _client_proc(proc_id: int, init_env: optimizer.EnvInterface, address: str, p
     opt = optimizer.ClientCMAES(address, port, buf_size)
     print(f"Start THREAD{proc_id}")
 
-    res = None
-    while res is None:
+    error = None
+    can_recover = True
+    err_count = 0
+    while (error is None or can_recover) and err_count < 5:
         print(f"THREAD{proc_id} is calculating")
-        res = opt.optimize(env)
-    print(f"THREAD{proc_id} is close : ", res)
+        error, can_recover = opt.optimize(env)
+        if error is not None and can_recover:
+            err_count += 1
+        else:
+            err_count = 0
+
+    print(f"THREAD{proc_id} is close : ", error)
 
 
 def cmaes_optimize_client(
