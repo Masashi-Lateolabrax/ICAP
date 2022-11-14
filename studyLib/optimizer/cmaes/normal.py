@@ -38,8 +38,7 @@ class CMAES:
 
     def optimize(self, env: EnvInterface):
         for gen in range(1, self._generation + 1):
-            proc = Proc(copy.deepcopy(env))
-            self._base.optimize_current_generation(gen, self._generation, proc)
+            self._base.optimize_current_generation(gen, self._generation, Proc(env))
 
     def optimize_with_recoding_min(self, env: MuJoCoEnvInterface, window: Window, camera: Camera):
         for gen in range(1, self._generation + 1):

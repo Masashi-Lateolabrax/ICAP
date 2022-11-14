@@ -101,7 +101,6 @@ class BaseCMAES:
             sigma=sigma,
             lambda_=population,
             mu=mu,
-            weights="equal"
         )
 
         # self._strategy = cma.StrategyOnePlusLambda(
@@ -159,8 +158,9 @@ class BaseCMAES:
                 if not numpy.isnan(ind.fitness.values[0]):
                     continue
 
-                proc.ready()
-                handles[i] = mp.Process(target=proc_launcher, args=(i, queue, ind, proc))
+                tmp_proc = copy.deepcopy(proc)
+                tmp_proc.ready()
+                handles[i] = mp.Process(target=proc_launcher, args=(i, queue, ind, tmp_proc))
                 handles[i].start()
 
                 while len(handles) - queue.qsize() >= self.max_thread:

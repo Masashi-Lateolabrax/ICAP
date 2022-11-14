@@ -32,7 +32,7 @@ class DecoGeom(mujoco.MjvGeom):
             self.type,
             self.size,
             self.pos,
-            self.mat,
+            self.mat.ravel(),
             self.rgba,
         )
 
