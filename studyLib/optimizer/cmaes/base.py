@@ -73,23 +73,44 @@ def proc_launcher(index: int, queue: mp.Queue, ind: Individual, proc: Proc):
 
 
 class BaseCMAES:
-    def __init__(self, dim: int, population: int, sigma=0.3, minimalize=True, max_thread: int = 1):
+    def __init__(
+            self,
+            dim: int,
+            population: int,
+            mu: int = -1,
+            sigma: float = 0.3,
+            minimalize: bool = True,
+            max_thread: int = 1
+    ):
         self._best_para: array.array = array.array("d", [0.0] * dim)
         self._history: Hist = Hist(minimalize)
         self._start_handler = default_start_handler
         self._end_handler = default_end_handler
         self.max_thread: int = max_thread
 
+        if minimalize:
+            self._ind_type = MinimalizeIndividual
+        else:
+            self._ind_type = MaximizeIndividual
+
+        if mu <= 0:
+            mu = int(population * 0.5)
+
         self._strategy = cma.Strategy(
             centroid=[0 for _i in range(0, dim)],
             sigma=sigma,
-            lambda_=population
+            lambda_=population,
+            mu=mu,
+            weights="equal"
         )
 
-        if minimalize:
-            self._individuals: list[Individual] = self._strategy.generate(MinimalizeIndividual)
-        else:
-            self._individuals: list[Individual] = self._strategy.generate(MaximizeIndividual)
+        # self._strategy = cma.StrategyOnePlusLambda(
+        #     parent=self._ind_type(numpy.zeros(dim)),
+        #     sigma=sigma,
+        #     lambda_=population,
+        # )
+
+        self._individuals: list[Individual] = self._strategy.generate(self._ind_type)
 
     def _generate_new_generation(self) -> (float, float, float, array.array, float):
         avg = 0.0
@@ -120,10 +141,7 @@ class BaseCMAES:
 
         self._strategy.update(self._individuals)
 
-        if self._history.is_minimalize():
-            self._individuals: list[Individual] = self._strategy.generate(MinimalizeIndividual)
-        else:
-            self._individuals: list[Individual] = self._strategy.generate(MaximizeIndividual)
+        self._individuals: list[Individual] = self._strategy.generate(self._ind_type)
 
         return avg, min_value, max_value, good_para, self._history.best
 

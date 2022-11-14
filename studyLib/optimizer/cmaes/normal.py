@@ -8,8 +8,17 @@ from studyLib.optimizer.cmaes.base import BaseCMAES, Proc, default_start_handler
 
 
 class CMAES:
-    def __init__(self, dim: int, generation, population, sigma=0.3, minimalize=True, max_thread: int = 1):
-        self._base = BaseCMAES(dim, population, sigma, minimalize, max_thread)
+    def __init__(
+            self,
+            dim: int,
+            generation: int,
+            population: int,
+            mu: int = -1,
+            sigma: float = 0.3,
+            minimalize: bool = True,
+            max_thread: int = 1
+    ):
+        self._base = BaseCMAES(dim, population, mu, sigma, minimalize, max_thread)
         self._generation = generation
 
     def get_best_para(self) -> array.array:

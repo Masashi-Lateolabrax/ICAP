@@ -17,13 +17,14 @@ def show_mujoco_env(
 def cmaes_optimize(
         generation: int,
         population: int,
+        mu: int,
         sigma: float,
         env: optimizer.MuJoCoEnvInterface,
         max_thread: int = 4,
         minimalize: bool = True,
         window_and_camera: (miscellaneous.Window, wrap_mjc.Camera) = None
 ) -> (numpy.ndarray, optimizer.Hist):
-    opt = optimizer.CMAES(env.dim(), generation, population, sigma, minimalize, max_thread)
+    opt = optimizer.CMAES(env.dim(), generation, population, mu, sigma, minimalize, max_thread)
     if window_and_camera is None:
         opt.optimize(env)
     else:
@@ -35,13 +36,14 @@ def cmaes_optimize(
 def cmaes_optimize_server(
         generation: int,
         population: int,
+        mu: int,
         sigma: float,
         env: optimizer.MuJoCoEnvInterface,
         port: int = 52325,
         minimalize: bool = True,
         window_and_camera: (miscellaneous.Window, wrap_mjc.Camera) = None
 ) -> (numpy.ndarray, optimizer.Hist):
-    opt = optimizer.ServerCMAES(port, env.dim(), generation, population, sigma, minimalize)
+    opt = optimizer.ServerCMAES(port, env.dim(), generation, population, mu, sigma, minimalize)
     if window_and_camera is None:
         opt.optimize(env)
     else:

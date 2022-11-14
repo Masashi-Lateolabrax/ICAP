@@ -36,8 +36,17 @@ class ServerProc(Proc):
 
 
 class ServerCMAES:
-    def __init__(self, port: int, dim: int, generation, population, sigma=0.3, minimalize=True):
-        self._base = BaseCMAES(dim, population, sigma, minimalize, population)
+    def __init__(
+            self,
+            port: int,
+            dim: int,
+            generation: int,
+            population: int,
+            mu: int = -1,
+            sigma: float = 0.3,
+            minimalize: bool = True
+    ):
+        self._base = BaseCMAES(dim, population, mu, sigma, minimalize, population)
         self._generation = generation
         self._port = port
 
