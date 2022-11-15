@@ -235,7 +235,7 @@ class _Robot:
 
         self.left_act.ctrl = 3000 * ctrl[0]
         self.right_act.ctrl = 3000 * ctrl[1]
-        return ctrl[2]
+        return ctrl[2] * 30
 
 
 def _evaluate(
