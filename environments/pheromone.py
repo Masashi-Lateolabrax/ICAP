@@ -91,7 +91,7 @@ class PheromoneField:
         :return: None
         """
         if 0 <= ix < self._nx and 0 <= iy < self._ny:
-            self._dif_liquid[iy, ix] += value
+            self._liquid[iy, ix] += value
 
     def add_liquid(self, x: float, y: float, value: float) -> None:
         """
