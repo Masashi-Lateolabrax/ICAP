@@ -52,10 +52,7 @@ def cmaes_optimize_server(
     return opt.get_best_para(), opt.get_history()
 
 
-def _client_proc(proc_id: int, init_env: optimizer.EnvInterface, address: str, port: int, buf_size: int):
-    import copy
-
-    env = copy.deepcopy(init_env)
+def _client_proc(proc_id: int, default_env_creator: optimizer.EnvCreator, address: str, port: int, buf_size: int):
     opt = optimizer.ClientCMAES(address, port, buf_size)
     print(f"Start THREAD{proc_id}")
 
@@ -64,7 +61,7 @@ def _client_proc(proc_id: int, init_env: optimizer.EnvInterface, address: str, p
     err_count = 0
     while (error is None or can_recover) and err_count < 5:
         print(f"THREAD{proc_id} is calculating")
-        error, can_recover = opt.optimize(env)
+        error, can_recover = opt.optimize(default_env_creator)
         if error is not None and can_recover:
             err_count += 1
         else:
@@ -75,7 +72,7 @@ def _client_proc(proc_id: int, init_env: optimizer.EnvInterface, address: str, p
 
 def cmaes_optimize_client(
         num_thread: int,
-        init_env: optimizer.EnvInterface,
+        default_env_creator: optimizer.EnvCreator,
         address: str,
         buf_size: int = 3072,
         port: int = 52325,
@@ -84,12 +81,13 @@ def cmaes_optimize_client(
 
     process_list = []
     for proc_id in range(num_thread):
-        process = Process(
-            target=_client_proc,
-            args=(proc_id, init_env, address, port, buf_size)
-        )
-        process.start()
-        process_list.append(process)
+        # process = Process(
+        #     target=_client_proc,
+        #     args=(proc_id, init_env, address, port, buf_size)
+        # )
+        # process.start()
+        # process_list.append(process)
+        _client_proc(proc_id, default_env_creator, address, port, buf_size)
 
     for p in process_list:
         p.join()
