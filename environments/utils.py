@@ -81,13 +81,12 @@ def cmaes_optimize_client(
 
     process_list = []
     for proc_id in range(num_thread):
-        # process = Process(
-        #     target=_client_proc,
-        #     args=(proc_id, init_env, address, port, buf_size)
-        # )
-        # process.start()
-        # process_list.append(process)
-        _client_proc(proc_id, default_env_creator, address, port, buf_size)
+        process = Process(
+            target=_client_proc,
+            args=(proc_id, default_env_creator, address, port, buf_size)
+        )
+        process.start()
+        process_list.append(process)
 
     for p in process_list:
         p.join()
