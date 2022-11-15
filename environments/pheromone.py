@@ -127,15 +127,16 @@ class PheromoneField:
         plane.set_rgba(color)
 
     def update_cells(self, dt: float = 0.03333):
-        eva = (self._swvp - self._gas) * self._evaporate
-        self._dif_liquid -= eva * dt
+        eva = numpy.minimum(self._liquid, (self._swvp - self._gas) * self._evaporate)
+        self._dif_liquid -= eva
 
         dif = scipy.signal.convolve2d(self._gas, self._convolve, "same")
         dec = self._gas * self._decrease
-        self._dif_gas += (eva + dif - dec) * dt
+        self._dif_gas += numpy.maximum(-self._gas, eva + dif - dec)
 
-        self._liquid += self._dif_liquid
-        self._gas += self._dif_gas
+        self._liquid += self._dif_liquid * dt
+        self._gas += self._dif_gas * dt
+
         self._dif_liquid.fill(0)
         self._dif_gas.fill(0)
 
