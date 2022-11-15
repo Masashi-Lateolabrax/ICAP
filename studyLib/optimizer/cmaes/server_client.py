@@ -1,38 +1,45 @@
 import array
-import copy
 import datetime
 import multiprocessing as mp
 import platform
 import socket
+import threading
+
 from studyLib.miscellaneous import Window, Recorder
 from studyLib.wrap_mjc import Camera
-from studyLib.optimizer.cmaes.base import Proc, Individual, BaseCMAES, default_end_handler, default_start_handler
-from studyLib.optimizer import EnvInterface, Hist, MuJoCoEnvInterface
+from studyLib.optimizer.cmaes.base import Individual, BaseCMAES, ProcInterface, default_end_handler, \
+    default_start_handler
+from studyLib.optimizer import Hist, EnvCreator, MuJoCoEnvCreator
 
 
-class ServerProc(Proc):
-    def __init__(self, env: EnvInterface, listener: socket.socket):
-        super().__init__(env)
-        self.env = env
-        self.listener = listener
-        self.soc: socket.socket = None
+def _proc(ind: Individual, env_creator: EnvCreator, queue: mp.Queue, sct: socket.socket):
+    import struct
+    buf = [env_creator.save()]
+    buf.extend([struct.pack("<d", x) for x in ind])
+    try:
+        sct.send(b''.join(buf))
+        received = sct.recv(1024)
+        score = struct.unpack("<d", received)[0]
+    except Exception as e:
+        print(e)
+        score = float("nan")
+    queue.put(score)
 
-    def ready(self):
-        soc, _addr = self.listener.accept()
-        self.soc = soc
 
-    def start(self, index: int, queue: mp.Queue, ind: Individual):
-        import struct
-        buf = [self.env.save()]
-        buf.extend([struct.pack("<d", x) for x in ind])
-        try:
-            self.soc.send(b''.join(buf))
-            received = self.soc.recv(1024)
-            score = struct.unpack("<d", received)[0]
-        except Exception as e:
-            print(e)
-            score = float("nan")
-        queue.put((index, score))
+class _ServerProc(ProcInterface):
+    listener: socket.socket = None
+
+    def __init__(self, ind: Individual, env_creator: EnvCreator):
+        self.queue = mp.Queue(1)
+        sct, _addr = self.listener.accept()
+        self.handle = threading.Thread(target=_proc, args=(ind, env_creator, self.queue, sct))
+
+    def finished(self) -> bool:
+        return self.queue.qsize() > 0
+
+    def join(self) -> float:
+        self.handle.join()
+        return self.queue.get()
 
 
 class ServerCMAES:
@@ -48,7 +55,10 @@ class ServerCMAES:
     ):
         self._base = BaseCMAES(dim, population, mu, sigma, minimalize, population)
         self._generation = generation
-        self._port = port
+
+        _ServerProc.listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        _ServerProc.listener.bind(("", port))
+        _ServerProc.listener.listen(2)
 
     def get_best_para(self) -> array.array:
         return self._base.get_best_para()
@@ -65,27 +75,18 @@ class ServerCMAES:
     def set_end_handler(self, handler=default_end_handler):
         self._base.set_end_handler(handler)
 
-    def optimize(self, env: EnvInterface):
-        listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        listener.bind(("", self._port))
-        listener.listen(2)
-
+    def optimize(self, env_creator: EnvCreator):
         for gen in range(1, self._generation + 1):
-            proc = ServerProc(copy.deepcopy(env), listener)
-            self._base.optimize_current_generation(gen, self._generation, proc)
+            self._base.optimize_current_generation(gen, self._generation, env_creator, _ServerProc)
 
-    def optimize_with_recoding_min(self, env: MuJoCoEnvInterface, window: Window, camera: Camera):
-        listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        listener.bind(("", self._port))
-        listener.listen(2)
-
+    def optimize_with_recoding_min(self, env_creator: MuJoCoEnvCreator, window: Window, camera: Camera):
         for gen in range(1, self._generation + 1):
-            proc = ServerProc(copy.deepcopy(env), listener)
-            good_para = self._base.optimize_current_generation(gen, self._generation, proc)
+            good_para = self._base.optimize_current_generation(gen, self._generation, env_creator, _ServerProc)
 
             time = datetime.datetime.now()
             recorder = Recorder(f"{gen}({time.strftime('%y%m%d_%H%M%S')}).mp4", 30, 640, 480)
             window.set_recorder(recorder)
+            env = env_creator.create_mujoco_env()
             env.calc_and_show(good_para, window, camera)
             window.set_recorder(None)
 
@@ -96,7 +97,7 @@ class ClientCMAES:
         self._port = port
         self._buf_size = buf_size
 
-    def optimize(self, env: EnvInterface):
+    def optimize(self, default_env_creator: EnvCreator):
         import socket
         import struct
 
@@ -107,9 +108,10 @@ class ClientCMAES:
             received = sock.recv(self._buf_size)
             print(f"receive data size : {len(received)}/{self._buf_size}")
 
-            env_size = env.load(received)
+            env_size = default_env_creator.load(received)
             para = [struct.unpack("<d", received[i:i + 8])[0] for i in range(env_size, len(received), 8)]
 
+            env = default_env_creator.create()
             score = env.calc(para)
 
             sock.send(struct.pack("<d", score))

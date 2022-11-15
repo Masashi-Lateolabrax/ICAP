@@ -1,13 +1,13 @@
 import struct
-import copy
 import mujoco
 import numpy
 
 from environments import sensor, pheromone
 from studyLib import nn_tools, optimizer, wrap_mjc, miscellaneous
+from studyLib.optimizer import EnvInterface, MuJoCoEnvInterface
 
 
-def gen_env(
+def _gen_env(
         nest_pos: (float, float), robot_pos: [(float, float)], enemy_pos: [(float, float)],
         enemy_weight: float
 ):
@@ -143,7 +143,7 @@ def gen_env(
     return generator.generate()
 
 
-class Nest:
+class _Nest:
     def __init__(self, model: wrap_mjc.WrappedModel):
         self.geom = model.get_geom("nest")
 
@@ -151,7 +151,7 @@ class Nest:
         return self.geom.get_xpos().copy()
 
 
-class Enemy:
+class _Enemy:
     def __init__(self, model: wrap_mjc.WrappedModel, number: int):
         self.body = model.get_body(f"enemy{number}")
 
@@ -159,7 +159,7 @@ class Enemy:
         return self.body.get_xpos().copy()
 
 
-class RobotBrain:
+class _RobotBrain:
     def __init__(self, para):
         self.calculator = nn_tools.Calculator(7)
 
@@ -182,8 +182,8 @@ class RobotBrain:
         return self.calculator.calc(array)
 
 
-class Robot:
-    def __init__(self, model: wrap_mjc.WrappedModel, brain: RobotBrain, number: int):
+class _Robot:
+    def __init__(self, model: wrap_mjc.WrappedModel, brain: _RobotBrain, number: int):
         self.body = model.get_body(f"robot{number}")
         self.brain = brain
         self.left_act = model.get_act(f"a_robot{number}_left")
@@ -234,7 +234,7 @@ class Robot:
         return 100
 
 
-def evaluate(
+def _evaluate(
         brain,
         nest_pos: (float, float),
         robot_pos: list,
@@ -247,16 +247,16 @@ def evaluate(
         camera: wrap_mjc.Camera = None,
         window: miscellaneous.Window = None
 ) -> float:
-    xml = gen_env(nest_pos, robot_pos, enemy_pos, enemy_weight)
+    xml = _gen_env(nest_pos, robot_pos, enemy_pos, enemy_weight)
     model = wrap_mjc.WrappedModel(xml)
     pheromone_field = pheromone.PheromoneField(0, 0, 1, 1, 80, 80, evaporate, diffusion, decrease, model)
 
     if not (camera is None):
         model.set_camera(camera)
 
-    nest = Nest(model)
-    enemies = [Enemy(model, i) for i in range(0, len(enemy_pos))]
-    robots = [Robot(model, brain, i) for i in range(0, len(robot_pos))]
+    nest = _Nest(model)
+    enemies = [_Enemy(model, i) for i in range(0, len(enemy_pos))]
+    robots = [_Robot(model, brain, i) for i in range(0, len(robot_pos))]
 
     loss = 0
     model.step()
@@ -296,7 +296,75 @@ def evaluate(
     return loss
 
 
-class EnvSetting:
+class Environment(optimizer.MuJoCoEnvInterface):
+    def __init__(
+            self,
+            nest_pos: (float, float),
+            enemy_pos: list[(float, float)],
+            task: list,
+            enemy_weight: float,
+            evaporate: float,
+            diffusion: float,
+            decrease: float,
+            timestep: int
+    ):
+        import copy
+        self.nest_pos = copy.deepcopy(nest_pos)
+        self.enemy_pos = copy.deepcopy(enemy_pos)
+        self.task = copy.deepcopy(task)
+        self.enemy_weight = enemy_weight
+        self.evaporate = evaporate
+        self.diffusion = diffusion
+        self.decrease = decrease
+        self.timestep = timestep
+
+    def calc(self, para) -> float:
+        brain = _RobotBrain(para)
+        total_loss = -float("inf")
+        for task in self.task:
+            score = _evaluate(
+                brain,
+                self.nest_pos,
+                task.robot_pos,
+                self.enemy_pos,
+                self.enemy_weight,
+                self.evaporate,
+                self.diffusion,
+                self.decrease,
+                self.timestep
+            )
+            if total_loss < score:
+                total_loss = score
+        return total_loss
+
+    def calc_and_show(self, para, window: miscellaneous.Window, camera: wrap_mjc.Camera) -> float:
+        brain = _RobotBrain(para)
+        total_loss = -float("inf")
+        for task in self.task:
+            score = _evaluate(
+                brain,
+                self.nest_pos,
+                task.robot_pos,
+                self.enemy_pos,
+                self.enemy_weight,
+                self.evaporate,
+                self.diffusion,
+                self.decrease,
+                self.timestep,
+                camera,
+                window
+            )
+            if total_loss < score:
+                total_loss = score
+        return total_loss
+
+
+class EnvCreator(optimizer.MuJoCoEnvCreator):
+    """
+    ロボットが前方にしか進めない状態で，後方の敵を押し巣から遠くに運ぶ環境．
+    ロボットはy軸の正の方向を正面として設置される．
+    """
+
     class Task:
         def __init__(self, robot_pos: list[(float, float)]):
             self.robot_pos: list[(float, float)] = robot_pos
@@ -305,7 +373,7 @@ class EnvSetting:
         self.nest_pos: (float, float) = (0, 0)
         self.enemy_pos: list[(float, float)] = [(0, -50)]
         self.enemy_weight: float = 10000
-        self.task: list[EnvSetting.Task] = [EnvSetting.Task([])]
+        self.task: list[EnvCreator.Task] = [EnvCreator.Task([])]
 
         self.evaporate: float = 0.0
         self.diffusion: float = 0.0
@@ -351,7 +419,7 @@ class EnvSetting:
         # ロボットの座標
         self.task.clear()
         for n in nums_robot:
-            task = EnvSetting.Task([])
+            task = EnvCreator.Task([])
             for _i in range(0, n):
                 s = e
                 e = s + 16
@@ -384,61 +452,29 @@ class EnvSetting:
 
         return e - offset
 
-
-class Environment(optimizer.MuJoCoEnvInterface):
-    def __init__(self, setting: EnvSetting):
-        """
-        ロボットが前方にしか進めない状態で，後方の敵を押し巣から遠くに運ぶ環境．
-        ロボットはy軸の正の方向を正面として設置される．
-        """
-        self.setting = copy.deepcopy(setting)
-
     def dim(self) -> int:
-        return RobotBrain(None).num_dim()
+        return _RobotBrain(None).num_dim()
 
-    def calc(self, para) -> float:
-        brain = RobotBrain(para)
-        total_loss = -float("inf")
-        for task in self.setting.task:
-            score = evaluate(
-                brain,
-                self.setting.nest_pos,
-                task.robot_pos,
-                self.setting.enemy_pos,
-                self.setting.enemy_weight,
-                self.setting.evaporate,
-                self.setting.diffusion,
-                self.setting.decrease,
-                self.setting.timestep
-            )
-            if total_loss < score:
-                total_loss = score
-        return total_loss
+    def create(self) -> EnvInterface:
+        return Environment(
+            self.nest_pos,
+            self.enemy_pos,
+            self.task,
+            self.enemy_weight,
+            self.evaporate,
+            self.diffusion,
+            self.decrease,
+            self.timestep
+        )
 
-    def calc_and_show(self, para, window: miscellaneous.Window, camera: wrap_mjc.Camera) -> float:
-        brain = RobotBrain(para)
-        total_loss = -float("inf")
-        for task in self.setting.task:
-            score = evaluate(
-                brain,
-                self.setting.nest_pos,
-                task.robot_pos,
-                self.setting.enemy_pos,
-                self.setting.enemy_weight,
-                self.setting.evaporate,
-                self.setting.diffusion,
-                self.setting.decrease,
-                self.setting.timestep,
-                camera,
-                window
-            )
-            if total_loss < score:
-                total_loss = score
-        return total_loss
-
-    def save(self) -> bytes:
-        return self.setting.save()
-
-    def load(self, data: bytes, offset: int = 0) -> int:
-        self.setting = EnvSetting()
-        return self.setting.load(data, offset)
+    def create_mujoco_env(self) -> MuJoCoEnvInterface:
+        return Environment(
+            self.nest_pos,
+            self.enemy_pos,
+            self.task,
+            self.enemy_weight,
+            self.evaporate,
+            self.diffusion,
+            self.decrease,
+            self.timestep
+        )

@@ -2,10 +2,9 @@ import abc
 import array
 import copy
 import datetime
-import multiprocessing as mp
 import numpy
 from deap import cma, base
-from studyLib.optimizer import EnvInterface, Hist
+from studyLib.optimizer import Hist, EnvCreator
 
 
 def default_start_handler(gen, generation, start_time):
@@ -40,36 +39,46 @@ class Individual(array.array):
 
     def __new__(cls, fitness: base.Fitness, arr: numpy.ndarray):
         this = super().__new__(cls, "d", arr)
-        this.fitness = fitness
+        if this.fitness is None:
+            this.fitness = fitness
         return this
 
 
-class MaximizeIndividual(Individual):
+class _MaximizeIndividual(Individual):
     def __new__(cls, arr: numpy.ndarray):
         this = super().__new__(cls, FitnessMax((float("nan"),)), arr)
         return this
 
 
-class MinimalizeIndividual(Individual):
+class _MinimalizeIndividual(Individual):
     def __new__(cls, arr: numpy.ndarray):
         this = super().__new__(cls, FitnessMin((float("nan"),)), arr)
         return this
 
 
-class Proc(metaclass=abc.ABCMeta):
-    def __init__(self, env: EnvInterface):
-        self.env = env
+class ProcInterface(metaclass=abc.ABCMeta):
+    @abc.abstractmethod
+    def __init__(self, ind: Individual, env_creator: EnvCreator):
+        raise NotImplemented()
 
-    def ready(self):
-        pass
+    @abc.abstractmethod
+    def finished(self) -> bool:
+        raise NotImplemented()
 
-    def start(self, index: int, queue: mp.Queue, ind: Individual):
-        score = self.env.calc(ind)
-        queue.put((index, score))
+    @abc.abstractmethod
+    def join(self) -> float:
+        raise NotImplemented()
 
 
-def proc_launcher(index: int, queue: mp.Queue, ind: Individual, proc: Proc):
-    proc.start(index, queue, ind)
+class _OneThreadProc(ProcInterface):
+    def __init__(self, ind: array.array, env_creator: EnvCreator):
+        self.score = env_creator.create().calc(ind)
+
+    def finished(self) -> bool:
+        return True
+
+    def join(self) -> float:
+        return self.score
 
 
 class BaseCMAES:
@@ -89,9 +98,9 @@ class BaseCMAES:
         self.max_thread: int = max_thread
 
         if minimalize:
-            self._ind_type = MinimalizeIndividual
+            self._ind_type = _MinimalizeIndividual
         else:
-            self._ind_type = MaximizeIndividual
+            self._ind_type = _MaximizeIndividual
 
         if mu <= 0:
             mu = int(population * 0.5)
@@ -144,7 +153,9 @@ class BaseCMAES:
 
         return avg, min_value, max_value, good_para, self._history.best
 
-    def optimize_current_generation(self, gen: int, generation: int, proc: Proc) -> array.array:
+    def optimize_current_generation(
+            self, gen: int, generation: int, env_creator: EnvCreator, proc=ProcInterface
+    ) -> array.array:
         import time
 
         start_time = datetime.datetime.now()
@@ -152,33 +163,25 @@ class BaseCMAES:
 
         res = None
         while res is None:
-            queue = mp.Queue(self._strategy.lambda_)
             handles = {}
             for i, ind in enumerate(self._individuals):
                 if not numpy.isnan(ind.fitness.values[0]):
                     continue
 
-                tmp_proc = copy.deepcopy(proc)
-                tmp_proc.ready()
-                handles[i] = mp.Process(target=proc_launcher, args=(i, queue, ind, tmp_proc))
-                handles[i].start()
+                handles[i] = proc(ind, env_creator)
 
-                while len(handles) - queue.qsize() >= self.max_thread:
-                    if queue.empty():
-                        time.sleep(0.0001)
-                        continue
-                    while not queue.empty():
-                        index, score = queue.get()
-                        self._individuals[index].fitness.values = (score,)
-                        h = handles.pop(index)
-                        h.join()
+                while len(handles) >= self.max_thread:
+                    remove_list = []
+                    for key in handles.keys():
+                        if handles[key].finished():
+                            remove_list.append(key)
+                    for key in remove_list:
+                        p = handles.pop(key)
+                        self._individuals[key].fitness.values = (p.join(),)
+                    time.sleep(0.0001)
 
-            for h in handles.values():
-                h.join()
-
-            while not queue.empty():
-                i, score = queue.get()
-                self._individuals[i].fitness.values = (score,)
+            for key, p in handles.items():
+                self._individuals[key].fitness.values = (p.join(),)
 
             res = self._generate_new_generation()
 
