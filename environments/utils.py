@@ -63,6 +63,7 @@ def _client_proc(proc_id: int, default_env_creator: optimizer.EnvCreator, addres
         print(f"THREAD{proc_id} is calculating")
         error, can_recover = opt.optimize(default_env_creator)
         if error is not None and can_recover:
+            print(f"THREAD{proc_id} is reconnecting.")
             err_count += 1
         else:
             err_count = 0
