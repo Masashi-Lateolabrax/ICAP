@@ -188,6 +188,8 @@ class _Robot:
         self.brain = brain
         self.left_act = model.get_act(f"a_robot{number}_left")
         self.right_act = model.get_act(f"a_robot{number}_right")
+        self._accustomed = 0.0
+        self._accustomed_rate = 0.8
 
     def get_pos(self) -> numpy.ndarray:
         return self.body.get_xpos().copy()
@@ -220,7 +222,7 @@ class _Robot:
             enemy_omni_sensor.sense(fp)
 
         input_ = numpy.concatenate(
-            [nest_direction, robot_omni_sensor.value, enemy_omni_sensor.value, [pheromone_value]]
+            [nest_direction, robot_omni_sensor.value, enemy_omni_sensor.value, [pheromone_value - self._accustomed]]
         )
         ctrl = self.brain.calc(input_)
 
@@ -228,6 +230,8 @@ class _Robot:
             print("NAN!")
         elif numpy.isinf(ctrl[0]) or numpy.isinf(ctrl[1]):
             print("INF!")
+
+        self._accustomed = (1.0 - self._accustomed_rate) * self._accustomed + self._accustomed_rate * pheromone_value
 
         self.left_act.ctrl = 3000 * ctrl[0]
         self.right_act.ctrl = 3000 * ctrl[1]
