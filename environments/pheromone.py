@@ -11,6 +11,7 @@ class PheromoneField:
             px: float, py: float,
             size: float, ds: float,
             nx: int, ny: int,
+            swvp: float,
             evaporate: float, diffusion: float, decrease: float,
             model: wrap_mjc.WrappedModel = None, z: float = -1,
     ):
@@ -19,14 +20,19 @@ class PheromoneField:
         self._nx = nx
         self._ny = ny
         self._size = size
+
         self._ds = ds * ds
-        self._gas = numpy.zeros((ny, nx))
         self._liquid = numpy.zeros((ny, nx))
-        self._dif_gas = numpy.zeros((ny, nx))
-        self._dif_liquid = numpy.zeros((ny, nx))
+        self._gas = numpy.zeros((ny, nx))
+
         self._evaporate = evaporate
+        self._swvp = swvp
+
         self._diffusion = diffusion
         self._decrease = decrease
+
+        self._dif_gas = numpy.zeros((ny, nx))
+        self._dif_liquid = numpy.zeros((ny, nx))
 
         self._convolve = numpy.array([
             [0.0, 1.0, 0.0],
@@ -121,11 +127,13 @@ class PheromoneField:
         plane.set_rgba(color)
 
     def update_cells(self, dt: float = 0.03333):
-        eva = self._liquid * self._evaporate
+        eva = (self._swvp - self._gas) * self._evaporate
+        self._dif_liquid -= eva * dt
+
         dif = scipy.signal.convolve2d(self._gas, self._convolve, "same")
         dec = self._gas * self._decrease
-        self._dif_liquid -= eva * dt
         self._dif_gas += (eva + dif - dec) * dt
+
         self._liquid += self._dif_liquid
         self._gas += self._dif_gas
         self._dif_liquid.fill(0)
