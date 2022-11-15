@@ -33,6 +33,7 @@ class _ServerProc(ProcInterface):
         self.queue = mp.Queue(1)
         sct, _addr = self.listener.accept()
         self.handle = threading.Thread(target=_proc, args=(ind, env_creator, self.queue, sct))
+        self.handle.start()
 
     def finished(self) -> bool:
         return self.queue.qsize() > 0

@@ -383,7 +383,7 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
 
     def save(self):
         packed = [struct.pack("<I", len(self.task))]  # タスクの数
-        packed.extend([struct.pack("<I", len(rp)) for task in self.task for rp in task.robot_pos])  # タスクごとのロボットの数
+        packed.extend([struct.pack("<I", len(task.robot_pos)) for task in self.task])  # タスクごとのロボットの数
         packed.extend([struct.pack("<I", len(self.enemy_pos))])  # 敵の数
         packed.extend([struct.pack("<dd", self.nest_pos[0], self.nest_pos[1])])  # 巣の座標
         packed.extend([struct.pack("<dd", x, y) for task in self.task for (x, y) in task.robot_pos])  # ロボットの座標
