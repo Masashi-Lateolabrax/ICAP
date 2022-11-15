@@ -235,7 +235,7 @@ class _Robot:
 
         self.left_act.ctrl = 3000 * ctrl[0]
         self.right_act.ctrl = 3000 * ctrl[1]
-        return 100
+        return ctrl[2]
 
 
 def _evaluate(
@@ -279,7 +279,8 @@ def _evaluate(
             secretion = r.act(nest_pos, robot_pos, enemy_pos, pheromone_value)
             pheromone_field.add_liquid(p[0], p[1], secretion)
         model.step()
-        pheromone_field.update_cells()
+        for _ in range(3):
+            pheromone_field.update_cells(0.03333 / 3)
 
         # Calculate loss
         loss_dt = 0
