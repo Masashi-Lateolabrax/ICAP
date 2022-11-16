@@ -245,7 +245,7 @@ def _evaluate(
         enemy_pos: list[(float, float)],
         enemy_weight: float,
         evaporate: float,
-        swvp: float,
+        sv: float,
         diffusion: float,
         decrease: float,
         timestep: int,
@@ -255,9 +255,9 @@ def _evaluate(
     xml = _gen_env(nest_pos, robot_pos, enemy_pos, enemy_weight)
     model = wrap_mjc.WrappedModel(xml)
     if window is None:
-        pheromone_field = pheromone.PheromoneField(0, 0, 1, 1, 80, 80, swvp, evaporate, diffusion, decrease, None)
+        pheromone_field = pheromone.PheromoneField(0, 0, 1, 1, 80, 80, sv, evaporate, diffusion, decrease, None)
     else:
-        pheromone_field = pheromone.PheromoneField(0, 0, 1, 1, 80, 80, swvp, evaporate, diffusion, decrease, model)
+        pheromone_field = pheromone.PheromoneField(0, 0, 1, 1, 80, 80, sv, evaporate, diffusion, decrease, model)
 
     if not (camera is None):
         model.set_camera(camera)
@@ -312,7 +312,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
             enemy_pos: list[(float, float)],
             task: list,
             enemy_weight: float,
-            swvp: float,
+            sv: float,
             evaporate: float,
             diffusion: float,
             decrease: float,
@@ -323,7 +323,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
         self.enemy_pos = copy.deepcopy(enemy_pos)
         self.task = copy.deepcopy(task)
         self.enemy_weight = enemy_weight
-        self.swvp = swvp
+        self.sv = sv
         self.evaporate = evaporate
         self.diffusion = diffusion
         self.decrease = decrease
@@ -339,7 +339,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
                 task.robot_pos,
                 self.enemy_pos,
                 self.enemy_weight,
-                self.swvp,
+                self.sv,
                 self.evaporate,
                 self.diffusion,
                 self.decrease,
@@ -359,7 +359,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
                 task.robot_pos,
                 self.enemy_pos,
                 self.enemy_weight,
-                self.swvp,
+                self.sv,
                 self.evaporate,
                 self.diffusion,
                 self.decrease,
@@ -388,7 +388,7 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
         self.enemy_weight: float = 10000
         self.task: list[EnvCreator.Task] = [EnvCreator.Task([])]
 
-        self.swvp: float = 0.0
+        self.sv: float = 0.0
         self.evaporate: float = 0.0
         self.diffusion: float = 0.0
         self.decrease: float = 0.0
@@ -403,7 +403,7 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
         packed.extend([struct.pack("<dd", x, y) for task in self.task for (x, y) in task.robot_pos])  # ロボットの座標
         packed.extend([struct.pack("<dd", x, y) for (x, y) in self.enemy_pos])  # 敵の座標
         packed.extend([struct.pack("<d", self.enemy_weight)])  # 敵の重さ
-        packed.extend([struct.pack("<dddd", self.swvp, self.evaporate, self.diffusion, self.decrease)])  # フェロモン情報
+        packed.extend([struct.pack("<dddd", self.sv, self.evaporate, self.diffusion, self.decrease)])  # フェロモン情報
         packed.extend([struct.pack("<I", self.timestep)])  # タイムステップ
         return b"".join(packed)
 
@@ -457,7 +457,7 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
         # フェロモンの設定
         s = e
         e = s + 32
-        self.swvp, self.evaporate, self.diffusion, self.decrease = struct.unpack(f"<dddd", data[s:e])[0:4]
+        self.sv, self.evaporate, self.diffusion, self.decrease = struct.unpack(f"<dddd", data[s:e])[0:4]
 
         # タイムステップ
         s = e
@@ -475,7 +475,7 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
             self.enemy_pos,
             self.task,
             self.enemy_weight,
-            self.swvp,
+            self.sv,
             self.evaporate,
             self.diffusion,
             self.decrease,
@@ -488,7 +488,7 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
             self.enemy_pos,
             self.task,
             self.enemy_weight,
-            self.swvp,
+            self.sv,
             self.evaporate,
             self.diffusion,
             self.decrease,

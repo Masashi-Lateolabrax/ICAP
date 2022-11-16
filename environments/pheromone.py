@@ -11,22 +11,24 @@ class PheromoneField:
             px: float, py: float,
             size: float, ds: float,
             nx: int, ny: int,
-            swvp: float,
+            sv: float,
             evaporate: float, diffusion: float, decrease: float,
             model: wrap_mjc.WrappedModel = None, z: float = -1,
     ):
-        self._px = px
-        self._py = py
+        # セルの数
         self._nx = nx
         self._ny = ny
+
+        # MuJoCo上に表示する座標と一つのセルの大きさ．
+        self._px = px
+        self._py = py
         self._size = size
 
-        self._ds = ds * ds
         self._liquid = numpy.zeros((ny, nx))
         self._gas = numpy.zeros((ny, nx))
 
         self._evaporate = evaporate
-        self._swvp = swvp
+        self._sv = sv
 
         self._diffusion = diffusion
         self._decrease = decrease
@@ -38,7 +40,7 @@ class PheromoneField:
             [0.0, 1.0, 0.0],
             [1.0, -4.0, 1.0],
             [0.0, 1.0, 0.0],
-        ]) * self._diffusion / self._ds
+        ]) * self._diffusion / (ds * ds)
 
         self._panels = []
         if model is not None:
@@ -127,7 +129,7 @@ class PheromoneField:
         plane.set_rgba(color)
 
     def update_cells(self, dt: float = 0.03333):
-        eva = numpy.minimum(self._liquid, (self._swvp - self._gas) * self._evaporate)
+        eva = numpy.minimum(self._liquid, (self._sv - self._gas) * self._evaporate)
         self._dif_liquid -= eva
 
         dif = scipy.signal.convolve2d(self._gas, self._convolve, "same")
