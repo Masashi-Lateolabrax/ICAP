@@ -27,16 +27,13 @@ class PheromoneField:
         self._liquid = numpy.zeros((ny, nx))
         self._gas = numpy.zeros((ny, nx))
 
-        self._evaporate = evaporate
-        self._sv = sv
+        self._eva = evaporate  # 蒸発速度
+        self._sv = sv  # 飽和蒸気量
 
-        self._diffusion = diffusion
-        self._decrease = decrease
+        self._diffusion = diffusion  # 拡散速度
+        self._dec = decrease  # 分解速度
 
-        self._dif_gas = numpy.zeros((ny, nx))
-        self._dif_liquid = numpy.zeros((ny, nx))
-
-        self._convolve = numpy.array([
+        self._c = numpy.array([
             [0.0, 1.0, 0.0],
             [1.0, -4.0, 1.0],
             [0.0, 1.0, 0.0],
@@ -128,19 +125,44 @@ class PheromoneField:
         plane = self._get_deco_geom(ix, iy)
         plane.set_rgba(color)
 
+    def _euler_update(self, dt: float):
+        """
+        オイラー法による計算
+        :param dt: 刻み幅
+        :return: None
+        """
+        dif_liquid = numpy.minimum(self._liquid * dt, (self._sv - self._gas) * self._eva * dt)
+        dif_gas = dif_liquid + (scipy.signal.convolve2d(self._gas, self._c, "same") - self._gas * self._dec) * dt
+        self._liquid += dif_liquid
+        self._gas += dif_gas
+
+    def _rk_update(self, dt: float):
+        """
+        ルンゲ＝クッタ法による計算
+        :param dt: 刻み幅
+        :return: None
+        """
+        k1 = (self._sv - self._gas) * self._eva * dt
+        k2 = 1.0 + 0.5 * self._eva * dt
+        k3 = (1.0 + 0.5 * (1.0 + 0.5 * self._eva * dt)) * self._eva * dt
+        k4 = (1.0 + (1.0 + 0.5 * (1.0 + 0.5 * self._eva * dt)) * self._eva * dt) * self._eva * dt
+        dif_liquid = numpy.minimum(self._liquid * dt, k1 * (1.0 + 2.0 * k2 + 2.0 * k3 + k4) * 0.166666666666667)
+
+        # 計算コスト削減のため，k2,k3,k4の拡散項の計算でk1の値を流用しています．
+        # 検証していませんが，おそらく厳密には拡散項も計算しなおさないといけません．
+        # しかし，k1の値を流用することでk2,k3,k4を行列の計算からスカラーの計算に変えられるため劇的に高速化できます．
+        k1 = (scipy.signal.convolve2d(self._gas, self._c, "same") - self._gas * self._dec) * dt
+        k2 = (1.0 - 0.5 * self._dec * dt)
+        k3 = (1.0 - 0.5 * (1.0 - 0.5 * self._dec * dt) * self._dec * dt)
+        k4 = (1.0 - (1.0 - 0.5 * (1.0 - 0.5 * self._dec * dt) * self._dec * dt) * self._dec * dt)
+        dif_gas = dif_liquid + k1 * (1.0 + 2.0 * k2 + 2.0 * k3 + k4) * 0.166666666666667
+
+        self._liquid -= dif_liquid
+        self._gas += dif_gas
+
     def update_cells(self, dt: float = 0.03333):
-        eva = numpy.minimum(self._liquid, (self._sv - self._gas) * self._evaporate)
-        self._dif_liquid -= eva
-
-        dif = scipy.signal.convolve2d(self._gas, self._convolve, "same")
-        dec = self._gas * self._decrease
-        self._dif_gas += numpy.maximum(-self._gas, eva + dif - dec)
-
-        self._liquid += self._dif_liquid * dt
-        self._gas += self._dif_gas * dt
-
-        self._dif_liquid.fill(0)
-        self._dif_gas.fill(0)
+        self._rk_update(dt)
+        # self._euler_update(dt)
 
     def update_panels(self, func=lambda x: x):
         if len(self._panels) != 0:

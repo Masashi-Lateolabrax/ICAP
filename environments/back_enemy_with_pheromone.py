@@ -279,8 +279,9 @@ def _evaluate(
             secretion = r.act(nest_pos, robot_pos, enemy_pos, pheromone_value)
             pheromone_field.add_liquid(p[0], p[1], secretion)
         model.step()
-        for _ in range(3):
-            pheromone_field.update_cells(0.03333 / 3)
+
+        for _ in range(5):
+            pheromone_field.update_cells(0.03333 / 5)
 
         # Calculate loss
         loss_dt = 0
