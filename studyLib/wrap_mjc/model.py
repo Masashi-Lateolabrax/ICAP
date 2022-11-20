@@ -279,11 +279,12 @@ class WrappedModel:
         return self._ctx
 
     def get_scene(self, cam: Camera = None):
-        if self._scn is None:
-            self._scn = mujoco.MjvScene(self.model, maxgeom=self.model.ngeom + len(self.deco_geoms) + 1)
+        num_viewable_geom = self.model.ngeom + self.model.ntendon * 32 + len(self.deco_geoms)
 
-        if self._scn.maxgeom != self.model.ngeom + len(self.deco_geoms) + 1:
-            self._scn = mujoco.MjvScene(self.model, maxgeom=self.model.ngeom + len(self.deco_geoms) + 1)
+        if self._scn is None:
+            self._scn = mujoco.MjvScene(self.model, maxgeom=num_viewable_geom)
+        elif self._scn.maxgeom != num_viewable_geom:
+            self._scn = mujoco.MjvScene(self.model, maxgeom=num_viewable_geom)
 
         if not (cam is None):
             self.set_camera(cam)
@@ -294,9 +295,9 @@ class WrappedModel:
             mujoco.mjtCatBit.mjCAT_ALL, self._scn
         )
 
-        for dest, src in zip(self._scn.geoms[self.model.ngeom:], self.deco_geoms):
+        for dest, src in zip(reversed(self._scn.geoms), self.deco_geoms):
             src.copy_to(dest)
-        self._scn.ngeom = self.model.ngeom + len(self.deco_geoms)
+        self._scn.ngeom = num_viewable_geom
 
         return self._scn
 
