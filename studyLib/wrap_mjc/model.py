@@ -181,7 +181,7 @@ class WrappedBody:
 
 class WrappedGeom:
     def __init__(self, model_geom, data_geom):
-        self.model_geom = model_geom,
+        self.model_geom = model_geom
         self.data_geom = data_geom
 
     def get_id(self):
@@ -216,6 +216,9 @@ class WrappedGeom:
 
     def get_margin(self):
         return self.model_geom.margin
+
+    def get_pos(self):
+        return self.model_geom.pos
 
     def get_priority(self):
         return self.model_geom.priority
