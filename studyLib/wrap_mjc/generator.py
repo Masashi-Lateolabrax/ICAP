@@ -1,4 +1,5 @@
 import abc
+import enum
 
 
 class MuJoCoXMLGenerator:
@@ -162,11 +163,91 @@ class MuJoCoXMLGenerator:
             return "Hello"
 
     class MuJoCoTendon(ToString):
+        class MuJoCoTendonSpatial:
+            class _AttrType(enum.Enum):
+                SpatialSite = 1
+                SpatialGeom = 1
+                SpatialPulley = 1
+
+            def __init__(self, attributes):
+                self._attributes = attributes
+                self._sub_attrs = []
+
+            def add_point(self, attributes):
+                if "site" in attributes:
+                    self._sub_attrs.append((self._AttrType.SpatialSite, attributes))
+                elif "geom" in attributes or "sidesite" in attributes:
+                    self._sub_attrs.append((self._AttrType.SpatialGeom, attributes))
+                elif "divisor" in attributes:
+                    self._sub_attrs.append((self._AttrType.SpatialPulley, attributes))
+
+            def to_string(self) -> str:
+                xml = "<spatial "
+                for k, v in self._attributes.items():
+                    xml += f"{k}=\"{v}\" "
+                xml += ">\n"
+
+                for t, attr in self._sub_attrs:
+                    if t == self._AttrType.SpatialSite:
+                        xml += "<site "
+                    elif t == self._AttrType.SpatialGeom:
+                        xml += "<geom "
+                    elif t == self._AttrType.SpatialPulley:
+                        xml += "<pulley "
+                    for k, v in attr.items():
+                        xml += f"{k}=\"{v}\" "
+                    xml += "/>\n"
+
+                xml += "</spatial>\n"
+
+                return xml
+
+        class MuJoCoTendonFixed:
+            def __init__(self, attributes):
+                self._attributes = attributes
+                self._joint = []
+
+            def add_joint(self, attributes):
+                self._joint.append(attributes)
+
+            def to_string(self) -> str:
+                xml = "<fixed "
+                for k, v in self._attributes.items():
+                    xml += f"{k}=\"{v}\" "
+                xml += ">\n"
+
+                for j in self._joint:
+                    xml += "<joint "
+                    for k, v in j.items():
+                        xml += f"{k}=\"{v}\" "
+                    xml += "/>\n"
+
+                xml += "</fixed>\n"
+
+                return xml
+
         def __init__(self):
-            pass
+            self._spatial: list[MuJoCoXMLGenerator.MuJoCoTendon.MuJoCoTendonSpatial] = []
+            self._fixed: list[MuJoCoXMLGenerator.MuJoCoTendon.MuJoCoTendonFixed] = []
+
+        def add_spatial(self, attributes) -> MuJoCoTendonSpatial:
+            element = MuJoCoXMLGenerator.MuJoCoTendon.MuJoCoTendonSpatial(attributes)
+            self._spatial.append(element)
+            return element
+
+        def fixed(self, attributes) -> MuJoCoTendonFixed:
+            element = MuJoCoXMLGenerator.MuJoCoTendon.MuJoCoTendonFixed(attributes)
+            self._fixed.append(element)
+            return element
 
         def to_string(self) -> str:
-            return "Hello"
+            xml = "<tendon>"
+            for s in self._spatial:
+                xml += s.to_string()
+            for f in self._fixed:
+                xml += f.to_string()
+            xml += "</tendon>\n"
+            return xml
 
     class MuJoCoActuator(ToString):
         def __init__(self):
@@ -212,7 +293,7 @@ class MuJoCoXMLGenerator:
 
     def __init__(self, model_name: str):
         self.model_name = model_name
-        self.elements = list([MuJoCoXMLGenerator.MuJoCoBody(True, {})])
+        self.elements: list[MuJoCoXMLGenerator.ToString] = list([MuJoCoXMLGenerator.MuJoCoBody(True, {})])
 
     def add_compiler(self) -> MuJoCoCompiler:
         pass
@@ -243,9 +324,13 @@ class MuJoCoXMLGenerator:
         return element
 
     def get_body(self, name: str = "worldbody") -> MuJoCoBody:
-        find = None
+        find: MuJoCoXMLGenerator.MuJoCoBody = None
         index = 0
-        candidate = [e for e in self.elements if type(e) == MuJoCoXMLGenerator.MuJoCoBody]
+
+        candidate: list[MuJoCoXMLGenerator.MuJoCoBody] = [
+            e for e in self.elements if type(e) == MuJoCoXMLGenerator.MuJoCoBody
+        ]
+
         while index < len(candidate):
             if candidate[index]._name == name:
                 find = candidate[index]
@@ -262,7 +347,9 @@ class MuJoCoXMLGenerator:
         pass
 
     def add_tendon(self) -> MuJoCoTendon:
-        pass
+        element = MuJoCoXMLGenerator.MuJoCoTendon()
+        self.elements.append(element)
+        return element
 
     def add_actuator(self) -> MuJoCoActuator:
         element = MuJoCoXMLGenerator.MuJoCoActuator()
