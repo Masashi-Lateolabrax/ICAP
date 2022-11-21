@@ -94,7 +94,7 @@ class MuJoCoXMLGenerator:
             elif "name" in attributes:
                 self._name = attributes["name"]
 
-        def add_body(self, attributes):
+        def add_body(self, attributes={}):
             child_body = MuJoCoXMLGenerator.MuJoCoBody(False, attributes)
             self._child_body.append(child_body)
             return child_body
@@ -252,17 +252,29 @@ class MuJoCoXMLGenerator:
     class MuJoCoActuator(ToString):
         def __init__(self):
             self.velocity = []
+            self.position = []
 
         def add_velocity(self, attributes):
             self.velocity.append(attributes)
 
+        def add_position(self, attributes):
+            self.position.append(attributes)
+
         def to_string(self) -> str:
             xml = "<actuator>\n"
+
             for va in self.velocity:
                 xml += "<velocity "
                 for k, v in va.items():
                     xml += f"{k}=\"{v}\" "
                 xml += "/>\n"
+
+            for va in self.position:
+                xml += "<position "
+                for k, v in va.items():
+                    xml += f"{k}=\"{v}\" "
+                xml += "/>\n"
+
             xml += "</actuator>\n"
             return xml
 
