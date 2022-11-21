@@ -1,10 +1,11 @@
-from environments import utils, back_enemy_with_pheromone
+from environments import utils
+from environments.collect_feed import EnvCreator
 
 if __name__ == '__main__':
     def main():
         utils.cmaes_optimize_client(
             6,
-            back_enemy_with_pheromone.EnvCreator(),
+            EnvCreator(),
             "localhost"
         )
 
