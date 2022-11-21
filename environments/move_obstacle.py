@@ -12,7 +12,10 @@ def _gen_env(
 ):
     generator = wrap_mjc.MuJoCoXMLGenerator("co-behavior")
 
-    generator.add_option({"timestep": 0.03333})
+    generator.add_option({
+        "timestep": 0.033333,
+        "gravity": "0 0 -981.0"
+    })
     generator.add_asset().add_texture({
         "type": "skybox",
         "builtin": "gradient",
@@ -23,6 +26,7 @@ def _gen_env(
     })
 
     worldbody = generator.get_body()
+    act = generator.add_actuator()
 
     # Create Ground
     worldbody.add_geom({
@@ -30,6 +34,8 @@ def _gen_env(
         "size": "0 0 0.05",
         "rgba": "1.0 1.0 1.0 0.5",
         "condim": "1",
+        "contype": "1",
+        "conaffinity": "2",
         "priority": "0"
     })
 
@@ -47,18 +53,17 @@ def _gen_env(
         "mass": f"{obstacle_weight}",
         "rgba": "1 0 0 1",
         "condim": "3",
-        "priority": "1",
-        "friction": "0.5 0.0 0.0",
-        "solimp": "0.9 0.95 0.001 0.5 2",
-        "solref": "0.5 1"
     })
 
-    act = generator.add_actuator()
-
     # Create Robots
+    depth = 1.0
+    friction = (1.0, 0.005, 0.0001)  # default : (1.0, 0.005, 0.0001)
+    body_density = 0.51995  # 鉄の密度(7.874 g/cm^3), ルンバの密度(0.51995 g/cm^3)
+    wheel_density = 0.3
+
     robot_body = worldbody.add_body({
         "name": f"robot",
-        "pos": f"{robot_pos[0]} {robot_pos[1]} 6",
+        "pos": f"{robot_pos[0]} {robot_pos[1]} {10 + depth + 0.5}",
         "axisangle": f"0 0 1 0",
     })
     robot_body.add_freejoint()
@@ -66,59 +71,80 @@ def _gen_env(
     robot_body.add_geom({
         "type": "cylinder",
         "size": "17.5 5",  # 幅35cm，高さ10cm
-        "density": "7.874",  # 鉄の密度(7.874 g/cm^3)
+        "density": f"{body_density}",
         "rgba": "1 1 0 0.3",
         "condim": "1",
-        "solimp": "0.9 0.95 0.001 0.5 2",
-        "solref": "0.3 1"
+        "contype": "2",
+        "conaffinity": "2"
     })
 
-    right_wheel_body = robot_body.add_body({"pos": "-10 0 -0.5"})
+    right_wheel_body = robot_body.add_body({"pos": f"10 0 -{depth}"})
     right_wheel_body.add_joint({"name": f"joint_robot_right", "type": "hinge", "axis": "-1 0 0"})
     right_wheel_body.add_geom({
         "type": "cylinder",
         "size": "5 5",
-        "density": "1",  # 水の密度(1 g/cm^3)
+        "density": f"{wheel_density}",
         "axisangle": "0 1 0 90",
         "condim": "6",
+        "contype": "1",
+        "conaffinity": "1",
         "priority": "1",
-        "solimp": "0.9 0.95 0.001 0.5 2",
-        "solref": "0.3 1"
+        "friction": f"{friction[0]} {friction[1]} {friction[2]}"
     })
 
-    left_wheel_body = robot_body.add_body({"pos": "10 0 -0.5"})
+    left_wheel_body = robot_body.add_body({"pos": f"-10 0 -{depth}"})
     left_wheel_body.add_joint({"name": f"joint_robot_left", "type": "hinge", "axis": "-1 0 0"})
     left_wheel_body.add_geom({
         "type": "cylinder",
         "size": "5 5",
-        "density": "1",
+        "density": f"{wheel_density}",
         "axisangle": "0 1 0 90",
         "condim": "6",
+        "contype": "1",
+        "conaffinity": "1",
         "priority": "1",
-        "solimp": "0.9 0.95 0.001 0.5 2",
-        "solref": "0.3 1"
+        "friction": f"{friction[0]} {friction[1]} {friction[2]}"
     })
 
-    front_wheel_body = robot_body.add_body({"pos": "0 15 -4.0"})
+    front_wheel_body = robot_body.add_body({"pos": f"0 15 {-5 + 1.5 - depth}"})
     front_wheel_body.add_joint({"type": "ball"})
     front_wheel_body.add_geom({
         "type": "sphere",
         "size": "1.5",
-        "density": "1",
+        "density": f"{wheel_density}",
         "condim": "1",
-        "solimp": "0.9 0.95 0.001 0.5 2",
-        "solref": "0.3 1"
+        "contype": "1",
+        "conaffinity": "1",
+        "priority": "1"
     })
 
-    rear_wheel_body = robot_body.add_body({"pos": "0 -15 -4.0"})
+    rear_wheel_body = robot_body.add_body({"pos": f"0 -15 {-5 + 1.5 - depth}"})
     rear_wheel_body.add_joint({"type": "ball"})
     rear_wheel_body.add_geom({
         "type": "sphere",
         "size": "1.5",
-        "density": "1",
+        "density": f"{wheel_density}",
         "condim": "1",
-        "solimp": "0.9 0.95 0.001 0.5 2",
-        "solref": "0.3 1"
+        "contype": "1",
+        "conaffinity": "1",
+        "priority": "1"
+    })
+
+    act.add_velocity({
+        "name": f"act_robot_left",
+        "joint": f"joint_robot_left",
+        "gear": "80",
+        "ctrllimited": "true",
+        "ctrlrange": "-50000 50000",
+        "kv": "1"
+    })
+    act.add_velocity({
+        "name": f"act_robot_right",
+        "joint": f"joint_robot_right",
+        "gear": "80",
+        "ctrllimited": "true",
+        "ctrlrange": "-50000 50000",
+        "kv": "1"
     })
 
     tendon = generator.add_tendon()
@@ -130,23 +156,6 @@ def _gen_env(
     })
     tendon_spatial.add_point({"site": "s1"})
     tendon_spatial.add_point({"site": "s2"})
-
-    act.add_velocity({
-        "name": f"a_robot_left",
-        "joint": f"joint_robot_left",
-        "gear": "80",
-        "ctrllimited": "true",
-        "ctrlrange": "-50000 50000",
-        "kv": "1"
-    })
-    act.add_velocity({
-        "name": f"a_robot_right",
-        "joint": f"joint_robot_right",
-        "gear": "80",
-        "ctrllimited": "true",
-        "ctrlrange": "-50000 50000",
-        "kv": "1"
-    })
 
     return generator.generate()
 
@@ -162,8 +171,8 @@ class _Obstacle:
 class _Robot:
     def __init__(self, model: wrap_mjc.WrappedModel):
         self.body = model.get_body(f"robot")
-        self.left_act = model.get_act(f"a_robot_left")
-        self.right_act = model.get_act(f"a_robot_right")
+        self.left_act = model.get_act(f"act_robot_left")
+        self.right_act = model.get_act(f"act_robot_right")
 
     def get_pos(self) -> numpy.ndarray:
         return self.body.get_xpos().copy()
@@ -177,8 +186,8 @@ class _Robot:
         return numpy.dot(self.get_orientation(), [0.0, 1.0, 0.0])
 
     def act(self):
-        self.left_act.ctrl = 30000
-        self.right_act.ctrl = 30000
+        self.left_act.ctrl = 10000
+        self.right_act.ctrl = 10000
 
 
 def _evaluate(
