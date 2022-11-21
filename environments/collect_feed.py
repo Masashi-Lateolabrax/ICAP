@@ -13,7 +13,7 @@ def _gen_env(
 ):
     generator = wrap_mjc.MuJoCoXMLGenerator("co-behavior")
 
-    generator.add_option({"timestep": 0.03333})
+    generator.add_option({"timestep": 0.0166667})
     generator.add_asset().add_texture({
         "type": "skybox",
         "builtin": "gradient",
@@ -185,7 +185,7 @@ class _RobotBrain:
         self._calculator.add_layer(nn_tools.TanhLayer(7))
 
         self._calculator.add_layer(nn_tools.AffineLayer(3))
-        self._calculator.add_layer(nn_tools.SigmoidLayer(3))
+        self._calculator.add_layer(nn_tools.TanhLayer(3))
 
         if not (para is None):
             self._calculator.load(para)
@@ -256,9 +256,9 @@ class _Robot:
 
         self._accustomed = (1.0 - self._accustomed_rate) * self._accustomed + self._accustomed_rate * pheromone_value
 
-        self._left_act.ctrl = 30000 * ctrl[0]
-        self._right_act.ctrl = 30000 * ctrl[1]
-        return 30 * ctrl[2]
+        self._left_act.ctrl = 30000
+        self._right_act.ctrl = 30000
+        return 30 * (ctrl[2] + 1.0) * 0.5
 
 
 def _evaluate(
@@ -309,7 +309,7 @@ def _evaluate(
 
         model.step()
         for _ in range(5):
-            pheromone_field.update_cells(0.03333 / 5)
+            pheromone_field.update_cells(0.0166667 / 5)
 
         # Render MuJoCo Scene
         if window is not None:
