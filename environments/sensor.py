@@ -21,9 +21,9 @@ class OmniSensor:
 
     def sense(self, pos):
         ref_pos = numpy.dot(self._inv_rot_mat, pos - self._center)
-        d = numpy.linalg.norm(ref_pos, ord=2)
+        d = numpy.linalg.norm(ref_pos[:2], ord=2)
         if d != 0:
-            ref_direction = ref_pos[:2] / numpy.linalg.norm(ref_pos[:2], ord=2)
+            ref_direction = ref_pos[:2] / d
             self.value += self._min / (self._a * d + 1.0) * ref_direction
         else:
             self.value += self._min
