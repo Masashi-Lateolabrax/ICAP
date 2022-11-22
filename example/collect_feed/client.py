@@ -6,7 +6,9 @@ if __name__ == '__main__':
         utils.cmaes_optimize_client(
             6,
             EnvCreator(),
-            "localhost"
+            "localhost",
+            1024 * 6,
+            52325
         )
 
 
