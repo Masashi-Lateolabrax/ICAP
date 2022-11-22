@@ -6,6 +6,9 @@ class Calculator:
         self._layer: list[interface.CalcLayer] = []
         self.num_input = num_input
 
+    def get_layer(self, i: int) -> interface.CalcLayer:
+        return self._layer[i]
+
     def add_layer(self, layer: interface.CalcLayer):
         ni = self.num_input
         if len(self._layer) > 0:
