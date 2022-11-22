@@ -145,3 +145,10 @@ class ClientCMAES:
             return ClientCMAES.Result.FatalErrorOccurred, e
 
         return ClientCMAES.Result.Succeed, (para, env)
+
+    def optimize_and_show(self, default_env_creator: MuJoCoEnvCreator, window: Window, camera: Camera):
+        result, pe = self.optimize(default_env_creator)
+        if result == ClientCMAES.Result.Succeed:
+            para, env = pe
+            env.calc_and_show(para, window, camera)
+        return result, pe
