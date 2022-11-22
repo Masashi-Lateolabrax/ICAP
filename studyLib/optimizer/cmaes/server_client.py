@@ -2,12 +2,13 @@ import array
 import datetime
 import enum
 import multiprocessing as mp
+import numpy
 import platform
 import socket
 import struct
 import threading
 
-from studyLib.miscellaneous import Window, Recorder
+from studyLib.miscellaneous import Window
 from studyLib.wrap_mjc import Camera
 from studyLib.optimizer import Hist, EnvCreator, MuJoCoEnvCreator
 from studyLib.optimizer.cmaes import base
@@ -85,11 +86,10 @@ class ServerCMAES:
             good_para = self._base.optimize_current_generation(gen, self._generation, env_creator, _ServerProc)
 
             time = datetime.datetime.now()
-            recorder = Recorder(f"{gen}({time.strftime('%y%m%d_%H%M%S')}).mp4", 30, 640, 480)
-            window.set_recorder(recorder)
+            filename = f"{gen}({time.strftime('%y%m%d_%H%M%S')}).npy"
+            numpy.save(filename, good_para)
             env = env_creator.create_mujoco_env()
             env.calc_and_show(good_para, window, camera)
-            window.set_recorder(None)
 
 
 class ClientCMAES:
