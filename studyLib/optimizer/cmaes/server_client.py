@@ -1,19 +1,20 @@
 import array
 import datetime
+import enum
 import multiprocessing as mp
+import numpy
 import platform
 import socket
+import struct
 import threading
 
-from studyLib.miscellaneous import Window, Recorder
+from studyLib.miscellaneous import Window
 from studyLib.wrap_mjc import Camera
-from studyLib.optimizer.cmaes.base import Individual, BaseCMAES, ProcInterface, default_end_handler, \
-    default_start_handler
 from studyLib.optimizer import Hist, EnvCreator, MuJoCoEnvCreator
+from studyLib.optimizer.cmaes import base
 
 
-def _proc(ind: Individual, env_creator: EnvCreator, queue: mp.Queue, sct: socket.socket):
-    import struct
+def _proc(ind: base.Individual, env_creator: EnvCreator, queue: mp.Queue, sct: socket.socket):
     buf = [env_creator.save()]
     buf.extend([struct.pack("<d", x) for x in ind])
     try:
@@ -26,10 +27,10 @@ def _proc(ind: Individual, env_creator: EnvCreator, queue: mp.Queue, sct: socket
     queue.put(score)
 
 
-class _ServerProc(ProcInterface):
+class _ServerProc(base.ProcInterface):
     listener: socket.socket = None
 
-    def __init__(self, ind: Individual, env_creator: EnvCreator):
+    def __init__(self, ind: base.Individual, env_creator: EnvCreator):
         self.queue = mp.Queue(1)
         sct, _addr = self.listener.accept()
         self.handle = threading.Thread(target=_proc, args=(ind, env_creator, self.queue, sct))
@@ -54,7 +55,7 @@ class ServerCMAES:
             sigma: float = 0.3,
             minimalize: bool = True
     ):
-        self._base = BaseCMAES(dim, population, mu, sigma, minimalize, population)
+        self._base = base.BaseCMAES(dim, population, mu, sigma, minimalize, population)
         self._generation = generation
 
         _ServerProc.listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -70,10 +71,10 @@ class ServerCMAES:
     def get_history(self) -> Hist:
         return self._base.get_history()
 
-    def set_start_handler(self, handler=default_start_handler):
+    def set_start_handler(self, handler=base.default_start_handler):
         self._base.set_start_handler(handler)
 
-    def set_end_handler(self, handler=default_end_handler):
+    def set_end_handler(self, handler=base.default_end_handler):
         self._base.set_end_handler(handler)
 
     def optimize(self, env_creator: EnvCreator):
@@ -85,24 +86,26 @@ class ServerCMAES:
             good_para = self._base.optimize_current_generation(gen, self._generation, env_creator, _ServerProc)
 
             time = datetime.datetime.now()
-            recorder = Recorder(f"{gen}({time.strftime('%y%m%d_%H%M%S')}).mp4", 30, 640, 480)
-            window.set_recorder(recorder)
+            filename = f"{gen}({time.strftime('%y%m%d_%H%M%S')}).npy"
+            numpy.save(filename, good_para)
             env = env_creator.create_mujoco_env()
             env.calc_and_show(good_para, window, camera)
-            window.set_recorder(None)
 
 
 class ClientCMAES:
+    class Result(enum.Enum):
+        Succeed = 1
+        ErrorOccurred = 2
+        FatalErrorOccurred = 3
+
     def __init__(self, address, port, buf_size: int = 1024):
         self._address = address
         self._port = port
         self._buf_size = buf_size
 
     def optimize(self, default_env_creator: EnvCreator):
-        import socket
-        import struct
-
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
         try:
             sock.connect((self._address, self._port))
 
@@ -126,19 +129,26 @@ class ClientCMAES:
             if os == "Windows":
                 if e.errno == 10054:  # [WinError 10054] 既存の接続はリモート ホストに強制的に切断されました。
                     sock.close()
-                    return e, False
+                    return ClientCMAES.Result.FatalErrorOccurred, e
                 elif e.errno == 10057:  # [WinError 10057] ソケットが接続されていないか、sendto呼び出しを使ってデータグラムソケットで...
                     sock.close()
-                    return e, False
+                    return ClientCMAES.Result.FatalErrorOccurred, e
                 elif e.errno == 10060:  # [WinError 10060] 接続済みの呼び出し先が一定時間を過ぎても正しく応答しなかったため...
                     sock.close()
-                    return e, True
+                    return ClientCMAES.Result.ErrorOccurred, e
                 elif e.errno == 10061:  # [WinError 10061] 対象のコンピューターによって拒否されたため、接続できませんでした。
                     sock.close()
-                    return e, True
+                    return ClientCMAES.Result.ErrorOccurred, e
 
             sock.shutdown(socket.SHUT_RDWR)
             sock.close()
-            return e, False
+            return ClientCMAES.Result.FatalErrorOccurred, e
 
-        return None, True
+        return ClientCMAES.Result.Succeed, (para, env)
+
+    def optimize_and_show(self, default_env_creator: MuJoCoEnvCreator, window: Window, camera: Camera):
+        result, pe = self.optimize(default_env_creator)
+        if result == ClientCMAES.Result.Succeed:
+            para, env = pe
+            env.calc_and_show(para, window, camera)
+        return result, pe
