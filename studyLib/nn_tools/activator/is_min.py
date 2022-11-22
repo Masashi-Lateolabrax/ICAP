@@ -1,28 +1,34 @@
 from collections.abc import Sequence
+
 from studyLib.nn_tools import interface, la
 
 
 class IsMinLayer(interface.CalcActivator):
-    def __init__(self, num_node: int, mu: float, sigma: float):
+    def __init__(self, num_node: int):
         super().__init__(num_node)
-        self.mu = la.array([mu for _i in range(0, num_node)])
-        self.inv_sigma2 = la.array([1.0 / (sigma * sigma) for _i in range(0, num_node)])
 
     def calc(self, input_: la.ndarray) -> la.ndarray:
-        return la.exp(-1.0 * la.power(input_ - self.mu, 2) * self.inv_sigma2)
+        min_value = la.min(input_)
+        mask = input_ <= min_value
+        input_[la.logical_not(mask)] = 0.0
+        input_[mask] = 1.0 / la.count_nonzero(mask)
+        return input_
 
     def num_dim(self) -> int:
-        return 2 * self.num_node
+        return 0
 
     def load(self, offset: int, array: Sequence) -> int:
-        s = offset
-        e = s + self.num_node
-        self.mu = la.array(array[s:e])
-        s = e
-        e = s + self.num_node
-        self.inv_sigma2 = la.abs(la.array(array[s:e]))
-        return e - offset
+        return 0
 
     def save(self, array: list) -> None:
-        array.extend(self.mu)
-        array.extend(self.inv_sigma2)
+        pass
+
+
+if __name__ == '__main__':
+    def test():
+        is_min_layer = IsMinLayer(5)
+        sample = la.array([1.0, 3.0, 6.0, 1.9, 7.0])
+        print(is_min_layer.calc(sample))
+
+
+    test()
