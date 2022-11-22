@@ -65,7 +65,7 @@ def _gen_env(
     for i, fp in enumerate(feed_pos):
         feed_body = worldbody.add_body({
             "name": f"feed{i}",
-            "pos": f"{fp[0]} {fp[1]} 20"
+            "pos": f"{fp[0]} {fp[1]} 11"
         })
         feed_body.add_freejoint()
         feed_body.add_geom({
@@ -449,6 +449,7 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
         s = e
         e = s + 4
         num = struct.unpack("<I", data[s:e])[0]
+        self.robot_pos.clear()
         for _ in range(0, num):
             s = e
             e = s + 16
@@ -459,6 +460,7 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
         s = e
         e = s + 4
         num = struct.unpack("<I", data[s:e])[0]
+        self.obstacle_pos.clear()
         for _ in range(0, num):
             s = e
             e = s + 16
@@ -469,11 +471,12 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
         s = e
         e = s + 4
         num = struct.unpack("<I", data[s:e])[0]
+        self.feed_pos.clear()
         for _ in range(0, num):
             s = e
             e = s + 16
             fp = struct.unpack("<dd", data[s:e])[0:2]
-            self.obstacle_pos.append(fp)
+            self.feed_pos.append(fp)
 
         s = e
         e = s + 8 + 8 + 8 + 8 + 4
