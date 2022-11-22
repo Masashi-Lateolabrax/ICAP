@@ -13,7 +13,10 @@ def _gen_env(
 ):
     generator = wrap_mjc.MuJoCoXMLGenerator("co-behavior")
 
-    generator.add_option({"timestep": 0.0166667})
+    generator.add_option({
+        "timestep": 0.033333,
+        "gravity": "0 0 -981.0"
+    })
     generator.add_asset().add_texture({
         "type": "skybox",
         "builtin": "gradient",
@@ -32,6 +35,8 @@ def _gen_env(
         "size": "0 0 0.05",
         "rgba": "1.0 1.0 1.0 0.5",
         "condim": "1",
+        "contype": "1",
+        "conaffinity": "2",
         "priority": "0"
     })
 
@@ -50,10 +55,13 @@ def _gen_env(
             "type": "cylinder",
             "size": "50 10",
             "rgba": "1 0 0 1",
-            "pos": f"{op[0]} {op[1]} 20"
+            "pos": f"{op[0]} {op[1]} 10",
+            "contype": "1",
+            "conaffinity": "2"
         })
 
     # Create Feeds
+    feed_weight = 350 * 2
     for i, fp in enumerate(feed_pos):
         feed_body = worldbody.add_body({
             "name": f"feed{i}",
@@ -63,9 +71,11 @@ def _gen_env(
         feed_body.add_geom({
             "type": "cylinder",
             "size": "100 10",
-            "mass": "260000",
+            "mass": f"{feed_weight}",
             "rgba": "0 1 1 1",
             "condim": "3",
+            "contype": "1",
+            "conaffinity": "1",
             "priority": "1",
             "friction": "0.5 0.0 0.0",
             "solimp": "0.9 0.95 0.001 0.5 2",
@@ -73,69 +83,74 @@ def _gen_env(
         })
 
     # Create Robots
+    depth = 1.0
+    body_density = 0.51995  # 鉄の密度(7.874 g/cm^3), ルンバの密度(0.51995 g/cm^3)
+    wheel_density = 0.3
     for i, rp in enumerate(robot_pos):
         robot_body = worldbody.add_body({
             "name": f"robot{i}",
-            "pos": f"{rp[0]} {rp[1]} 6",
+            "pos": f"{rp[0]} {rp[1]} {10 + depth + 0.5}",
             "axisangle": f"0 0 1 0",
         })
         robot_body.add_freejoint()
         robot_body.add_geom({
             "type": "cylinder",
             "size": "17.5 5",  # 幅35cm，高さ10cm
-            "density": "7.874",  # 鉄の密度(7.874 g/cm^3)
+            "density": f"{body_density}",
             "rgba": "1 1 0 0.3",
             "condim": "1",
-            "solimp": "0.9 0.95 0.001 0.5 2",
-            "solref": "0.3 1"
+            "contype": "2",
+            "conaffinity": "2"
         })
 
-        right_wheel_body = robot_body.add_body({"pos": "-10 0 -0.5"})
+        right_wheel_body = robot_body.add_body({"pos": f"10 0 -{depth}"})
         right_wheel_body.add_joint({"name": f"joint_robot{i}_right", "type": "hinge", "axis": "-1 0 0"})
         right_wheel_body.add_geom({
             "type": "cylinder",
             "size": "5 5",
-            "density": "1",  # 水の密度(1 g/cm^3)
+            "density": f"{wheel_density}",
             "axisangle": "0 1 0 90",
             "condim": "6",
+            "contype": "1",
+            "conaffinity": "1",
             "priority": "1",
-            "solimp": "0.9 0.95 0.001 0.5 2",
-            "solref": "0.3 1"
         })
 
-        left_wheel_body = robot_body.add_body({"pos": "10 0 -0.5"})
+        left_wheel_body = robot_body.add_body({"pos": f"-10 0 -{depth}"})
         left_wheel_body.add_joint({"name": f"joint_robot{i}_left", "type": "hinge", "axis": "-1 0 0"})
         left_wheel_body.add_geom({
             "type": "cylinder",
             "size": "5 5",
-            "density": "1",
+            "density": f"{wheel_density}",
             "axisangle": "0 1 0 90",
             "condim": "6",
+            "contype": "1",
+            "conaffinity": "1",
             "priority": "1",
-            "solimp": "0.9 0.95 0.001 0.5 2",
-            "solref": "0.3 1"
         })
 
-        front_wheel_body = robot_body.add_body({"pos": "0 15 -4.0"})
+        front_wheel_body = robot_body.add_body({"pos": f"0 15 {-5 + 1.5 - depth}"})
         front_wheel_body.add_joint({"type": "ball"})
         front_wheel_body.add_geom({
             "type": "sphere",
             "size": "1.5",
-            "density": "1",
+            "density": f"{wheel_density}",
             "condim": "1",
-            "solimp": "0.9 0.95 0.001 0.5 2",
-            "solref": "0.3 1"
+            "contype": "1",
+            "conaffinity": "1",
+            "priority": "1"
         })
 
-        rear_wheel_body = robot_body.add_body({"pos": "0 -15 -4.0"})
+        rear_wheel_body = robot_body.add_body({"pos": f"0 -15 {-5 + 1.5 - depth}"})
         rear_wheel_body.add_joint({"type": "ball"})
         rear_wheel_body.add_geom({
             "type": "sphere",
             "size": "1.5",
-            "density": "1",
+            "density": f"{wheel_density}",
             "condim": "1",
-            "solimp": "0.9 0.95 0.001 0.5 2",
-            "solref": "0.3 1"
+            "contype": "1",
+            "conaffinity": "1",
+            "priority": "1"
         })
 
         act.add_velocity({
@@ -155,7 +170,8 @@ def _gen_env(
             "kv": "1"
         })
 
-    return generator.generate()
+    xml = generator.generate()
+    return xml
 
 
 class _Obstacle:
@@ -256,8 +272,8 @@ class _Robot:
 
         self._accustomed = (1.0 - self._accustomed_rate) * self._accustomed + self._accustomed_rate * pheromone_value
 
-        self._left_act.ctrl = 30000
-        self._right_act.ctrl = 30000
+        self._left_act.ctrl = 10000 * ctrl[0]
+        self._right_act.ctrl = 10000 * ctrl[1]
         return 30 * (ctrl[2] + 1.0) * 0.5
 
 
@@ -294,7 +310,7 @@ def _evaluate(
     nest_pos = numpy.array([nest_pos[0], nest_pos[1], 0])
     obstacle_pos = [o.get_pos() for o in obstacles]
 
-    for _ in range(0, 30):
+    for _ in range(0, 5):
         model.step()
 
     loss = 0.0
@@ -309,7 +325,7 @@ def _evaluate(
 
         model.step()
         for _ in range(5):
-            pheromone_field.update_cells(0.0166667 / 5)
+            pheromone_field.update_cells(0.033333 / 5)
 
         # Render MuJoCo Scene
         if window is not None:
