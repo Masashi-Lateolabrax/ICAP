@@ -56,19 +56,26 @@ def _client_proc(proc_id: int, default_env_creator: optimizer.EnvCreator, addres
     opt = optimizer.ClientCMAES(address, port, buf_size)
     print(f"Start THREAD{proc_id}")
 
-    error = None
-    can_recover = True
-    err_count = 0
-    while (error is None or can_recover) and err_count < 5:
-        print(f"THREAD{proc_id} is calculating")
-        error, can_recover = opt.optimize(default_env_creator)
-        if error is not None and can_recover:
-            print(f"THREAD{proc_id} is reconnecting.")
-            err_count += 1
-        else:
-            err_count = 0
+    # window = miscellaneous.Window(640, 480)
+    # camera = wrap_mjc.Camera((0, 350, 0), 1200, 0, 90)
 
-    print(f"THREAD{proc_id} is close : ", error)
+    error_count = 0
+    while True:
+        print(f"THREAD{proc_id} is calculating")
+        result, pe = opt.optimize(default_env_creator)
+        # result, pe = opt.optimize_and_show(default_env_creator, window, camera)  # debug
+
+        if result is optimizer.ClientCMAES.Result.Succeed:
+            error_count = 0
+            continue
+        elif result is optimizer.ClientCMAES.Result.ErrorOccurred:
+            if error_count >= 3:
+                print(f"THREAD{proc_id} failed to reconnect the server. : ", pe)
+            print(f"THREAD{proc_id} is retrying.")
+            error_count += 1
+            continue
+        elif result is optimizer.ClientCMAES.Result.FatalErrorOccurred:
+            print(f"THREAD{proc_id} face fatal error : ", pe)
 
 
 def cmaes_optimize_client(
