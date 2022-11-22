@@ -7,12 +7,11 @@ import threading
 
 from studyLib.miscellaneous import Window, Recorder
 from studyLib.wrap_mjc import Camera
-from studyLib.optimizer.cmaes.base import Individual, BaseCMAES, ProcInterface, default_end_handler, \
-    default_start_handler
 from studyLib.optimizer import Hist, EnvCreator, MuJoCoEnvCreator
+from studyLib.optimizer.cmaes import base
 
 
-def _proc(ind: Individual, env_creator: EnvCreator, queue: mp.Queue, sct: socket.socket):
+def _proc(ind: base.Individual, env_creator: EnvCreator, queue: mp.Queue, sct: socket.socket):
     import struct
     buf = [env_creator.save()]
     buf.extend([struct.pack("<d", x) for x in ind])
@@ -26,10 +25,10 @@ def _proc(ind: Individual, env_creator: EnvCreator, queue: mp.Queue, sct: socket
     queue.put(score)
 
 
-class _ServerProc(ProcInterface):
+class _ServerProc(base.ProcInterface):
     listener: socket.socket = None
 
-    def __init__(self, ind: Individual, env_creator: EnvCreator):
+    def __init__(self, ind: base.Individual, env_creator: EnvCreator):
         self.queue = mp.Queue(1)
         sct, _addr = self.listener.accept()
         self.handle = threading.Thread(target=_proc, args=(ind, env_creator, self.queue, sct))
@@ -54,7 +53,7 @@ class ServerCMAES:
             sigma: float = 0.3,
             minimalize: bool = True
     ):
-        self._base = BaseCMAES(dim, population, mu, sigma, minimalize, population)
+        self._base = base.BaseCMAES(dim, population, mu, sigma, minimalize, population)
         self._generation = generation
 
         _ServerProc.listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -70,10 +69,10 @@ class ServerCMAES:
     def get_history(self) -> Hist:
         return self._base.get_history()
 
-    def set_start_handler(self, handler=default_start_handler):
+    def set_start_handler(self, handler=base.default_start_handler):
         self._base.set_start_handler(handler)
 
-    def set_end_handler(self, handler=default_end_handler):
+    def set_end_handler(self, handler=base.default_end_handler):
         self._base.set_end_handler(handler)
 
     def optimize(self, env_creator: EnvCreator):

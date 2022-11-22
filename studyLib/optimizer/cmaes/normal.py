@@ -1,21 +1,23 @@
 import array
 import datetime
 import multiprocessing as mp
+
+import numpy
+
 from studyLib.wrap_mjc import Camera
-from studyLib.miscellaneous import Window, Recorder
+from studyLib.miscellaneous import Window
 from studyLib.optimizer import Hist, EnvCreator, MuJoCoEnvCreator
-from studyLib.optimizer.cmaes.base import Individual, BaseCMAES, ProcInterface, default_start_handler, \
-    default_end_handler
+from studyLib.optimizer.cmaes import base
 
 
-def _func(ind: Individual, env_creator: EnvCreator, queue: mp.Queue):
+def _func(ind: base.Individual, env_creator: EnvCreator, queue: mp.Queue):
     env = env_creator.create()
     score = env.calc(ind)
     queue.put(score)
 
 
-class _ThreadProc(ProcInterface):
-    def __init__(self, ind: Individual, env_creator: EnvCreator):
+class _ThreadProc(base.ProcInterface):
+    def __init__(self, ind: base.Individual, env_creator: EnvCreator):
         self.queue = mp.Queue(1)
         self.handle = mp.Process(target=_func, args=(ind, env_creator, self.queue))
         self.handle.start()
@@ -39,7 +41,7 @@ class CMAES:
             minimalize: bool = True,
             max_thread: int = 1
     ):
-        self._base = BaseCMAES(dim, population, mu, sigma, minimalize, max_thread)
+        self._base = base.BaseCMAES(dim, population, mu, sigma, minimalize, max_thread)
         self._generation = generation
 
     def get_best_para(self) -> array.array:
@@ -51,10 +53,10 @@ class CMAES:
     def get_history(self) -> Hist:
         return self._base.get_history()
 
-    def set_start_handler(self, handler=default_start_handler):
+    def set_start_handler(self, handler=base.default_start_handler):
         self._base.set_start_handler(handler)
 
-    def set_end_handler(self, handler=default_end_handler):
+    def set_end_handler(self, handler=base.default_end_handler):
         self._base.set_end_handler(handler)
 
     def optimize(self, env_creator: EnvCreator):
@@ -66,8 +68,7 @@ class CMAES:
             good_para = self._base.optimize_current_generation(gen, self._generation, env_creator, _ThreadProc)
 
             time = datetime.datetime.now()
-            recorder = Recorder(f"{gen}({time.strftime('%y%m%d_%H%M%S')}).mp4", 30, 640, 480)
-            window.set_recorder(recorder)
+            filename = f"{gen}({time.strftime('%y%m%d_%H%M%S')}).npy"
+            numpy.save(filename, good_para)
             env = env_creator.create_mujoco_env()
             env.calc_and_show(good_para, window, camera)
-            window.set_recorder(None)

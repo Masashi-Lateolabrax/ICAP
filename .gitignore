@@ -2,8 +2,8 @@
 /RESULT/
 
 /main.py
-/best_para.npy
-/history.*
-/MUJOCO_LOG.TXT
-/*.mp4
 /test.py
+*.TXT
+*.mp4
+*.log
+*.npy
