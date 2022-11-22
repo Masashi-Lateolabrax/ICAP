@@ -194,13 +194,10 @@ class _RobotBrain:
     def __init__(self, para):
         self._calculator = nn_tools.Calculator(9)
 
-        self._calculator.add_layer(nn_tools.AffineLayer(18))
-        self._calculator.add_layer(nn_tools.TanhLayer(18))
+        self._calculator.add_layer(nn_tools.GaussianRadialBasisLayer(50))
+        self._calculator.add_layer(nn_tools.IsMaxLayer(50))
 
-        self._calculator.add_layer(nn_tools.AffineLayer(7))
-        self._calculator.add_layer(nn_tools.TanhLayer(7))
-
-        self._calculator.add_layer(nn_tools.AffineLayer(3))
+        self._calculator.add_layer(nn_tools.InnerDotLayer(3))
         self._calculator.add_layer(nn_tools.TanhLayer(3))
 
         if not (para is None):
@@ -211,6 +208,14 @@ class _RobotBrain:
 
     def calc(self, array):
         return self._calculator.calc(array)
+
+    def get_pattern(self, i: int) -> (numpy.ndarray, float):
+        rbf: nn_tools.GaussianRadialBasisLayer = self._calculator.get_layer(0)
+        return numpy.array(rbf.centroid[i]), numpy.abs(rbf.weights[i])
+
+    def get_act_dict(self) -> numpy.ndarray:
+        inner_dot_layer: nn_tools.InnerDotLayer = self._calculator.get_layer(2)
+        return inner_dot_layer.weights.copy()
 
 
 class _Robot:
