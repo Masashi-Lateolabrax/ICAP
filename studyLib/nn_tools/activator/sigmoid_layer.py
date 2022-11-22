@@ -2,13 +2,10 @@ from collections.abc import Sequence
 from studyLib.nn_tools import interface, la
 
 
-class SigmoidLayer(interface.CalcLayer):
+class SigmoidLayer(interface.CalcActivator):
     def __init__(self, num_node: int, a: float = 1.0):
         super().__init__(num_node)
         self.alpha = la.abs(a)
-
-    def init(self, num_input: int) -> None:
-        pass
 
     def calc(self, input_: la.ndarray) -> la.ndarray:
         return 1.0 / (1.0 + la.exp(-self.alpha * input_))

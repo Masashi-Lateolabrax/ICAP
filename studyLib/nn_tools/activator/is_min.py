@@ -2,7 +2,7 @@ from collections.abc import Sequence
 from studyLib.nn_tools import interface, la
 
 
-class GaussianLayer(interface.CalcActivator):
+class IsMinLayer(interface.CalcActivator):
     def __init__(self, num_node: int, mu: float, sigma: float):
         super().__init__(num_node)
         self.mu = la.array([mu for _i in range(0, num_node)])

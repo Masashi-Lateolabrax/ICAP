@@ -2,13 +2,10 @@ from collections.abc import Sequence
 from studyLib.nn_tools import interface, la
 
 
-class ReluLayer(interface.CalcLayer):
+class ReluLayer(interface.CalcActivator):
     def __init__(self, num_node: int, threshold: float):
         super().__init__(num_node)
         self.threshold = threshold
-
-    def init(self, num_input: int) -> None:
-        pass
 
     def calc(self, input_: la.ndarray) -> la.ndarray:
         input_ -= self.threshold
