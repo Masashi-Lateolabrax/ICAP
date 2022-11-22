@@ -138,7 +138,7 @@ class ClientCMAES:
                     return ClientCMAES.Result.ErrorOccurred, e
                 elif e.errno == 10061:  # [WinError 10061] 対象のコンピューターによって拒否されたため、接続できませんでした。
                     sock.close()
-                    return ClientCMAES.Result.ErrorOccurred, e
+                    return ClientCMAES.Result.FatalErrorOccurred, e
 
             sock.shutdown(socket.SHUT_RDWR)
             sock.close()

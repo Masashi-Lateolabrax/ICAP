@@ -71,11 +71,13 @@ def _client_proc(proc_id: int, default_env_creator: optimizer.EnvCreator, addres
         elif result is optimizer.ClientCMAES.Result.ErrorOccurred:
             if error_count >= 3:
                 print(f"THREAD{proc_id} failed to reconnect the server. : ", pe)
+                break
             print(f"THREAD{proc_id} is retrying.")
             error_count += 1
             continue
         elif result is optimizer.ClientCMAES.Result.FatalErrorOccurred:
             print(f"THREAD{proc_id} face fatal error : ", pe)
+            break
 
 
 def cmaes_optimize_client(
