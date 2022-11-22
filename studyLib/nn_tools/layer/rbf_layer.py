@@ -3,7 +3,6 @@ from studyLib.nn_tools import interface, la
 
 
 class GaussianRadialBasisLayer(interface.CalcLayer):
-
     def __init__(self, num_node: int):
         super().__init__(num_node)
         self.centroid = la.zeros((0, 0))
