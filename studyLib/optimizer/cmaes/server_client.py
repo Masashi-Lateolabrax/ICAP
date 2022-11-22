@@ -1,8 +1,10 @@
 import array
 import datetime
+import enum
 import multiprocessing as mp
 import platform
 import socket
+import struct
 import threading
 
 from studyLib.miscellaneous import Window, Recorder
@@ -12,7 +14,6 @@ from studyLib.optimizer.cmaes import base
 
 
 def _proc(ind: base.Individual, env_creator: EnvCreator, queue: mp.Queue, sct: socket.socket):
-    import struct
     buf = [env_creator.save()]
     buf.extend([struct.pack("<d", x) for x in ind])
     try:
@@ -92,16 +93,19 @@ class ServerCMAES:
 
 
 class ClientCMAES:
+    class Result(enum.Enum):
+        Succeed = 1
+        ErrorOccurred = 2
+        FatalErrorOccurred = 3
+
     def __init__(self, address, port, buf_size: int = 1024):
         self._address = address
         self._port = port
         self._buf_size = buf_size
 
     def optimize(self, default_env_creator: EnvCreator):
-        import socket
-        import struct
-
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
         try:
             sock.connect((self._address, self._port))
 
@@ -125,19 +129,19 @@ class ClientCMAES:
             if os == "Windows":
                 if e.errno == 10054:  # [WinError 10054] 既存の接続はリモート ホストに強制的に切断されました。
                     sock.close()
-                    return e, False
+                    return ClientCMAES.Result.FatalErrorOccurred, e
                 elif e.errno == 10057:  # [WinError 10057] ソケットが接続されていないか、sendto呼び出しを使ってデータグラムソケットで...
                     sock.close()
-                    return e, False
+                    return ClientCMAES.Result.FatalErrorOccurred, e
                 elif e.errno == 10060:  # [WinError 10060] 接続済みの呼び出し先が一定時間を過ぎても正しく応答しなかったため...
                     sock.close()
-                    return e, True
+                    return ClientCMAES.Result.ErrorOccurred, e
                 elif e.errno == 10061:  # [WinError 10061] 対象のコンピューターによって拒否されたため、接続できませんでした。
                     sock.close()
-                    return e, True
+                    return ClientCMAES.Result.ErrorOccurred, e
 
             sock.shutdown(socket.SHUT_RDWR)
             sock.close()
-            return e, False
+            return ClientCMAES.Result.FatalErrorOccurred, e
 
-        return None, True
+        return ClientCMAES.Result.Succeed, (para, env)
