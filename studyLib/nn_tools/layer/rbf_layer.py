@@ -6,7 +6,7 @@ class GaussianRadialBasisLayer(interface.CalcLayer):
     def __init__(self, num_node: int):
         super().__init__(num_node)
         self.centroid = la.zeros((0, 0))
-        self.weights = la.ones(num_node)
+        self.weights = la.ones(num_node).reshape((num_node, 1))
         self._num_input = 0
 
     def init(self, num_input: int) -> None:
@@ -27,9 +27,9 @@ class GaussianRadialBasisLayer(interface.CalcLayer):
         self.centroid = la.array(array[s:e]).reshape((self.num_node, self._num_input))
         s = e
         e = s + self.num_node
-        self.weights = la.abs(la.array(array[s:e])) * -1.0
+        self.weights = (la.abs(la.array(array[s:e])) * -1.0).reshape((self.num_node, 1))
         return e - offset
 
     def save(self, array: list) -> None:
         array.extend(self.centroid.ravel())
-        array.extend(la.abs(self.weights))
+        array.extend(la.abs(self.weights).ravel())
