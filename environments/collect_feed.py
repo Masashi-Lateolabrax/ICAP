@@ -10,6 +10,9 @@ def _gen_env(
         robot_pos: list[(float, float)],
         obstacle_pos: list[(float, float)],
         feed_pos: list[(float, float)],
+        pheromone_field_panel_size: float,
+        pheromone_field_pos: (float, float),
+        pheromone_field_shape: (int, int)
 ):
     generator = wrap_mjc.MuJoCoXMLGenerator("co-behavior")
 
@@ -38,6 +41,35 @@ def _gen_env(
         "contype": "1",
         "conaffinity": "2",
         "priority": "0"
+    })
+
+    # Create Wall
+    pheromone_field_size = (
+        pheromone_field_panel_size * pheromone_field_shape[0], pheromone_field_panel_size * pheromone_field_shape[1]
+    )
+    worldbody.add_geom({
+        "type": "box",
+        "pos": f"{pheromone_field_pos[0] + 0.5 * (pheromone_field_size[0] + pheromone_field_panel_size)} {pheromone_field_pos[1]} 5",
+        "size": f"{pheromone_field_panel_size * 0.5} {pheromone_field_size[1] * 0.5} 5",
+        "rgba": "0.7 0.7 0.7 0.5",
+    })
+    worldbody.add_geom({
+        "type": "box",
+        "pos": f"{pheromone_field_pos[0] - 0.5 * (pheromone_field_size[0] + pheromone_field_panel_size)} {pheromone_field_pos[1]} 5",
+        "size": f"{pheromone_field_panel_size * 0.5} {pheromone_field_size[1] * 0.5} 5",
+        "rgba": "0.7 0.7 0.7 0.5",
+    })
+    worldbody.add_geom({
+        "type": "box",
+        "pos": f"{pheromone_field_pos[0]} {pheromone_field_pos[1] + 0.5 * (pheromone_field_size[1] + pheromone_field_panel_size)} 5",
+        "size": f"{pheromone_field_size[0] * 0.5} {pheromone_field_panel_size * 0.5} 5",
+        "rgba": "0.7 0.7 0.7 0.5",
+    })
+    worldbody.add_geom({
+        "type": "box",
+        "pos": f"{pheromone_field_pos[0]} {pheromone_field_pos[1] - 0.5 * (pheromone_field_size[1] + pheromone_field_panel_size)} 5",
+        "size": f"{pheromone_field_size[0] * 0.5} {pheromone_field_panel_size * 0.5} 5",
+        "rgba": "0.7 0.7 0.7 0.5",
     })
 
     # Create Nest
@@ -301,7 +333,10 @@ def _evaluate(
 ) -> float:
     from environments import pheromone
 
-    xml = _gen_env(nest_pos, robot_pos, obstacle_pos, feed_pos)
+    xml = _gen_env(
+        nest_pos, robot_pos, obstacle_pos, feed_pos,
+        pheromone_field_panel_size, pheromone_field_pos, pheromone_field_shape
+    )
     model = wrap_mjc.WrappedModel(xml)
 
     if camera is not None:
