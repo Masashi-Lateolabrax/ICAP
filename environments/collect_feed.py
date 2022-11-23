@@ -292,6 +292,9 @@ def _evaluate(
         evaporate: float,
         diffusion: float,
         decrease: float,
+        pheromone_field_panel_size: float,
+        pheromone_field_pos: (float, float),
+        pheromone_field_shape: (int, int),
         timestep: int,
         camera: wrap_mjc.Camera = None,
         window: miscellaneous.Window = None
@@ -304,10 +307,13 @@ def _evaluate(
     if camera is not None:
         model.set_camera(camera)
 
-    if window is None:
-        pheromone_field = pheromone.PheromoneField(0, 350, 10, 1, 80, 100, sv, evaporate, diffusion, decrease, None)
-    else:
-        pheromone_field = pheromone.PheromoneField(0, 350, 10, 1, 80, 100, sv, evaporate, diffusion, decrease, model)
+    pheromone_field = pheromone.PheromoneField(
+        pheromone_field_pos[0], pheromone_field_pos[1],
+        pheromone_field_panel_size, 1,
+        pheromone_field_shape[0], pheromone_field_shape[1],
+        sv, evaporate, diffusion, decrease,
+        None if window is None else model
+    )
 
     robots = [_Robot(brain, model, i) for i in range(0, len(robot_pos))]
     obstacles = [_Obstacle(model, i) for i in range(0, len(obstacle_pos))]
@@ -365,6 +371,9 @@ class Environment(optimizer.MuJoCoEnvInterface):
             evaporate: float,
             diffusion: float,
             decrease: float,
+            pheromone_field_panel_size: float,
+            pheromone_field_pos: (float, float),
+            pheromone_field_shape: (int, int),
             timestep: int
     ):
         self.nest_pos: (float, float) = nest_pos
@@ -375,6 +384,9 @@ class Environment(optimizer.MuJoCoEnvInterface):
         self.evaporate: float = evaporate
         self.diffusion: float = diffusion
         self.decrease: float = decrease
+        self.pheromone_field_panel_size: float = pheromone_field_panel_size
+        self.pheromone_field_pos: (float, float) = pheromone_field_pos
+        self.pheromone_field_shape: (int, int) = pheromone_field_shape
         self.timestep: int = timestep
 
     def calc(self, para) -> float:
@@ -389,6 +401,9 @@ class Environment(optimizer.MuJoCoEnvInterface):
             self.evaporate,
             self.diffusion,
             self.decrease,
+            self.pheromone_field_panel_size,
+            self.pheromone_field_pos,
+            self.pheromone_field_shape,
             self.timestep,
             None,
             None
@@ -406,6 +421,9 @@ class Environment(optimizer.MuJoCoEnvInterface):
             self.evaporate,
             self.diffusion,
             self.decrease,
+            self.pheromone_field_panel_size,
+            self.pheromone_field_pos,
+            self.pheromone_field_shape,
             self.timestep,
             camera,
             window
@@ -422,6 +440,9 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
         self.evaporate: float = 0.0
         self.diffusion: float = 0.0
         self.decrease: float = 0.0
+        self.pheromone_field_panel_size: float = 0.0
+        self.pheromone_field_pos: (float, float) = (0, 0)
+        self.pheromone_field_shape: (int, int) = (0, 0)
         self.timestep: int = 100
 
     def save(self):
@@ -438,7 +459,13 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
         packed.extend([struct.pack("<I", len(self.feed_pos))])
         packed.extend([struct.pack("<dd", p[0], p[1]) for p in self.feed_pos])
 
-        packed.extend([struct.pack("<ddddI", self.sv, self.evaporate, self.diffusion, self.decrease, self.timestep)])
+        packed.extend([struct.pack("<dddd", self.sv, self.evaporate, self.diffusion, self.decrease)])
+
+        packed.extend([struct.pack("<d", self.pheromone_field_panel_size)])
+        packed.extend([struct.pack("<dd", self.pheromone_field_pos[0], self.pheromone_field_pos[1])])
+        packed.extend([struct.pack("<II", self.pheromone_field_shape[0], self.pheromone_field_shape[1])])
+
+        packed.extend([struct.pack("<I", self.timestep)])
 
         return b"".join(packed)
 
@@ -483,9 +510,30 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
             fp = struct.unpack("<dd", data[s:e])[0:2]
             self.feed_pos.append(fp)
 
+        # フェロモンの設定
         s = e
-        e = s + 8 + 8 + 8 + 8 + 4
-        self.sv, self.evaporate, self.diffusion, self.decrease, self.timestep = struct.unpack("<ddddI", data[s:e])[0:5]
+        e = s + 8 + 8 + 8 + 8
+        self.sv, self.evaporate, self.diffusion, self.decrease = struct.unpack("<dddd", data[s:e])[0:4]
+
+        # MuJoCo上でのフェロモンのパネルの大きさ
+        s = e
+        e = s + 8
+        self.pheromone_field_panel_size = struct.unpack("<d", data[s:e])[0]
+
+        # MuJoCo上でのフェロモンのパネルの座標
+        s = e
+        e = s + 16
+        self.pheromone_field_pos = struct.unpack("<dd", data[s:e])[0:2]
+
+        # MuJoCo上でのフェロモンパネルの数
+        s = e
+        e = s + 8
+        self.pheromone_field_shape = struct.unpack("<II", data[s:e])[0:2]
+
+        # MuJoCoのタイムステップ
+        s = e
+        e = s + 4
+        self.timestep = struct.unpack("<I", data[s:e])[0]
 
         return e - offset
 
@@ -502,6 +550,9 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
             self.evaporate,
             self.diffusion,
             self.decrease,
+            self.pheromone_field_panel_size,
+            self.pheromone_field_pos,
+            self.pheromone_field_shape,
             self.timestep
         )
 
@@ -515,5 +566,8 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
             self.evaporate,
             self.diffusion,
             self.decrease,
+            self.pheromone_field_panel_size,
+            self.pheromone_field_pos,
+            self.pheromone_field_shape,
             self.timestep
         )
