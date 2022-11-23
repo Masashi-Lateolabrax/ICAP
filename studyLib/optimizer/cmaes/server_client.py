@@ -81,7 +81,7 @@ class ServerCMAES:
         for gen in range(1, self._generation + 1):
             self._base.optimize_current_generation(gen, self._generation, env_creator, _ServerProc)
 
-    def optimize_with_recoding_min(self, env_creator: MuJoCoEnvCreator, window: Window, camera: Camera):
+    def optimize_and_save(self, env_creator: MuJoCoEnvCreator, window: Window, camera: Camera):
         for gen in range(1, self._generation + 1):
             good_para = self._base.optimize_current_generation(gen, self._generation, env_creator, _ServerProc)
 

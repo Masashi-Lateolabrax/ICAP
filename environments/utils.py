@@ -3,7 +3,7 @@ from studyLib import optimizer, miscellaneous, wrap_mjc
 
 
 def show_mujoco_env(
-        env: optimizer.MuJoCoEnvInterface,
+        env_creator: optimizer.MuJoCoEnvCreator,
         para,
         window: miscellaneous.Window,
         camera: wrap_mjc.Camera,
@@ -11,6 +11,7 @@ def show_mujoco_env(
         height: int = 480
 ) -> float:
     window.set_recorder(miscellaneous.Recorder("result.mp4", 30, width, height))
+    env = env_creator.create_mujoco_env()
     return env.calc_and_show(para, window, camera)
 
 
@@ -29,7 +30,7 @@ def cmaes_optimize(
         opt.optimize(env_creator)
     else:
         window, camera = window_and_camera
-        opt.optimize_with_recoding_min(env_creator, window, camera)
+        opt.optimize_with_save(env_creator, window, camera)
     return opt.get_best_para(), opt.get_history()
 
 
@@ -48,7 +49,7 @@ def cmaes_optimize_server(
         opt.optimize(env_creator)
     else:
         window, camera = window_and_camera
-        opt.optimize_with_recoding_min(env_creator, window, camera)
+        opt.optimize_and_save(env_creator, window, camera)
     return opt.get_best_para(), opt.get_history()
 
 
