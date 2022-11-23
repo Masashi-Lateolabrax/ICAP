@@ -1,12 +1,9 @@
 import array
 import datetime
 import multiprocessing as mp
-
 import numpy
 
-from studyLib.wrap_mjc import Camera
-from studyLib.miscellaneous import Window
-from studyLib.optimizer import Hist, EnvCreator, MuJoCoEnvCreator
+from studyLib.optimizer import Hist, EnvCreator
 from studyLib.optimizer.cmaes import base
 
 
@@ -63,12 +60,10 @@ class CMAES:
         for gen in range(1, self._generation + 1):
             self._base.optimize_current_generation(gen, self._generation, env_creator, _ThreadProc)
 
-    def optimize_with_save(self, env_creator: MuJoCoEnvCreator, window: Window, camera: Camera):
+    def optimize_with_save(self, env_creator: EnvCreator):
         for gen in range(1, self._generation + 1):
             good_para = self._base.optimize_current_generation(gen, self._generation, env_creator, _ThreadProc)
 
             time = datetime.datetime.now()
             filename = f"{gen}({time.strftime('%y%m%d_%H%M%S')}).npy"
             numpy.save(filename, good_para)
-            env = env_creator.create_mujoco_env()
-            env.calc_and_show(good_para, window, camera)

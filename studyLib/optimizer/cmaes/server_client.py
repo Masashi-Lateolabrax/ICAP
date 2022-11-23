@@ -81,15 +81,13 @@ class ServerCMAES:
         for gen in range(1, self._generation + 1):
             self._base.optimize_current_generation(gen, self._generation, env_creator, _ServerProc)
 
-    def optimize_and_save(self, env_creator: MuJoCoEnvCreator, window: Window, camera: Camera):
+    def optimize_and_save(self, env_creator: EnvCreator):
         for gen in range(1, self._generation + 1):
             good_para = self._base.optimize_current_generation(gen, self._generation, env_creator, _ServerProc)
 
             time = datetime.datetime.now()
             filename = f"{gen}({time.strftime('%y%m%d_%H%M%S')}).npy"
             numpy.save(filename, good_para)
-            env = env_creator.create_mujoco_env()
-            env.calc_and_show(good_para, window, camera)
 
 
 class ClientCMAES:

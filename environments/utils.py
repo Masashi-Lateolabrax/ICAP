@@ -20,17 +20,16 @@ def cmaes_optimize(
         population: int,
         mu: int,
         sigma: float,
-        env_creator: optimizer.MuJoCoEnvCreator,
+        env_creator: optimizer.EnvCreator,
         max_thread: int = 4,
         minimalize: bool = True,
-        window_and_camera: (miscellaneous.Window, wrap_mjc.Camera) = None
+        save: bool = False
 ) -> (numpy.ndarray, optimizer.Hist):
     opt = optimizer.CMAES(env_creator.dim(), generation, population, mu, sigma, minimalize, max_thread)
-    if window_and_camera is None:
-        opt.optimize(env_creator)
+    if save:
+        opt.optimize_with_save(env_creator)
     else:
-        window, camera = window_and_camera
-        opt.optimize_with_save(env_creator, window, camera)
+        opt.optimize(env_creator)
     return opt.get_best_para(), opt.get_history()
 
 
@@ -39,17 +38,16 @@ def cmaes_optimize_server(
         population: int,
         mu: int,
         sigma: float,
-        env_creator: optimizer.MuJoCoEnvCreator,
+        env_creator: optimizer.EnvCreator,
         port: int = 52325,
         minimalize: bool = True,
-        window_and_camera: (miscellaneous.Window, wrap_mjc.Camera) = None
+        save: bool = False
 ) -> (numpy.ndarray, optimizer.Hist):
     opt = optimizer.ServerCMAES(port, env_creator.dim(), generation, population, mu, sigma, minimalize)
-    if window_and_camera is None:
-        opt.optimize(env_creator)
+    if save:
+        opt.optimize_and_save(env_creator)
     else:
-        window, camera = window_and_camera
-        opt.optimize_and_save(env_creator, window, camera)
+        opt.optimize(env_creator)
     return opt.get_best_para(), opt.get_history()
 
 
