@@ -42,25 +42,26 @@ def _gen_env(
     # Create Obstacle
     obstacle_body = worldbody.add_body({
         "name": "obstacle",
-        "pos": f"{obstacle_pos[0]} {obstacle_pos[1]} 20"
+        "pos": f"{obstacle_pos[0]} {obstacle_pos[1]} 11"
     })
-    obstacle_body.add_site({"name": "s1", "pos": "0 100 0"})
     obstacle_body.add_freejoint()
+    obstacle_body.add_site({"name": "s1", "pos": "0 100 0"})
     obstacle_body.add_geom({
-        "name": "geom_obstacle",
         "type": "cylinder",
         "size": "100 10",
         "mass": f"{obstacle_weight}",
-        "rgba": "1 0 0 1",
+        "rgba": "0 1 1 1",
         "condim": "3",
+        "contype": "1",
+        "conaffinity": "1",
+        "priority": "1",
+        "friction": "0.5 0.0 0.0"
     })
 
     # Create Robots
     depth = 1.0
-    friction = (1.0, 0.005, 0.0001)  # default : (1.0, 0.005, 0.0001)
     body_density = 0.51995  # 鉄の密度(7.874 g/cm^3), ルンバの密度(0.51995 g/cm^3)
     wheel_density = 0.3
-
     robot_body = worldbody.add_body({
         "name": f"robot",
         "pos": f"{robot_pos[0]} {robot_pos[1]} {10 + depth + 0.5}",
@@ -89,7 +90,6 @@ def _gen_env(
         "contype": "1",
         "conaffinity": "1",
         "priority": "1",
-        "friction": f"{friction[0]} {friction[1]} {friction[2]}"
     })
 
     left_wheel_body = robot_body.add_body({"pos": f"-10 0 -{depth}"})
@@ -103,7 +103,6 @@ def _gen_env(
         "contype": "1",
         "conaffinity": "1",
         "priority": "1",
-        "friction": f"{friction[0]} {friction[1]} {friction[2]}"
     })
 
     front_wheel_body = robot_body.add_body({"pos": f"0 15 {-5 + 1.5 - depth}"})
@@ -207,7 +206,7 @@ def _evaluate(
     obstacle = _Obstacle(model)
     robot = _Robot(model)
 
-    for _ in range(0, 30):
+    for _ in range(0, 5):
         model.step()
 
     for t in range(0, timestep):
@@ -221,7 +220,7 @@ def _evaluate(
                 exit()
             window.flush()
 
-    return numpy.linalg.norm(obstacle.get_pos(), ord=2)
+    return numpy.linalg.norm(obstacle.get_pos()[0:2], ord=2)
 
 
 class Environment(optimizer.MuJoCoEnvInterface):
