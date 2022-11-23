@@ -43,9 +43,10 @@ class PheromoneField:
         if model is not None:
             for y in range(0, self._ny):
                 for x in range(0, self._nx):
-                    pos = [(x - self._nx / 2) * self._size + self._px, (y - self._ny / 2) * self._size + self._py, z]
+                    px = ((x / (self._nx - 1.0)) - 0.5) * self._size * self._nx + self._px
+                    py = ((y / (self._ny - 1.0)) - 0.5) * self._size * self._ny + self._py
                     deco_geom = model.add_deco_geom(mujoco.mjtGeom.mjGEOM_PLANE)
-                    deco_geom.set_pos(pos)
+                    deco_geom.set_pos([px, py, 0.05])
                     deco_geom.set_size([self._size * 0.5, self._size * 0.5, 0.05])
                     deco_geom.set_quat([0, 0, 1], 0)
                     self._panels.append(deco_geom)
@@ -57,8 +58,8 @@ class PheromoneField:
         :param y: MuJoCo上のy座標
         :return: 対応するself._gasのインデックス
         """
-        ix = (x - self._px) / self._size + self._nx / 2
-        iy = (y - self._py) / self._size + self._ny / 2
+        ix = ((x - self._px) / (self._size * self._nx) + 0.5) * (self._nx - 1.0)
+        iy = ((y - self._py) / (self._size * self._ny) + 0.5) * (self._ny - 1.0)
         return ix, iy
 
     def _calc_dico(self, x: float, y: float):
