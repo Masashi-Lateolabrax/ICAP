@@ -109,9 +109,7 @@ def _gen_env(
             "contype": "1",
             "conaffinity": "1",
             "priority": "1",
-            "friction": "0.5 0.0 0.0",
-            "solimp": "0.9 0.95 0.001 0.5 2",
-            "solref": "0.5 1"
+            "friction": "0.5 0.0 0.0"
         })
 
     # Create Robots
