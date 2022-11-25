@@ -126,8 +126,9 @@ class BaseCMAES:
         max_value = -float("inf")
         good_para: array.array = None
 
-        for ind in self._individuals:
+        for i, ind in enumerate(self._individuals):
             if numpy.isnan(ind.fitness.values[0]):
+                print(f"No.{i} is invalid.")
                 return None
 
             avg += ind.fitness.values[0]
