@@ -52,6 +52,8 @@ def cmaes_optimize_server(
 
 
 def _client_proc(proc_id: int, default_env_creator: optimizer.EnvCreator, address: str, port: int, buf_size: int):
+    import time
+
     opt = optimizer.ClientCMAES(address, port, buf_size)
     print(f"Start THREAD{proc_id}")
 
@@ -69,13 +71,14 @@ def _client_proc(proc_id: int, default_env_creator: optimizer.EnvCreator, addres
             continue
         elif result is optimizer.ClientCMAES.Result.ErrorOccurred:
             if error_count >= 3:
-                print(f"THREAD{proc_id} failed to reconnect the server. : ", pe)
+                print(f"[ERROR] THREAD{proc_id} failed to reconnect the server. : ", pe)
                 break
-            print(f"THREAD{proc_id} is retrying.")
+            print(f"[WARNING] THREAD{proc_id} is retrying.")
+            time.sleep(1)
             error_count += 1
             continue
         elif result is optimizer.ClientCMAES.Result.FatalErrorOccurred:
-            print(f"THREAD{proc_id} face fatal error : ", pe)
+            print(f"[ERROR] THREAD{proc_id} face fatal error : ", pe)
             break
 
 
