@@ -239,6 +239,10 @@ class RobotBrain:
     def calc(self, array):
         return self._calculator.calc(array)
 
+    def num_pattern(self) -> int:
+        rbf: nn_tools.GaussianRadialBasisLayer = self._calculator.get_layer(0)
+        return rbf.weights.shape[0]
+
     def get_pattern(self, i: int) -> (numpy.ndarray, float):
         rbf: nn_tools.GaussianRadialBasisLayer = self._calculator.get_layer(0)
         return numpy.array(rbf.centroid[i]), numpy.abs(rbf.weights[i])
