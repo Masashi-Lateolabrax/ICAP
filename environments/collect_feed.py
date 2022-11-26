@@ -31,6 +31,7 @@ def _gen_env(
 
     worldbody = generator.get_body()
     act = generator.add_actuator()
+    sensor = generator.add_sensor()
 
     # Create Ground
     worldbody.add_geom({
@@ -100,6 +101,7 @@ def _gen_env(
             "pos": f"{fp[0]} {fp[1]} 11"
         })
         feed_body.add_freejoint()
+        feed_body.add_site({"name": f"site_feed{i}"})
         feed_body.add_geom({
             "type": "cylinder",
             "size": "100 10",
@@ -110,6 +112,10 @@ def _gen_env(
             "conaffinity": "1",
             "priority": "1",
             "friction": "0.5 0.0 0.0"
+        })
+        sensor.add_velocimeter({
+            "name": f"sensor_feed{i}_velocity",
+            "site": f"site_feed{i}"
         })
 
     # Create Robots
@@ -215,9 +221,13 @@ class _Obstacle:
 class _Feed:
     def __init__(self, model: wrap_mjc.WrappedModel, number: int):
         self._body = model.get_body(f"feed{number}")
+        self._velocity_sensor = model.get_sensor(f"sensor_feed{number}_velocity")
 
     def get_pos(self):
         return self._body.get_xpos().copy()
+
+    def get_velocity(self) -> numpy.ndarray:
+        return self._velocity_sensor.get_data()
 
 
 class RobotBrain:
@@ -391,15 +401,25 @@ def _evaluate(
             window.flush()
 
         # Calculate loss
-        loss_dt = 0.0
-        for fp in feed_pos:
-            min_dist = float("inf")
-            for rp in robot_pos:
-                d = numpy.linalg.norm(fp - rp, ord=2)
-                if d < min_dist:
-                    min_dist = d
-            loss_dt += 0.001 * min_dist + numpy.linalg.norm(fp, ord=2)
-        loss += loss_dt
+        feed_range_bias = 1000000.0
+        feed_range_esp = 1000000.0
+        feed_robot_loss = 0.0
+        feed_nest_loss = 0.0
+        for f in feeds:
+            fv = numpy.linalg.norm(f.get_velocity()[0:2], ord=2)
+            fp = f.get_pos()
+
+            for r in robots:
+                d = numpy.linalg.norm(fp[0:2] - r.get_pos()[0:2], ord=2)
+                feed_robot_loss -= numpy.exp(-d * d / (feed_range_bias * fv + feed_range_esp))
+
+            feed_nest_loss += numpy.linalg.norm(fp[0:2] - nest_pos[0:2], ord=2)
+
+        feed_robot_loss *= 0.1 / (len(feeds) * len(robots))
+        feed_nest_loss *= 0.01 / len(feeds)
+
+        print(feed_robot_loss, feed_nest_loss)
+        loss += feed_robot_loss + feed_nest_loss
 
     return loss
 
