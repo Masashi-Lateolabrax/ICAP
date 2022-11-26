@@ -14,7 +14,7 @@ from studyLib.optimizer import Hist, EnvCreator, MuJoCoEnvCreator
 from studyLib.optimizer.cmaes import base
 
 
-def _proc(ind: base.Individual, env_creator: EnvCreator, queue: mp.Queue, sct: socket.socket):
+def _proc(i: int, ind: base.Individual, env_creator: EnvCreator, queue: mp.Queue, sct: socket.socket):
     buf = [env_creator.save()]
     buf.extend([struct.pack("<d", x) for x in ind])
     data_bytes = b''.join(buf)
@@ -25,7 +25,7 @@ def _proc(ind: base.Individual, env_creator: EnvCreator, queue: mp.Queue, sct: s
         received = sct.recv(1024)
         score = struct.unpack("<d", received)[0]
     except Exception as e:
-        print(e)
+        print(f"[ERROR] {e} (ID:{i})")
         score = float("nan")
     queue.put(score)
 
@@ -33,10 +33,10 @@ def _proc(ind: base.Individual, env_creator: EnvCreator, queue: mp.Queue, sct: s
 class _ServerProc(base.ProcInterface):
     listener: socket.socket = None
 
-    def __init__(self, ind: base.Individual, env_creator: EnvCreator):
+    def __init__(self, i: int, ind: base.Individual, env_creator: EnvCreator):
         self.queue = mp.Queue(1)
         sct, _addr = self.listener.accept()
-        self.handle = threading.Thread(target=_proc, args=(ind, env_creator, self.queue, sct))
+        self.handle = threading.Thread(target=_proc, args=(i, ind, env_creator, self.queue, sct))
         self.handle.start()
 
     def finished(self) -> bool:

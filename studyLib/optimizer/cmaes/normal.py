@@ -14,7 +14,7 @@ def _func(ind: base.Individual, env_creator: EnvCreator, queue: mp.Queue):
 
 
 class _ThreadProc(base.ProcInterface):
-    def __init__(self, ind: base.Individual, env_creator: EnvCreator):
+    def __init__(self, _i: int, ind: base.Individual, env_creator: EnvCreator):
         self.queue = mp.Queue(1)
         self.handle = mp.Process(target=_func, args=(ind, env_creator, self.queue))
         self.handle.start()

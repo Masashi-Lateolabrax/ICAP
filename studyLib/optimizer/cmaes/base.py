@@ -58,7 +58,7 @@ class _MinimalizeIndividual(Individual):
 
 class ProcInterface(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def __init__(self, ind: Individual, env_creator: EnvCreator):
+    def __init__(self, i: int, ind: Individual, env_creator: EnvCreator):
         raise NotImplemented()
 
     @abc.abstractmethod
@@ -128,7 +128,6 @@ class BaseCMAES:
 
         for i, ind in enumerate(self._individuals):
             if numpy.isnan(ind.fitness.values[0]):
-                print(f"No.{i} is invalid.")
                 return None
 
             avg += ind.fitness.values[0]
@@ -162,14 +161,17 @@ class BaseCMAES:
         start_time = datetime.datetime.now()
         self._start_handler(gen, generation, start_time)
 
+        recovery_mode = False
         res = None
         while res is None:
             handles = {}
             for i, ind in enumerate(self._individuals):
                 if not numpy.isnan(ind.fitness.values[0]):
                     continue
+                elif recovery_mode:
+                    print(f"Retry No.{i}.")
 
-                handles[i] = proc(ind, env_creator)
+                handles[i] = proc(i, ind, env_creator)
 
                 while len(handles) >= self.max_thread:
                     remove_list = []
@@ -185,6 +187,7 @@ class BaseCMAES:
                 self._individuals[key].fitness.values = (p.join(),)
 
             res = self._generate_new_generation()
+            recovery_mode = res is None
 
         avg, min_value, max_value, good_para, best = res
 
