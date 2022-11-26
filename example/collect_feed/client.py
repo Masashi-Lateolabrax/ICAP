@@ -7,7 +7,7 @@ if __name__ == '__main__':
             6,
             EnvCreator(),
             "localhost",
-            1024 * 6,
+            3072,
             52325
         )
 
