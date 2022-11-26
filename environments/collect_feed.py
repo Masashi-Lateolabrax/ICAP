@@ -220,7 +220,7 @@ class _Feed:
         return self._body.get_xpos().copy()
 
 
-class _RobotBrain:
+class RobotBrain:
     def __init__(self, para):
         self._calculator = nn_tools.Calculator(9)
 
