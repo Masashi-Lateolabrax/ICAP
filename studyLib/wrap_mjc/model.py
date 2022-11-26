@@ -248,6 +248,20 @@ class WrappedGeom:
         return self.model_geom.type
 
 
+class WrappedSensor:
+    def __init__(self, mj_data_sensor_views):
+        self._raw = mj_data_sensor_views
+
+    def get_data(self):
+        return self._raw.data
+
+    def get_id(self):
+        return self._raw.id
+
+    def get_name(self):
+        return self._raw.name
+
+
 class WrappedModel:
     def __init__(self, xml: str):
         self.model = mujoco.MjModel.from_xml_string(xml)
@@ -329,8 +343,8 @@ class WrappedModel:
     def set_act_ctrl(self, act_name: str, value):
         self.data.actuator(act_name).ctrl = value
 
-    def get_sensor(self, sen_name: str):
-        return self.data.sensor(sen_name)
+    def get_sensor(self, sen_name: str) -> WrappedSensor:
+        return WrappedSensor(self.data.sensor(sen_name))
 
     # コールバック関数のタイポ．ループごとに実行される処理を記述．別に書かなくてもＯＫ．
     def coolback(self):
