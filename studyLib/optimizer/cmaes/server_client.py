@@ -17,8 +17,11 @@ from studyLib.optimizer.cmaes import base
 def _proc(ind: base.Individual, env_creator: EnvCreator, queue: mp.Queue, sct: socket.socket):
     buf = [env_creator.save()]
     buf.extend([struct.pack("<d", x) for x in ind])
+    data_bytes = b''.join(buf)
+    data_size = len(data_bytes)
     try:
-        sct.send(b''.join(buf))
+        sct.send(struct.pack("<Q", data_size))
+        sct.send(data_bytes)
         received = sct.recv(1024)
         score = struct.unpack("<d", received)[0]
     except Exception as e:
@@ -107,11 +110,19 @@ class ClientCMAES:
         try:
             sock.connect((self._address, self._port))
 
-            received = sock.recv(self._buf_size)
-            print(f"receive data size : {len(received)}/{self._buf_size}")
+            buf = b""
+            while len(buf) < 8:
+                buf = b"".join([buf, sock.recv(8)])
+            data_size = struct.unpack("<Q", buf[0:8])[0]
+            print(f"data size : {data_size}")
 
-            env_size = default_env_creator.load(received)
-            para = [struct.unpack("<d", received[i:i + 8])[0] for i in range(env_size, len(received), 8)]
+            buf = buf[8:]
+            while len(buf) < data_size:
+                buf = b"".join([buf, sock.recv(self._buf_size)])
+                print(f"received : {len(buf) / float(data_size) * 100}%")
+
+            env_size = default_env_creator.load(buf)
+            para = [struct.unpack("<d", buf[i:i + 8])[0] for i in range(env_size, len(buf), 8)]
 
             env = default_env_creator.create()
             score = env.calc(para)
@@ -133,7 +144,7 @@ class ClientCMAES:
                     return ClientCMAES.Result.FatalErrorOccurred, e
                 elif e.errno == 10060:  # [WinError 10060] 接続済みの呼び出し先が一定時間を過ぎても正しく応答しなかったため...
                     sock.close()
-                    return ClientCMAES.Result.ErrorOccurred, e
+                    return ClientCMAES.Result.FatalErrorOccurred, e
                 elif e.errno == 10061:  # [WinError 10061] 対象のコンピューターによって拒否されたため、接続できませんでした。
                     sock.close()
                     return ClientCMAES.Result.ErrorOccurred, e
