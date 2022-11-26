@@ -253,7 +253,7 @@ class RobotBrain:
 
 
 class _Robot:
-    def __init__(self, brain: _RobotBrain, model: wrap_mjc.WrappedModel, number: int):
+    def __init__(self, brain: RobotBrain, model: wrap_mjc.WrappedModel, number: int):
         self._brain = brain
         self._body = model.get_body(f"robot{number}")
         self._left_act = model.get_act(f"act_robot{number}_left")
@@ -317,7 +317,7 @@ class _Robot:
 
 
 def _evaluate(
-        brain: _RobotBrain,
+        brain: RobotBrain,
         nest_pos: (float, float),
         robot_pos: list[(float, float)],
         obstacle_pos: list[(float, float)],
@@ -427,7 +427,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
         self.timestep: int = timestep
 
     def calc(self, para) -> float:
-        brain = _RobotBrain(para)
+        brain = RobotBrain(para)
         return _evaluate(
             brain,
             self.nest_pos,
@@ -447,7 +447,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
         )
 
     def calc_and_show(self, para, window: miscellaneous.Window, camera: wrap_mjc.Camera) -> float:
-        brain = _RobotBrain(para)
+        brain = RobotBrain(para)
         return _evaluate(
             brain,
             self.nest_pos,
@@ -575,7 +575,7 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
         return e - offset
 
     def dim(self) -> int:
-        return _RobotBrain(None).num_dim()
+        return RobotBrain(None).num_dim()
 
     def create(self) -> EnvInterface:
         return Environment(
