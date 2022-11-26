@@ -418,7 +418,6 @@ def _evaluate(
         feed_robot_loss *= 0.1 / (len(feeds) * len(robots))
         feed_nest_loss *= 0.01 / len(feeds)
 
-        print(feed_robot_loss, feed_nest_loss)
         loss += feed_robot_loss + feed_nest_loss
 
     return loss
