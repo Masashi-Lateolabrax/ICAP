@@ -247,9 +247,9 @@ class RobotBrain:
         rbf: nn_tools.GaussianRadialBasisLayer = self._calculator.get_layer(0)
         return numpy.array(rbf.centroid[i]), numpy.abs(rbf.weights[i])
 
-    def get_act_dict(self) -> numpy.ndarray:
+    def get_action(self, i: int) -> numpy.ndarray:
         inner_dot_layer: nn_tools.InnerDotLayer = self._calculator.get_layer(2)
-        return inner_dot_layer.weights.copy()
+        return numpy.array(inner_dot_layer.weights[:, i])
 
 
 class _Robot:
