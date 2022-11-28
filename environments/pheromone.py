@@ -19,6 +19,9 @@ class PheromoneField:
         self._nx = nx
         self._ny = ny
 
+        # セルの大きさ
+        self._ds = ds
+
         # MuJoCo上に表示する座標と一つのセルの大きさ．
         self._px = px
         self._py = py
@@ -171,3 +174,18 @@ class PheromoneField:
                 v = func(g)
                 color = colorsys.hsv_to_rgb(0.66 * (1.0 - v), 1.0, 1.0)
                 p.set_rgba((color[0], color[1], color[2], 0.7))
+
+    def get_gas_grad(self, pos: numpy.ndarray, direction: numpy.ndarray) -> numpy.ndarray:
+        h_direction = numpy.array([
+            numpy.cos(numpy.radians(-90)) * direction[0] - numpy.sin(numpy.radians(-90)) * direction[1],
+            numpy.sin(numpy.radians(-90)) * direction[0] + numpy.cos(numpy.radians(-90)) * direction[1]
+        ])
+        v1_pos = pos[0:2] + self._size * direction
+        v2_pos = pos[0:2] - self._size * direction
+        h1_pos = pos[0:2] + self._size * h_direction
+        h2_pos = pos[0:2] - self._size * h_direction
+        v1 = self.get_gas(v1_pos[0], v1_pos[1])
+        v2 = self.get_gas(v2_pos[0], v2_pos[1])
+        h1 = self.get_gas(h1_pos[0], h1_pos[1])
+        h2 = self.get_gas(h2_pos[0], h2_pos[1])
+        return numpy.ndarray([(v1 - v2) * 0.5 / self._ds, (h1 - h2) * 0.5 / self._ds])

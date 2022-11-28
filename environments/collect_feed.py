@@ -94,7 +94,7 @@ def _gen_env(
         })
 
     # Create Feeds
-    feed_weight = 1200
+    feed_weight = 2000
     for i, fp in enumerate(feed_pos):
         feed_body = worldbody.add_body({
             "name": f"feed{i}",
@@ -271,8 +271,6 @@ class _Robot:
         self._body = model.get_body(f"robot{number}")
         self._left_act = model.get_act(f"act_robot{number}_left")
         self._right_act = model.get_act(f"act_robot{number}_right")
-        self._accustomed = 0.0
-        self._accustomed_rate = 0.2
 
     def get_pos(self) -> numpy.ndarray:
         return self._body.get_xpos().copy()
@@ -283,11 +281,12 @@ class _Robot:
         return rot_mat
 
     def get_direction(self) -> numpy.ndarray:
-        return numpy.dot(self.get_orientation(), [0.0, 1.0, 0.0])
+        return numpy.dot(self.get_orientation(), [0.0, 1.0, 0.0])[0:2]
 
     def act(
             self,
             pheromone_value: float,
+            pheromone_grad: numpy.ndarray,
             nest_pos: numpy.ndarray,
             robot_pos: list[numpy.ndarray],
             obstacle_pos: list[numpy.ndarray],
@@ -309,20 +308,18 @@ class _Robot:
         for rp in robot_pos:
             rs.sense(rp)
 
-        os = sensor.OmniSensor(pos, mat, 100)
+        os = sensor.OmniSensor(pos, mat, 150)
         for op in obstacle_pos:
             os.sense(op)
 
-        fs = sensor.OmniSensor(pos, mat, 100)
+        fs = sensor.OmniSensor(pos, mat, 200)
         for fp in feed_pos:
             fs.sense(fp)
 
         input_ = numpy.concatenate(
-            [nest_direction, rs.value, os.value, fs.value, [pheromone_value - self._accustomed]]
+            [nest_direction, rs.value, os.value, fs.value, [pheromone_value], pheromone_grad]
         )
         ctrl = self._brain.calc(input_)
-
-        self._accustomed = (1.0 - self._accustomed_rate) * self._accustomed + self._accustomed_rate * pheromone_value
 
         self._left_act.ctrl = 10000 * ctrl[0]
         self._right_act.ctrl = 10000 * ctrl[1]
@@ -381,7 +378,8 @@ def _evaluate(
         feed_pos = [f.get_pos() for f in feeds]
         for r, rp in zip(robots, robot_pos):
             pheromone_value = pheromone_field.get_gas(rp[0], rp[1])
-            secretion = r.act(pheromone_value, nest_pos, robot_pos, obstacle_pos, feed_pos)
+            pheromone_grad = pheromone_field.get_gas_grad(rp, r.get_direction())
+            secretion = r.act(pheromone_value, pheromone_grad, nest_pos, robot_pos, obstacle_pos, feed_pos)
             pheromone_field.add_liquid(rp[0], rp[1], secretion)
 
         model.step()
