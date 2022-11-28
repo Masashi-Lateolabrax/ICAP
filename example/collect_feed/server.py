@@ -25,7 +25,8 @@ if __name__ == "__main__":
 
         generation = 300
         population = 100
-        mu = 20
+        mu = 10
+        sigma = 0.3
         env_creator.timestep = int(60 / 0.033333)
 
         width: int = 640
@@ -34,7 +35,7 @@ if __name__ == "__main__":
         window = miscellaneous.Window(width * scale, height * scale)
         camera = wrap_mjc.Camera((0, 700, 0), 2000, 90, 90)
 
-        para, hist = utils.cmaes_optimize_server(generation, population, mu, 0.3, env_creator, 52325, True, True)
+        para, hist = utils.cmaes_optimize_server(generation, population, mu, sigma, env_creator, 52325, True, True)
         numpy.save("best_para.npy", para)
         hist.save("history.log")
 
