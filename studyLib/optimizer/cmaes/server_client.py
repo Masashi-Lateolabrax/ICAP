@@ -108,7 +108,7 @@ class ClientCMAES:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         try:
-            socket.socket.settimeout(timeout)
+            sock.settimeout(timeout)
             sock.connect((self._address, self._port))
 
             buf = b""

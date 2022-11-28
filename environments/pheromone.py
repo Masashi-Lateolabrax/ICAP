@@ -188,4 +188,4 @@ class PheromoneField:
         v2 = self.get_gas(v2_pos[0], v2_pos[1])
         h1 = self.get_gas(h1_pos[0], h1_pos[1])
         h2 = self.get_gas(h2_pos[0], h2_pos[1])
-        return numpy.ndarray([(v1 - v2) * 0.5 / self._ds, (h1 - h2) * 0.5 / self._ds])
+        return numpy.array([(v1 - v2) * 0.5 / self._ds, (h1 - h2) * 0.5 / self._ds])
