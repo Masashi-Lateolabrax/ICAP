@@ -51,7 +51,14 @@ def cmaes_optimize_server(
     return opt.get_best_para(), opt.get_history()
 
 
-def _client_proc(proc_id: int, default_env_creator: optimizer.EnvCreator, address: str, port: int, buf_size: int):
+def _client_proc(
+        proc_id: int,
+        default_env_creator: optimizer.EnvCreator,
+        address: str,
+        port: int,
+        buf_size: int,
+        timeout: float = 60.0
+):
     import time
 
     opt = optimizer.ClientCMAES(address, port, buf_size)
@@ -63,7 +70,7 @@ def _client_proc(proc_id: int, default_env_creator: optimizer.EnvCreator, addres
     error_count = 0
     while True:
         print(f"THREAD{proc_id} is calculating")
-        result, pe = opt.optimize(default_env_creator)
+        result, pe = opt.optimize(default_env_creator, timeout)
         # result, pe = opt.optimize_and_show(default_env_creator, window, camera)  # debug
 
         if result is optimizer.ClientCMAES.Result.Succeed:
@@ -88,6 +95,7 @@ def cmaes_optimize_client(
         address: str,
         buf_size: int = 3072,
         port: int = 52325,
+        timeout: float = 60.0
 ):
     from multiprocessing import Process
 
@@ -95,7 +103,7 @@ def cmaes_optimize_client(
     for proc_id in range(num_thread):
         process = Process(
             target=_client_proc,
-            args=(proc_id, default_env_creator, address, port, buf_size)
+            args=(proc_id, default_env_creator, address, port, buf_size, timeout)
         )
         process.start()
         process_list.append(process)

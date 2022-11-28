@@ -63,7 +63,7 @@ class ServerCMAES:
 
         _ServerProc.listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         _ServerProc.listener.bind(("", port))
-        _ServerProc.listener.listen(2)
+        _ServerProc.listener.listen(10)
 
     def get_best_para(self) -> array.array:
         return self._base.get_best_para()
@@ -104,10 +104,11 @@ class ClientCMAES:
         self._port = port
         self._buf_size = buf_size
 
-    def optimize(self, default_env_creator: EnvCreator):
+    def optimize(self, default_env_creator: EnvCreator, timeout: float = 60.0):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         try:
+            socket.socket.settimeout(timeout)
             sock.connect((self._address, self._port))
 
             buf = b""
