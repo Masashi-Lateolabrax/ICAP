@@ -281,7 +281,9 @@ class _Robot:
         return rot_mat
 
     def get_direction(self) -> numpy.ndarray:
-        return numpy.dot(self.get_orientation(), [0.0, 1.0, 0.0])[0:2]
+        a = numpy.dot(self.get_orientation(), [0.0, 1.0, 0.0])[0:2]
+        d = numpy.linalg.norm(a, ord=2)
+        return a / d
 
     def act(
             self,
