@@ -40,7 +40,7 @@ class Logger(object):
         data = numpy.zeros((len(self.queue), self.dim + self.dim * self.dim))
         for i, q in enumerate(self.queue):
             data[i] = numpy.concatenate([q.centroid, q.C.ravel()])
-        numpy.savez(
+        numpy.savez_compressed(
             "./CMAES_LOG.log", meta=[self.dim, self.population, self.mu], data=data
         )
 
