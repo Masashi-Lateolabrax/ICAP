@@ -55,8 +55,8 @@ class Logger(object):
                 numpy.array(data[i][self.dim:self.dim + self.dim * self.dim]).reshape((self.dim, self.dim)),
             ))
 
-    def add_log(self, centroid, c):
-        self.queue.append(Logger.LogQueue(centroid, c))
+    def add_log(self, centroid: numpy.ndarray, c: numpy.ndarray):
+        self.queue.append(Logger.LogQueue(centroid.copy(), c.copy()))
 
 
 class FitnessMax(base.Fitness):
