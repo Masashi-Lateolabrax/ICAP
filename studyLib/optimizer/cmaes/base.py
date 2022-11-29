@@ -28,31 +28,31 @@ class Logger(object):
             self.centroid = centroid
             self.C = c
 
-    def __init__(self, dim: int, population: int, mu: int):
+    def __init__(self, dim: int = 0, population: int = 0, mu: int = 0):
         self.dim = dim
         self.population = population
         self.mu = mu
         self.queue: list[Logger.LogQueue] = []
 
-    def __del__(self):
-        data = numpy.zeros([[0] * (self.dim + self.dim * self.dim)])
-        data[0, 0] = self.dim
-        data[0, 1] = self.population
-        data[0, 2] = self.mu
+    def save(self):
+        data = numpy.zeros((len(self.queue), self.dim + self.dim * self.dim))
         for i, q in enumerate(self.queue):
-            data[i + 1] = numpy.concatenate([q.centroid, q.C.ravel()])
-        numpy.save("./CMAES_LOG.log", data)
+            data[i] = numpy.concatenate([q.centroid, q.C.ravel()])
+        numpy.savez(
+            "./CMAES_LOG.log", meta=[self.dim, self.population, self.mu], data=data
+        )
 
-    def load_file(self):
-        data = numpy.load("./CMAES_LOG.log")
-        self.dim = data[0, 0]
-        self.population = data[0, 1]
-        self.mu = data[0, 2]
-        for i in range(1, data.shape[0]):
-            raw_q = data.shape[i]
+    def load(self):
+        npz_file = numpy.load("./CMAES_LOG.log.npz")
+        meta = npz_file["meta"]
+        data = npz_file["data"]
+        self.dim = meta[0]
+        self.population = meta[1]
+        self.mu = meta[2]
+        for i in range(0, data.shape[0]):
             self.queue.append(Logger.LogQueue(
-                numpy.array(raw_q[0:self.dim]),
-                numpy.array(raw_q[self.dim:self.dim + self.dim * self.dim]).reshape((self.dim, self.dim)),
+                numpy.array(data[i][0:self.dim]),
+                numpy.array(data[i][self.dim:self.dim + self.dim * self.dim]).reshape((self.dim, self.dim)),
             ))
 
     def add_log(self, centroid, c):
@@ -215,8 +215,12 @@ class BaseCMAES:
 
                 try:
                     handles[i] = proc(i, ind, env_creator)
+                except KeyboardInterrupt:
+                    print(f"Interrupt CMAES Optimizing.")
+                    self._logger.save()
+                    sys.exit()
                 except Exception as e:
-                    print(f"[CMAES ERROR] {e} (Target:{i})")
+                    print(f"[CMAES ERROR] {e}")
                     sys.exit()
 
                 while len(handles) >= self.max_thread:
