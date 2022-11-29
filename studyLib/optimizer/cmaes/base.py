@@ -213,7 +213,7 @@ class BaseCMAES:
                     elif recovery_mode:
                         print(f"Retry No.{i}.")
 
-                        handles[i] = proc(i, ind, env_creator)
+                    handles[i] = proc(i, ind, env_creator)
 
                     while len(handles) >= self.max_thread:
                         remove_list = []
