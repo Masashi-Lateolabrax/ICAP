@@ -221,6 +221,7 @@ class BaseCMAES:
                     sys.exit()
                 except Exception as e:
                     print(f"[CMAES ERROR] {e}")
+                    self.logger.save()
                     sys.exit()
 
                 while len(handles) >= self.max_thread:

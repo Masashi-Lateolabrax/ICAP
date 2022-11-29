@@ -30,6 +30,7 @@ def cmaes_optimize(
         opt.optimize_with_save(env_creator)
     else:
         opt.optimize(env_creator)
+    opt.get_log().save()
     return opt.get_best_para(), opt.get_history()
 
 
@@ -48,6 +49,7 @@ def cmaes_optimize_server(
         opt.optimize_and_save(env_creator)
     else:
         opt.optimize(env_creator)
+    opt.get_log().save()
     return opt.get_best_para(), opt.get_history()
 
 
