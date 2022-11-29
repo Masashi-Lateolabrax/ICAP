@@ -26,9 +26,8 @@ def default_end_handler(population, gen, generation, start_time, fin_time, avg, 
 
 class Logger(object):
     class LogQueue:
-        def __init__(self, centroid, c):
+        def __init__(self, centroid):
             self.centroid = centroid
-            self.C = c
 
     def __init__(self, dim: int = 0, population: int = 0, mu: int = 0):
         self.dim = dim
@@ -37,9 +36,9 @@ class Logger(object):
         self.queue: list[Logger.LogQueue] = []
 
     def save(self):
-        data = numpy.zeros((len(self.queue), self.dim + self.dim * self.dim))
+        data = numpy.zeros((len(self.queue), self.dim))
         for i, q in enumerate(self.queue):
-            data[i] = numpy.concatenate([q.centroid, q.C.ravel()])
+            data[i] = q.centroid
         numpy.savez(
             "./CMAES_LOG.log", meta=[self.dim, self.population, self.mu], data=data
         )
@@ -52,13 +51,10 @@ class Logger(object):
         self.population = meta[1]
         self.mu = meta[2]
         for i in range(0, data.shape[0]):
-            self.queue.append(Logger.LogQueue(
-                numpy.array(data[i][0:self.dim]),
-                numpy.array(data[i][self.dim:self.dim + self.dim * self.dim]).reshape((self.dim, self.dim)),
-            ))
+            self.queue.append(Logger.LogQueue(data[i]))
 
-    def add_log(self, centroid: numpy.ndarray, c: numpy.ndarray):
-        self.queue.append(Logger.LogQueue(centroid.copy(), c.copy()))
+    def add_log(self, centroid: numpy.ndarray):
+        self.queue.append(Logger.LogQueue(centroid.copy()))
 
 
 class FitnessMax(base.Fitness):
@@ -207,44 +203,46 @@ class BaseCMAES:
 
         recovery_mode = False
         res = None
-        while res is None:
-            handles = {}
-            for i, ind in enumerate(self._individuals):
-                if not numpy.isnan(ind.fitness.values[0]):
-                    continue
-                elif recovery_mode:
-                    print(f"Retry No.{i}.")
 
-                try:
-                    handles[i] = proc(i, ind, env_creator)
-                except KeyboardInterrupt:
-                    print(f"Interrupt CMAES Optimizing.")
-                    self.logger.save()
-                    sys.exit()
-                except socket.timeout:
-                    print(f"[CMAES ERROR] Timeout.")
-                    self.logger.save()
-                    sys.exit()
-                except Exception as e:
-                    print(f"[CMAES ERROR] {e}")
-                    self.logger.save()
-                    sys.exit()
+        try:
+            while res is None:
+                handles = {}
+                for i, ind in enumerate(self._individuals):
+                    if not numpy.isnan(ind.fitness.values[0]):
+                        continue
+                    elif recovery_mode:
+                        print(f"Retry No.{i}.")
 
-                while len(handles) >= self.max_thread:
-                    remove_list = []
-                    for key in handles.keys():
-                        if handles[key].finished():
-                            remove_list.append(key)
-                    for key in remove_list:
-                        p = handles.pop(key)
-                        self._individuals[key].fitness.values = (p.join(),)
-                    time.sleep(0.0001)
+                        handles[i] = proc(i, ind, env_creator)
 
-            for key, p in handles.items():
-                self._individuals[key].fitness.values = (p.join(),)
+                    while len(handles) >= self.max_thread:
+                        remove_list = []
+                        for key in handles.keys():
+                            if handles[key].finished():
+                                remove_list.append(key)
+                        for key in remove_list:
+                            p = handles.pop(key)
+                            self._individuals[key].fitness.values = (p.join(),)
+                        time.sleep(0.0001)
 
-            res = self._generate_new_generation()
-            recovery_mode = res is None
+                for key, p in handles.items():
+                    self._individuals[key].fitness.values = (p.join(),)
+
+                res = self._generate_new_generation()
+                recovery_mode = res is None
+
+        except KeyboardInterrupt:
+            print(f"Interrupt CMAES Optimizing.")
+            self.logger.save()
+            sys.exit()
+        except socket.timeout:
+            print(f"[CMAES ERROR] Timeout.")
+            self.logger.save()
+            sys.exit()
+        except Exception as e:
+            print(f"[CMAES ERROR] {e}")
+            self.logger.save()
+            sys.exit()
 
         avg, min_value, max_value, good_para, best = res
 
