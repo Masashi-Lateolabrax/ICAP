@@ -94,7 +94,7 @@ def _gen_env(
         })
 
     # Create Feeds
-    feed_weight = 2000
+    feed_weight = 3000
     for i, fp in enumerate(feed_pos):
         feed_body = worldbody.add_body({
             "name": f"feed{i}",
@@ -414,7 +414,7 @@ def _evaluate(
 
             feed_nest_loss += numpy.linalg.norm(fp[0:2] - nest_pos[0:2], ord=2)
 
-        feed_robot_loss *= 0.1 / (len(feeds) * len(robots))
+        feed_robot_loss *= 1.0 / (len(feeds) * len(robots))
         feed_nest_loss *= 0.01 / len(feeds)
 
         loss += feed_robot_loss + feed_nest_loss
