@@ -189,7 +189,7 @@ class BaseCMAES:
 
         self._individuals: list[Individual] = self._strategy.generate(self._ind_type)
 
-        self.logger.add_log(self._strategy.centroid, self._strategy.C)
+        self.logger.add_log(self._strategy.centroid)
 
         return avg, min_value, max_value, good_para, self._history.best
 
