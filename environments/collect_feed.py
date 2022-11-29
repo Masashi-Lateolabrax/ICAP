@@ -400,8 +400,8 @@ def _evaluate(
             window.flush()
 
         # Calculate loss
-        feed_range_bias = 1500000.0
-        feed_range_esp = 1000000.0
+        feed_range_bias = 100000.0
+        feed_range_esp = 250000.0
         feed_robot_loss = 0.0
         feed_nest_loss = 0.0
         for f in feeds:
