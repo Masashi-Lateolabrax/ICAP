@@ -15,7 +15,7 @@ class Queue:
 
 class Hist:
     def __init__(self, minimalize: bool = True):
-        self.queues = []
+        self.queues: list[Queue] = []
         self.best = float("inf")
         self.minimalize = minimalize
 
