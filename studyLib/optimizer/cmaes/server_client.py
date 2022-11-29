@@ -34,8 +34,20 @@ class _ServerProc(base.ProcInterface):
     listener: socket.socket = None
 
     def __init__(self, i: int, ind: base.Individual, env_creator: EnvCreator):
-        self.queue = mp.Queue(1)
+        import select
+
+        r = []
+        for _ in range(5):
+            r, _, _ = select.select([self.listener], [], [], 60)
+            if len(r) != 0:
+                break
+            print("[WARNING] Clients don't be coming.")
+        if len(r) == 0:
+            raise socket.timeout
+
         sct, _addr = self.listener.accept()
+
+        self.queue = mp.Queue(1)
         self.handle = threading.Thread(target=_proc, args=(i, ind, env_creator, self.queue, sct))
         self.handle.start()
 
