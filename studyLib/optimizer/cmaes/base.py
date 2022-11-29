@@ -2,6 +2,8 @@ import abc
 import array
 import copy
 import datetime
+import socket
+
 from deap import cma, base
 import numpy
 import sys
@@ -217,6 +219,10 @@ class BaseCMAES:
                     handles[i] = proc(i, ind, env_creator)
                 except KeyboardInterrupt:
                     print(f"Interrupt CMAES Optimizing.")
+                    self.logger.save()
+                    sys.exit()
+                except socket.timeout:
+                    print(f"[CMAES ERROR] Timeout.")
                     self.logger.save()
                     sys.exit()
                 except Exception as e:
