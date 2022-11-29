@@ -130,12 +130,12 @@ class ClientCMAES:
             while len(buf) < 8:
                 buf = b"".join([buf, sock.recv(8)])
             data_size = struct.unpack("<Q", buf[0:8])[0]
-            print(f"data size : {data_size}")
+            # print(f"data size : {data_size}")
 
             buf = buf[8:]
             while len(buf) < data_size:
                 buf = b"".join([buf, sock.recv(self._buf_size)])
-                print(f"received : {len(buf) / float(data_size) * 100}%")
+                # print(f"received : {len(buf) / float(data_size) * 100}%")
 
             env_size = default_env_creator.load(buf)
             para = [struct.unpack("<d", buf[i:i + 8])[0] for i in range(env_size, len(buf), 8)]
@@ -144,7 +144,7 @@ class ClientCMAES:
             score = env.calc(para)
 
             sock.send(struct.pack("<d", score))
-            print(f"score : {score}")
+            # print(f"score : {score}")
 
             sock.shutdown(socket.SHUT_RDWR)
             sock.close()
