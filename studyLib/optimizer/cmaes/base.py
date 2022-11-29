@@ -2,8 +2,10 @@ import abc
 import array
 import copy
 import datetime
-import numpy
 from deap import cma, base
+import numpy
+import sys
+
 from studyLib.optimizer import Hist, EnvCreator
 
 
@@ -18,6 +20,43 @@ def default_end_handler(population, gen, generation, start_time, fin_time, avg, 
     print(
         f"[{fin_time}] finish {gen} gen. speed[ind/s]:{spd}, avg:{avg}, min:{min_v}, max:{max_v}, best:{best}, etr:{e}"
     )
+
+
+class Logger(object):
+    class LogQueue:
+        def __init__(self, centroid, c):
+            self.centroid = centroid
+            self.C = c
+
+    def __init__(self, dim: int, population: int, mu: int):
+        self.dim = dim
+        self.population = population
+        self.mu = mu
+        self.queue: list[Logger.LogQueue] = []
+
+    def __del__(self):
+        data = numpy.zeros([[0] * (self.dim + self.dim * self.dim)])
+        data[0, 0] = self.dim
+        data[0, 1] = self.population
+        data[0, 2] = self.mu
+        for i, q in enumerate(self.queue):
+            data[i + 1] = numpy.concatenate([q.centroid, q.C.ravel()])
+        numpy.save("./CMAES_LOG.log", data)
+
+    def load_file(self):
+        data = numpy.load("./CMAES_LOG.log")
+        self.dim = data[0, 0]
+        self.population = data[0, 1]
+        self.mu = data[0, 2]
+        for i in range(1, data.shape[0]):
+            raw_q = data.shape[i]
+            self.queue.append(Logger.LogQueue(
+                numpy.array(raw_q[0:self.dim]),
+                numpy.array(raw_q[self.dim:self.dim + self.dim * self.dim]).reshape((self.dim, self.dim)),
+            ))
+
+    def add_log(self, centroid, c):
+        self.queue.append(Logger.LogQueue(centroid, c))
 
 
 class FitnessMax(base.Fitness):
@@ -96,6 +135,7 @@ class BaseCMAES:
         self._start_handler = default_start_handler
         self._end_handler = default_end_handler
         self.max_thread: int = max_thread
+        self._logger = Logger(dim, population, mu)
 
         if minimalize:
             self._ind_type = _MinimalizeIndividual
@@ -151,6 +191,8 @@ class BaseCMAES:
 
         self._individuals: list[Individual] = self._strategy.generate(self._ind_type)
 
+        self._logger.add_log(self._strategy.centroid, self._strategy.C)
+
         return avg, min_value, max_value, good_para, self._history.best
 
     def optimize_current_generation(
@@ -171,7 +213,11 @@ class BaseCMAES:
                 elif recovery_mode:
                     print(f"Retry No.{i}.")
 
-                handles[i] = proc(i, ind, env_creator)
+                try:
+                    handles[i] = proc(i, ind, env_creator)
+                except Exception as e:
+                    print(f"[CMAES ERROR] {e} (Target:{i})")
+                    sys.exit()
 
                 while len(handles) >= self.max_thread:
                     remove_list = []
