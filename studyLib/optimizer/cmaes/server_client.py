@@ -137,6 +137,9 @@ class ClientCMAES:
             sock.shutdown(socket.SHUT_RDWR)
             sock.close()
 
+        except socket.timeout as e:
+            return ClientCMAES.Result.FatalErrorOccurred, e
+
         except socket.error as e:
             os = platform.system()
             if os == "Windows":
