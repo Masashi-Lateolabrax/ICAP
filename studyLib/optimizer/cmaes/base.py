@@ -135,7 +135,7 @@ class BaseCMAES:
         self._start_handler = default_start_handler
         self._end_handler = default_end_handler
         self.max_thread: int = max_thread
-        self._logger = Logger(dim, population, mu)
+        self.logger = Logger(dim, population, mu)
 
         if minimalize:
             self._ind_type = _MinimalizeIndividual
@@ -191,7 +191,7 @@ class BaseCMAES:
 
         self._individuals: list[Individual] = self._strategy.generate(self._ind_type)
 
-        self._logger.add_log(self._strategy.centroid, self._strategy.C)
+        self.logger.add_log(self._strategy.centroid, self._strategy.C)
 
         return avg, min_value, max_value, good_para, self._history.best
 
@@ -217,7 +217,7 @@ class BaseCMAES:
                     handles[i] = proc(i, ind, env_creator)
                 except KeyboardInterrupt:
                     print(f"Interrupt CMAES Optimizing.")
-                    self._logger.save()
+                    self.logger.save()
                     sys.exit()
                 except Exception as e:
                     print(f"[CMAES ERROR] {e}")

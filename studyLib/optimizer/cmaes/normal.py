@@ -41,6 +41,9 @@ class CMAES:
         self._base = base.BaseCMAES(dim, population, mu, sigma, minimalize, max_thread)
         self._generation = generation
 
+    def get_log(self) -> base.Logger:
+        return self._base.logger
+
     def get_best_para(self) -> array.array:
         return self._base.get_best_para()
 

@@ -65,6 +65,9 @@ class ServerCMAES:
         _ServerProc.listener.bind(("", port))
         _ServerProc.listener.listen(10)
 
+    def get_log(self) -> base.Logger:
+        return self._base.logger
+
     def get_best_para(self) -> array.array:
         return self._base.get_best_para()
 
