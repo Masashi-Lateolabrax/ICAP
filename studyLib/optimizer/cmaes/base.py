@@ -147,7 +147,7 @@ class BaseCMAES:
 
         avg /= self._strategy.lambda_
 
-        if type(self._ind_type) is _MinimalizeIndividual:
+        if self._ind_type is _MinimalizeIndividual:
             if self._best_score > min_score:
                 self._best_score = min_score
             good_para = min_para
@@ -163,7 +163,7 @@ class BaseCMAES:
             min_para,
             max_score,
             max_para,
-            self._strategy.C
+            self._strategy.sigma
         )
 
         self._strategy.update(self._individuals)
