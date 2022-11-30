@@ -1,7 +1,5 @@
 import array
-import datetime
 import multiprocessing as mp
-import numpy
 
 from studyLib.optimizer import Hist, EnvCreator
 from studyLib.optimizer.cmaes import base
