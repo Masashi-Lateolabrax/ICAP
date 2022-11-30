@@ -78,8 +78,9 @@ class Hist:
 
         self.queues.clear()
         for t, centroid, min_p, max_p, s, sigma_ in zip(time, centroids, min_para, max_para, score, sigmas):
-            q = Queue(score[0], centroid, score[1], min_p, score[2], max_p, sigma_)
+            q = Queue(s[0], centroid, s[1], min_p, s[2], max_p, sigma_)
             q.time = datetime.datetime.strptime(t, "%Y-%m-%d %H:%M:%S.%f")
+            self.queues.append(q)
 
     def add(
             self,
