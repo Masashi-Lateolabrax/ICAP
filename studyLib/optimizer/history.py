@@ -46,7 +46,7 @@ class Hist:
 
     def save(self, file_path: str = None):
         if file_path is None:
-            file_path = f"./TMP_HIST_DATA({datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')})"
+            file_path = f"./TMP_HIST"
 
         meta = numpy.array([self.dim, self.population, self.mu])
 
