@@ -24,7 +24,6 @@ def cmaes_optimize(
         env_creator: optimizer.EnvCreator,
         max_thread: int = 4,
         minimalize: bool = True,
-        save: bool = False
 ) -> (numpy.ndarray, optimizer.Hist):
     opt = optimizer.CMAES(env_creator.dim(), generation, population, mu, sigma, centroid, minimalize, max_thread)
     opt.optimize(env_creator)
@@ -40,7 +39,6 @@ def cmaes_optimize_server(
         env_creator: optimizer.EnvCreator,
         port: int = 52325,
         minimalize: bool = True,
-        save: bool = False
 ) -> (numpy.ndarray, optimizer.Hist):
     opt = optimizer.ServerCMAES(port, env_creator.dim(), generation, population, mu, sigma, centroid, minimalize)
     opt.optimize(env_creator)
