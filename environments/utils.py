@@ -26,7 +26,7 @@ def cmaes_optimize(
         minimalize: bool = True,
         save: bool = False
 ) -> (numpy.ndarray, optimizer.Hist):
-    opt = optimizer.CMAES(env_creator.dim(), generation, population, mu, sigma, minimalize, max_thread, centroid)
+    opt = optimizer.CMAES(env_creator.dim(), generation, population, mu, sigma, centroid, minimalize, max_thread)
     opt.optimize(env_creator)
     return opt.get_best_para(), opt.get_history()
 

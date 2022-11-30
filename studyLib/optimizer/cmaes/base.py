@@ -112,8 +112,11 @@ class BaseCMAES:
         if mu <= 0:
             mu = int(population * 0.5)
 
+        if centroid is None:
+            centroid = numpy.zeros((dim,))
+
         self._strategy = cma.Strategy(
-            centroid=centroid if centroid is not None else [0 for _i in range(0, dim)],
+            centroid=centroid,
             sigma=sigma,
             lambda_=population,
             mu=mu,
