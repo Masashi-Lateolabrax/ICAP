@@ -94,7 +94,7 @@ def _gen_env(
         })
 
     # Create Feeds
-    feed_weight = 3000
+    feed_weight = 2500
     for i, fp in enumerate(feed_pos):
         feed_body = worldbody.add_body({
             "name": f"feed{i}",
