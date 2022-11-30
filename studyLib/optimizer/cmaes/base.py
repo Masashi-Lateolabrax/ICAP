@@ -24,39 +24,6 @@ def default_end_handler(population, gen, generation, start_time, fin_time, avg, 
     )
 
 
-class Logger(object):
-    class LogQueue:
-        def __init__(self, centroid):
-            self.centroid = centroid
-
-    def __init__(self, dim: int = 0, population: int = 0, mu: int = 0):
-        self.dim = dim
-        self.population = population
-        self.mu = mu
-        self.queue: list[Logger.LogQueue] = []
-
-    def save(self):
-        data = numpy.zeros((len(self.queue), self.dim))
-        for i, q in enumerate(self.queue):
-            data[i] = q.centroid
-        numpy.savez(
-            "./CMAES_LOG.log", meta=[self.dim, self.population, self.mu], data=data
-        )
-
-    def load(self):
-        npz_file = numpy.load("./CMAES_LOG.log.npz")
-        meta = npz_file["meta"]
-        data = npz_file["data"]
-        self.dim = meta[0]
-        self.population = meta[1]
-        self.mu = meta[2]
-        for i in range(0, data.shape[0]):
-            self.queue.append(Logger.LogQueue(data[i]))
-
-    def add_log(self, centroid: numpy.ndarray):
-        self.queue.append(Logger.LogQueue(centroid.copy()))
-
-
 class FitnessMax(base.Fitness):
     weights = (1.0,)
 
@@ -125,44 +92,41 @@ class BaseCMAES:
             population: int,
             mu: int = -1,
             sigma: float = 0.3,
+            centroid=None,
             minimalize: bool = True,
-            max_thread: int = 1
+            max_thread: int = 1,
     ):
         self._best_para: array.array = array.array("d", [0.0] * dim)
-        self._history: Hist = Hist(minimalize)
+        self._history: Hist = Hist(dim, population, mu)
         self._start_handler = default_start_handler
         self._end_handler = default_end_handler
         self.max_thread: int = max_thread
-        self.logger = Logger(dim, population, mu)
 
         if minimalize:
             self._ind_type = _MinimalizeIndividual
+            self._best_score = float("inf")
         else:
             self._ind_type = _MaximizeIndividual
+            self._best_score = -float("inf")
 
         if mu <= 0:
             mu = int(population * 0.5)
 
         self._strategy = cma.Strategy(
-            centroid=[0 for _i in range(0, dim)],
+            centroid=centroid if centroid is not None else [0 for _i in range(0, dim)],
             sigma=sigma,
             lambda_=population,
             mu=mu,
         )
 
-        # self._strategy = cma.StrategyOnePlusLambda(
-        #     parent=self._ind_type(numpy.zeros(dim)),
-        #     sigma=sigma,
-        #     lambda_=population,
-        # )
-
         self._individuals: list[Individual] = self._strategy.generate(self._ind_type)
 
-    def _generate_new_generation(self) -> (float, float, float, array.array, float):
+    def _generate_new_generation(self):
         avg = 0.0
-        min_value = float("inf")
-        max_value = -float("inf")
-        good_para: array.array = None
+        min_score = float("inf")
+        min_para = None
+        max_score = -float("inf")
+        max_para = None
 
         for i, ind in enumerate(self._individuals):
             if numpy.isnan(ind.fitness.values[0]):
@@ -170,28 +134,39 @@ class BaseCMAES:
 
             avg += ind.fitness.values[0]
 
-            if ind.fitness.values[0] < min_value:
-                min_value = ind.fitness.values[0]
-                if self._history.is_minimalize():
-                    good_para = ind
+            if ind.fitness.values[0] < min_score:
+                min_score = ind.fitness.values[0]
+                min_para = numpy.array(ind)
 
-            if ind.fitness.values[0] > max_value:
-                max_value = ind.fitness.values[0]
-                if not self._history.is_minimalize():
-                    good_para = ind
+            if ind.fitness.values[0] > max_score:
+                max_score = ind.fitness.values[0]
+                max_para = numpy.array(ind)
 
         avg /= self._strategy.lambda_
 
-        if self._history.add(avg, min_value, max_value):
-            self._best_para = copy.deepcopy(good_para)
+        if type(self._ind_type) is _MinimalizeIndividual:
+            if self._best_score > min_score:
+                self._best_score = min_score
+            good_para = min_para
+        else:
+            if self._best_score < max_score:
+                self._best_score = max_score
+            good_para = max_para
+
+        self._history.add(
+            avg,
+            self._strategy.centroid,
+            min_score,
+            min_para,
+            max_score,
+            max_para,
+            self._strategy.C
+        )
 
         self._strategy.update(self._individuals)
-
         self._individuals: list[Individual] = self._strategy.generate(self._ind_type)
 
-        self.logger.add_log(self._strategy.centroid)
-
-        return avg, min_value, max_value, good_para, self._history.best
+        return avg, min_score, max_score, good_para
 
     def optimize_current_generation(
             self, gen: int, generation: int, env_creator: EnvCreator, proc=ProcInterface
@@ -233,24 +208,24 @@ class BaseCMAES:
 
         except KeyboardInterrupt:
             print(f"Interrupt CMAES Optimizing.")
-            self.logger.save()
+            self._history.save()
             sys.exit()
         except socket.timeout:
             print(f"[CMAES ERROR] Timeout.")
-            self.logger.save()
+            self._history.save()
             sys.exit()
         except Exception as e:
             print(f"[CMAES ERROR] {e}")
-            self.logger.save()
+            self._history.save()
             sys.exit()
 
-        avg, min_value, max_value, good_para, best = res
+        avg, min_value, max_value, good_para = res
 
         finish_time = datetime.datetime.now()
         self._end_handler(
             self.get_lambda(), gen, generation,
             start_time, finish_time,
-            avg, min_value, max_value, best
+            avg, min_value, max_value, self._best_score
         )
 
         return good_para
@@ -265,7 +240,7 @@ class BaseCMAES:
         return copy.deepcopy(self._best_para)
 
     def get_best_score(self) -> float:
-        return self._history.best
+        return self._best_score
 
     def get_history(self) -> Hist:
         return copy.deepcopy(self._history)

@@ -35,14 +35,12 @@ class CMAES:
             population: int,
             mu: int = -1,
             sigma: float = 0.3,
+            centroid=None,
             minimalize: bool = True,
-            max_thread: int = 1
+            max_thread: int = 1,
     ):
-        self._base = base.BaseCMAES(dim, population, mu, sigma, minimalize, max_thread)
+        self._base = base.BaseCMAES(dim, population, mu, sigma, centroid, minimalize, max_thread)
         self._generation = generation
-
-    def get_log(self) -> base.Logger:
-        return self._base.logger
 
     def get_best_para(self) -> array.array:
         return self._base.get_best_para()
@@ -62,11 +60,3 @@ class CMAES:
     def optimize(self, env_creator: EnvCreator):
         for gen in range(1, self._generation + 1):
             self._base.optimize_current_generation(gen, self._generation, env_creator, _ThreadProc)
-
-    def optimize_with_save(self, env_creator: EnvCreator):
-        for gen in range(1, self._generation + 1):
-            good_para = self._base.optimize_current_generation(gen, self._generation, env_creator, _ThreadProc)
-
-            time = datetime.datetime.now()
-            filename = f"{gen}({time.strftime('%y%m%d_%H%M%S')}).npy"
-            numpy.save(filename, good_para)

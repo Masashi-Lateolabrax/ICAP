@@ -68,23 +68,21 @@ class ServerCMAES:
             population: int,
             mu: int = -1,
             sigma: float = 0.3,
-            minimalize: bool = True
+            centroid=None,
+            minimalize: bool = True,
     ):
-        self._base = base.BaseCMAES(dim, population, mu, sigma, minimalize, population)
+        self._base = base.BaseCMAES(dim, population, mu, sigma, centroid, minimalize, population)
         self._generation = generation
 
         _ServerProc.listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         _ServerProc.listener.bind(("", port))
         _ServerProc.listener.listen(10)
 
-    def get_log(self) -> base.Logger:
-        return self._base.logger
-
     def get_best_para(self) -> array.array:
         return self._base.get_best_para()
 
     def get_best_score(self) -> float:
-        return self.get_best_score()
+        return self._base.get_best_score()
 
     def get_history(self) -> Hist:
         return self._base.get_history()
@@ -98,14 +96,6 @@ class ServerCMAES:
     def optimize(self, env_creator: EnvCreator):
         for gen in range(1, self._generation + 1):
             self._base.optimize_current_generation(gen, self._generation, env_creator, _ServerProc)
-
-    def optimize_and_save(self, env_creator: EnvCreator):
-        for gen in range(1, self._generation + 1):
-            good_para = self._base.optimize_current_generation(gen, self._generation, env_creator, _ServerProc)
-
-            time = datetime.datetime.now()
-            filename = f"{gen}({time.strftime('%y%m%d_%H%M%S')}).npy"
-            numpy.save(filename, good_para)
 
 
 class ClientCMAES:

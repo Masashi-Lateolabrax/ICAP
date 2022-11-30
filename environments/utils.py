@@ -20,17 +20,14 @@ def cmaes_optimize(
         population: int,
         mu: int,
         sigma: float,
+        centroid,
         env_creator: optimizer.EnvCreator,
         max_thread: int = 4,
         minimalize: bool = True,
         save: bool = False
 ) -> (numpy.ndarray, optimizer.Hist):
-    opt = optimizer.CMAES(env_creator.dim(), generation, population, mu, sigma, minimalize, max_thread)
-    if save:
-        opt.optimize_with_save(env_creator)
-    else:
-        opt.optimize(env_creator)
-    opt.get_log().save()
+    opt = optimizer.CMAES(env_creator.dim(), generation, population, mu, sigma, minimalize, max_thread, centroid)
+    opt.optimize(env_creator)
     return opt.get_best_para(), opt.get_history()
 
 
@@ -39,17 +36,14 @@ def cmaes_optimize_server(
         population: int,
         mu: int,
         sigma: float,
+        centroid,
         env_creator: optimizer.EnvCreator,
         port: int = 52325,
         minimalize: bool = True,
         save: bool = False
 ) -> (numpy.ndarray, optimizer.Hist):
-    opt = optimizer.ServerCMAES(port, env_creator.dim(), generation, population, mu, sigma, minimalize)
-    if save:
-        opt.optimize_and_save(env_creator)
-    else:
-        opt.optimize(env_creator)
-    opt.get_log().save()
+    opt = optimizer.ServerCMAES(port, env_creator.dim(), generation, population, mu, sigma, centroid, minimalize)
+    opt.optimize(env_creator)
     return opt.get_best_para(), opt.get_history()
 
 
