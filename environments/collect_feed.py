@@ -237,11 +237,11 @@ class RobotBrain:
         self._calculator.add_layer(nn_tools.AffineLayer(50))
         self._calculator.add_layer(nn_tools.TanhLayer(50))
 
-        self._calculator.add_layer(nn_tools.AffineLayer(30))
-        self._calculator.add_layer(nn_tools.TanhLayer(30))
+        self._calculator.add_layer(nn_tools.AffineLayer(20))
+        self._calculator.add_layer(nn_tools.TanhLayer(20))
 
-        self._calculator.add_layer(nn_tools.AffineLayer(10))
-        self._calculator.add_layer(nn_tools.IsMaxLayer(10))
+        self._calculator.add_layer(nn_tools.AffineLayer(50))
+        self._calculator.add_layer(nn_tools.IsMaxLayer(50))
 
         self._calculator.add_layer(nn_tools.InnerDotLayer(3))
         self._calculator.add_layer(nn_tools.TanhLayer(3))
