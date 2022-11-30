@@ -414,7 +414,7 @@ def _evaluate(
 
             feed_nest_loss += numpy.linalg.norm(fp[0:2] - nest_pos[0:2], ord=2)
 
-        feed_robot_loss *= 1.0 / (len(feeds) * len(robots))
+        feed_robot_loss *= 0.1 / (len(feeds) * len(robots))
         feed_nest_loss *= 0.01 / len(feeds)
 
         loss += feed_robot_loss + feed_nest_loss
