@@ -12,7 +12,7 @@ class Queue:
             min_para: numpy.ndarray,
             max_score: float,
             max_para: numpy.ndarray,
-            sigma: numpy.ndarray
+            sigma: float
     ):
         self.time = datetime.datetime.now()
         self.scores_avg: float = scores_avg
@@ -21,7 +21,7 @@ class Queue:
         self.min_para: numpy.ndarray = min_para.copy()
         self.max_score: float = max_score
         self.max_para: numpy.ndarray = max_para.copy()
-        self.sigma = sigma.copy()
+        self.sigma: float = sigma
 
 
 class Hist:
@@ -42,14 +42,14 @@ class Hist:
         min_para = numpy.zeros((len(self.queues), self.dim))
         max_para = numpy.zeros((len(self.queues), self.dim))
         score = numpy.zeros((len(self.queues), 3))
-        sigmas = numpy.zeros((len(self.queues), self.dim))
+        sigmas = numpy.zeros((len(self.queues),))
         for i, q in enumerate(self.queues):
             time.append(q.time.strftime("%Y-%m-%d %H:%M:%S.%f"))
             centroids[i] = q.centroid
             min_para[i] = q.min_para
             max_para[i] = q.max_para
             score[i] = numpy.array([q.scores_avg, q.min_score, q.max_score])
-            sigmas = q.sigma
+            sigmas[i] = q.sigma
 
         numpy.savez(
             file_path,
@@ -89,6 +89,6 @@ class Hist:
             min_para: numpy.ndarray,
             max_score: float,
             max_para: numpy.ndarray,
-            sigma: numpy.ndarray
+            sigma: float
     ):
         self.queues.append(Queue(scores_avg, centroid, min_score, min_para, max_score, max_para, sigma))
