@@ -150,13 +150,13 @@ class BaseCMAES:
         if self._ind_type is _MinimalizeIndividual:
             if self._best_score > min_score:
                 self._best_score = min_score
-                self._best_para = min_para
-            good_para = min_para
+                self._best_para = min_para.copy()
+            good_para = min_para.copy()
         else:
             if self._best_score < max_score:
                 self._best_score = max_score
-                self._best_para = max_para
-            good_para = max_para
+                self._best_para = max_para.copy()
+            good_para = max_para.copy()
 
         self._history.add(
             avg,
