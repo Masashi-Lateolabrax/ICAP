@@ -403,7 +403,7 @@ def _evaluate(
         # Calculate loss
         feed_range_bias = 300000.0
         feed_range_esp = 20000.0
-        obstacle_range = 2500.0
+        obstacle_range = 2000.0
         feed_robot_loss = 0.0
         feed_nest_loss = 0.0
         obstacle_robot_loss = 0.0
