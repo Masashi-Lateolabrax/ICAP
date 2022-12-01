@@ -54,6 +54,7 @@ def _client_proc(
         timeout: float = 60.0
 ):
     import time
+    import datetime
 
     opt = optimizer.ClientCMAES(address, port, buf_size)
     print(f"Start THREAD{proc_id}")
@@ -63,7 +64,8 @@ def _client_proc(
 
     error_count = 0
     while True:
-        print(f"THREAD{proc_id} is calculating")
+        t = datetime.datetime.now()
+        print(f"[INFO({t})] THREAD{proc_id} is calculating")
         result, pe = opt.optimize(default_env_creator, timeout)
         # result, pe = opt.optimize_and_show(default_env_creator, window, camera)  # debug
 
@@ -72,14 +74,14 @@ def _client_proc(
             continue
         elif result is optimizer.ClientCMAES.Result.ErrorOccurred:
             if error_count >= 3:
-                print(f"[ERROR] THREAD{proc_id} failed to reconnect the server. : ", pe)
+                print(f"[ERROR({t})] THREAD{proc_id} failed to reconnect the server. : ", pe)
                 break
-            print(f"[WARNING] THREAD{proc_id} is retrying.")
+            print(f"[WARNING({t})] THREAD{proc_id} is retrying.")
             time.sleep(1)
             error_count += 1
             continue
         elif result is optimizer.ClientCMAES.Result.FatalErrorOccurred:
-            print(f"[ERROR] THREAD{proc_id} face fatal error : ", pe)
+            print(f"[ERROR({t})] THREAD{proc_id} face fatal error : ", pe)
             break
 
 
