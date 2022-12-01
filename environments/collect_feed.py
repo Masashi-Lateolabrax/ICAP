@@ -378,7 +378,12 @@ def _evaluate(
 
     loss = 0.0
     for t in range(0, timestep):
-        # Simulate
+        # Calculate
+        model.step()
+        for _ in range(5):
+            pheromone_field.update_cells(0.033333 / 5)
+
+        # Act
         robot_pos = [r.get_pos() for r in robots]
         feed_pos = [f.get_pos() for f in feeds]
         for r, rp in zip(robots, robot_pos):
@@ -386,10 +391,6 @@ def _evaluate(
             pheromone_grad = pheromone_field.get_gas_grad(rp, r.get_direction())
             secretion = r.act(pheromone_value, pheromone_grad, nest_pos, robot_pos, obstacle_pos, feed_pos)
             pheromone_field.add_liquid(rp[0], rp[1], secretion)
-
-        model.step()
-        for _ in range(5):
-            pheromone_field.update_cells(0.033333 / 5)
 
         # Render MuJoCo Scene
         if window is not None:
@@ -402,21 +403,28 @@ def _evaluate(
         # Calculate loss
         feed_range_bias = 300000.0
         feed_range_esp = 20000.0
+        obstacle_range = 7000.0
         feed_robot_loss = 0.0
         feed_nest_loss = 0.0
-        for f in feeds:
-            fv = numpy.linalg.norm(f.get_velocity()[0:2], ord=2)
-            fp = f.get_pos()
+        obstacle_robot_loss = 0.0
+        for f, fp in zip(feeds, feed_pos):
+            fv = numpy.linalg.norm(f.get_velocity(), ord=2)
 
-            for r in robots:
-                d = numpy.sum((fp[0:2] - r.get_pos()[0:2]) ** 2)
+            for rp in robot_pos:
+                d = numpy.sum((fp[0:2] - rp[0:2]) ** 2)
                 feed_robot_loss -= numpy.exp(-d / (feed_range_bias * fv + feed_range_esp))
 
             feed_nest_loss += numpy.linalg.norm(fp[0:2] - nest_pos[0:2], ord=2)
 
-        feed_robot_loss /= (len(feeds) * len(robots))
+        for op in obstacle_pos:
+            for rp in robot_pos:
+                d = numpy.sum((rp[0:2] - op[0:2]) ** 2)
+                obstacle_robot_loss += numpy.exp(-d / obstacle_range)
+
+        feed_robot_loss /= len(feeds) * len(robots)
         feed_nest_loss *= 0.001 / len(feeds)
-        loss += feed_robot_loss + feed_nest_loss
+        obstacle_robot_loss /= len(obstacle_pos) * len(robots)
+        loss += feed_robot_loss + feed_nest_loss + obstacle_robot_loss
 
     return loss
 
