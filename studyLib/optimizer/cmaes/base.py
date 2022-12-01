@@ -102,6 +102,9 @@ class BaseCMAES:
         self._end_handler = default_end_handler
         self.max_thread: int = max_thread
 
+        self._save_count = 10
+        self._save_counter = self._save_count
+
         if minimalize:
             self._ind_type = _MinimalizeIndividual
             self._best_score = float("inf")
@@ -170,6 +173,12 @@ class BaseCMAES:
 
         self._strategy.update(self._individuals)
         self._individuals: list[Individual] = self._strategy.generate(self._ind_type)
+
+        if self._save_count is not None:
+            self._save_counter -= 1
+            if self._save_counter <= 0:
+                self._history.save()
+                self._save_counter = self._save_count
 
         return avg, min_score, max_score, good_para
 
