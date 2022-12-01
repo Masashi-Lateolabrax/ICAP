@@ -401,7 +401,7 @@ def _evaluate(
 
         # Calculate loss
         feed_range_bias = 300000.0
-        feed_range_esp = 500000.0
+        feed_range_esp = 20000.0
         feed_robot_loss = 0.0
         feed_nest_loss = 0.0
         for f in feeds:
@@ -409,14 +409,14 @@ def _evaluate(
             fp = f.get_pos()
 
             for r in robots:
-                d = numpy.linalg.norm(fp[0:2] - r.get_pos()[0:2], ord=2)
-                feed_robot_loss -= numpy.exp(-d * d / (feed_range_bias * fv + feed_range_esp))
+                d = numpy.sum((fp[0:2] - r.get_pos()[0:2]) ** 2)
+                feed_robot_loss -= numpy.exp(-d / (feed_range_bias * fv + feed_range_esp))
 
             feed_nest_loss += numpy.linalg.norm(fp[0:2] - nest_pos[0:2], ord=2)
 
-        feed_robot_loss *= 1.0 / (len(feeds) * len(robots))
-        feed_nest_loss *= 0.01 / len(feeds)
-
+        feed_robot_loss /= (len(feeds) * len(robots))
+        feed_nest_loss *= 0.001 / len(feeds)
+        print(feed_nest_loss, feed_robot_loss)
         loss += feed_robot_loss + feed_nest_loss
 
     return loss

@@ -8,9 +8,10 @@ def show_mujoco_env(
         window: miscellaneous.Window,
         camera: wrap_mjc.Camera,
         width: int = 640,
-        height: int = 480
+        height: int = 480,
+        video_file_name: str = "result.mp4"
 ) -> float:
-    window.set_recorder(miscellaneous.Recorder("result.mp4", 30, width, height))
+    window.set_recorder(miscellaneous.Recorder(video_file_name, 30, width, height))
     env = env_creator.create_mujoco_env()
     return env.calc_and_show(para, window, camera)
 
