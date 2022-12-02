@@ -396,7 +396,7 @@ def _evaluate(
 
         # Calculate loss
         feed_range_bias = 300000.0
-        feed_range_esp = 100000.0
+        feed_range_esp = 20000.0
         obstacle_range = 2000.0
         feed_robot_loss = 0.0
         feed_nest_loss = 0.0
@@ -415,7 +415,7 @@ def _evaluate(
         #         d = numpy.sum((rp[0:2] - op[0:2]) ** 2)
         #         obstacle_robot_loss += numpy.exp(-d / obstacle_range)
 
-        feed_robot_loss /= len(feeds) * len(robots)
+        feed_robot_loss *= 100.0 / (len(feeds) * len(robots))
         feed_nest_loss *= 0.001 / len(feeds)
         # obstacle_robot_loss *= 0.0001 / len(obstacle_pos) * len(robots)
         loss += feed_robot_loss + feed_nest_loss  # + obstacle_robot_loss
