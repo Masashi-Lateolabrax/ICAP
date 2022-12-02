@@ -2,7 +2,7 @@ from collections.abc import Sequence
 from studyLib.nn_tools import interface, la
 
 
-class SigmoidLayer(interface.CalcActivator):
+class SoftmaxLayer(interface.CalcActivator):
     def __init__(self, num_node: int):
         super().__init__(num_node)
 
