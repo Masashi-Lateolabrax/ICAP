@@ -415,10 +415,10 @@ def _evaluate(
         #         d = numpy.sum((rp[0:2] - op[0:2]) ** 2)
         #         obstacle_robot_loss += numpy.exp(-d / obstacle_range)
 
-        feed_robot_loss *= 100.0 / (len(feeds) * len(robots))
-        feed_nest_loss *= 0.001 / len(feeds)
+        feed_robot_loss *= 1.0 / (len(feeds) * len(robots))
+        # feed_nest_loss *= 0.001 / len(feeds)
         # obstacle_robot_loss *= 0.0001 / len(obstacle_pos) * len(robots)
-        loss += feed_robot_loss + feed_nest_loss  # + obstacle_robot_loss
+        loss += feed_robot_loss  # + feed_nest_loss + obstacle_robot_loss
 
     return loss
 
