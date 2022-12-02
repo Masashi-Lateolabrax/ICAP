@@ -94,7 +94,7 @@ def _gen_env(
         })
 
     # Create Feeds
-    feed_weight = 25000
+    feed_weight = 3000
     for i, fp in enumerate(feed_pos):
         feed_body = worldbody.add_body({
             "name": f"feed{i}",
@@ -235,13 +235,7 @@ class RobotBrain:
         self._calculator = nn_tools.Calculator(11)
 
         self._calculator.add_layer(nn_tools.AffineLayer(50))
-        self._calculator.add_layer(nn_tools.TanhLayer(50))
-
-        self._calculator.add_layer(nn_tools.AffineLayer(20))
-        self._calculator.add_layer(nn_tools.TanhLayer(20))
-
-        self._calculator.add_layer(nn_tools.AffineLayer(50))
-        self._calculator.add_layer(nn_tools.SoftmaxLayer(50))
+        self._calculator.add_layer(nn_tools.IsMaxLayer(50))
 
         self._calculator.add_layer(nn_tools.InnerDotLayer(3))
         self._calculator.add_layer(nn_tools.TanhLayer(3))
@@ -424,7 +418,7 @@ def _evaluate(
         feed_robot_loss /= len(feeds) * len(robots)
         feed_nest_loss *= 0.001 / len(feeds)
         # obstacle_robot_loss *= 0.0001 / len(obstacle_pos) * len(robots)
-        loss += feed_robot_loss + feed_nest_loss # + obstacle_robot_loss
+        loss += feed_robot_loss + feed_nest_loss  # + obstacle_robot_loss
 
     return loss
 
