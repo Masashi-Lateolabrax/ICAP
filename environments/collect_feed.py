@@ -91,8 +91,9 @@ def _gen_env(
             "size": "50 10",
             "rgba": "1 0 0 1",
             "pos": f"{op[0]} {op[1]} 10",
+            "condim": "1",
             "contype": "1",
-            "conaffinity": "2"
+            "conaffinity": "2",
         })
 
     # Create Feeds
