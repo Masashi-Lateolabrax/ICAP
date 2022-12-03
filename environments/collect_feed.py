@@ -123,7 +123,7 @@ def _gen_env(
 
     # Create Robots
     depth = 1.0
-    body_density = 0.05  # 鉄の密度(7.874 g/cm^3), ルンバの密度(0.51995 g/cm^3)
+    body_density = 0.51995  # 鉄の密度(7.874 g/cm^3), ルンバの密度(0.51995 g/cm^3)
     wheel_density = 0.3
     for i, rp in enumerate(robot_pos):
         robot_body = worldbody.add_body({
@@ -411,15 +411,16 @@ class Environment(optimizer.MuJoCoEnvInterface):
 
             feed_nest_loss += numpy.linalg.norm(fp[0:2] - self.nest_pos[0:2], ord=2)
 
-        # for op in obstacle_pos:
-        #     for rp in robot_pos:
-        #         d = numpy.sum((rp[0:2] - op[0:2]) ** 2)
-        #         obstacle_robot_loss += numpy.exp(-d / obstacle_range)
+        for op in self.obstacle_pos:
+            for rp in robot_pos:
+                d = numpy.sum((rp[0:2] - op[0:2]) ** 2)
+                obstacle_robot_loss += numpy.exp(-d / obstacle_range)
 
         feed_robot_loss *= 1.0 / (len(self.feeds) * len(self.robots))
         # feed_nest_loss *= 0.001 / len(feeds)
-        # obstacle_robot_loss *= 0.0001 / len(obstacle_pos) * len(robots)
-        self.loss += feed_robot_loss  # + feed_nest_loss + obstacle_robot_loss
+        obstacle_robot_loss *= 0.0001 / len(self.obstacle_pos) * len(self.robots)
+        print(feed_robot_loss, obstacle_robot_loss)
+        self.loss += feed_robot_loss + obstacle_robot_loss  # + feed_nest_loss
 
         return self.loss
 
