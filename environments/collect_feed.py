@@ -4,7 +4,6 @@ import mujoco
 import numpy
 
 from studyLib import optimizer, wrap_mjc, miscellaneous, nn_tools
-from studyLib.optimizer import EnvInterface, MuJoCoEnvInterface
 
 
 def _gen_env(
@@ -20,15 +19,28 @@ def _gen_env(
 
     generator.add_option({
         "timestep": 0.033333,
-        "gravity": "0 0 -981.0"
+        "gravity": "0 0 -981.0",
+        "impratio": "0.1"
     })
-    generator.add_asset().add_texture({
+    asset = generator.add_asset()
+    asset.add_texture({
         "type": "skybox",
         "builtin": "gradient",
         "rgb1": "0.3 0.5 0.7",
         "rgb2": "0 0 0",
         "width": "512",
         "height": "512",
+    })
+    asset.add_texture({
+        "name": "wheel_texture",
+        "type": "cube",
+        "builtin": "checker",
+        "width": "16",
+        "height": "16",
+    })
+    asset.add_material({
+        "name": "wheel_material",
+        "texture": "wheel_texture",
     })
 
     worldbody = generator.get_body()
@@ -150,9 +162,13 @@ def _gen_env(
             "density": f"{wheel_density}",
             "axisangle": "0 1 0 90",
             "condim": "6",
+            "friction": "1 0.005 0.0001",
+            # "solimp": "0.9 0.95 0.001 0.5 2",
+            # "solref": "0.02 1",
             "contype": "1",
             "conaffinity": "1",
             "priority": "1",
+            "material": "wheel_material"
         })
 
         left_wheel_body = robot_body.add_body({"pos": f"-10 0 -{depth}"})
@@ -163,9 +179,13 @@ def _gen_env(
             "density": f"{wheel_density}",
             "axisangle": "0 1 0 90",
             "condim": "6",
+            "friction": "1 0.005 0.0001",
+            # "solimp": "0.9 0.95 0.001 0.5 2",
+            # "solref": "0.02 1",
             "contype": "1",
             "conaffinity": "1",
             "priority": "1",
+            "material": "wheel_material"
         })
 
         front_wheel_body = robot_body.add_body({"pos": f"0 15 {-5 + 1.5 - depth}"})
@@ -287,6 +307,10 @@ class _Robot:
         d = numpy.linalg.norm(a, ord=2)
         return a / d
 
+    def rotate_wheel(self, left, right):
+        self._left_act.ctrl = 10000 * left
+        self._right_act.ctrl = 10000 * right
+
     def act(
             self,
             pheromone_value: float,
@@ -325,8 +349,7 @@ class _Robot:
         )
         ctrl = self.brain.calc(input_)
 
-        self._left_act.ctrl = 10000 * ctrl[0]
-        self._right_act.ctrl = 10000 * ctrl[1]
+        self.rotate_wheel(ctrl[0], ctrl[1])
         return 30 * (ctrl[2] + 1.0) * 0.5
 
 
@@ -417,8 +440,8 @@ class Environment(optimizer.MuJoCoEnvInterface):
                 obstacle_robot_loss += numpy.exp(-d / obstacle_range)
 
         feed_robot_loss *= 1.0 / (len(self.feeds) * len(self.robots))
-        feed_nest_loss *= 0.001 / len(self.feeds)
-        obstacle_robot_loss *= 0.0001 / len(self.obstacle_pos) * len(self.robots)
+        feed_nest_loss *= 0.01 / len(self.feeds)
+        obstacle_robot_loss *= 0.001 / len(self.obstacle_pos) * len(self.robots)
         self.loss += feed_robot_loss + obstacle_robot_loss + feed_nest_loss
 
         return self.loss

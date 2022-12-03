@@ -65,14 +65,23 @@ class MuJoCoXMLGenerator:
     class MuJoCoAsset(ToString):
         def __init__(self):
             self.texture_attributes = []
+            self.material_attributes = []
 
         def add_texture(self, attributes):
             self.texture_attributes.append(attributes)
+
+        def add_material(self, attributes):
+            self.material_attributes.append(attributes)
 
         def to_string(self) -> str:
             xml = "<asset>\n"
             for ta in self.texture_attributes:
                 xml += "<texture "
+                for k, v in ta.items():
+                    xml += f"{k}=\"{v}\" "
+                xml += "/>\n"
+            for ta in self.material_attributes:
+                xml += "<material "
                 for k, v in ta.items():
                     xml += f"{k}=\"{v}\" "
                 xml += "/>\n"
