@@ -419,7 +419,6 @@ class Environment(optimizer.MuJoCoEnvInterface):
         feed_robot_loss *= 1.0 / (len(self.feeds) * len(self.robots))
         # feed_nest_loss *= 0.001 / len(feeds)
         obstacle_robot_loss *= 0.0001 / len(self.obstacle_pos) * len(self.robots)
-        print(feed_robot_loss, obstacle_robot_loss)
         self.loss += feed_robot_loss + obstacle_robot_loss  # + feed_nest_loss
 
         return self.loss
