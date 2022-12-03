@@ -18,6 +18,7 @@ def _proc(i: int, ind: base.Individual, env_creator: EnvCreator, queue: mp.Queue
     data_bytes = b''.join(buf)
     data_size = len(data_bytes)
     try:
+        sct.settimeout(180.0)
         sct.send(struct.pack("<Q", data_size))
         sct.send(data_bytes)
         received = sct.recv(1024)
