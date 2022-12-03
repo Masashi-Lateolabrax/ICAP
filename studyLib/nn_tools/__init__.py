@@ -5,6 +5,7 @@ from .layer.affine_layer import AffineLayer
 from .layer.iner_dot_layer import InnerDotLayer
 from .layer.rbf_layer import GaussianRadialBasisLayer
 
+from .activator.buf_layer import BufLayer
 from .activator.gaussian_layer import GaussianLayer
 from .activator.is_max import IsMaxLayer
 from .activator.is_min import IsMinLayer
