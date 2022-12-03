@@ -425,15 +425,15 @@ class Environment(optimizer.MuJoCoEnvInterface):
 
             feed_nest_loss += numpy.linalg.norm(fp[0:2] - self.nest_pos[0:2], ord=2)
 
-        for op in self.obstacle_pos:
-            for rp in robot_pos:
-                d = numpy.sum((rp[0:2] - op[0:2]) ** 2)
-                obstacle_robot_loss += numpy.exp(-d / obstacle_range)
+        # for op in self.obstacle_pos:
+        #     for rp in robot_pos:
+        #         d = numpy.sum((rp[0:2] - op[0:2]) ** 2)
+        #         obstacle_robot_loss += numpy.exp(-d / obstacle_range)
 
         feed_robot_loss *= 1.0 / (len(self.feeds) * len(self.robots))
         feed_nest_loss *= 0.01 / len(self.feeds)
-        obstacle_robot_loss *= 0.001 / len(self.obstacle_pos) * len(self.robots)
-        self.loss += feed_robot_loss + obstacle_robot_loss + feed_nest_loss
+        # obstacle_robot_loss *= 0.001 / len(self.obstacle_pos) * len(self.robots)
+        self.loss += feed_robot_loss + feed_nest_loss # + obstacle_robot_loss
 
         return self.loss
 
