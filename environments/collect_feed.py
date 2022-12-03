@@ -396,7 +396,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
             self.pheromone_field.add_liquid(rp[0], rp[1], secretion)
 
         # Calculate loss
-        feed_range_bias = 300000.0
+        feed_range_bias = 100000.0
         feed_range_esp = 20000.0
         obstacle_range = 2000.0
         feed_robot_loss = 0.0
@@ -417,7 +417,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
                 obstacle_robot_loss += numpy.exp(-d / obstacle_range)
 
         feed_robot_loss *= 1.0 / (len(self.feeds) * len(self.robots))
-        feed_nest_loss *= 0.0001 / len(self.feeds)
+        feed_nest_loss *= 0.001 / len(self.feeds)
         obstacle_robot_loss *= 0.0001 / len(self.obstacle_pos) * len(self.robots)
         self.loss += feed_robot_loss + obstacle_robot_loss + feed_nest_loss
 
