@@ -260,9 +260,13 @@ class MuJoCoXMLGenerator:
 
     class MuJoCoActuator(ToString):
         def __init__(self):
+            self.general = []
             self.motor = []
             self.position = []
             self.velocity = []
+
+        def add_general(self, attributes):
+            self.general.append(attributes)
 
         def add_motor(self, attributes):
             self.motor.append(attributes)
@@ -275,6 +279,12 @@ class MuJoCoXMLGenerator:
 
         def to_string(self) -> str:
             xml = "<actuator>\n"
+
+            for a in self.general:
+                xml += "<general "
+                for k, v in a.items():
+                    xml += f"{k}=\"{v}\" "
+                xml += "/>\n"
 
             for a in self.motor:
                 xml += "<motor "

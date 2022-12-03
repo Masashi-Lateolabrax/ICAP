@@ -20,7 +20,6 @@ def _gen_env(
     generator.add_option({
         "timestep": 0.033333,
         "gravity": "0 0 -981.0",
-        "impratio": "0.1"
     })
     asset = generator.add_asset()
     asset.add_texture({
@@ -162,9 +161,7 @@ def _gen_env(
             "density": f"{wheel_density}",
             "axisangle": "0 1 0 90",
             "condim": "6",
-            "friction": "1 0.005 0.0001",
-            # "solimp": "0.9 0.95 0.001 0.5 2",
-            # "solref": "0.02 1",
+            "friction": "0.2 0.01 0.01",
             "contype": "1",
             "conaffinity": "1",
             "priority": "1",
@@ -179,9 +176,7 @@ def _gen_env(
             "density": f"{wheel_density}",
             "axisangle": "0 1 0 90",
             "condim": "6",
-            "friction": "1 0.005 0.0001",
-            # "solimp": "0.9 0.95 0.001 0.5 2",
-            # "solref": "0.02 1",
+            "friction": "0.2 0.01 0.01",
             "contype": "1",
             "conaffinity": "1",
             "priority": "1",
@@ -215,18 +210,14 @@ def _gen_env(
         act.add_velocity({
             "name": f"act_robot{i}_left",
             "joint": f"joint_robot{i}_left",
-            "gear": "80",
-            "ctrllimited": "true",
-            "ctrlrange": "-50000 50000",
-            "kv": "1"
+            "kv": "100",
+            "gear": "30",
         })
         act.add_velocity({
             "name": f"act_robot{i}_right",
             "joint": f"joint_robot{i}_right",
-            "gear": "80",
-            "ctrllimited": "true",
-            "ctrlrange": "-50000 50000",
-            "kv": "1"
+            "kv": "100",
+            "gear": "30"
         })
 
     xml = generator.generate()
@@ -308,8 +299,8 @@ class _Robot:
         return a / d
 
     def rotate_wheel(self, left, right):
-        self._left_act.ctrl = 10000 * left
-        self._right_act.ctrl = 10000 * right
+        self._left_act.ctrl = 1000 * left
+        self._right_act.ctrl = 1000 * right
 
     def act(
             self,
