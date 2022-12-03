@@ -2,20 +2,6 @@ import numpy
 from studyLib import optimizer, miscellaneous, wrap_mjc
 
 
-def show_mujoco_env(
-        env_creator: optimizer.MuJoCoEnvCreator,
-        para,
-        window: miscellaneous.Window,
-        camera: wrap_mjc.Camera,
-        width: int = 640,
-        height: int = 480,
-        video_file_name: str = "result.mp4"
-) -> float:
-    window.set_recorder(miscellaneous.Recorder(video_file_name, 30, width, height))
-    env = env_creator.create_mujoco_env()
-    return env.calc_and_show(para, window, camera)
-
-
 def cmaes_optimize(
         generation: int,
         population: int,

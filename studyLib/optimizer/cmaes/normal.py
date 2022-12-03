@@ -6,8 +6,8 @@ from studyLib.optimizer.cmaes import base
 
 
 def _func(ind: base.Individual, env_creator: EnvCreator, queue: mp.Queue):
-    env = env_creator.create()
-    score = env.calc(ind)
+    env = env_creator.create(ind)
+    score = env.calc()
     queue.put(score)
 
 

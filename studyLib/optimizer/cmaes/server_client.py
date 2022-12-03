@@ -1,8 +1,6 @@
 import array
-import datetime
 import enum
 import multiprocessing as mp
-import numpy
 import platform
 import socket
 import struct
@@ -130,8 +128,8 @@ class ClientCMAES:
             env_size = default_env_creator.load(buf)
             para = [struct.unpack("<d", buf[i:i + 8])[0] for i in range(env_size, len(buf), 8)]
 
-            env = default_env_creator.create()
-            score = env.calc(para)
+            env = default_env_creator.create(para)
+            score = env.calc()
 
             sock.send(struct.pack("<d", score))
             # print(f"score : {score}")

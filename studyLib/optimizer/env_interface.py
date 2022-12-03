@@ -4,13 +4,21 @@ from studyLib import wrap_mjc, miscellaneous
 
 class EnvInterface(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def calc(self, para) -> float:
+    def calc_step(self) -> float:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def calc(self) -> float:
         raise NotImplementedError()
 
 
 class MuJoCoEnvInterface(EnvInterface, abc.ABC):
     @abc.abstractmethod
-    def calc_and_show(self, para, window: miscellaneous.Window, camera: wrap_mjc.Camera) -> float:
+    def render(self) -> float:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def calc_and_show(self) -> float:
         raise NotImplementedError()
 
 
@@ -32,7 +40,7 @@ class EnvCreator(metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def create(self) -> EnvInterface:
+    def create(self, para) -> EnvInterface:
         raise NotImplementedError()
 
 
@@ -42,5 +50,5 @@ class MuJoCoEnvCreator(EnvCreator, abc.ABC):
     """
 
     @abc.abstractmethod
-    def create_mujoco_env(self) -> MuJoCoEnvInterface:
+    def create_mujoco_env(self, para, window: miscellaneous.Window, camera: wrap_mjc.Camera) -> MuJoCoEnvInterface:
         raise NotImplementedError()

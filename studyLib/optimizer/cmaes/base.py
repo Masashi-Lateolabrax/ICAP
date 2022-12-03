@@ -76,7 +76,7 @@ class ProcInterface(metaclass=abc.ABCMeta):
 
 class _OneThreadProc(ProcInterface):
     def __init__(self, ind: array.array, env_creator: EnvCreator):
-        self.score = env_creator.create().calc(ind)
+        self.score = env_creator.create(ind).calc()
 
     def finished(self) -> bool:
         return True
