@@ -25,11 +25,17 @@ class Calculator:
     def calc(self, input_):
         size = len(input_)
         la.copyto(self.buf1, input_)
+
         for i, layer in enumerate(self._layer):
             if i % 2 == 0:
-                size = layer.calc(self.buf1[0:size], self.buf2)
+                if len(self.buf2) < layer.num_node:
+                    self.buf2 = la.zeros(layer.num_node)
+                size = layer.calc(self.buf1[0:size], self.buf2[0:layer.num_node])
             else:
-                size = layer.calc(self.buf2[0:size], self.buf1)
+                if len(self.buf1) < layer.num_node:
+                    self.buf1 = la.zeros(layer.num_node)
+                size = layer.calc(self.buf2[0:size], self.buf1[0:layer.num_node])
+
         if len(self._layer) % 2 == 0:
             return self.buf1[0:size]
         else:

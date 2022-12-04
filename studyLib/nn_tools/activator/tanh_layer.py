@@ -7,12 +7,7 @@ class TanhLayer(interface.CalcActivator):
         super().__init__(num_node)
 
     def calc(self, input_: la.ndarray, output: la.ndarray) -> int:
-        if len(output) < self.num_node:
-            output.resize((self.num_node,))
-        output = output[0:self.num_node]
-
         la.tanh(input_, out=output)
-
         return self.num_node
 
     def num_dim(self) -> int:

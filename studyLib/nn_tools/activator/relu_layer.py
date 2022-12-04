@@ -8,10 +8,6 @@ class ReluLayer(interface.CalcActivator):
         self.threshold = threshold
 
     def calc(self, input_: la.ndarray, output: la.ndarray) -> int:
-        if len(output) < self.num_node:
-            output.resize((self.num_node,))
-        output = output[0:self.num_node]
-
         la.maximum(input_, self.threshold, out=output)
         output -= self.threshold
 

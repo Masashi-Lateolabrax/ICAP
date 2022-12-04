@@ -8,10 +8,6 @@ class SigmoidLayer(interface.CalcActivator):
         self.alpha = la.abs(a)
 
     def calc(self, input_: la.ndarray, output: la.ndarray) -> int:
-        if len(output) < self.num_node:
-            output.resize((self.num_node,))
-        output = output[0:self.num_node]
-
         la.copyto(output, input_)
         buf = input_
         output *= -self.alpha

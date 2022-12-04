@@ -16,16 +16,11 @@ class GaussianRadialBasisLayer(interface.CalcLayer):
         self._num_input = num_input
 
     def calc(self, input_: la.ndarray, output: la.ndarray) -> int:
-        if len(output) < self.num_node:
-            output.resize((self.num_node,))
-        output = output[0:self.num_node]
-
         la.copyto(self._buf, self.centroid)
         self._buf -= input_
         input_ = la.linalg.norm(self._buf, axis=1, ord=2)
         input_ *= self.weights
         la.exp(input_, out=output)
-
         return self.num_node
 
     def num_dim(self) -> int:

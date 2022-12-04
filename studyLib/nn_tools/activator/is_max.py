@@ -8,15 +8,10 @@ class IsMaxLayer(interface.CalcActivator):
         super().__init__(num_node)
 
     def calc(self, input_: la.ndarray, output: la.ndarray) -> int:
-        if len(output) < self.num_node:
-            output.resize((self.num_node,))
-        output = output[0:self.num_node]
-
         max_value = la.max(input_)
         mask = input_ >= max_value
         output[la.logical_not(mask)] = 0.0
         output[mask] = 1.0 / la.count_nonzero(mask)
-
         return self.num_node
 
     def num_dim(self) -> int:

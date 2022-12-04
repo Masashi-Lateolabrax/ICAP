@@ -13,12 +13,7 @@ class InnerDotLayer(interface.CalcLayer):
         self._num_input = num_input
 
     def calc(self, input_: la.ndarray, output: la.ndarray) -> int:
-        if len(output) < self.num_node:
-            output.resize((self.num_node,))
-        output = output[0:self.num_node]
-
         la.dot(self.weights, input_, output)
-
         return self.num_node
 
     def num_dim(self) -> int:

@@ -7,10 +7,6 @@ class SoftmaxLayer(interface.CalcActivator):
         super().__init__(num_node)
 
     def calc(self, input_: la.ndarray, output: la.ndarray) -> int:
-        if len(output) < self.num_node:
-            output.resize((self.num_node,))
-        output = output[0:self.num_node]
-
         la.exp(input_, out=output)
         s = la.sum(output)
         output /= s
