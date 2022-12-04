@@ -24,7 +24,7 @@ class Calculator:
 
     def calc(self, input_):
         size = len(input_)
-        la.copyto(self.buf1, input_)
+        la.copyto(self.buf1[0:size], input_)
 
         for i, layer in enumerate(self._layer):
             if i % 2 == 0:
