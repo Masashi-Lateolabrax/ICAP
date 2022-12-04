@@ -111,6 +111,8 @@ def _gen_env(
             "rgba": "1 0 0 1",
             "pos": f"{op[0]} {op[1]} 10",
             "condim": "3",
+            "priority": "1",
+            "friction": "0.5 0.0 0.0",
             "contype": "1",
             "conaffinity": "2",
         })
@@ -130,10 +132,10 @@ def _gen_env(
             "mass": f"{feed_weight}",
             "rgba": "0 1 1 1",
             "condim": "3",
+            "priority": "1",
+            "friction": "0.5 0.0 0.0",
             "contype": "1",
             "conaffinity": "1",
-            "priority": "1",
-            "friction": "0.5 0.0 0.0"
         })
         sensor.add_velocimeter({
             "name": f"sensor_feed{i}_velocity",
@@ -424,7 +426,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
         for f, fp in zip(self.feeds, feed_pos):
             feed_nest_vector = (fp - self.nest_pos)[0:2]
             feed_nest_distance = numpy.linalg.norm(feed_nest_vector, ord=2)
-            feed_nest_loss += numpy.dot(feed_nest_vector / feed_nest_distance, f.get_velocity())
+            feed_nest_loss += numpy.dot(feed_nest_vector / feed_nest_distance, f.get_velocity()[0:2])
             for rp in robot_pos:
                 d = numpy.sum((fp[0:2] - rp[0:2]) ** 2)
                 feed_robot_loss -= numpy.exp(-d / feed_range_range)
