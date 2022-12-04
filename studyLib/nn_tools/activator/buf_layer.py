@@ -7,9 +7,13 @@ class BufLayer(interface.CalcActivator):
         super().__init__(num_node)
         self.buf = la.zeros(num_node)
 
-    def calc(self, input_: la.ndarray) -> la.ndarray:
-        self.buf = input_.copy()
-        return input_
+    def calc(self, input_: la.ndarray, output: la.ndarray) -> int:
+        if len(output) < self.num_node:
+            output.resize((self.num_node,))
+        output = output[0:self.num_node]
+        la.copyto(self.buf, input_)
+        la.copyto(output, input_)
+        return self.num_node
 
     def num_dim(self) -> int:
         return 0

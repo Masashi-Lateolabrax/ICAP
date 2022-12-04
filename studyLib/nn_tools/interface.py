@@ -13,7 +13,7 @@ class CalcLayer(metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def calc(self, input_: la.ndarray) -> la.ndarray:
+    def calc(self, input_: la.ndarray, output: la.ndarray) -> int:
         raise NotImplementedError()
 
     @abc.abstractmethod

@@ -7,8 +7,20 @@ class SigmoidLayer(interface.CalcActivator):
         super().__init__(num_node)
         self.alpha = la.abs(a)
 
-    def calc(self, input_: la.ndarray) -> la.ndarray:
-        return 1.0 / (1.0 + la.exp(-self.alpha * input_))
+    def calc(self, input_: la.ndarray, output: la.ndarray) -> int:
+        if len(output) < self.num_node:
+            output.resize((self.num_node,))
+        output = output[0:self.num_node]
+
+        la.copyto(output, input_)
+        buf = input_
+        output *= -self.alpha
+        la.exp(output, out=buf)
+        buf += 1.0
+        output.fill(1.0)
+        output /= buf
+
+        return self.num_node
 
     def num_dim(self) -> int:
         return 0

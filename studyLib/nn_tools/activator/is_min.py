@@ -7,12 +7,17 @@ class IsMinLayer(interface.CalcActivator):
     def __init__(self, num_node: int):
         super().__init__(num_node)
 
-    def calc(self, input_: la.ndarray) -> la.ndarray:
+    def calc(self, input_: la.ndarray, output: la.ndarray) -> int:
+        if len(output) < self.num_node:
+            output.resize((self.num_node,))
+        output = output[0:self.num_node]
+
         min_value = la.min(input_)
         mask = input_ <= min_value
-        input_[la.logical_not(mask)] = 0.0
-        input_[mask] = 1.0 / la.count_nonzero(mask)
-        return input_
+        output[la.logical_not(mask)] = 0.0
+        output[mask] = 1.0 / la.count_nonzero(mask)
+
+        return self.num_node
 
     def num_dim(self) -> int:
         return 0

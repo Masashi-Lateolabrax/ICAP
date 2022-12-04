@@ -3,13 +3,19 @@ from studyLib.nn_tools import interface, la
 
 
 class ReluLayer(interface.CalcActivator):
-    def __init__(self, num_node: int, threshold: float):
+    def __init__(self, num_node: int, threshold: float = 0.0):
         super().__init__(num_node)
         self.threshold = threshold
 
-    def calc(self, input_: la.ndarray) -> la.ndarray:
-        input_ -= self.threshold
-        return la.maximum(input_, 0.0)
+    def calc(self, input_: la.ndarray, output: la.ndarray) -> int:
+        if len(output) < self.num_node:
+            output.resize((self.num_node,))
+        output = output[0:self.num_node]
+
+        la.maximum(input_, self.threshold, out=output)
+        output -= self.threshold
+
+        return self.num_node
 
     def num_dim(self) -> int:
         return 0

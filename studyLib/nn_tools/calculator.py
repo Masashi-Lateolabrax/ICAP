@@ -1,19 +1,18 @@
-from studyLib.nn_tools import interface
+from studyLib.nn_tools import interface, la
 
 
 class Calculator:
     def __init__(self, num_input: int):
         self._layer: list[interface.CalcLayer] = []
         self.num_input = num_input
+        self.buf1 = la.zeros(num_input)
+        self.buf2 = la.zeros(0)
 
     def get_layer(self, i: int) -> interface.CalcLayer:
         return self._layer[i]
 
     def add_layer(self, layer: interface.CalcLayer):
-        ni = self.num_input
-        if len(self._layer) > 0:
-            ni = self._layer[-1].num_node
-
+        ni = self._layer[-1].num_node if len(self._layer) > 0 else self.num_input
         self._layer.append(layer)
         self._layer[-1].init(ni)
 
@@ -24,17 +23,17 @@ class Calculator:
         return n
 
     def calc(self, input_):
-        buf1 = input_.copy()
-        buf2 = None
+        size = len(input_)
+        la.copyto(self.buf1, input_)
         for i, layer in enumerate(self._layer):
             if i % 2 == 0:
-                buf2 = layer.calc(buf1)
+                size = layer.calc(self.buf1[0:size], self.buf2)
             else:
-                buf1 = layer.calc(buf2)
+                size = layer.calc(self.buf2[0:size], self.buf1)
         if len(self._layer) % 2 == 0:
-            return buf1
+            return self.buf1[0:size]
         else:
-            return buf2
+            return self.buf2[0:size]
 
     def load(self, array):
         offset = 0

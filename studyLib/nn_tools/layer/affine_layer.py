@@ -14,8 +14,15 @@ class AffineLayer(interface.CalcLayer):
         self.weights = la.zeros((self.num_node, num_input))
         self.bias = la.zeros(self.num_node)
 
-    def calc(self, input_: la.ndarray) -> la.ndarray:
-        return self.bias + la.dot(self.weights, input_)
+    def calc(self, input_: la.ndarray, output: la.ndarray) -> int:
+        if len(output) < self.num_node:
+            output.resize((self.num_node,))
+        output = output[0:self.num_node]
+
+        la.dot(self.weights, input_, output)
+        output += self.bias
+
+        return self.num_node
 
     def num_dim(self) -> int:
         return (self._num_input + 1) * self.num_node
