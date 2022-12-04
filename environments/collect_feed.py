@@ -429,20 +429,29 @@ class Environment(optimizer.MuJoCoEnvInterface):
             self.pheromone_field.add_liquid(rp[0], rp[1], secretion)
 
         # Calculate loss
-        feed_range_range = 20000.0
-        feed_robot_loss = 0.0
-        feed_nest_loss = 0.0
+        feed_range = 30000.0
+        dt_loss_feed_nest = 0.0
         for f, fp in zip(self.feeds, feed_pos):
-            feed_nest_vector = (fp - self.nest_pos)[0:2]
-            feed_nest_distance = numpy.linalg.norm(feed_nest_vector, ord=2)
-            feed_nest_loss += numpy.dot(feed_nest_vector / feed_nest_distance, f.get_velocity()[0:2])
-            for rp in robot_pos:
-                d = numpy.sum((fp[0:2] - rp[0:2]) ** 2)
-                feed_robot_loss -= numpy.exp(-d / feed_range_range)
+            nest_feed_vector = (fp - self.nest_pos)[0:2]
+            feed_nest_distance = numpy.linalg.norm(nest_feed_vector, ord=2)
+            dt_loss_feed_nest += numpy.dot(nest_feed_vector / feed_nest_distance, f.get_velocity()[0:2])
 
-        feed_nest_loss *= 1.0 / len(self.feeds)
-        feed_robot_loss *= 0.1 / (len(self.feeds) * len(self.robots))
-        self.loss += feed_nest_loss + feed_robot_loss
+        obstacle_range = 1000.0
+        dt_loss_feed_robot = 0.0
+        dt_loss_obstacle_robot = 0.0
+        for rp in robot_pos:
+            for fp in feed_pos:
+                d = numpy.sum((fp[0:2] - rp[0:2]) ** 2)
+                dt_loss_feed_robot -= numpy.exp(-d / feed_range)
+
+            for op in self.obstacle_pos:
+                d = numpy.sum((rp[0:2] - op[0:2]) ** 2)
+                dt_loss_obstacle_robot += numpy.exp(-d / obstacle_range)
+
+        dt_loss_feed_nest *= 0.01 / len(self.feeds)
+        dt_loss_feed_robot *= 1.0 / (len(self.feeds) * len(self.robots))
+        dt_loss_obstacle_robot *= 0.1 / len(self.obstacle_pos) * len(self.robots)
+        self.loss += dt_loss_feed_nest + dt_loss_feed_robot + dt_loss_obstacle_robot
 
         return self.loss
 
