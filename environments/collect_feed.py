@@ -52,9 +52,9 @@ def _gen_env(
         "size": "0 0 0.05",
         "rgba": "1.0 1.0 1.0 0.0",
         "contype": "1",
-        "conaffinity": "2",
-        "condim": "1",
         "priority": "0",
+        "condim": "1",
+        "conaffinity": "2",
     })
 
     # Create Wall
@@ -134,7 +134,7 @@ def _gen_env(
             "condim": "3",
             "priority": "1",
             "friction": "0.5 0.0 0.0",
-            "contype": "1",
+            "contype": "2",
             "conaffinity": "1",
         })
         sensor.add_velocimeter({
