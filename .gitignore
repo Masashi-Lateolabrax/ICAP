@@ -1,7 +1,6 @@
 /.idea/
 /RESULT/
 
-/main.py
 *.TXT
 *.mp4
 *.log
