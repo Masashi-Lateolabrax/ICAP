@@ -1,6 +1,7 @@
 /.idea/
 /RESULT/
 
+/report.md
 *.TXT
 *.mp4
 *.log
