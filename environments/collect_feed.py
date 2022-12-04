@@ -51,9 +51,9 @@ def _gen_env(
         "type": "plane",
         "size": "0 0 0.05",
         "rgba": "1.0 1.0 1.0 0.0",
-        "contype": "1",
-        "priority": "0",
         "condim": "1",
+        "priority": "0",
+        "contype": "1",
         "conaffinity": "2",
     })
 
@@ -66,6 +66,8 @@ def _gen_env(
         "pos": f"{pheromone_field_pos[0] + 0.5 * (pheromone_field_size[0] + pheromone_field_panel_size)} {pheromone_field_pos[1]} 5",
         "size": f"{pheromone_field_panel_size * 0.5} {pheromone_field_size[1] * 0.5} 5",
         "rgba": "0.7 0.7 0.7 0.5",
+        "condim": "1",
+        "priority": "2",
         "contype": "1",
         "conaffinity": "2",
     })
@@ -74,6 +76,8 @@ def _gen_env(
         "pos": f"{pheromone_field_pos[0] - 0.5 * (pheromone_field_size[0] + pheromone_field_panel_size)} {pheromone_field_pos[1]} 5",
         "size": f"{pheromone_field_panel_size * 0.5} {pheromone_field_size[1] * 0.5} 5",
         "rgba": "0.7 0.7 0.7 0.5",
+        "condim": "1",
+        "priority": "2",
         "contype": "1",
         "conaffinity": "2",
     })
@@ -82,6 +86,8 @@ def _gen_env(
         "pos": f"{pheromone_field_pos[0]} {pheromone_field_pos[1] + 0.5 * (pheromone_field_size[1] + pheromone_field_panel_size)} 5",
         "size": f"{pheromone_field_size[0] * 0.5} {pheromone_field_panel_size * 0.5} 5",
         "rgba": "0.7 0.7 0.7 0.5",
+        "condim": "1",
+        "priority": "2",
         "contype": "1",
         "conaffinity": "2",
     })
@@ -90,6 +96,8 @@ def _gen_env(
         "pos": f"{pheromone_field_pos[0]} {pheromone_field_pos[1] - 0.5 * (pheromone_field_size[1] + pheromone_field_panel_size)} 5",
         "size": f"{pheromone_field_size[0] * 0.5} {pheromone_field_panel_size * 0.5} 5",
         "rgba": "0.7 0.7 0.7 0.5",
+        "condim": "1",
+        "priority": "2",
         "contype": "1",
         "conaffinity": "2",
     })
@@ -159,6 +167,7 @@ def _gen_env(
             "density": f"{body_density}",
             "rgba": "1 1 0 0.3",
             "condim": "1",
+            "priority": "0",
             "contype": "2",
             "conaffinity": "2"
         })
@@ -171,10 +180,10 @@ def _gen_env(
             "density": f"{wheel_density}",
             "axisangle": "0 1 0 90",
             "condim": "6",
+            "priority": "1",
             "friction": "0.2 0.01 0.01",
             "contype": "1",
             "conaffinity": "1",
-            "priority": "1",
             "material": "wheel_material"
         })
 
@@ -186,10 +195,10 @@ def _gen_env(
             "density": f"{wheel_density}",
             "axisangle": "0 1 0 90",
             "condim": "6",
+            "priority": "1",
             "friction": "0.2 0.01 0.01",
             "contype": "1",
             "conaffinity": "1",
-            "priority": "1",
             "material": "wheel_material"
         })
 
@@ -200,9 +209,9 @@ def _gen_env(
             "size": "1.5",
             "density": f"{wheel_density}",
             "condim": "1",
+            "priority": "1",
             "contype": "1",
             "conaffinity": "1",
-            "priority": "1"
         })
 
         rear_wheel_body = robot_body.add_body({"pos": f"0 -15 {-5 + 1.5 - depth}"})
@@ -212,9 +221,9 @@ def _gen_env(
             "size": "1.5",
             "density": f"{wheel_density}",
             "condim": "1",
+            "priority": "1",
             "contype": "1",
             "conaffinity": "1",
-            "priority": "1"
         })
 
         act.add_velocity({
