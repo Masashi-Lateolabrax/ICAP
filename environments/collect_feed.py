@@ -50,11 +50,11 @@ def _gen_env(
     worldbody.add_geom({
         "type": "plane",
         "size": "0 0 0.05",
-        "rgba": "1.0 1.0 1.0 0.5",
-        "condim": "1",
+        "rgba": "1.0 1.0 1.0 0.0",
         "contype": "1",
         "conaffinity": "2",
-        "priority": "0"
+        "condim": "1",
+        "priority": "0",
     })
 
     # Create Wall
@@ -66,31 +66,39 @@ def _gen_env(
         "pos": f"{pheromone_field_pos[0] + 0.5 * (pheromone_field_size[0] + pheromone_field_panel_size)} {pheromone_field_pos[1]} 5",
         "size": f"{pheromone_field_panel_size * 0.5} {pheromone_field_size[1] * 0.5} 5",
         "rgba": "0.7 0.7 0.7 0.5",
+        "contype": "1",
+        "conaffinity": "2",
     })
     worldbody.add_geom({
         "type": "box",
         "pos": f"{pheromone_field_pos[0] - 0.5 * (pheromone_field_size[0] + pheromone_field_panel_size)} {pheromone_field_pos[1]} 5",
         "size": f"{pheromone_field_panel_size * 0.5} {pheromone_field_size[1] * 0.5} 5",
         "rgba": "0.7 0.7 0.7 0.5",
+        "contype": "1",
+        "conaffinity": "2",
     })
     worldbody.add_geom({
         "type": "box",
         "pos": f"{pheromone_field_pos[0]} {pheromone_field_pos[1] + 0.5 * (pheromone_field_size[1] + pheromone_field_panel_size)} 5",
         "size": f"{pheromone_field_size[0] * 0.5} {pheromone_field_panel_size * 0.5} 5",
         "rgba": "0.7 0.7 0.7 0.5",
+        "contype": "1",
+        "conaffinity": "2",
     })
     worldbody.add_geom({
         "type": "box",
         "pos": f"{pheromone_field_pos[0]} {pheromone_field_pos[1] - 0.5 * (pheromone_field_size[1] + pheromone_field_panel_size)} 5",
         "size": f"{pheromone_field_size[0] * 0.5} {pheromone_field_panel_size * 0.5} 5",
         "rgba": "0.7 0.7 0.7 0.5",
+        "contype": "1",
+        "conaffinity": "2",
     })
 
     # Create Nest
     worldbody.add_geom({
         "type": "cylinder",
         "pos": f"{nest_pos[0]} {nest_pos[1]} -3",
-        "size": "50 1",
+        "size": "150 1",
         "rgba": "0.0 1.0 0.0 1",
     })
 
@@ -99,10 +107,10 @@ def _gen_env(
         worldbody.add_geom({
             "name": f"obstacle{i}",
             "type": "cylinder",
-            "size": "50 10",
+            "size": "100 10",
             "rgba": "1 0 0 1",
             "pos": f"{op[0]} {op[1]} 10",
-            "condim": "1",
+            "condim": "3",
             "contype": "1",
             "conaffinity": "2",
         })
@@ -118,7 +126,7 @@ def _gen_env(
         feed_body.add_site({"name": f"site_feed{i}"})
         feed_body.add_geom({
             "type": "cylinder",
-            "size": "100 10",
+            "size": "50 10",
             "mass": f"{feed_weight}",
             "rgba": "0 1 1 1",
             "condim": "3",
@@ -410,30 +418,20 @@ class Environment(optimizer.MuJoCoEnvInterface):
             self.pheromone_field.add_liquid(rp[0], rp[1], secretion)
 
         # Calculate loss
-        feed_range_bias = 100000.0
-        feed_range_esp = 20000.0
-        obstacle_range = 2000.0
+        feed_range_range = 20000.0
         feed_robot_loss = 0.0
         feed_nest_loss = 0.0
-        obstacle_robot_loss = 0.0
         for f, fp in zip(self.feeds, feed_pos):
-            fv = numpy.linalg.norm(f.get_velocity(), ord=2)
-
+            feed_nest_vector = (fp - self.nest_pos)[0:2]
+            feed_nest_distance = numpy.linalg.norm(feed_nest_vector, ord=2)
+            feed_nest_loss += numpy.dot(feed_nest_vector / feed_nest_distance, f.get_velocity())
             for rp in robot_pos:
                 d = numpy.sum((fp[0:2] - rp[0:2]) ** 2)
-                feed_robot_loss -= numpy.exp(-d / (feed_range_bias * fv + feed_range_esp))
+                feed_robot_loss -= numpy.exp(-d / feed_range_range)
 
-            feed_nest_loss += numpy.linalg.norm(fp[0:2] - self.nest_pos[0:2], ord=2)
-
-        # for op in self.obstacle_pos:
-        #     for rp in robot_pos:
-        #         d = numpy.sum((rp[0:2] - op[0:2]) ** 2)
-        #         obstacle_robot_loss += numpy.exp(-d / obstacle_range)
-
-        feed_robot_loss *= 1.0 / (len(self.feeds) * len(self.robots))
-        feed_nest_loss *= 0.01 / len(self.feeds)
-        # obstacle_robot_loss *= 0.001 / len(self.obstacle_pos) * len(self.robots)
-        self.loss += feed_robot_loss + feed_nest_loss # + obstacle_robot_loss
+        feed_nest_loss *= 1.0 / len(self.feeds)
+        feed_robot_loss *= 0.1 / (len(self.feeds) * len(self.robots))
+        self.loss += feed_nest_loss + feed_robot_loss
 
         return self.loss
 
@@ -451,7 +449,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
             if not self.window.render(self.model, self.camera):
                 exit()
             self.pheromone_field.update_panels()
-            self.model.draw_text(f"{self.loss}", 0, 0, (0, 0, 0))
+            self.model.draw_text(f"{self.loss}", 0, 0, (1, 1, 1))
             self.window.flush()
 
     def calc_and_show(self) -> float:
