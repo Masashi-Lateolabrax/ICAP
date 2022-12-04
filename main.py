@@ -25,7 +25,7 @@ if __name__ == "__main__":
         env_creator.decrease = 0.1
 
         generation = 500
-        population = 50
+        population = 100
         mu = 10
         sigma = 0.3
         centroid = None
