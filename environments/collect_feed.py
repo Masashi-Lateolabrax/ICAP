@@ -439,7 +439,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
             feed_nest_distance = numpy.linalg.norm(nest_feed_vector, ord=2)
             dt_loss_feed_nest += numpy.dot(nest_feed_vector / feed_nest_distance, f.get_velocity()[0:2])
 
-        obstacle_range = 1000.0
+        obstacle_range = 500.0
         dt_loss_feed_robot = 0.0
         dt_loss_obstacle_robot = 0.0
         for rp in robot_pos:
