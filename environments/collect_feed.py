@@ -268,12 +268,15 @@ class RobotBrain:
         self._calculator = nn_tools.Calculator(11)
         self._calculator.add_layer(nn_tools.BufLayer(11))  # 0
 
-        self._calculator.add_layer(nn_tools.AffineLayer(50))  # 1
-        self._calculator.add_layer(nn_tools.IsMaxLayer(50))  # 2
-        self._calculator.add_layer(nn_tools.BufLayer(50))  # 3
+        self._calculator.add_layer(nn_tools.AffineLayer(30))  # 1
+        self._calculator.add_layer(nn_tools.TanhLayer(30))  # 2
 
-        self._calculator.add_layer(nn_tools.InnerDotLayer(3))  # 4
-        self._calculator.add_layer(nn_tools.TanhLayer(3))  # 5
+        self._calculator.add_layer(nn_tools.AffineLayer(10))  # 3
+        self._calculator.add_layer(nn_tools.IsMaxLayer(10))  # 4
+        self._calculator.add_layer(nn_tools.BufLayer(10))  # 5
+
+        self._calculator.add_layer(nn_tools.InnerDotLayer(3))  # 6
+        self._calculator.add_layer(nn_tools.TanhLayer(3))  # 7
 
         if not (para is None):
             self._calculator.load(para)
@@ -289,11 +292,11 @@ class RobotBrain:
         return buf_layer.buf.copy()
 
     def get_calced_feature_value(self) -> numpy.ndarray:
-        buf_layer: nn_tools.BufLayer = self._calculator.get_layer(3)
+        buf_layer: nn_tools.BufLayer = self._calculator.get_layer(5)
         return buf_layer.buf.copy()
 
     def get_action(self, i: int) -> numpy.ndarray:
-        inner_dot_layer: nn_tools.InnerDotLayer = self._calculator.get_layer(4)
+        inner_dot_layer: nn_tools.InnerDotLayer = self._calculator.get_layer(6)
         return numpy.array(inner_dot_layer.weights[:, i])
 
 
