@@ -277,6 +277,7 @@ class RobotBrain:
 
         self._calculator.add_layer(nn_tools.InnerDotLayer(3))  # 6
         self._calculator.add_layer(nn_tools.TanhLayer(3))  # 7
+        self._calculator.add_layer(nn_tools.BufLayer(3))  # 8
 
         if not (para is None):
             self._calculator.load(para)
@@ -298,6 +299,10 @@ class RobotBrain:
     def get_action(self, i: int) -> numpy.ndarray:
         inner_dot_layer: nn_tools.InnerDotLayer = self._calculator.get_layer(6)
         return numpy.array(inner_dot_layer.weights[:, i])
+
+    def get_output(self) -> numpy.ndarray:
+        buf_layer: nn_tools.BufLayer = self._calculator.get_layer(8)
+        return buf_layer.buf.copy()
 
 
 class _Robot:
