@@ -26,11 +26,5 @@ class OmniSensor:
 
         if d > 0:
             ref_direction = ref_pos[:2] / d
-        else:
-            return
-
-        d -= self._offset
-        if d < 0:
-            d = 0.0
-
-        self.value += self._min / (self._a * d + 1.0) * ref_direction
+            d = (d - self._offset) if d > self._offset else 0.0
+            self.value += self._min / (self._a * d + 1.0) * ref_direction
