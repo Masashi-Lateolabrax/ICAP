@@ -431,7 +431,6 @@ class Environment(optimizer.MuJoCoEnvInterface):
         z_axis = numpy.array([0, 0, 1])
         for r in self.robots:
             c = numpy.dot(z_axis, r.get_direction())
-            print(f"c={c}")
             if not (-0.5 < c < 0.5):
                 return float("inf")
 
