@@ -350,15 +350,15 @@ class _Robot:
         else:
             nest_direction = numpy.zeros(2)
 
-        rs = sensor.OmniSensor(pos, mat, 100)
+        rs = sensor.OmniSensor(pos, mat, 17.5, 70)
         for rp in robot_pos:
             rs.sense(rp)
 
-        os = sensor.OmniSensor(pos, mat, 150)
+        os = sensor.OmniSensor(pos, mat, 17.5 + 100.0, 70)
         for op in obstacle_pos:
             os.sense(op)
 
-        fs = sensor.OmniSensor(pos, mat, 200)
+        fs = sensor.OmniSensor(pos, mat, 17.5 + 50.0, 70)
         for fp in feed_pos:
             fs.sense(fp)
 
