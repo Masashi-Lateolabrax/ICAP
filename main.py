@@ -1,6 +1,6 @@
 import numpy
 from environments import utils
-from environments.collect_feed import EnvCreator
+from environments.collect_feed_without_pheromone import EnvCreator
 from studyLib import wrap_mjc, miscellaneous
 
 if __name__ == "__main__":
@@ -29,7 +29,7 @@ if __name__ == "__main__":
         mu = 5
         sigma = 0.3
         centroid = None
-        env_creator.timestep = int(60 / 0.033333)
+        env_creator.timestep = int(30 / 0.033333)
 
         # Resume
         # hist = optimizer.Hist(0, 0, 0)
@@ -42,7 +42,7 @@ if __name__ == "__main__":
         #         best_score = q.min_score
 
         # Resume
-        centroid = numpy.load("best_para.npy")
+        # centroid = numpy.load("best_para.npy")
 
         # para, hist = utils.cmaes_optimize(generation, population, mu, sigma, centroid, env_creator, 1, True)
         para, hist = utils.cmaes_optimize_server(generation, population, mu, sigma, centroid, env_creator, 52325, True)
