@@ -431,6 +431,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
         z_axis = numpy.array([0, 0, 1])
         for r in self.robots:
             c = numpy.dot(z_axis, r.get_direction())
+            print(f"c={c}")
             if not (-0.5 < c < 0.5):
                 return float("inf")
 
@@ -474,7 +475,9 @@ class Environment(optimizer.MuJoCoEnvInterface):
             self.model.step()
 
         for t in range(0, self.timestep):
-            self.calc_step()
+            score = self.calc_step()
+            if numpy.isinf(score):
+                return score
 
         return self.loss
 
@@ -491,7 +494,9 @@ class Environment(optimizer.MuJoCoEnvInterface):
             self.model.step()
 
         for t in range(0, self.timestep):
-            self.calc_step()
+            score = self.calc_step()
+            if numpy.isinf(score):
+                return score
             self.render()
 
         return self.loss
