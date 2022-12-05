@@ -25,8 +25,8 @@ if __name__ == "__main__":
         env_creator.decrease = 0.1
 
         generation = 300
-        population = 30
-        mu = 5
+        population = 100
+        mu = 10
         sigma = 0.3
         centroid = None
         env_creator.timestep = int(30 / 0.033333)
