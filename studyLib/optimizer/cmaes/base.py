@@ -137,6 +137,8 @@ class BaseCMAES:
         for i, ind in enumerate(self._individuals):
             if numpy.isnan(ind.fitness.values[0]):
                 return None
+            elif numpy.isinf(ind.fitness.values[0]):
+                continue
 
             avg += ind.fitness.values[0]
 
