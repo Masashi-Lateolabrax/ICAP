@@ -321,7 +321,7 @@ class _Robot:
         return rot_mat
 
     def get_direction(self) -> numpy.ndarray:
-        a = numpy.dot(self.get_orientation(), [0.0, 1.0, 0.0])[0:2]
+        a = numpy.dot(self.get_orientation(), [0.0, 1.0, 0.0])
         d = numpy.linalg.norm(a, ord=2)
         return a / d
 
@@ -427,12 +427,19 @@ class Environment(optimizer.MuJoCoEnvInterface):
         for _ in range(5):
             self.pheromone_field.update_cells(0.033333 / 5)
 
+        # Stop unstable state
+        z_axis = numpy.array([0, 0, 1])
+        for r in self.robots:
+            c = numpy.dot(z_axis, r.get_direction())
+            if not (-0.5 < c < 0.5):
+                return float("inf")
+
         # Act
         robot_pos = [r.get_pos() for r in self.robots]
         feed_pos = [f.get_pos() for f in self.feeds]
         for r, rp in zip(self.robots, robot_pos):
             pheromone_value = self.pheromone_field.get_gas(rp[0], rp[1])
-            pheromone_grad = self.pheromone_field.get_gas_grad(rp, r.get_direction())
+            pheromone_grad = self.pheromone_field.get_gas_grad(rp, r.get_direction()[0:2])
             secretion = r.act(pheromone_value, pheromone_grad, self.nest_pos, robot_pos, self.obstacle_pos, feed_pos)
             self.pheromone_field.add_liquid(rp[0], rp[1], secretion)
 
