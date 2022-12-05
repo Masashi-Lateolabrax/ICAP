@@ -24,12 +24,12 @@ if __name__ == "__main__":
         env_creator.diffusion = 35.0
         env_creator.decrease = 0.1
 
-        generation = 500
-        population = 200
+        generation = 300
+        population = 100
         mu = 10
         sigma = 0.3
         centroid = None
-        env_creator.timestep = int(45 / 0.033333)
+        env_creator.timestep = int(60 / 0.033333)
 
         # Resume
         # hist = optimizer.Hist(0, 0, 0)
