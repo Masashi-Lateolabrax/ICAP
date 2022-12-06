@@ -28,6 +28,4 @@ class OmniSensor:
             ref_direction = ref_pos[:2] / d
             d = (d - self._offset) if d > self._offset else 0.0
             k = self._max / (self._a * d + 1.0)
-            if k < 1e-12:
-                print("WOW")
             self.value += k * ref_direction
