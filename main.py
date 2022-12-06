@@ -42,7 +42,7 @@ if __name__ == "__main__":
         #         best_score = q.min_score
 
         # Resume
-        # centroid = numpy.load("best_para.npy")
+        centroid = numpy.load("best_para.npy")
 
         # para, hist = utils.cmaes_optimize(generation, population, mu, sigma, centroid, env_creator, 1, True)
         para, hist = utils.cmaes_optimize_server(generation, population, mu, sigma, centroid, env_creator, 52325, True)
