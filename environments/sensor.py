@@ -10,7 +10,7 @@ class OmniSensor:
 
         self._a = 2.0 / one_third_point
         self._offset = offset
-        self._min = min_value
+        self._max = min_value
 
         self._center = center
         self._inv_rot_mat = numpy.linalg.inv(rot_mat)
@@ -27,4 +27,7 @@ class OmniSensor:
         if d > 0:
             ref_direction = ref_pos[:2] / d
             d = (d - self._offset) if d > self._offset else 0.0
-            self.value += self._min / (self._a * d + 1.0) * ref_direction
+            k = self._max / (self._a * d + 1.0)
+            if k < 1e-12:
+                print("WOW")
+            self.value += k * ref_direction
