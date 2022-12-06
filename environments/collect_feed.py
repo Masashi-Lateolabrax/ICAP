@@ -143,7 +143,7 @@ def _gen_env(
             "priority": "1",
             "friction": "0.5 0.0 0.0",
             "contype": "2",
-            "conaffinity": "1",
+            "conaffinity": "2",
         })
         sensor.add_velocimeter({
             "name": f"sensor_feed{i}_velocity",
