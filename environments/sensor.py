@@ -2,15 +2,15 @@ import numpy
 
 
 class OmniSensor:
-    def __init__(self, center, rot_mat, offset: float, one_third_point: float, min_value: float = 1.0):
-        if min_value <= 0:
-            raise ValueError(f"'min_value' must be grater than 0 but it is {min_value}.")
+    def __init__(self, center, rot_mat, offset: float, one_third_point: float, max_value: float = 1.0):
+        if max_value <= 0:
+            raise ValueError(f"'max_value' must be grater than 0 but it is {max_value}.")
         if one_third_point <= 0:
             raise ValueError(f"'one_third_point' must be grater than 0 but it is {one_third_point}.")
 
         self._a = 2.0 / one_third_point
         self._offset = offset
-        self._max = min_value
+        self._max = max_value
 
         self._center = center
         self._inv_rot_mat = numpy.linalg.inv(rot_mat)
