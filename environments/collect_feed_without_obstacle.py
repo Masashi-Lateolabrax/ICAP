@@ -422,7 +422,6 @@ class Environment(optimizer.MuJoCoEnvInterface):
 
         dt_loss_feed_nest *= 1e-4 / len(self.feeds)
         dt_loss_feed_robot *= 1.0 / (len(self.feeds) * len(self.robots))
-        print(dt_loss_feed_nest, dt_loss_feed_robot)
         self.loss += dt_loss_feed_nest + dt_loss_feed_robot
 
         return self.loss
