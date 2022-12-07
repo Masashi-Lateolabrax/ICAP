@@ -17,7 +17,7 @@ class AddFoldLayer(interface.CalcLayer):
         while e <= len(input_):
             output += input_[s:e]
             s = e
-            e = la.min(s + self._stride, len(input_))
+            e = la.minimum(s + self._stride, len(input_))
         return self.num_node
 
     def num_dim(self) -> int:
