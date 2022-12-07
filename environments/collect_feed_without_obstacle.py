@@ -314,6 +314,10 @@ class RobotBrain:
 
         pheromone_calculator = nn_tools.Calculator(7)  # 1->0
         pheromone_calculator.add_layer(PassPheromone(6))  # 1->0->0
+        pheromone_calculator.add_layer(nn_tools.AffineLayer(10))  # 1->0->1
+        pheromone_calculator.add_layer(nn_tools.TanhLayer(10))  # 1->0->2
+        pheromone_calculator.add_layer(nn_tools.AffineLayer(25))  # 1->0->1
+        pheromone_calculator.add_layer(nn_tools.TanhLayer(25))  # 1->0->2
         pheromone_calculator.add_layer(nn_tools.AffineLayer(50))  # 1->0->1
         pheromone_calculator.add_layer(nn_tools.TanhLayer(50))  # 1->0->2
         pheromone_calculator.add_layer(nn_tools.BufLayer(50))  # 1->0->3
