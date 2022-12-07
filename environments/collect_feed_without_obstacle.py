@@ -1,9 +1,11 @@
 import copy
+from typing import Sequence
 
 import mujoco
 import numpy
 
 from studyLib import optimizer, wrap_mjc, miscellaneous, nn_tools
+from studyLib.nn_tools import la
 
 
 def _gen_env(
@@ -239,6 +241,25 @@ class _Feed:
         return self._velocity_sensor.get_data()
 
 
+class ConvertPheromone(nn_tools.interface.CalcActivator):
+    def __init__(self, num_node: int, pheromone_index: int):
+        super().__init__(num_node)
+        self.pheromone_index = pheromone_index
+
+    def calc(self, input_: la.ndarray, output: la.ndarray) -> int:
+        output[self.pheromone_index] = (input_[self.pheromone_index] + 1.0) * 0.5
+        return self.num_node
+
+    def num_dim(self) -> int:
+        return 0
+
+    def load(self, offset: int, array: Sequence) -> int:
+        return 0
+
+    def save(self, array: list) -> None:
+        return None
+
+
 class RobotBrain:
     def __init__(self, para):
         self._calculator = nn_tools.Calculator(7)
@@ -250,7 +271,8 @@ class RobotBrain:
 
         self._calculator.add_layer(nn_tools.InnerDotLayer(3))  # 4
         self._calculator.add_layer(nn_tools.TanhLayer(3))  # 5
-        self._calculator.add_layer(nn_tools.BufLayer(3))  # 6
+        self._calculator.add_layer(ConvertPheromone(3, 2))  # 6
+        self._calculator.add_layer(nn_tools.BufLayer(3))  # 7
 
         if not (para is None):
             self._calculator.load(para)
@@ -274,7 +296,7 @@ class RobotBrain:
         return numpy.array(inner_dot_layer.weights[:, i])
 
     def get_output(self) -> numpy.ndarray:
-        buf_layer: nn_tools.BufLayer = self._calculator.get_layer(6)
+        buf_layer: nn_tools.BufLayer = self._calculator.get_layer(7)
         return buf_layer.buf.copy()
 
 
@@ -325,7 +347,7 @@ class _Robot:
         if nest_dist > 0.0:
             nest_direction = ref_nest_pos / nest_dist
         else:
-            nest_direction = numpy.zeros(2)
+            nest_direction = numpy.array([0.0, 1.0])
 
         rs = sensor.OmniSensor(pos, mat, 17.5, 70)
         for rp in robot_pos:
@@ -358,7 +380,7 @@ class _Robot:
         # self._state_ball.set_rgba([tmp[0], tmp[1], tmp[2], 1.0])
 
         self.rotate_wheel(ctrl[0], ctrl[1])
-        return 30 * (ctrl[2] + 1.0) * 0.5
+        return 30 * ctrl[2]
 
 
 class Environment(optimizer.MuJoCoEnvInterface):
