@@ -14,7 +14,7 @@ class AddFoldLayer(interface.CalcLayer):
         output.fill(0.0)
         s = 0
         e = la.minimum(s + self._stride, len(input_))
-        while e <= len(input_):
+        while s < e:
             output += input_[s:e]
             s = e
             e = la.minimum(s + self._stride, len(input_))
