@@ -434,7 +434,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
         self.window = window
         self.camera = camera
 
-        robot_pos = [(rp[0], rp[1], random.random() * 360.0) for rp in robot_pos]
+        robot_pos = [(rp[0], rp[1], 0.0) for rp in robot_pos]
 
         xml = _gen_env(
             nest_pos, robot_pos, feed_pos,
