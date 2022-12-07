@@ -284,11 +284,12 @@ class _Robot:
         self._body = model.get_body(f"robot{number}")
         self._left_act = model.get_act(f"act_robot{number}_left")
         self._right_act = model.get_act(f"act_robot{number}_right")
-        self._prev_action = 31
-        pos = self._body.get_xpos()
-        self._state_ball = model.add_deco_geom(mujoco.mjtGeom.mjGEOM_SPHERE)
-        self._state_ball.set_size([20, 20, 20])
-        self._state_ball.set_pos([pos[0], pos[1], 5])
+
+        # self._prev_action = 31
+        # pos = self._body.get_xpos()
+        # self._state_ball = model.add_deco_geom(mujoco.mjtGeom.mjGEOM_SPHERE)
+        # self._state_ball.set_size([20, 20, 20])
+        # self._state_ball.set_pos([pos[0], pos[1], 5])
 
     def get_pos(self) -> numpy.ndarray:
         return self._body.get_xpos().copy()
