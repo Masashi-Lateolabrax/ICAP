@@ -1,5 +1,6 @@
 from .liner_algebra import la
 from .calculator import Calculator
+import interface
 
 from .layer.affine_layer import AffineLayer
 from .layer.iner_dot_layer import InnerDotLayer
