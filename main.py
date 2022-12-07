@@ -13,9 +13,9 @@ if __name__ == "__main__":
             (-45, -45), (0, -45), (45, -45),
         ]
         env_creator.obstacle_pos = [(0, 300)]
-        env_creator.feed_pos = [(0, 800), (0, 1200)]
+        env_creator.feed_pos = [(0, 600), (0, 1000)]
 
-        env_creator.pheromone_field_pos = (0, 700)
+        env_creator.pheromone_field_pos = (0, 550)
         env_creator.pheromone_field_panel_size = 20
         env_creator.pheromone_field_shape = (60, 80)
 
@@ -49,11 +49,11 @@ if __name__ == "__main__":
         numpy.save("best_para.npy", para)
         hist.save("history.log")
 
-        width: int = 640
-        height: int = 640
+        width: int = 500
+        height: int = 700
         scale: int = 1
         window = miscellaneous.Window(width * scale, height * scale)
-        camera = wrap_mjc.Camera((0, 650, 0), 2100, 90, 90)
+        camera = wrap_mjc.Camera((0, 600, 0), 2500, 90, 90)
         # camera = wrap_mjc.Camera((0, 0, 0), 500, 90, 90)
         window.set_recorder(miscellaneous.Recorder("result.mp4", 30, width, height))
 
