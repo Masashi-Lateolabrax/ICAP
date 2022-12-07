@@ -10,7 +10,7 @@ from studyLib.nn_tools import la
 
 def _gen_env(
         nest_pos: (float, float),
-        robot_pos: list[(float, float)],
+        robot_pos: list[(float, float, float)],
         feed_pos: list[(float, float)],
         pheromone_field_panel_size: float,
         pheromone_field_pos: (float, float),
@@ -144,7 +144,7 @@ def _gen_env(
         robot_body = worldbody.add_body({
             "name": f"robot{i}",
             "pos": f"{rp[0]} {rp[1]} {10 + depth + 0.5}",
-            "axisangle": f"0 0 1 0",
+            "axisangle": f"0 0 1 {rp[2]}",
         })
         robot_body.add_freejoint()
         robot_body.add_geom({
@@ -198,6 +198,7 @@ def _gen_env(
             "priority": "1",
             "contype": "1",
             "conaffinity": "1",
+            "rgba": "1 0 0 1.0",
         })
 
         rear_wheel_body = robot_body.add_body({"pos": f"0 -15 {-5 + 1.5 - depth}"})
@@ -401,11 +402,14 @@ class Environment(optimizer.MuJoCoEnvInterface):
             window: miscellaneous.Window = None,
             camera: wrap_mjc.Camera = None
     ):
+        import random
         from environments import pheromone
 
         self.timestep = timestep
         self.window = window
         self.camera = camera
+
+        robot_pos = [(rp[0], rp[1], random.random() * 360.0) for rp in robot_pos]
 
         xml = _gen_env(
             nest_pos, robot_pos, feed_pos,
