@@ -8,10 +8,8 @@ if __name__ == "__main__":
         env_creator = EnvCreator()
         env_creator.nest_pos = (0, 0)
         env_creator.robot_pos = [
-            (-90, 45), (-45, 45), (0, 45), (45, 45), (90, 45),
-            (-90, 0), (-45, 0), (0, 0), (45, 0), (90, 0),
-            (-90, -45), (-45, -45), (0, -45), (45, -45), (90, -45),
-            (-90, -90), (-45, -90), (0, -90), (45, -90), (90, -90),
+            (-45, 0), (0, 0), (45, 0),
+            (-45, -45), (0, -45), (45, -45),
         ]
         env_creator.obstacle_pos = [(0, 300)]
         env_creator.feed_pos = [(0, 600), (0, 1000)]
@@ -25,7 +23,7 @@ if __name__ == "__main__":
         env_creator.diffusion = 35.0
         env_creator.decrease = 0.1
 
-        generation = 1000
+        generation = 500
         population = 200
         mu = int(population * 0.5)
         sigma = 0.3
