@@ -8,7 +8,7 @@ class ParallelLayer(interface.CalcLayer):
         for c in calcs:
             num_node += c.num_output()
         super().__init__(num_node)
-        self._calcs = calcs
+        self.calcs = calcs
         self._input_buf = la.zeros(0)
 
     def init(self, num_input: int) -> None:
@@ -16,7 +16,7 @@ class ParallelLayer(interface.CalcLayer):
 
     def calc(self, input_: la.ndarray, output: la.ndarray) -> int:
         s = 0
-        for c in self._calcs:
+        for c in self.calcs:
             e = s + c.num_output()
             la.copyto(self._input_buf, input_)
             la.copyto(output[s:e], c.calc(self._input_buf))
@@ -25,14 +25,14 @@ class ParallelLayer(interface.CalcLayer):
 
     def num_dim(self) -> int:
         d = 0
-        for c in self._calcs:
+        for c in self.calcs:
             d += c.num_dim()
         return d
 
     def load(self, offset: int, array: Sequence) -> int:
         s = offset
         e = 0
-        for c in self._calcs:
+        for c in self.calcs:
             e = s + c.num_dim()
             sub_array = array[s:e]
             c.load(sub_array)
@@ -40,5 +40,5 @@ class ParallelLayer(interface.CalcLayer):
         return e - offset
 
     def save(self, array: list) -> None:
-        for c in self._calcs:
+        for c in self.calcs:
             c.save(array)
