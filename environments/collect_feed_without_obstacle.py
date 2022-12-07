@@ -241,8 +241,8 @@ class _Feed:
 
 class RobotBrain:
     def __init__(self, para):
-        self._calculator = nn_tools.Calculator(9)
-        self._calculator.add_layer(nn_tools.BufLayer(9))  # 0
+        self._calculator = nn_tools.Calculator(7)
+        self._calculator.add_layer(nn_tools.BufLayer(7))  # 0
 
         self._calculator.add_layer(nn_tools.AffineLayer(50))  # 1
         self._calculator.add_layer(nn_tools.IsMaxLayer(50))  # 2
@@ -311,7 +311,6 @@ class _Robot:
     def act(
             self,
             pheromone_value: float,
-            pheromone_grad: numpy.ndarray,
             nest_pos: numpy.ndarray,
             robot_pos: list[numpy.ndarray],
             feed_pos: list[numpy.ndarray]
@@ -337,7 +336,7 @@ class _Robot:
             fs.sense(fp)
 
         input_ = numpy.concatenate(
-            [nest_direction, rs.value, fs.value, [pheromone_value], pheromone_grad]
+            [nest_direction, rs.value, fs.value, [pheromone_value]]
         )
         ctrl = self.brain.calc(input_)
 
@@ -427,8 +426,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
         feed_pos = [f.get_pos() for f in self.feeds]
         for r, rp in zip(self.robots, robot_pos):
             pheromone_value = self.pheromone_field.get_gas(rp[0], rp[1])
-            pheromone_grad = self.pheromone_field.get_gas_grad(rp, r.get_direction()[0:2])
-            secretion = r.act(pheromone_value, pheromone_grad, self.nest_pos, robot_pos, feed_pos)
+            secretion = r.act(pheromone_value, self.nest_pos, robot_pos, feed_pos)
             self.pheromone_field.add_liquid(rp[0], rp[1], secretion)
 
         # Calculate loss
