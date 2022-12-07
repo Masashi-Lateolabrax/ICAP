@@ -266,14 +266,27 @@ class RobotBrain:
         self._calculator = nn_tools.Calculator(7)
         self._calculator.add_layer(nn_tools.BufLayer(7))  # 0
 
-        self._calculator.add_layer(nn_tools.AffineLayer(50))  # 1
-        self._calculator.add_layer(nn_tools.IsMaxLayer(50))  # 2
-        self._calculator.add_layer(nn_tools.BufLayer(50))  # 3
+        pheromone_calculator = nn_tools.Calculator(7)  # 1->0
+        pheromone_calculator.add_layer(nn_tools.AffineLayer(50))  # 1->0->0
+        pheromone_calculator.add_layer(nn_tools.TanhLayer(50))  # 1->0->1
+        pheromone_calculator.add_layer(nn_tools.BufLayer(50))  # 1->0->2
 
-        self._calculator.add_layer(nn_tools.InnerDotLayer(3))  # 4
-        self._calculator.add_layer(nn_tools.TanhLayer(3))  # 5
-        self._calculator.add_layer(ConvertPheromone(3, 2))  # 6
-        self._calculator.add_layer(nn_tools.BufLayer(3))  # 7
+        state_calculator = nn_tools.Calculator(7)  # 1->1
+        state_calculator.add_layer(nn_tools.AffineLayer(50))  # 1->1->0
+        state_calculator.add_layer(nn_tools.TanhLayer(50))  # 1->1->1
+        state_calculator.add_layer(nn_tools.BufLayer(50))  # 1->1->2
+
+        self._calculator.add_layer(nn_tools.ParallelLayer([  # 1
+            pheromone_calculator,  # 1->0
+            state_calculator  # 1->1
+        ]))
+        self._calculator.add_layer(nn_tools.AddFoldLayer(50))  # 2
+        self._calculator.add_layer(nn_tools.IsMaxLayer(50))  # 3
+        self._calculator.add_layer(nn_tools.BufLayer(50))  # 4
+        self._calculator.add_layer(nn_tools.InnerDotLayer(3))  # 5
+        self._calculator.add_layer(nn_tools.TanhLayer(3))  # 6
+        self._calculator.add_layer(ConvertPheromone(3, 2))  # 7
+        self._calculator.add_layer(nn_tools.BufLayer(3))  # 8
 
         if not (para is None):
             self._calculator.load(para)
@@ -289,15 +302,27 @@ class RobotBrain:
         return buf_layer.buf.copy()
 
     def get_calced_feature_value(self) -> numpy.ndarray:
-        buf_layer: nn_tools.BufLayer = self._calculator.get_layer(3)
+        buf_layer: nn_tools.BufLayer = self._calculator.get_layer(4)
         return buf_layer.buf.copy()
 
     def get_action(self, i: int) -> numpy.ndarray:
-        inner_dot_layer: nn_tools.InnerDotLayer = self._calculator.get_layer(4)
+        inner_dot_layer: nn_tools.InnerDotLayer = self._calculator.get_layer(5)
         return numpy.array(inner_dot_layer.weights[:, i])
 
+    def get_mod_p(self) -> numpy.ndarray:
+        para_layer: nn_tools.ParallelLayer = self._calculator.get_layer(1)
+        pheromone_calc: nn_tools.Calculator = para_layer.calcs[0]
+        buf_layer: nn_tools.BufLayer = pheromone_calc.get_layer(2)
+        return buf_layer.buf.copy()
+
+    def get_mod_s(self) -> numpy.ndarray:
+        para_layer: nn_tools.ParallelLayer = self._calculator.get_layer(1)
+        pheromone_calc: nn_tools.Calculator = para_layer.calcs[1]
+        buf_layer: nn_tools.BufLayer = pheromone_calc.get_layer(2)
+        return buf_layer.buf.copy()
+
     def get_output(self) -> numpy.ndarray:
-        buf_layer: nn_tools.BufLayer = self._calculator.get_layer(7)
+        buf_layer: nn_tools.BufLayer = self._calculator.get_layer(8)
         return buf_layer.buf.copy()
 
 
