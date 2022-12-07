@@ -4,6 +4,7 @@ from .calculator import Calculator
 
 from .layer.affine_layer import AffineLayer
 from .layer.iner_dot_layer import InnerDotLayer
+from .layer.parallel_layer import ParallelLayer
 from .layer.rbf_layer import GaussianRadialBasisLayer
 
 from .activator.buf_layer import BufLayer
