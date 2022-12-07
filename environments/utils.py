@@ -54,7 +54,7 @@ def _client_proc(
         t = datetime.datetime.now()
         print(f"[INFO({t})] THREAD{proc_id} is calculating")
         result, pe = opt.optimize(default_env_creator, timeout)
-        # result, pe = opt.optimize_and_show(default_env_creator, window, camera)  # debug
+        # result, pe = opt.optimize_and_show(default_env_creator, window, camera, timeout)  # debug
 
         if result is optimizer.ClientCMAES.Result.Succeed:
             error_count = 0
