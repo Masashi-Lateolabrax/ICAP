@@ -24,9 +24,9 @@ if __name__ == "__main__":
         env_creator.diffusion = 35.0
         env_creator.decrease = 0.1
 
-        generation = 500
+        generation = 1000
         population = 200
-        mu = 10
+        mu = int(population * 0.5)
         sigma = 0.3
         centroid = None
         env_creator.timestep = int(60 / 0.033333)
