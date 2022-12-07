@@ -4,7 +4,7 @@ from studyLib.nn_tools import interface, la
 class Calculator:
     def __init__(self, num_input: int):
         self._layer: list[interface.CalcLayer] = []
-        self.num_input = num_input
+        self._num_input = num_input
         self.buf1 = la.zeros(num_input)
         self.buf2 = la.zeros(0)
 
@@ -12,15 +12,21 @@ class Calculator:
         return self._layer[i]
 
     def add_layer(self, layer: interface.CalcLayer):
-        ni = self._layer[-1].num_node if len(self._layer) > 0 else self.num_input
+        ni = self._layer[-1].num_node if len(self._layer) > 0 else self._num_input
         self._layer.append(layer)
         self._layer[-1].init(ni)
 
-    def num_dim(self):
+    def num_dim(self) -> int:
         n = 0
         for layer in self._layer:
             n += layer.num_dim()
         return n
+
+    def num_input(self) -> int:
+        return self._num_input
+
+    def num_output(self) -> int:
+        return self._layer[-1].num_node
 
     def calc(self, input_):
         size = len(input_)
