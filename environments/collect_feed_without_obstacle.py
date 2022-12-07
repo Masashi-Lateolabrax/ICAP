@@ -285,6 +285,12 @@ class _Robot:
         self._left_act = model.get_act(f"act_robot{number}_left")
         self._right_act = model.get_act(f"act_robot{number}_right")
 
+        # self._prev_action = 31
+        # pos = self._body.get_xpos()
+        # self._state_ball = model.add_deco_geom(mujoco.mjtGeom.mjGEOM_SPHERE)
+        # self._state_ball.set_size([20, 20, 20])
+        # self._state_ball.set_pos([pos[0], pos[1], 5])
+
     def get_pos(self) -> numpy.ndarray:
         return self._body.get_xpos().copy()
 
@@ -334,6 +340,23 @@ class _Robot:
             [nest_direction, rs.value, fs.value, [pheromone_value], pheromone_grad]
         )
         ctrl = self.brain.calc(input_)
+
+        # import colorsys
+        # action_index: int = numpy.argmax(self.brain.get_calced_feature_value())
+        # self._state_ball.set_pos([pos[0], pos[1], 5])
+        #
+        # pattern = {
+        #     31: 0, 41: 1, 13: 2, 29: 3, 17: 4,
+        #     14: 5, 43: 6, 33: 7, 44: 8, 9: 9,
+        #     16: 10, 27: 11, 42: 12, 15: 13, 39: 14
+        # }
+        # if action_index not in pattern.keys():
+        #     action_index = self._prev_action
+        #     ctrl = numpy.tanh(self.brain.get_action(action_index))
+        #
+        # self._prev_action = action_index
+        # tmp = colorsys.hsv_to_rgb(0.66 * (1.0 - pattern[action_index] / len(pattern)), 1.0, 1.0)
+        # self._state_ball.set_rgba([tmp[0], tmp[1], tmp[2], 1.0])
 
         self.rotate_wheel(ctrl[0], ctrl[1])
         return 30 * (ctrl[2] + 1.0) * 0.5
