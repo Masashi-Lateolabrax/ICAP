@@ -1,4 +1,5 @@
-from .liner_algebra import la
+from .other import interface
+from .other.liner_algebra import la
 from .calculator import Calculator
 
 from .layer.affine_layer import AffineLayer

@@ -1,7 +1,7 @@
 import abc
 from abc import ABC
 from collections.abc import Sequence
-from studyLib.nn_tools import la
+from studyLib.nn_tools.other.liner_algebra import la
 
 
 class CalcLayer(metaclass=abc.ABCMeta):
