@@ -354,7 +354,7 @@ class _Robot:
         for rp in robot_pos:
             rs.sense(rp)
 
-        fs = sensor.OmniSensor(pos, mat, 17.5 + 50.0, 70)
+        fs = sensor.OmniSensor(pos, mat, 17.5 + 50.0, 600)
         for fp in feed_pos:
             fs.sense(fp)
 
