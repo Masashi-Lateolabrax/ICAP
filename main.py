@@ -38,6 +38,7 @@ if __name__ == "__main__":
         centroid = None
 
         # Resume
+        # from studyLib import optimizer
         # hist = optimizer.Hist(0, 0, 0)
         # hist.load("./TMP_HIST.npz")
         # best_score = float("inf")
