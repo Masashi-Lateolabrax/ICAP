@@ -24,8 +24,8 @@ if __name__ == "__main__":
         env_creator.diffusion = 35.0
         env_creator.decrease = 0.1
 
-        generation = 1000
-        population = 100
+        generation = 300
+        population = 300
         mu = 10
         sigma = 0.3
         centroid = None
