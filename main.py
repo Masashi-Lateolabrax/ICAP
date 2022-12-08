@@ -3,33 +3,39 @@ from environments import utils
 from environments.collect_feed_without_obstacle import EnvCreator
 from studyLib import wrap_mjc, miscellaneous
 
+
+def set_env_creator(env_creator: EnvCreator):
+    env_creator.nest_pos = (0, 0)
+    env_creator.robot_pos = [
+        (-45, 45), (0, 45), (45, 45),
+        (-45, 0), (0, 0), (45, 0),
+        (-45, -45), (0, -45), (45, -45),
+    ]
+    env_creator.obstacle_pos = [(0, 300)]
+    env_creator.feed_pos = [(0, 600), (0, 1000)]
+
+    env_creator.pheromone_field_pos = (0, 550)
+    env_creator.pheromone_field_panel_size = 20
+    env_creator.pheromone_field_shape = (60, 80)
+
+    env_creator.sv = 10.0
+    env_creator.evaporate = 20.0
+    env_creator.diffusion = 35.0
+    env_creator.decrease = 0.1
+
+    env_creator.timestep = int(60 / 0.033333)
+
+
 if __name__ == "__main__":
     def main():
         env_creator = EnvCreator()
-        env_creator.nest_pos = (0, 0)
-        env_creator.robot_pos = [
-            (-45, 45), (0, 45), (45, 45),
-            (-45, 0), (0, 0), (45, 0),
-            (-45, -45), (0, -45), (45, -45),
-        ]
-        env_creator.obstacle_pos = [(0, 300)]
-        env_creator.feed_pos = [(0, 600), (0, 1000)]
-
-        env_creator.pheromone_field_pos = (0, 550)
-        env_creator.pheromone_field_panel_size = 20
-        env_creator.pheromone_field_shape = (60, 80)
-
-        env_creator.sv = 10.0
-        env_creator.evaporate = 20.0
-        env_creator.diffusion = 35.0
-        env_creator.decrease = 0.1
+        set_env_creator(env_creator)
 
         generation = 300
         population = 300
         mu = 10
         sigma = 0.3
         centroid = None
-        env_creator.timestep = int(60 / 0.033333)
 
         # Resume
         # hist = optimizer.Hist(0, 0, 0)
