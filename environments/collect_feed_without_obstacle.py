@@ -242,52 +242,6 @@ class _Feed:
         return self._velocity_sensor.get_data()
 
 
-class PassPheromone(nn_tools.interface.CalcLayer):
-    def __init__(self, pass_index: int):
-        super().__init__(1)
-        self._pass_index = pass_index
-
-    def init(self, num_input: int) -> None:
-        pass
-
-    def calc(self, input_: la.ndarray, output: la.ndarray) -> int:
-        output[0] = input_[self._pass_index]
-        return self.num_node
-
-    def num_dim(self) -> int:
-        return 0
-
-    def load(self, offset: int, array: Sequence) -> int:
-        return 0
-
-    def save(self, array: list) -> None:
-        pass
-
-
-class BlockPheromone(nn_tools.interface.CalcLayer):
-    def __init__(self, num_node, block_index: int):
-        super().__init__(num_node)
-        self._block_index = block_index
-
-    def init(self, num_input: int) -> None:
-        pass
-
-    def calc(self, input_: la.ndarray, output: la.ndarray) -> int:
-        mask = [True] * len(input_)
-        mask[self._block_index] = False
-        la.copyto(output, input_[mask])
-        return self.num_node
-
-    def num_dim(self) -> int:
-        return 0
-
-    def load(self, offset: int, array: Sequence) -> int:
-        return 0
-
-    def save(self, array: list) -> None:
-        pass
-
-
 class ConvertPheromone(nn_tools.interface.CalcActivator):
     def __init__(self, num_node: int, pheromone_index: int):
         super().__init__(num_node)
@@ -309,32 +263,36 @@ class ConvertPheromone(nn_tools.interface.CalcActivator):
 
 class RobotBrain:
     def __init__(self, para):
+        # DIM 330
+
         self._calculator = nn_tools.Calculator(7)
         self._calculator.add_layer(nn_tools.BufLayer(7))  # 0
 
         pheromone_calculator = nn_tools.Calculator(7)  # 1->0
-        pheromone_calculator.add_layer(PassPheromone(6))  # 1->0->0
+        pheromone_calculator.add_layer(nn_tools.FilterLayer([6]))  # 1->0->0
+        pheromone_calculator.add_layer(nn_tools.AffineLayer(3))  # 1->0->1
+        pheromone_calculator.add_layer(nn_tools.TanhLayer(3))  # 1->0->2
+        pheromone_calculator.add_layer(nn_tools.AffineLayer(5))  # 1->0->1
+        pheromone_calculator.add_layer(nn_tools.TanhLayer(5))  # 1->0->2
         pheromone_calculator.add_layer(nn_tools.AffineLayer(10))  # 1->0->1
         pheromone_calculator.add_layer(nn_tools.TanhLayer(10))  # 1->0->2
-        pheromone_calculator.add_layer(nn_tools.AffineLayer(25))  # 1->0->1
-        pheromone_calculator.add_layer(nn_tools.TanhLayer(25))  # 1->0->2
-        pheromone_calculator.add_layer(nn_tools.AffineLayer(50))  # 1->0->1
-        pheromone_calculator.add_layer(nn_tools.TanhLayer(50))  # 1->0->2
-        pheromone_calculator.add_layer(nn_tools.BufLayer(50))  # 1->0->3
+        pheromone_calculator.add_layer(nn_tools.BufLayer(10))  # 1->0->3
 
         state_calculator = nn_tools.Calculator(7)  # 1->1
-        state_calculator.add_layer(BlockPheromone(6, 6))  # 1->0->0
-        state_calculator.add_layer(nn_tools.AffineLayer(50))  # 1->1->1
-        state_calculator.add_layer(nn_tools.TanhLayer(50))  # 1->1->2
-        state_calculator.add_layer(nn_tools.BufLayer(50))  # 1->1->3
+        state_calculator.add_layer(nn_tools.FilterLayer([0, 1, 2, 3, 4, 5]))  # 1->0->0
+        state_calculator.add_layer(nn_tools.AffineLayer(12))  # 1->1->1
+        state_calculator.add_layer(nn_tools.TanhLayer(12))  # 1->1->2
+        state_calculator.add_layer(nn_tools.AffineLayer(10))  # 1->1->1
+        state_calculator.add_layer(nn_tools.TanhLayer(10))  # 1->1->2
+        state_calculator.add_layer(nn_tools.BufLayer(10))  # 1->1->3
 
         self._calculator.add_layer(nn_tools.ParallelLayer([  # 1
             pheromone_calculator,  # 1->0
             state_calculator  # 1->1
         ]))
-        self._calculator.add_layer(nn_tools.AddFoldLayer(50))  # 2
-        self._calculator.add_layer(nn_tools.IsMaxLayer(50))  # 3
-        self._calculator.add_layer(nn_tools.BufLayer(50))  # 4
+        self._calculator.add_layer(nn_tools.AddFoldLayer(10))  # 2
+        self._calculator.add_layer(nn_tools.IsMaxLayer(10))  # 3
+        self._calculator.add_layer(nn_tools.BufLayer(10))  # 4
         self._calculator.add_layer(nn_tools.InnerDotLayer(3))  # 5
         self._calculator.add_layer(nn_tools.TanhLayer(3))  # 6
         self._calculator.add_layer(ConvertPheromone(3, 2))  # 7
