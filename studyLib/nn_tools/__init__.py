@@ -3,6 +3,7 @@ from .other.liner_algebra import la
 from .calculator import Calculator
 
 from .layer.affine_layer import AffineLayer
+from .layer.filter_layer import FilterLayer
 from .layer.fold_layer import AddFoldLayer
 from .layer.iner_dot_layer import InnerDotLayer
 from .layer.parallel_layer import ParallelLayer
