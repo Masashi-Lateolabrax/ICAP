@@ -9,7 +9,7 @@ class FilterLayer(interface.CalcLayer):
         self._pass_indexes = pass_indexes
 
     def init(self, num_input: int) -> None:
-        self._mask = [False] * num_input
+        self._mask = la.array([False] * num_input)
         for i in self._pass_indexes:
             self._mask[i] = True
 
