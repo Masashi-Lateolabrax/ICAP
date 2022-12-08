@@ -234,12 +234,18 @@ class _Feed:
     def __init__(self, model: wrap_mjc.WrappedModel, number: int):
         self._body = model.get_body(f"feed{number}")
         self._velocity_sensor = model.get_sensor(f"sensor_feed{number}_velocity")
+        self._init_pos: numpy.ndarray = None
 
     def get_pos(self):
         return self._body.get_xpos().copy()
 
     def get_velocity(self) -> numpy.ndarray:
         return self._velocity_sensor.get_data()
+
+    def get_init_pos(self) -> numpy.ndarray:
+        if self._init_pos is None:
+            self._init_pos = self._body.get_xpos()
+        return self._init_pos.copy()
 
 
 class ConvertPheromone(nn_tools.interface.CalcActivator):
@@ -437,7 +443,6 @@ class Environment(optimizer.MuJoCoEnvInterface):
             window: miscellaneous.Window = None,
             camera: wrap_mjc.Camera = None
     ):
-        import random
         from environments import pheromone
 
         self.timestep = timestep
@@ -495,15 +500,17 @@ class Environment(optimizer.MuJoCoEnvInterface):
         dt_loss_feed_nest = 0.0
         dt_loss_feed_robot = 0.0
         for f, fp in zip(self.feeds, feed_pos):
-            feed_nest_vector = (self.nest_pos - fp)[0:2]
-            dt_loss_feed_nest += numpy.linalg.norm(feed_nest_vector, ord=2)
+            feed_nest_distance = numpy.linalg.norm((self.nest_pos - fp)[0:2], ord=2)
+            init_dist = numpy.linalg.norm((f.get_init_pos() - self.nest_pos)[0:2], ord=2)
+            dt_loss_feed_nest += feed_nest_distance / init_dist
 
             for rp in robot_pos:
                 d = numpy.sum((fp[0:2] - rp[0:2]) ** 2)
                 dt_loss_feed_robot -= numpy.exp(-d / feed_range)
 
-        dt_loss_feed_nest *= 1e-3 / len(self.feeds)
-        dt_loss_feed_robot *= 1e-2 / (len(self.feeds) * len(self.robots))
+        dt_loss_feed_nest *= 1e-1 / len(self.feeds)
+        dt_loss_feed_robot *= 1.0 / (len(self.feeds) * len(self.robots))
+        print(dt_loss_feed_nest, dt_loss_feed_robot)
         self.loss += dt_loss_feed_nest + dt_loss_feed_robot
 
         return self.loss
