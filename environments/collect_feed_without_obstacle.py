@@ -384,7 +384,7 @@ class _Robot:
         pos = self.get_pos()
         mat = self.get_orientation()
 
-        ref_nest_pos = numpy.dot(numpy.invert(mat), nest_pos - pos)[:2]
+        ref_nest_pos = numpy.dot(numpy.linalg.inv(mat), nest_pos - pos)[:2]
 
         rs = sensor.OmniSensor(pos, mat, 17.5, 70)
         for rp in robot_pos:
