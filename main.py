@@ -8,6 +8,7 @@ if __name__ == "__main__":
         env_creator = EnvCreator()
         env_creator.nest_pos = (0, 0)
         env_creator.robot_pos = [
+            (-45, 45), (0, 45), (45, 45),
             (-45, 0), (0, 0), (45, 0),
             (-45, -45), (0, -45), (45, -45),
         ]
@@ -23,9 +24,9 @@ if __name__ == "__main__":
         env_creator.diffusion = 35.0
         env_creator.decrease = 0.1
 
-        generation = 500
-        population = 200
-        mu = int(population * 0.5)
+        generation = 1000
+        population = 100
+        mu = 10
         sigma = 0.3
         centroid = None
         env_creator.timestep = int(60 / 0.033333)
