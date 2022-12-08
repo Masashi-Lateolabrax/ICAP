@@ -384,12 +384,7 @@ class _Robot:
         pos = self.get_pos()
         mat = self.get_orientation()
 
-        ref_nest_pos = (nest_pos - pos)[:2]
-        nest_dist = numpy.linalg.norm(ref_nest_pos, ord=2)
-        if nest_dist > 0.0:
-            nest_direction = ref_nest_pos / nest_dist
-        else:
-            nest_direction = numpy.array([0.0, 1.0])
+        ref_nest_pos = numpy.dot(numpy.invert(mat), nest_pos - pos)[:2]
 
         rs = sensor.OmniSensor(pos, mat, 17.5, 70)
         for rp in robot_pos:
@@ -400,7 +395,7 @@ class _Robot:
             fs.sense(fp)
 
         input_ = numpy.concatenate(
-            [nest_direction, rs.value, fs.value, [pheromone_value]]
+            [ref_nest_pos, rs.value, fs.value, [pheromone_value]]
         )
         ctrl = self.brain.calc(input_)
 
