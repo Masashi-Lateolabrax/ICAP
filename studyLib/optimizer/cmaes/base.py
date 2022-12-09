@@ -184,7 +184,7 @@ class BaseCMAES:
                 self._history.save()
                 self._save_counter = self._save_count
 
-        return avg, min_score, max_score, good_para
+        return num_error, avg, min_score, max_score, good_para
 
     def optimize_current_generation(
             self, gen: int, generation: int, env_creator: EnvCreator, proc=ProcInterface
