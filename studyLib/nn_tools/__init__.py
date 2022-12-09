@@ -4,7 +4,7 @@ from .calculator import Calculator
 
 from .layer.affine_layer import AffineLayer
 from .layer.filter_layer import FilterLayer
-from .layer.fold_layer import AddFoldLayer
+from .layer.fold_layer import FoldLayer, AddFoldLayer, MulFoldLayer
 from .layer.iner_dot_layer import InnerDotLayer
 from .layer.parallel_layer import ParallelLayer
 from .layer.rbf_layer import GaussianRadialBasisLayer
