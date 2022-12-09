@@ -2,22 +2,21 @@ from collections.abc import Sequence
 from studyLib.nn_tools import interface, la
 
 
-class AddFoldLayer(interface.CalcLayer):
-    def __init__(self, num_node: int):
+class FoldLayer(interface.CalcLayer):
+    def __init__(self, func, num_node: int, stride: int = None):
         super().__init__(num_node)
-        self._stride = num_node
+        self._stride = num_node if stride is None else stride
+        self._func = func
 
     def init(self, num_input: int) -> None:
         pass
 
     def calc(self, input_: la.ndarray, output: la.ndarray) -> int:
         output.fill(0.0)
-        s = 0
-        e = la.minimum(s + self._stride, len(input_))
-        while s < e:
-            output += input_[s:e]
-            s = e
-            e = la.minimum(s + self._stride, len(input_))
+        offset = 0
+        while offset + self.num_node <= len(input_):
+            self._func(input_[offset:(offset + self.num_node)], output)
+            offset += self._stride
         return self.num_node
 
     def num_dim(self) -> int:
@@ -28,3 +27,21 @@ class AddFoldLayer(interface.CalcLayer):
 
     def save(self, array: list) -> None:
         pass
+
+
+class AddFoldLayer(FoldLayer):
+    @staticmethod
+    def _add_func(values: la.ndarray, output: la.ndarray):
+        output += values
+
+    def __init__(self, num_node: int, stride: int = None):
+        super().__init__(AddFoldLayer._add_func, num_node, stride)
+
+
+class MulFoldLayer(FoldLayer):
+    @staticmethod
+    def _mul_func(values: la.ndarray, output: la.ndarray):
+        output *= values
+
+    def __init__(self, num_node: int, stride: int = None):
+        super().__init__(MulFoldLayer._mul_func, num_node, stride)
