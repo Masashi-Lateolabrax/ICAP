@@ -15,12 +15,12 @@ def default_start_handler(gen, generation, start_time):
     print(f"[{start_time}] start {gen} gen. ({gen}/{generation}={float(gen) / generation * 100.0}%)")
 
 
-def default_end_handler(population, gen, generation, start_time, fin_time, avg, min_v, max_v, best):
+def default_end_handler(population, gen, generation, start_time, fin_time, num_error, avg, min_v, max_v, best):
     elapse = float((fin_time - start_time).total_seconds())
     spd = population / elapse
     e = datetime.timedelta(seconds=(generation - gen) * elapse)
     print(
-        f"[{fin_time}] finish {gen} gen. speed[ind/s]:{spd}, avg:{avg}, min:{min_v}, max:{max_v}, best:{best}, etr:{e}"
+        f"[{fin_time}] finish {gen} gen. speed[ind/s]:{spd}, error:{num_error}, avg:{avg}, min:{min_v}, max:{max_v}, best:{best}, etr:{e}"
     )
 
 
@@ -128,6 +128,7 @@ class BaseCMAES:
         self._individuals: list[Individual] = self._strategy.generate(self._ind_type)
 
     def _generate_new_generation(self):
+        num_error = 0
         avg = 0.0
         min_score = float("inf")
         min_para = None
@@ -138,6 +139,7 @@ class BaseCMAES:
             if numpy.isnan(ind.fitness.values[0]):
                 return None
             elif numpy.isinf(ind.fitness.values[0]):
+                num_error += 1
                 continue
 
             avg += ind.fitness.values[0]
@@ -150,7 +152,7 @@ class BaseCMAES:
                 max_score = ind.fitness.values[0]
                 max_para = numpy.array(ind)
 
-        avg /= self._strategy.lambda_
+        avg /= self._strategy.lambda_ - num_error
 
         if self._ind_type is _MinimalizeIndividual:
             if self._best_score > min_score:
@@ -235,12 +237,13 @@ class BaseCMAES:
             self._history.save()
             sys.exit()
 
-        avg, min_value, max_value, good_para = res
+        num_error, avg, min_value, max_value, good_para = res
 
         finish_time = datetime.datetime.now()
         self._end_handler(
             self.get_lambda(), gen, generation,
             start_time, finish_time,
+            num_error,
             avg, min_value, max_value, self._best_score
         )
 
