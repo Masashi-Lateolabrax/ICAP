@@ -49,11 +49,34 @@ class MuJoCoXMLGenerator:
             return "Hello"
 
     class MuJoCoDefault(ToString):
-        def __init__(self):
+        def __init__(self, class_name: str):
+            self._class_name = class_name
+            self._children: list[MuJoCoXMLGenerator.MuJoCoDefault] = []
+            self._geom_attributes = []
             pass
 
+        def add_default(self, class_name: str):
+            default = MuJoCoXMLGenerator.MuJoCoDefault(class_name)
+            self._children.append(default)
+            return default
+
+        def add_geom(self, attributes):
+            self._geom_attributes.append(attributes)
+
         def to_string(self) -> str:
-            return "Hello"
+            xml = f"<default class=\"{self._class_name}\">\n"
+
+            for a in self._geom_attributes:
+                xml += "<geom "
+                for k, v in a.items():
+                    xml += f"{k}=\"{v}\" "
+                xml += "/>\n"
+
+            for d in self._children:
+                xml += d.to_string()
+
+            xml += "</default>\n"
+            return xml
 
     class MuJoCoCustom(ToString):
         def __init__(self):
@@ -354,7 +377,9 @@ class MuJoCoXMLGenerator:
         pass
 
     def add_default(self) -> MuJoCoDefault:
-        pass
+        element = MuJoCoXMLGenerator.MuJoCoDefault("main")
+        self.elements.append(element)
+        return element
 
     def add_custom(self) -> MuJoCoCustom:
         pass
