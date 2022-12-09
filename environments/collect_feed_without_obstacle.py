@@ -21,6 +21,7 @@ def _gen_env(
     generator.add_option({
         "timestep": 0.033333,
         "gravity": "0 0 -981.0",
+        "impratio": "3",
     })
     asset = generator.add_asset()
     asset.add_texture({
