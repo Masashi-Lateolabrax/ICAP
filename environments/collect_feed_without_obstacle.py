@@ -260,7 +260,7 @@ class _Feed:
 
     def get_init_pos(self) -> numpy.ndarray:
         if self._init_pos is None:
-            self._init_pos = self._body.get_xpos()
+            self._init_pos = self._body.get_xpos().copy()
         return self._init_pos.copy()
 
 
