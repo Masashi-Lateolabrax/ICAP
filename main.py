@@ -31,9 +31,9 @@ if __name__ == "__main__":
         env_creator = EnvCreator()
         set_env_creator(env_creator)
 
-        generation = 500
-        population = 100
-        mu = 10
+        generation = 1000
+        population = 200
+        mu = 20
         sigma = 0.3
         centroid = None
 
