@@ -386,16 +386,16 @@ class _Robot:
 
         ref_nest_pos = numpy.dot(numpy.linalg.inv(mat), nest_pos - pos)[:2]
 
-        rs = sensor.OmniSensor(pos, mat, 17.5, 70)
+        sensed_robots_position = sensor.OmniSensor(pos, mat, 17.5, 70)
         for rp in robot_pos:
-            rs.sense(rp)
+            sensed_robots_position.sense(rp)
 
-        fs = sensor.OmniSensor(pos, mat, 17.5 + 50.0, 600)
+        sensed_feeds_position = sensor.OmniSensor(pos, mat, 17.5 + 50.0, 600)
         for fp in feed_pos:
-            fs.sense(fp)
+            sensed_feeds_position.sense(fp)
 
         input_ = numpy.concatenate(
-            [ref_nest_pos, rs.value, fs.value, [pheromone_value]]
+            [ref_nest_pos, sensed_robots_position.value, sensed_feeds_position.value, [pheromone_value]]
         )
         ctrl = self.brain.calc(input_)
 
