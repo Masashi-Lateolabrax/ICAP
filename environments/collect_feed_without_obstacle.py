@@ -23,6 +23,7 @@ def _gen_env(
         "gravity": "0 0 -981.0",
         "impratio": "3",
     })
+
     asset = generator.add_asset()
     asset.add_texture({
         "type": "skybox",
@@ -42,6 +43,66 @@ def _gen_env(
     asset.add_material({
         "name": "wheel_material",
         "texture": "wheel_texture",
+    })
+
+    # Default Setting
+    default = generator.add_default()
+
+    # Create Setting for Walls
+    wall_default = default.add_default("wall")
+    wall_default.add_geom({
+        "type": "box",
+        "rgba": "0.7 0.7 0.7 0.5",
+        "condim": "1",
+        "priority": "2",
+        "contype": "1",
+        "conaffinity": "2",
+    })
+
+    # Create Setting for Feeds
+    feed_default = default.add_default("feeds")
+    feed_default.add_geom({
+        "type": "cylinder",
+        "size": "50 10",
+        "mass": "3000",
+        "rgba": "0 1 1 1",
+        "condim": "3",
+        "priority": "1",
+        "friction": "0.5 0.0 0.0",
+        "contype": "2",
+        "conaffinity": "2",
+    })
+
+    # Create Setting for Robots
+    body_default = default.add_default("robot_body")
+    body_default.add_geom({
+        "type": "cylinder",
+        "size": "17.5 5",  # 幅35cm，高さ10cm
+        "density": "0.51995",  # 鉄の密度(7.874 g/cm^3), ルンバの密度(0.51995 g/cm^3)
+        "rgba": "1 1 0 0.3",
+        "condim": "1",
+        "priority": "0",
+        "contype": "2",
+        "conaffinity": "2"
+    })
+    wheel_default = default.add_default("robot_wheel")
+    wheel_default.add_geom({
+        "type": "cylinder",
+        "size": "5 5",
+        "density": "0.3",
+        "axisangle": "0 1 0 90",
+        "condim": "6",
+        "priority": "1",
+        "friction": "0.2 0.01 0.01",
+        "contype": "1",
+        "conaffinity": "1",
+        "material": "wheel_material"
+    })
+    ball_default = wheel_default.add_default("robot_ball")
+    ball_default.add_geom({
+        "type": "sphere",
+        "size": "1.5",
+        "condim": "1",
     })
 
     worldbody = generator.get_body()
@@ -64,44 +125,24 @@ def _gen_env(
         pheromone_field_panel_size * pheromone_field_shape[0], pheromone_field_panel_size * pheromone_field_shape[1]
     )
     worldbody.add_geom({
-        "type": "box",
+        "class": "wall",
         "pos": f"{pheromone_field_pos[0] + 0.5 * (pheromone_field_size[0] + pheromone_field_panel_size)} {pheromone_field_pos[1]} 5",
         "size": f"{pheromone_field_panel_size * 0.5} {pheromone_field_size[1] * 0.5} 5",
-        "rgba": "0.7 0.7 0.7 0.5",
-        "condim": "1",
-        "priority": "2",
-        "contype": "1",
-        "conaffinity": "2",
     })
     worldbody.add_geom({
-        "type": "box",
+        "class": "wall",
         "pos": f"{pheromone_field_pos[0] - 0.5 * (pheromone_field_size[0] + pheromone_field_panel_size)} {pheromone_field_pos[1]} 5",
         "size": f"{pheromone_field_panel_size * 0.5} {pheromone_field_size[1] * 0.5} 5",
-        "rgba": "0.7 0.7 0.7 0.5",
-        "condim": "1",
-        "priority": "2",
-        "contype": "1",
-        "conaffinity": "2",
     })
     worldbody.add_geom({
-        "type": "box",
+        "class": "wall",
         "pos": f"{pheromone_field_pos[0]} {pheromone_field_pos[1] + 0.5 * (pheromone_field_size[1] + pheromone_field_panel_size)} 5",
         "size": f"{pheromone_field_size[0] * 0.5} {pheromone_field_panel_size * 0.5} 5",
-        "rgba": "0.7 0.7 0.7 0.5",
-        "condim": "1",
-        "priority": "2",
-        "contype": "1",
-        "conaffinity": "2",
     })
     worldbody.add_geom({
-        "type": "box",
+        "class": "wall",
         "pos": f"{pheromone_field_pos[0]} {pheromone_field_pos[1] - 0.5 * (pheromone_field_size[1] + pheromone_field_panel_size)} 5",
         "size": f"{pheromone_field_size[0] * 0.5} {pheromone_field_panel_size * 0.5} 5",
-        "rgba": "0.7 0.7 0.7 0.5",
-        "condim": "1",
-        "priority": "2",
-        "contype": "1",
-        "conaffinity": "2",
     })
 
     # Create Nest
@@ -113,7 +154,6 @@ def _gen_env(
     })
 
     # Create Feeds
-    feed_weight = 3000
     for i, fp in enumerate(feed_pos):
         feed_body = worldbody.add_body({
             "name": f"feed{i}",
@@ -121,17 +161,7 @@ def _gen_env(
         })
         feed_body.add_freejoint()
         feed_body.add_site({"name": f"site_feed{i}"})
-        feed_body.add_geom({
-            "type": "cylinder",
-            "size": "50 10",
-            "mass": f"{feed_weight}",
-            "rgba": "0 1 1 1",
-            "condim": "3",
-            "priority": "1",
-            "friction": "0.5 0.0 0.0",
-            "contype": "2",
-            "conaffinity": "2",
-        })
+        feed_body.add_geom({"class": "feeds"})
         sensor.add_velocimeter({
             "name": f"sensor_feed{i}_velocity",
             "site": f"site_feed{i}"
@@ -139,8 +169,6 @@ def _gen_env(
 
     # Create Robots
     depth = 1.0
-    body_density = 0.51995  # 鉄の密度(7.874 g/cm^3), ルンバの密度(0.51995 g/cm^3)
-    wheel_density = 0.3
     for i, rp in enumerate(robot_pos):
         robot_body = worldbody.add_body({
             "name": f"robot{i}",
@@ -148,71 +176,23 @@ def _gen_env(
             "axisangle": f"0 0 1 {rp[2]}",
         })
         robot_body.add_freejoint()
-        robot_body.add_geom({
-            "type": "cylinder",
-            "size": "17.5 5",  # 幅35cm，高さ10cm
-            "density": f"{body_density}",
-            "rgba": "1 1 0 0.3",
-            "condim": "1",
-            "priority": "0",
-            "contype": "2",
-            "conaffinity": "2"
-        })
+        robot_body.add_geom({"class": "robot_body"})
 
         right_wheel_body = robot_body.add_body({"pos": f"10 0 -{depth}"})
         right_wheel_body.add_joint({"name": f"joint_robot{i}_right", "type": "hinge", "axis": "-1 0 0"})
-        right_wheel_body.add_geom({
-            "type": "cylinder",
-            "size": "5 5",
-            "density": f"{wheel_density}",
-            "axisangle": "0 1 0 90",
-            "condim": "6",
-            "priority": "1",
-            "friction": "0.2 0.01 0.01",
-            "contype": "1",
-            "conaffinity": "1",
-            "material": "wheel_material"
-        })
+        right_wheel_body.add_geom({"class": "robot_wheel"})
 
         left_wheel_body = robot_body.add_body({"pos": f"-10 0 -{depth}"})
         left_wheel_body.add_joint({"name": f"joint_robot{i}_left", "type": "hinge", "axis": "-1 0 0"})
-        left_wheel_body.add_geom({
-            "type": "cylinder",
-            "size": "5 5",
-            "density": f"{wheel_density}",
-            "axisangle": "0 1 0 90",
-            "condim": "6",
-            "priority": "1",
-            "friction": "0.2 0.01 0.01",
-            "contype": "1",
-            "conaffinity": "1",
-            "material": "wheel_material"
-        })
+        left_wheel_body.add_geom({"class": "robot_wheel"})
 
         front_wheel_body = robot_body.add_body({"pos": f"0 15 {-5 + 1.5 - depth}"})
         front_wheel_body.add_joint({"type": "ball"})
-        front_wheel_body.add_geom({
-            "type": "sphere",
-            "size": "1.5",
-            "density": f"{wheel_density}",
-            "condim": "1",
-            "priority": "1",
-            "contype": "1",
-            "conaffinity": "1",
-            "rgba": "1 0 0 1.0",
-        })
+        front_wheel_body.add_geom({"class": "robot_ball"})
 
         rear_wheel_body = robot_body.add_body({"pos": f"0 -15 {-5 + 1.5 - depth}"})
         rear_wheel_body.add_joint({"type": "ball"})
-        rear_wheel_body.add_geom({
-            "type": "sphere",
-            "size": "1.5",
-            "density": f"{wheel_density}",
-            "condim": "1",
-            "priority": "1",
-            "contype": "1",
-            "conaffinity": "1",
-        })
+        rear_wheel_body.add_geom({"class": "robot_ball"})
 
         act.add_velocity({
             "name": f"act_robot{i}_left",
