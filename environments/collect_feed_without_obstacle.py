@@ -52,10 +52,16 @@ def _gen_env(
     # Default Setting
     ######################################################################################################
     default = generator.add_default()
+    default.add_geom({
+        "density": "1",  # Unit is g/cm^3. (1000kg/m^3 = 1g/cm^3)
+        "solimp": "0.9 0.95 1.0 0.5 2",
+        "solref": "0.002 100.0",
+    })
 
     ######################################################################################################
     # Create Setting for Walls
     ######################################################################################################
+    wall_height = 15.0
     wall_default = default.add_default("wall")
     wall_default.add_geom({
         "type": "box",
@@ -64,8 +70,6 @@ def _gen_env(
         "priority": "2",
         "contype": "1",
         "conaffinity": "2",
-        "solimp": "0.9 0.95 0.001 0.5 2",
-        "solref": "0.02 1",
     })
 
     ######################################################################################################
@@ -75,7 +79,7 @@ def _gen_env(
     feed_default.add_geom({
         "type": "cylinder",
         "size": "50 10",
-        "mass": "3000",
+        "mass": "3000",  # 3kg = 3000g
         "rgba": "0 1 1 1",
         "condim": "3",
         "priority": "1",
@@ -91,7 +95,7 @@ def _gen_env(
     body_default.add_geom({
         "type": "cylinder",
         "size": "17.5 5",  # 幅35cm，高さ10cm
-        "density": "0.51995",  # 鉄の密度(7.874 g/cm^3), ルンバの密度(0.51995 g/cm^3)
+        "mass": "3000",  # 3kg = 3000g．ルンバの重さが4kgくらい．
         "rgba": "1 1 0 0.3",
         "condim": "1",
         "priority": "0",
@@ -102,7 +106,7 @@ def _gen_env(
     wheel_default.add_geom({
         "type": "cylinder",
         "size": "5 5",
-        "density": "0.3",
+        "mass": "250",
         "axisangle": "0 1 0 90",
         "condim": "6",
         "priority": "1",
@@ -138,28 +142,33 @@ def _gen_env(
     ######################################################################################################
     # Create Wall
     ######################################################################################################
-    pheromone_field_size = (
-        pheromone_field_panel_size * pheromone_field_shape[0], pheromone_field_panel_size * pheromone_field_shape[1]
+    big_wall_size = (
+        pheromone_field_panel_size * (pheromone_field_shape[0] + 2),
+        pheromone_field_panel_size * (pheromone_field_shape[1] + 2)
+    )
+    wall_size = (
+        pheromone_field_panel_size * pheromone_field_shape[0],
+        pheromone_field_panel_size * pheromone_field_shape[1]
     )
     worldbody.add_geom({
         "class": "wall",
-        "pos": f"{pheromone_field_pos[0] + 0.5 * (pheromone_field_size[0] + pheromone_field_panel_size)} {pheromone_field_pos[1]} 5",
-        "size": f"{pheromone_field_panel_size * 0.5} {pheromone_field_size[1] * 0.5} 5",
+        "pos": f"{pheromone_field_pos[0] + 0.5 * (wall_size[0] + pheromone_field_panel_size)} {pheromone_field_pos[1]} {wall_height * 0.5}",
+        "size": f"{pheromone_field_panel_size} {big_wall_size[1] * 0.5} {wall_height * 0.5}",
     })
     worldbody.add_geom({
         "class": "wall",
-        "pos": f"{pheromone_field_pos[0] - 0.5 * (pheromone_field_size[0] + pheromone_field_panel_size)} {pheromone_field_pos[1]} 5",
-        "size": f"{pheromone_field_panel_size * 0.5} {pheromone_field_size[1] * 0.5} 5",
+        "pos": f"{pheromone_field_pos[0] - 0.5 * (wall_size[0] + pheromone_field_panel_size)} {pheromone_field_pos[1]} {wall_height * 0.5}",
+        "size": f"{pheromone_field_panel_size} {big_wall_size[1] * 0.5} {wall_height * 0.5}",
     })
     worldbody.add_geom({
         "class": "wall",
-        "pos": f"{pheromone_field_pos[0]} {pheromone_field_pos[1] + 0.5 * (pheromone_field_size[1] + pheromone_field_panel_size)} 5",
-        "size": f"{pheromone_field_size[0] * 0.5} {pheromone_field_panel_size * 0.5} 5",
+        "pos": f"{pheromone_field_pos[0]} {pheromone_field_pos[1] + 0.5 * (wall_size[1] + pheromone_field_panel_size)} {wall_height * 0.5}",
+        "size": f"{wall_size[0] * 0.5} {pheromone_field_panel_size} {wall_height * 0.5}",
     })
     worldbody.add_geom({
         "class": "wall",
-        "pos": f"{pheromone_field_pos[0]} {pheromone_field_pos[1] - 0.5 * (pheromone_field_size[1] + pheromone_field_panel_size)} 5",
-        "size": f"{pheromone_field_size[0] * 0.5} {pheromone_field_panel_size * 0.5} 5",
+        "pos": f"{pheromone_field_pos[0]} {pheromone_field_pos[1] - 0.5 * (wall_size[1] + pheromone_field_panel_size)} {wall_height * 0.5}",
+        "size": f"{wall_size[0] * 0.5} {pheromone_field_panel_size} {wall_height * 0.5}",
     })
 
     ######################################################################################################
