@@ -461,7 +461,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
         self.window = window
         self.camera = camera
 
-        robot_pos = [(rp[0], rp[1], 0.0) for rp in robot_pos]
+        robot_pos = [(rp[0], rp[1], 45.0 if i < len(robot_pos) / 2 else -45.0) for i, rp in enumerate(robot_pos)]
 
         xml = _gen_env(
             nest_pos, robot_pos, feed_pos,
