@@ -5,6 +5,8 @@ from studyLib import wrap_mjc, miscellaneous
 
 
 def set_env_creator(env_creator: EnvCreator):
+    print(f"DIMENSION : {env_creator.dim()}")
+
     env_creator.nest_pos = (0, 0)
     env_creator.robot_pos = [
         (-45, 45), (0, 45), (45, 45),
@@ -31,9 +33,9 @@ if __name__ == "__main__":
         env_creator = EnvCreator()
         set_env_creator(env_creator)
 
-        generation = 1000
-        population = 200
-        mu = 20
+        generation = 500
+        population = 100
+        mu = 10
         sigma = 0.3
         centroid = None
 

@@ -286,37 +286,31 @@ class ConvertPheromone(nn_tools.interface.CalcActivator):
 
 class RobotBrain:
     def __init__(self, para):
-        # DIM 330
-
         self._calculator = nn_tools.Calculator(7)
         self._calculator.add_layer(nn_tools.BufLayer(7))  # 0
 
         pheromone_calculator = nn_tools.Calculator(7)  # 1->0
         pheromone_calculator.add_layer(nn_tools.FilterLayer([6]))  # 1->0->0
-        pheromone_calculator.add_layer(nn_tools.AffineLayer(3))  # 1->0->1
-        pheromone_calculator.add_layer(nn_tools.TanhLayer(3))  # 1->0->2
         pheromone_calculator.add_layer(nn_tools.AffineLayer(5))  # 1->0->1
         pheromone_calculator.add_layer(nn_tools.TanhLayer(5))  # 1->0->2
-        pheromone_calculator.add_layer(nn_tools.AffineLayer(10))  # 1->0->1
-        pheromone_calculator.add_layer(nn_tools.SigmoidLayer(10))  # 1->0->2
-        pheromone_calculator.add_layer(nn_tools.BufLayer(10))  # 1->0->3
+        pheromone_calculator.add_layer(nn_tools.AffineLayer(5))  # 1->0->3
+        pheromone_calculator.add_layer(nn_tools.TanhLayer(5))  # 1->0->4
+        pheromone_calculator.add_layer(nn_tools.AffineLayer(3))  # 1->0->5
 
         state_calculator = nn_tools.Calculator(7)  # 1->1
-        state_calculator.add_layer(nn_tools.FilterLayer([0, 1, 2, 3, 4, 5]))  # 1->0->0
+        state_calculator.add_layer(nn_tools.FilterLayer([0, 1, 2, 3, 4, 5]))  # 1->1->0
         state_calculator.add_layer(nn_tools.AffineLayer(12))  # 1->1->1
         state_calculator.add_layer(nn_tools.TanhLayer(12))  # 1->1->2
-        state_calculator.add_layer(nn_tools.AffineLayer(10))  # 1->1->1
-        state_calculator.add_layer(nn_tools.TanhLayer(10))  # 1->1->2
-        state_calculator.add_layer(nn_tools.BufLayer(10))  # 1->1->3
+        state_calculator.add_layer(nn_tools.AffineLayer(6))  # 1->1->3
+        state_calculator.add_layer(nn_tools.TanhLayer(6))  # 1->1->4
+        state_calculator.add_layer(nn_tools.AffineLayer(3))  # 1->1->5
 
         self._calculator.add_layer(nn_tools.ParallelLayer([  # 1
             pheromone_calculator,  # 1->0
             state_calculator  # 1->1
         ]))
-        self._calculator.add_layer(nn_tools.MulFoldLayer(10))  # 2
-        self._calculator.add_layer(nn_tools.IsMaxLayer(10))  # 3
-        self._calculator.add_layer(nn_tools.BufLayer(10))  # 4
-        self._calculator.add_layer(nn_tools.InnerDotLayer(3))  # 5
+        self._calculator.add_layer(nn_tools.BufLayer(6))  # 2
+        self._calculator.add_layer(nn_tools.AddFoldLayer(3))  # 3
         self._calculator.add_layer(nn_tools.TanhLayer(3))  # 6
         self._calculator.add_layer(ConvertPheromone(3, 2))  # 7
         self._calculator.add_layer(nn_tools.BufLayer(3))  # 8
@@ -407,7 +401,7 @@ class _Robot:
         for rp in robot_pos:
             sensed_robots_position.sense(rp)
 
-        sensed_feeds_position = sensor.OmniSensor(pos, mat, 17.5 + 50.0, 70)
+        sensed_feeds_position = sensor.OmniSensor(pos, mat, 17.5 + 50.0, 500)
         for fp in feed_pos:
             sensed_feeds_position.sense(fp)
 
@@ -461,7 +455,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
         self.window = window
         self.camera = camera
 
-        robot_pos = [(rp[0], rp[1], 45.0 if i < len(robot_pos) / 2 else -45.0) for i, rp in enumerate(robot_pos)]
+        robot_pos = [(rp[0], rp[1], 0) for i, rp in enumerate(robot_pos)]
 
         xml = _gen_env(
             nest_pos, robot_pos, feed_pos,
