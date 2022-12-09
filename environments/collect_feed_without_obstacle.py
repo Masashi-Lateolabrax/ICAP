@@ -261,7 +261,8 @@ class ConvertPheromone(nn_tools.interface.CalcActivator):
         self.pheromone_index = pheromone_index
 
     def calc(self, input_: la.ndarray, output: la.ndarray) -> int:
-        output[self.pheromone_index] = (input_[self.pheromone_index] + 1.0) * 0.5
+        la.copyto(output, input_)
+        output[self.pheromone_index] = (output[self.pheromone_index] + 1.0) * 0.5
         return self.num_node
 
     def num_dim(self) -> int:
