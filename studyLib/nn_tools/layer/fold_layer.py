@@ -12,8 +12,13 @@ class FoldLayer(interface.CalcLayer):
         pass
 
     def calc(self, input_: la.ndarray, output: la.ndarray) -> int:
-        output.fill(0.0)
-        offset = 0
+        if len(input_) <= len(output):
+            output.fill(0.0)
+            la.copyto(output[0:len(input_)], input_)
+            return self.num_node
+
+        la.copyto(output, input_[0:self.num_node])
+        offset = self._stride
         while offset + self.num_node <= len(input_):
             self._func(input_[offset:(offset + self.num_node)], output)
             offset += self._stride
