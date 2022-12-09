@@ -281,7 +281,7 @@ class RobotBrain:
         pheromone_calculator.add_layer(nn_tools.AffineLayer(5))  # 1->0->1
         pheromone_calculator.add_layer(nn_tools.TanhLayer(5))  # 1->0->2
         pheromone_calculator.add_layer(nn_tools.AffineLayer(10))  # 1->0->1
-        pheromone_calculator.add_layer(nn_tools.TanhLayer(10))  # 1->0->2
+        pheromone_calculator.add_layer(nn_tools.SigmoidLayer(10))  # 1->0->2
         pheromone_calculator.add_layer(nn_tools.BufLayer(10))  # 1->0->3
 
         state_calculator = nn_tools.Calculator(7)  # 1->1
@@ -296,7 +296,7 @@ class RobotBrain:
             pheromone_calculator,  # 1->0
             state_calculator  # 1->1
         ]))
-        self._calculator.add_layer(nn_tools.AddFoldLayer(10))  # 2
+        self._calculator.add_layer(nn_tools.MulFoldLayer(10))  # 2
         self._calculator.add_layer(nn_tools.IsMaxLayer(10))  # 3
         self._calculator.add_layer(nn_tools.BufLayer(10))  # 4
         self._calculator.add_layer(nn_tools.InnerDotLayer(3))  # 5
