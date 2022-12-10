@@ -1,6 +1,6 @@
 import numpy
 from environments import utils
-from environments.collect_feed_without_obstacle import EnvCreator
+from environments.collect_feed import EnvCreator
 from studyLib import wrap_mjc, miscellaneous
 
 
@@ -14,7 +14,7 @@ def set_env_creator(env_creator: EnvCreator):
         (-45, -45), (0, -45), (45, -45),
     ]
     env_creator.obstacle_pos = [(0, 300)]
-    env_creator.feed_pos = [(0, 600), (0, 1000)]
+    env_creator.feed_pos = [(0, 800), (0, 1100)]
 
     env_creator.pheromone_field_pos = (0, 550)
     env_creator.pheromone_field_panel_size = 20
