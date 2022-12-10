@@ -1,4 +1,5 @@
 import copy
+from typing import Sequence
 
 import mujoco
 import numpy
@@ -8,7 +9,7 @@ from studyLib import optimizer, wrap_mjc, miscellaneous, nn_tools
 
 def _gen_env(
         nest_pos: (float, float),
-        robot_pos: list[(float, float)],
+        robot_pos: list[(float, float, float)],
         obstacle_pos: list[(float, float)],
         feed_pos: list[(float, float)],
         pheromone_field_panel_size: float,
@@ -20,7 +21,12 @@ def _gen_env(
     generator.add_option({
         "timestep": 0.033333,
         "gravity": "0 0 -981.0",
+        "impratio": "3",
     })
+
+    ######################################################################################################
+    # Set Texture
+    ######################################################################################################
     asset = generator.add_asset()
     asset.add_texture({
         "type": "skybox",
@@ -42,11 +48,102 @@ def _gen_env(
         "texture": "wheel_texture",
     })
 
+    ######################################################################################################
+    # Default Setting
+    ######################################################################################################
+    default = generator.add_default()
+    default.add_geom({
+        "density": "1",  # Unit is g/cm^3. (1000kg/m^3 = 1g/cm^3)
+        "solimp": "0.9 0.95 1.0 0.5 2",
+        "solref": "0.002 100.0",
+    })
+
+    ######################################################################################################
+    # Create Setting for Walls
+    ######################################################################################################
+    wall_height = 15.0
+    wall_default = default.add_default("wall")
+    wall_default.add_geom({
+        "type": "box",
+        "rgba": "0.7 0.7 0.7 0.5",
+        "condim": "1",
+        "priority": "2",
+        "contype": "1",
+        "conaffinity": "2",
+    })
+
+    ######################################################################################################
+    # Create Setting for Obstacles
+    ######################################################################################################
+    obstacle_default = default.add_default("obstacles")
+    obstacle_default.add_geom({
+        "type": "cylinder",
+        "size": "60 10",
+        "rgba": "1 0 0 1",
+        "condim": "1",
+        "priority": "1",
+        "friction": "0.5 0.0 0.0",
+        "contype": "1",
+        "conaffinity": "2",
+    })
+
+    ######################################################################################################
+    # Create Setting for Feeds
+    ######################################################################################################
+    feed_default = default.add_default("feeds")
+    feed_default.add_geom({
+        "type": "cylinder",
+        "size": "50 10",
+        "mass": "3000",  # 3kg = 3000g
+        "rgba": "0 1 1 1",
+        "condim": "3",
+        "priority": "1",
+        "friction": "0.5 0.0 0.0",
+        "contype": "2",
+        "conaffinity": "2",
+    })
+
+    ######################################################################################################
+    # Create Setting for Robots
+    ######################################################################################################
+    body_default = default.add_default("robot_body")
+    body_default.add_geom({
+        "type": "cylinder",
+        "size": "17.5 5",  # 幅35cm，高さ10cm
+        "mass": "3000",  # 3kg = 3000g．ルンバの重さが4kgくらい．
+        "rgba": "1 1 0 0.3",
+        "condim": "1",
+        "priority": "0",
+        "contype": "2",
+        "conaffinity": "2"
+    })
+    wheel_default = default.add_default("robot_wheel")
+    wheel_default.add_geom({
+        "type": "cylinder",
+        "size": "5 5",
+        "mass": "250",
+        "axisangle": "0 1 0 90",
+        "condim": "6",
+        "priority": "1",
+        "friction": "0.2 0.01 0.01",
+        "contype": "1",
+        "conaffinity": "1",
+        "material": "wheel_material"
+    })
+    ball_default = wheel_default.add_default("robot_ball")
+    ball_default.add_geom({
+        "type": "sphere",
+        "size": "1.5",
+        "condim": "1",
+    })
+
     worldbody = generator.get_body()
     act = generator.add_actuator()
     sensor = generator.add_sensor()
 
+    ######################################################################################################
     # Create Ground
+    ######################################################################################################
     worldbody.add_geom({
         "type": "plane",
         "size": "0 0 0.05",
@@ -57,52 +154,41 @@ def _gen_env(
         "conaffinity": "2",
     })
 
+    ######################################################################################################
     # Create Wall
-    pheromone_field_size = (
-        pheromone_field_panel_size * pheromone_field_shape[0], pheromone_field_panel_size * pheromone_field_shape[1]
+    ######################################################################################################
+    big_wall_size = (
+        pheromone_field_panel_size * (pheromone_field_shape[0] + 2),
+        pheromone_field_panel_size * (pheromone_field_shape[1] + 2)
+    )
+    wall_size = (
+        pheromone_field_panel_size * pheromone_field_shape[0],
+        pheromone_field_panel_size * pheromone_field_shape[1]
     )
     worldbody.add_geom({
-        "type": "box",
-        "pos": f"{pheromone_field_pos[0] + 0.5 * (pheromone_field_size[0] + pheromone_field_panel_size)} {pheromone_field_pos[1]} 5",
-        "size": f"{pheromone_field_panel_size * 0.5} {pheromone_field_size[1] * 0.5} 5",
-        "rgba": "0.7 0.7 0.7 0.5",
-        "condim": "1",
-        "priority": "2",
-        "contype": "1",
-        "conaffinity": "2",
+        "class": "wall",
+        "pos": f"{pheromone_field_pos[0] + 0.5 * (wall_size[0] + pheromone_field_panel_size)} {pheromone_field_pos[1]} {wall_height * 0.5}",
+        "size": f"{pheromone_field_panel_size} {big_wall_size[1] * 0.5} {wall_height * 0.5}",
     })
     worldbody.add_geom({
-        "type": "box",
-        "pos": f"{pheromone_field_pos[0] - 0.5 * (pheromone_field_size[0] + pheromone_field_panel_size)} {pheromone_field_pos[1]} 5",
-        "size": f"{pheromone_field_panel_size * 0.5} {pheromone_field_size[1] * 0.5} 5",
-        "rgba": "0.7 0.7 0.7 0.5",
-        "condim": "1",
-        "priority": "2",
-        "contype": "1",
-        "conaffinity": "2",
+        "class": "wall",
+        "pos": f"{pheromone_field_pos[0] - 0.5 * (wall_size[0] + pheromone_field_panel_size)} {pheromone_field_pos[1]} {wall_height * 0.5}",
+        "size": f"{pheromone_field_panel_size} {big_wall_size[1] * 0.5} {wall_height * 0.5}",
     })
     worldbody.add_geom({
-        "type": "box",
-        "pos": f"{pheromone_field_pos[0]} {pheromone_field_pos[1] + 0.5 * (pheromone_field_size[1] + pheromone_field_panel_size)} 5",
-        "size": f"{pheromone_field_size[0] * 0.5} {pheromone_field_panel_size * 0.5} 5",
-        "rgba": "0.7 0.7 0.7 0.5",
-        "condim": "1",
-        "priority": "2",
-        "contype": "1",
-        "conaffinity": "2",
+        "class": "wall",
+        "pos": f"{pheromone_field_pos[0]} {pheromone_field_pos[1] + 0.5 * (wall_size[1] + pheromone_field_panel_size)} {wall_height * 0.5}",
+        "size": f"{wall_size[0] * 0.5} {pheromone_field_panel_size} {wall_height * 0.5}",
     })
     worldbody.add_geom({
-        "type": "box",
-        "pos": f"{pheromone_field_pos[0]} {pheromone_field_pos[1] - 0.5 * (pheromone_field_size[1] + pheromone_field_panel_size)} 5",
-        "size": f"{pheromone_field_size[0] * 0.5} {pheromone_field_panel_size * 0.5} 5",
-        "rgba": "0.7 0.7 0.7 0.5",
-        "condim": "1",
-        "priority": "2",
-        "contype": "1",
-        "conaffinity": "2",
+        "class": "wall",
+        "pos": f"{pheromone_field_pos[0]} {pheromone_field_pos[1] - 0.5 * (wall_size[1] + pheromone_field_panel_size)} {wall_height * 0.5}",
+        "size": f"{wall_size[0] * 0.5} {pheromone_field_panel_size} {wall_height * 0.5}",
     })
 
+    ######################################################################################################
     # Create Nest
+    ######################################################################################################
     worldbody.add_geom({
         "type": "cylinder",
         "pos": f"{nest_pos[0]} {nest_pos[1]} -3",
@@ -110,23 +196,19 @@ def _gen_env(
         "rgba": "0.0 1.0 0.0 1",
     })
 
+    ######################################################################################################
     # Create Obstacles
+    ######################################################################################################
     for i, op in enumerate(obstacle_pos):
         worldbody.add_geom({
             "name": f"obstacle{i}",
-            "type": "cylinder",
-            "size": "100 10",
-            "rgba": "1 0 0 1",
+            "class": "obstacles",
             "pos": f"{op[0]} {op[1]} 10",
-            "condim": "3",
-            "priority": "1",
-            "friction": "0.5 0.0 0.0",
-            "contype": "1",
-            "conaffinity": "2",
         })
 
+    ######################################################################################################
     # Create Feeds
-    feed_weight = 3000
+    ######################################################################################################
     for i, fp in enumerate(feed_pos):
         feed_body = worldbody.add_body({
             "name": f"feed{i}",
@@ -134,97 +216,40 @@ def _gen_env(
         })
         feed_body.add_freejoint()
         feed_body.add_site({"name": f"site_feed{i}"})
-        feed_body.add_geom({
-            "type": "cylinder",
-            "size": "50 10",
-            "mass": f"{feed_weight}",
-            "rgba": "0 1 1 1",
-            "condim": "3",
-            "priority": "1",
-            "friction": "0.5 0.0 0.0",
-            "contype": "2",
-            "conaffinity": "2",
-        })
+        feed_body.add_geom({"class": "feeds"})
         sensor.add_velocimeter({
             "name": f"sensor_feed{i}_velocity",
             "site": f"site_feed{i}"
         })
 
+    ######################################################################################################
     # Create Robots
+    ######################################################################################################
     depth = 1.0
-    body_density = 0.51995  # 鉄の密度(7.874 g/cm^3), ルンバの密度(0.51995 g/cm^3)
-    wheel_density = 0.3
     for i, rp in enumerate(robot_pos):
         robot_body = worldbody.add_body({
             "name": f"robot{i}",
             "pos": f"{rp[0]} {rp[1]} {10 + depth + 0.5}",
-            "axisangle": f"0 0 1 0",
+            "axisangle": f"0 0 1 {rp[2]}",
         })
         robot_body.add_freejoint()
-        robot_body.add_geom({
-            "type": "cylinder",
-            "size": "17.5 5",  # 幅35cm，高さ10cm
-            "density": f"{body_density}",
-            "rgba": "1 1 0 0.3",
-            "condim": "1",
-            "priority": "0",
-            "contype": "2",
-            "conaffinity": "2"
-        })
+        robot_body.add_geom({"class": "robot_body"})
 
         right_wheel_body = robot_body.add_body({"pos": f"10 0 -{depth}"})
         right_wheel_body.add_joint({"name": f"joint_robot{i}_right", "type": "hinge", "axis": "-1 0 0"})
-        right_wheel_body.add_geom({
-            "type": "cylinder",
-            "size": "5 5",
-            "density": f"{wheel_density}",
-            "axisangle": "0 1 0 90",
-            "condim": "6",
-            "priority": "1",
-            "friction": "0.2 0.01 0.01",
-            "contype": "1",
-            "conaffinity": "1",
-            "material": "wheel_material"
-        })
+        right_wheel_body.add_geom({"class": "robot_wheel"})
 
         left_wheel_body = robot_body.add_body({"pos": f"-10 0 -{depth}"})
         left_wheel_body.add_joint({"name": f"joint_robot{i}_left", "type": "hinge", "axis": "-1 0 0"})
-        left_wheel_body.add_geom({
-            "type": "cylinder",
-            "size": "5 5",
-            "density": f"{wheel_density}",
-            "axisangle": "0 1 0 90",
-            "condim": "6",
-            "priority": "1",
-            "friction": "0.2 0.01 0.01",
-            "contype": "1",
-            "conaffinity": "1",
-            "material": "wheel_material"
-        })
+        left_wheel_body.add_geom({"class": "robot_wheel"})
 
         front_wheel_body = robot_body.add_body({"pos": f"0 15 {-5 + 1.5 - depth}"})
         front_wheel_body.add_joint({"type": "ball"})
-        front_wheel_body.add_geom({
-            "type": "sphere",
-            "size": "1.5",
-            "density": f"{wheel_density}",
-            "condim": "1",
-            "priority": "1",
-            "contype": "1",
-            "conaffinity": "1",
-        })
+        front_wheel_body.add_geom({"class": "robot_ball"})
 
         rear_wheel_body = robot_body.add_body({"pos": f"0 -15 {-5 + 1.5 - depth}"})
         rear_wheel_body.add_joint({"type": "ball"})
-        rear_wheel_body.add_geom({
-            "type": "sphere",
-            "size": "1.5",
-            "density": f"{wheel_density}",
-            "condim": "1",
-            "priority": "1",
-            "contype": "1",
-            "conaffinity": "1",
-        })
+        rear_wheel_body.add_geom({"class": "robot_ball"})
 
         act.add_velocity({
             "name": f"act_robot{i}_left",
@@ -239,6 +264,9 @@ def _gen_env(
             "gear": "30"
         })
 
+    ######################################################################################################
+    # Generate XML
+    ######################################################################################################
     xml = generator.generate()
     return xml
 
@@ -263,21 +291,56 @@ class _Feed:
         return self._velocity_sensor.get_data()
 
 
+class ConvertPheromone(nn_tools.interface.CalcActivator):
+    def __init__(self, num_node: int, pheromone_index: int):
+        super().__init__(num_node)
+        self.pheromone_index = pheromone_index
+
+    def calc(self, input_: nn_tools.la.ndarray, output: nn_tools.la.ndarray) -> int:
+        nn_tools.la.copyto(output, input_)
+        output[self.pheromone_index] = (output[self.pheromone_index] + 1.0) * 0.5
+        return self.num_node
+
+    def num_dim(self) -> int:
+        return 0
+
+    def load(self, offset: int, array: Sequence) -> int:
+        return 0
+
+    def save(self, array: list) -> None:
+        return None
+
+
 class RobotBrain:
     def __init__(self, para):
-        self._calculator = nn_tools.Calculator(11)
-        self._calculator.add_layer(nn_tools.BufLayer(11))  # 0
+        self._calculator = nn_tools.Calculator(9)
+        self._calculator.add_layer(nn_tools.BufLayer(9))  # 0
 
-        self._calculator.add_layer(nn_tools.AffineLayer(30))  # 1
-        self._calculator.add_layer(nn_tools.TanhLayer(30))  # 2
+        pheromone_calculator = nn_tools.Calculator(9)  # 1->0
+        pheromone_calculator.add_layer(nn_tools.FilterLayer([8]))  # 1->0->0
+        pheromone_calculator.add_layer(nn_tools.AffineLayer(5))  # 1->0->1
+        pheromone_calculator.add_layer(nn_tools.TanhLayer(5))  # 1->0->2
+        pheromone_calculator.add_layer(nn_tools.AffineLayer(5))  # 1->0->3
+        pheromone_calculator.add_layer(nn_tools.TanhLayer(5))  # 1->0->4
+        pheromone_calculator.add_layer(nn_tools.AffineLayer(3))  # 1->0->5
 
-        self._calculator.add_layer(nn_tools.AffineLayer(10))  # 3
-        self._calculator.add_layer(nn_tools.IsMaxLayer(10))  # 4
-        self._calculator.add_layer(nn_tools.BufLayer(10))  # 5
+        state_calculator = nn_tools.Calculator(9)  # 1->1
+        state_calculator.add_layer(nn_tools.FilterLayer([0, 1, 2, 3, 4, 5, 6, 7]))  # 1->1->0
+        state_calculator.add_layer(nn_tools.AffineLayer(16))  # 1->1->1
+        state_calculator.add_layer(nn_tools.TanhLayer(16))  # 1->1->2
+        state_calculator.add_layer(nn_tools.AffineLayer(5))  # 1->1->3
+        state_calculator.add_layer(nn_tools.TanhLayer(5))  # 1->1->4
+        state_calculator.add_layer(nn_tools.AffineLayer(3))  # 1->1->5
 
-        self._calculator.add_layer(nn_tools.InnerDotLayer(3))  # 6
-        self._calculator.add_layer(nn_tools.TanhLayer(3))  # 7
-        self._calculator.add_layer(nn_tools.BufLayer(3))  # 8
+        self._calculator.add_layer(nn_tools.ParallelLayer([  # 1
+            pheromone_calculator,  # 1->0
+            state_calculator  # 1->1
+        ]))
+        self._calculator.add_layer(nn_tools.BufLayer(6))  # 2
+        self._calculator.add_layer(nn_tools.AddFoldLayer(3))  # 3
+        self._calculator.add_layer(nn_tools.TanhLayer(3))  # 4
+        self._calculator.add_layer(ConvertPheromone(3, 2))  # 5
+        self._calculator.add_layer(nn_tools.BufLayer(3))  # 6
 
         if not (para is None):
             self._calculator.load(para)
@@ -292,17 +355,17 @@ class RobotBrain:
         buf_layer: nn_tools.BufLayer = self._calculator.get_layer(0)
         return buf_layer.buf.copy()
 
-    def get_calced_feature_value(self) -> numpy.ndarray:
-        buf_layer: nn_tools.BufLayer = self._calculator.get_layer(5)
+    def get_feature_values(self) -> numpy.ndarray:
+        buf_layer: nn_tools.BufLayer = self._calculator.get_layer(2)
         return buf_layer.buf.copy()
-
-    def get_action(self, i: int) -> numpy.ndarray:
-        inner_dot_layer: nn_tools.InnerDotLayer = self._calculator.get_layer(6)
-        return numpy.array(inner_dot_layer.weights[:, i])
 
     def get_output(self) -> numpy.ndarray:
-        buf_layer: nn_tools.BufLayer = self._calculator.get_layer(8)
+        buf_layer: nn_tools.BufLayer = self._calculator.get_layer(6)
         return buf_layer.buf.copy()
+
+    def get_pheromone_calculator(self) -> nn_tools.Calculator:
+        parallel_layer: nn_tools.ParallelLayer = self._calculator.get_layer(1)
+        return parallel_layer.calcs[0]
 
 
 class _Robot:
@@ -332,7 +395,6 @@ class _Robot:
     def act(
             self,
             pheromone_value: float,
-            pheromone_grad: numpy.ndarray,
             nest_pos: numpy.ndarray,
             robot_pos: list[numpy.ndarray],
             obstacle_pos: list[numpy.ndarray],
@@ -354,7 +416,7 @@ class _Robot:
         for rp in robot_pos:
             rs.sense(rp)
 
-        os = sensor.OmniSensor(pos, mat, 17.5 + 100.0, 70)
+        os = sensor.OmniSensor(pos, mat, 17.5 + 60.0, 70)
         for op in obstacle_pos:
             os.sense(op)
 
@@ -363,7 +425,7 @@ class _Robot:
             fs.sense(fp)
 
         input_ = numpy.concatenate(
-            [nest_direction, rs.value, os.value, fs.value, [pheromone_value], pheromone_grad]
+            [nest_direction, rs.value, os.value, fs.value, [pheromone_value]]
         )
         ctrl = self.brain.calc(input_)
 
@@ -395,6 +457,8 @@ class Environment(optimizer.MuJoCoEnvInterface):
         self.timestep = timestep
         self.window = window
         self.camera = camera
+
+        robot_pos = [(rp[0], rp[1], 0) for i, rp in enumerate(robot_pos)]
 
         xml = _gen_env(
             nest_pos, robot_pos, obstacle_pos, feed_pos,
@@ -439,30 +503,31 @@ class Environment(optimizer.MuJoCoEnvInterface):
         feed_pos = [f.get_pos() for f in self.feeds]
         for r, rp in zip(self.robots, robot_pos):
             pheromone_value = self.pheromone_field.get_gas(rp[0], rp[1])
-            pheromone_grad = self.pheromone_field.get_gas_grad(rp, r.get_direction()[0:2])
-            secretion = r.act(pheromone_value, pheromone_grad, self.nest_pos, robot_pos, self.obstacle_pos, feed_pos)
+            secretion = r.act(pheromone_value, self.nest_pos, robot_pos, self.obstacle_pos, feed_pos)
             self.pheromone_field.add_liquid(rp[0], rp[1], secretion)
 
         # Calculate loss
-        feed_range = 30000.0
+        feed_range = 10000.0
         dt_loss_feed_nest = 0.0
         dt_loss_feed_robot = 0.0
         for f, fp in zip(self.feeds, feed_pos):
             feed_nest_vector = (self.nest_pos - fp)[0:2]
-            dt_loss_feed_nest += numpy.linalg.norm(feed_nest_vector, ord=2)
+            feed_nest_distance = numpy.linalg.norm(feed_nest_vector, ord=2)
+            valid_feed_velocity = numpy.dot(feed_nest_vector / feed_nest_distance, f.get_velocity()[0:2])
+            dt_loss_feed_nest -= valid_feed_velocity
 
             for rp in robot_pos:
                 d = numpy.sum((fp[0:2] - rp[0:2]) ** 2)
                 dt_loss_feed_robot -= numpy.exp(-d / feed_range)
 
-        obstacle_range = 650.0
+        obstacle_range = 500.0
         dt_loss_obstacle_robot = 0.0
         for rp in robot_pos:
             for op in self.obstacle_pos:
                 d = numpy.sum((rp[0:2] - op[0:2]) ** 2)
                 dt_loss_obstacle_robot += numpy.exp(-d / obstacle_range)
 
-        dt_loss_feed_nest *= 1e-3 / len(self.feeds)
+        dt_loss_feed_nest *= 0.1 / len(self.feeds)
         dt_loss_feed_robot *= 1.0 / (len(self.feeds) * len(self.robots))
         dt_loss_obstacle_robot *= 1e12 / (len(self.obstacle_pos) * len(self.robots))
         self.loss += dt_loss_feed_nest + dt_loss_feed_robot + dt_loss_obstacle_robot
