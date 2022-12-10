@@ -48,6 +48,10 @@ class Calculator:
             return self.buf2[0:size]
 
     def load(self, array):
+        dim = self.num_dim()
+        if len(array) != dim:
+            print(f"[WARNING] The Passed Calculator Parameter Dimension is {len(array)} "
+                  f"but The Calculater Dimension is {dim}.")
         offset = 0
         for layer in self._layer:
             offset += layer.load(offset, array)
