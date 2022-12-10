@@ -33,10 +33,10 @@ if __name__ == "__main__":
         env_creator = EnvCreator()
         set_env_creator(env_creator)
 
-        generation = 100
-        population = 500
-        mu = 250
-        sigma = 3.0
+        generation = 500
+        population = 300  # int(3.0 * numpy.log(env_creator.dim())) * 4
+        mu = 10
+        sigma = 0.3
         centroid = None
 
         # Resume
