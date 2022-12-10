@@ -56,7 +56,7 @@ if __name__ == "__main__":
         # para, hist = utils.cmaes_optimize(generation, population, mu, sigma, centroid, env_creator, 1, True)
         para, hist = utils.cmaes_optimize_server(generation, population, mu, sigma, centroid, env_creator, 52325, True)
         numpy.save("best_para.npy", para)
-        hist.save("history.log")
+        hist.save("history")
 
         width: int = 500
         height: int = 700
