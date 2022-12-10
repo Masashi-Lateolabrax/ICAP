@@ -385,7 +385,7 @@ class _Robot:
         for rp in robot_pos:
             sensed_robots_position.sense(rp)
 
-        sensed_feeds_position = sensor.OmniSensor(pos, mat, 17.5 + 50.0, 500)
+        sensed_feeds_position = sensor.OmniSensor(pos, mat, 17.5 + 50.0, 70)
         for fp in feed_pos:
             sensed_feeds_position.sense(fp)
 
@@ -486,7 +486,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
             self.pheromone_field.add_liquid(rp[0], rp[1], secretion)
 
         # Calculate loss
-        feed_range = 50000.0
+        feed_range = 80000.0
         dt_loss_feed_nest = 0.0
         dt_loss_feed_robot = 0.0
         for f, fp in zip(self.feeds, feed_pos):
