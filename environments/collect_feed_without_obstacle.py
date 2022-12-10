@@ -328,13 +328,17 @@ class RobotBrain:
         buf_layer: nn_tools.BufLayer = self._calculator.get_layer(0)
         return buf_layer.buf.copy()
 
-    def get_calced_feature_value(self) -> numpy.ndarray:
+    def get_feature_values(self) -> numpy.ndarray:
         buf_layer: nn_tools.BufLayer = self._calculator.get_layer(2)
         return buf_layer.buf.copy()
 
     def get_output(self) -> numpy.ndarray:
         buf_layer: nn_tools.BufLayer = self._calculator.get_layer(6)
         return buf_layer.buf.copy()
+
+    def get_pheromone_calculator(self) -> nn_tools.Calculator:
+        parallel_layer: nn_tools.ParallelLayer = self._calculator.get_layer(1)
+        return parallel_layer.calcs[0]
 
 
 class _Robot:
