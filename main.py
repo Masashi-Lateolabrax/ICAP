@@ -35,8 +35,8 @@ if __name__ == "__main__":
 
         generation = 100
         population = 500
-        mu = 10
-        sigma = 0.3
+        mu = 250
+        sigma = 3.0
         centroid = None
 
         # Resume
