@@ -93,3 +93,21 @@ class Hist:
             sigma: float
     ):
         self.queues.append(Queue(scores_avg, centroid, min_score, min_para, max_score, max_para, sigma))
+
+    def get_min(self) -> (float, numpy.ndarray):
+        para = self.queues[0].min_para
+        score = float("inf")
+        for q in self.queues:
+            if score > q.min_score:
+                score = q.min_score
+                para = q.min_para
+        return score, para.copy()
+
+    def get_max(self) -> (float, numpy.ndarray):
+        para = self.queues[0].min_para
+        score = -float("inf")
+        for q in self.queues:
+            if score < q.max_score:
+                score = q.max_score
+                para = q.max_para
+        return score, para.copy()
