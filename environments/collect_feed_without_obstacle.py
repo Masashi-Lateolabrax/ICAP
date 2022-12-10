@@ -332,10 +332,6 @@ class RobotBrain:
         buf_layer: nn_tools.BufLayer = self._calculator.get_layer(2)
         return buf_layer.buf.copy()
 
-    def get_action(self, i: int) -> numpy.ndarray:
-        inner_dot_layer: nn_tools.InnerDotLayer = self._calculator.get_layer(5)
-        return numpy.array(inner_dot_layer.weights[:, i])
-
     def get_output(self) -> numpy.ndarray:
         buf_layer: nn_tools.BufLayer = self._calculator.get_layer(6)
         return buf_layer.buf.copy()
@@ -503,7 +499,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
                 dt_loss_feed_robot -= numpy.exp(-d / feed_range)
 
         dt_loss_feed_nest *= 1e0 / len(self.feeds)
-        dt_loss_feed_robot *= 1e0 / (len(self.feeds) * len(self.robots))
+        dt_loss_feed_robot *= 1e-1 / (len(self.feeds) * len(self.robots))
         self.loss += dt_loss_feed_nest + dt_loss_feed_robot
 
         return self.loss
