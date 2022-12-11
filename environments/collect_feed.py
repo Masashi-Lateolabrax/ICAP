@@ -514,7 +514,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
             self.pheromone_field.add_liquid(rp[0], rp[1], secretion)
 
         # Calculate loss
-        feed_range = 10000.0
+        feed_range = 8000.0
         dt_loss_feed_nest = 0.0
         dt_loss_feed_robot = 0.0
         for f, fp in zip(self.feeds, feed_pos):
