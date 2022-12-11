@@ -14,11 +14,11 @@ class EnvInterface(metaclass=abc.ABCMeta):
 
 class MuJoCoEnvInterface(EnvInterface, abc.ABC):
     @abc.abstractmethod
-    def render(self) -> float:
+    def render(self, rect: (int, int, int, int) = None, flush: bool = True) -> float:
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def calc_and_show(self) -> float:
+    def calc_and_show(self, rect: (int, int, int, int) = None) -> float:
         raise NotImplementedError()
 
 

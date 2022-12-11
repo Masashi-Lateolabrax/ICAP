@@ -553,20 +553,21 @@ class Environment(optimizer.MuJoCoEnvInterface):
                 return score
         return self.loss
 
-    def render(self):
+    def render(self, rect: (int, int, int, int) = None, flush: bool = True):
         if self.window is not None:
-            if not self.window.render(self.model, self.camera):
+            if not self.window.render(self.model, self.camera, rect):
                 exit()
             self.pheromone_field[self.show_pheromone_index].update_panels()
             self.model.draw_text(f"{self.loss}", 0, 0, (1, 1, 1))
-            self.window.flush()
+            if flush:
+                self.window.flush()
 
-    def calc_and_show(self) -> float:
+    def calc_and_show(self, rect: (int, int, int, int) = None) -> float:
         for t in range(0, self.timestep):
             score = self.calc_step()
             if numpy.isinf(score):
                 return score
-            self.render()
+            self.render(rect)
         return self.loss
 
 

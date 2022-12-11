@@ -66,14 +66,17 @@ class Window:
             self.recorder.release()
         self.recorder = recorder
 
-    def render(self, model: WrappedModel, cam: Camera = None) -> bool:
+    def render(self, model: WrappedModel, cam: Camera = None, rect: (int, int, int, int) = None) -> bool:
         if glfw.window_should_close(self.window):
             return False
 
         ctx = model.get_ctx()
         scn = model.get_scene(cam)
-        (width, height) = self.get_size()
-        rect = mujoco.MjrRect(0, 0, width, height)
+        if rect is None:
+            (width, height) = self.get_size()
+            rect = mujoco.MjrRect(0, 0, width, height)
+        else:
+            rect = mujoco.MjrRect(rect[0], rect[1], rect[2], rect[3])
 
         glfw.make_context_current(self.window)
         mujoco.mjr_render(rect, scn, ctx)
