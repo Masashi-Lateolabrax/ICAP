@@ -316,32 +316,32 @@ class ConvertPheromone(nn_tools.interface.CalcActivator):
 
 class RobotBrain:
     def __init__(self, para):
-        self._calculator = nn_tools.Calculator(9)
-        self._calculator.add_layer(nn_tools.BufLayer(9))  # 0
+        self._calculator = nn_tools.Calculator(10)
+        self._calculator.add_layer(nn_tools.BufLayer(10))  # 0
 
-        pheromone_calculator = nn_tools.Calculator(9)  # 1->0
-        pheromone_calculator.add_layer(nn_tools.FilterLayer([8]))  # 1->0->0
+        pheromone_calculator = nn_tools.Calculator(10)  # 1->0
+        pheromone_calculator.add_layer(nn_tools.FilterLayer([8, 9]))  # 1->0->0
         pheromone_calculator.add_layer(nn_tools.AffineLayer(30))  # 1->0->1
         pheromone_calculator.add_layer(nn_tools.TanhLayer(30))  # 1->0->2
         pheromone_calculator.add_layer(nn_tools.AffineLayer(10))  # 1->0->3
         pheromone_calculator.add_layer(nn_tools.TanhLayer(10))  # 1->0->4
-        pheromone_calculator.add_layer(nn_tools.AffineLayer(3))  # 1->0->5
+        pheromone_calculator.add_layer(nn_tools.AffineLayer(4))  # 1->0->5
 
-        state_calculator = nn_tools.Calculator(9)  # 1->1
+        state_calculator = nn_tools.Calculator(10)  # 1->1
         state_calculator.add_layer(nn_tools.FilterLayer([0, 1, 2, 3, 4, 5, 6, 7]))  # 1->1->0
         state_calculator.add_layer(nn_tools.AffineLayer(10))  # 1->1->1
         state_calculator.add_layer(nn_tools.TanhLayer(10))  # 1->1->2
-        state_calculator.add_layer(nn_tools.AffineLayer(3))  # 1->1->3
+        state_calculator.add_layer(nn_tools.AffineLayer(4))  # 1->1->3
 
         self._calculator.add_layer(nn_tools.ParallelLayer([  # 1
             pheromone_calculator,  # 1->0
             state_calculator  # 1->1
         ]))
-        self._calculator.add_layer(nn_tools.BufLayer(6))  # 2
-        self._calculator.add_layer(nn_tools.AddFoldLayer(3))  # 3
-        self._calculator.add_layer(nn_tools.TanhLayer(3))  # 4
-        self._calculator.add_layer(ConvertPheromone(3, 2))  # 5
-        self._calculator.add_layer(nn_tools.BufLayer(3))  # 6
+        self._calculator.add_layer(nn_tools.BufLayer(8))  # 2
+        self._calculator.add_layer(nn_tools.AddFoldLayer(4))  # 3
+        self._calculator.add_layer(nn_tools.TanhLayer(4))  # 4
+        self._calculator.add_layer(ConvertPheromone(4, [2, 3]))  # 5
+        self._calculator.add_layer(nn_tools.BufLayer(4))  # 6
 
         if not (para is None):
             self._calculator.load(para)
