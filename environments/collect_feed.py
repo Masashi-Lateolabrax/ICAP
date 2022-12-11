@@ -318,16 +318,16 @@ class RobotBrain:
 
         pheromone_calculator = nn_tools.Calculator(9)  # 1->0
         pheromone_calculator.add_layer(nn_tools.FilterLayer([8]))  # 1->0->0
-        pheromone_calculator.add_layer(nn_tools.AffineLayer(5))  # 1->0->1
-        pheromone_calculator.add_layer(nn_tools.TanhLayer(5))  # 1->0->2
-        pheromone_calculator.add_layer(nn_tools.AffineLayer(5))  # 1->0->3
-        pheromone_calculator.add_layer(nn_tools.TanhLayer(5))  # 1->0->4
+        pheromone_calculator.add_layer(nn_tools.AffineLayer(30))  # 1->0->1
+        pheromone_calculator.add_layer(nn_tools.TanhLayer(30))  # 1->0->2
+        pheromone_calculator.add_layer(nn_tools.AffineLayer(10))  # 1->0->3
+        pheromone_calculator.add_layer(nn_tools.TanhLayer(10))  # 1->0->4
         pheromone_calculator.add_layer(nn_tools.AffineLayer(3))  # 1->0->5
 
         state_calculator = nn_tools.Calculator(9)  # 1->1
         state_calculator.add_layer(nn_tools.FilterLayer([0, 1, 2, 3, 4, 5, 6, 7]))  # 1->1->0
-        state_calculator.add_layer(nn_tools.AffineLayer(16))  # 1->1->1
-        state_calculator.add_layer(nn_tools.TanhLayer(16))  # 1->1->2
+        state_calculator.add_layer(nn_tools.AffineLayer(10))  # 1->1->1
+        state_calculator.add_layer(nn_tools.TanhLayer(10))  # 1->1->2
         state_calculator.add_layer(nn_tools.AffineLayer(3))  # 1->1->3
 
         self._calculator.add_layer(nn_tools.ParallelLayer([  # 1
