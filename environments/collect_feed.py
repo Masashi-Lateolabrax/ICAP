@@ -538,7 +538,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
                 d = numpy.sum((rp[0:2] - op[0:2]) ** 2)
                 dt_loss_obstacle_robot += numpy.exp(-d / obstacle_range)
 
-        dt_loss_feed_nest *= 0.01 / len(self.feeds)
+        dt_loss_feed_nest *= 1.0 / len(self.feeds)
         dt_loss_feed_robot *= 1.0 / (len(self.feeds) * len(self.robots))
         dt_loss_obstacle_robot *= 1e12 / (len(self.obstacle_pos) * len(self.robots))
         self.loss += dt_loss_feed_nest + dt_loss_feed_robot + dt_loss_obstacle_robot
