@@ -93,7 +93,7 @@ def _gen_env(
     feed_default = default.add_default("feeds")
     feed_default.add_geom({
         "type": "cylinder",
-        "size": "50 10",
+        "size": "35 10",
         "mass": "3000",  # 3kg = 3000g
         "rgba": "0 1 1 1",
         "condim": "3",
