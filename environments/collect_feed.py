@@ -485,9 +485,16 @@ class Environment(optimizer.MuJoCoEnvInterface):
 
         self.loss = 0.0
 
+        for _ in range(0, 15):
+            self.pheromone_field.set_liquid(self.nest_pos[0], self.nest_pos[1], 800)
+            self.model.step()
+            for _ in range(5):
+                self.pheromone_field.update_cells(0.033333 / 5)
+
     def calc_step(self) -> float:
         # Calculate
         self.model.step()
+        self.pheromone_field.set_liquid(self.nest_pos[0], self.nest_pos[1], 800)
         for _ in range(5):
             self.pheromone_field.update_cells(0.033333 / 5)
 
@@ -535,14 +542,10 @@ class Environment(optimizer.MuJoCoEnvInterface):
         return self.loss
 
     def calc(self) -> float:
-        for _ in range(0, 5):
-            self.model.step()
-
         for t in range(0, self.timestep):
             score = self.calc_step()
             if numpy.isinf(score):
                 return score
-
         return self.loss
 
     def render(self):
@@ -554,15 +557,11 @@ class Environment(optimizer.MuJoCoEnvInterface):
             self.window.flush()
 
     def calc_and_show(self) -> float:
-        for _ in range(0, 5):
-            self.model.step()
-
         for t in range(0, self.timestep):
             score = self.calc_step()
             if numpy.isinf(score):
                 return score
             self.render()
-
         return self.loss
 
 

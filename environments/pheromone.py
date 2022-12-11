@@ -85,17 +85,6 @@ class PheromoneField:
         e4 = x * y
         return (x1, y1, e1), (x2, y1, e2), (x1, y2, e3), (x2, y2, e4)
 
-    def _add_liquid(self, ix: int, iy: int, value: float) -> None:
-        """
-        液体の量を表す指定した要素に値を加算する．
-        :param ix: 要素のインデックス．
-        :param iy: 要素のインデックス．
-        :param value: 加算する値．
-        :return: None
-        """
-        if 0 <= ix < self._nx and 0 <= iy < self._ny:
-            self._liquid[iy, ix] += value
-
     def add_liquid(self, x: float, y: float, value: float) -> None:
         """
         液体の量を表す指定した座標の付近の複数の要素に重みづけされた指定した量を加える．
@@ -105,8 +94,15 @@ class PheromoneField:
         :return:
         """
         dico = self._calc_dico(x, y)
-        for x, y, e in dico:
-            self._add_liquid(x, y, value * e)
+        for ix, iy, e in dico:
+            if 0 <= ix < self._nx and 0 <= iy < self._ny:
+                self._liquid[iy, ix] += value * e
+
+    def set_liquid(self, x: float, y: float, value: float) -> None:
+        dico = self._calc_dico(x, y)
+        for ix, iy, e in dico:
+            if 0 <= ix < self._nx and 0 <= iy < self._ny:
+                self._liquid[iy, ix] = value * e
 
     def _get_gas(self, ix: int, iy: int) -> float:
         if 0 <= ix < self._nx and 0 <= iy < self._ny:
