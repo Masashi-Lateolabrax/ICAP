@@ -63,14 +63,22 @@ if __name__ == "__main__":
         width: int = 500
         height: int = 700
         scale: int = 1
-        window = miscellaneous.Window(width * scale, height * scale)
+        window = miscellaneous.Window(len(env_creator.sv) * width * scale, height * scale)
         camera = wrap_mjc.Camera((0, 600, 0), 2500, 90, 90)
-        # camera = wrap_mjc.Camera((0, 0, 0), 500, 90, 90)
-        window.set_recorder(miscellaneous.Recorder("result.mp4", 30, width, height))
+        window.set_recorder(miscellaneous.Recorder("replay.mp4", 30, len(env_creator.sv) * width, height))
 
-        para = numpy.load("best_para.npy")
-        env = env_creator.create_mujoco_env(para, window, camera)
-        score = env.calc_and_show()
+        envs = []
+        for i in range(0, len(env_creator.sv)):
+            env_creator.show_pheromone_index = i
+            env = env_creator.create_mujoco_env(para, window, camera)
+            envs.append(env)
+
+        timestep = envs[0].timestep
+        score = float("nan")
+        for t in range(0, timestep):
+            for i, env in enumerate(envs):
+                score = env.calc_step()
+                env.render((width * i, 0, width, height), i == len(envs) - 1)
         print(f"Result : {score}")
 
 
