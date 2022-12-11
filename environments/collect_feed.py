@@ -426,7 +426,7 @@ class _Robot:
         ctrl = self.brain.calc(input_)
 
         self.rotate_wheel(ctrl[0], ctrl[1])
-        return 30 * (ctrl[2] + 1.0) * 0.5
+        return 30 * ctrl[2], 30 * ctrl[3]
 
 
 class Environment(optimizer.MuJoCoEnvInterface):
@@ -539,7 +539,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
                 d = numpy.sum((rp[0:2] - op[0:2]) ** 2)
                 dt_loss_obstacle_robot += numpy.exp(-d / obstacle_range)
 
-        dt_loss_feed_nest *= 1.0 / len(self.feeds)
+        dt_loss_feed_nest *= 0.1 / len(self.feeds)
         dt_loss_feed_robot *= 1.0 / (len(self.feeds) * len(self.robots))
         dt_loss_obstacle_robot *= 1e12 / (len(self.obstacle_pos) * len(self.robots))
         self.loss += dt_loss_feed_nest + dt_loss_feed_robot + dt_loss_obstacle_robot
