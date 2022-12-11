@@ -35,8 +35,8 @@ if __name__ == "__main__":
         set_env_creator(env_creator)
 
         generation = 300
-        population = 100  # int(3.0 * numpy.log(env_creator.dim())) * 4
-        mu = int(3.0 * numpy.log(env_creator.dim())) * 2
+        population = 150  # int(3.0 * numpy.log(env_creator.dim())) * 4
+        mu = 10  # int(3.0 * numpy.log(env_creator.dim())) * 2
         sigma = 0.3
         centroid = None
         print(f"population : {population}, parent number : {mu}")
