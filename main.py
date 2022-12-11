@@ -25,7 +25,7 @@ def set_env_creator(env_creator: EnvCreator):
     env_creator.diffusion = 35.0
     env_creator.decrease = 0.1
 
-    env_creator.timestep = int(60 / 0.033333)
+    env_creator.timestep = int(30 / 0.033333)
 
 
 if __name__ == "__main__":
