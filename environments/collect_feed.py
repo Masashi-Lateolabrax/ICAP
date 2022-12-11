@@ -292,13 +292,16 @@ class _Feed:
 
 
 class ConvertPheromone(nn_tools.interface.CalcActivator):
-    def __init__(self, num_node: int, pheromone_index: int):
+    def __init__(self, num_node: int, pheromone_indexes: len[int]):
         super().__init__(num_node)
-        self.pheromone_index = pheromone_index
+        self.mask = [False] * num_node
+        for i in pheromone_indexes:
+            self.mask[i] = True
 
     def calc(self, input_: nn_tools.la.ndarray, output: nn_tools.la.ndarray) -> int:
         nn_tools.la.copyto(output, input_)
-        output[self.pheromone_index] = (output[self.pheromone_index] + 1.0) * 0.5
+        output[self.mask] += 1.0
+        output[self.mask] *= 0.5
         return self.num_node
 
     def num_dim(self) -> int:
@@ -392,7 +395,7 @@ class _Robot:
 
     def act(
             self,
-            pheromone_value: float,
+            pheromone_values: len[float],
             nest_pos: numpy.ndarray,
             robot_pos: list[numpy.ndarray],
             obstacle_pos: list[numpy.ndarray],
@@ -418,7 +421,7 @@ class _Robot:
             fs.sense(fp)
 
         input_ = numpy.concatenate(
-            [ref_nest_pos, rs.value, os.value, fs.value, [pheromone_value]]
+            [ref_nest_pos, rs.value, os.value, fs.value, pheromone_values]
         )
         ctrl = self.brain.calc(input_)
 
@@ -434,20 +437,22 @@ class Environment(optimizer.MuJoCoEnvInterface):
             robot_pos: list[(float, float)],
             obstacle_pos: list[(float, float)],
             feed_pos: list[(float, float)],
-            sv: float,
-            evaporate: float,
-            diffusion: float,
-            decrease: float,
+            sv: len[float],
+            evaporate: len[float],
+            diffusion: len[float],
+            decrease: len[float],
             pheromone_field_panel_size: float,
             pheromone_field_pos: (float, float),
             pheromone_field_shape: (int, int),
             timestep: int,
+            show_pheromone_index: int = 0,
             window: miscellaneous.Window = None,
             camera: wrap_mjc.Camera = None
     ):
         from environments import pheromone
 
         self.timestep = timestep
+        self.show_pheromone_index = show_pheromone_index
         self.window = window
         self.camera = camera
 
@@ -462,13 +467,17 @@ class Environment(optimizer.MuJoCoEnvInterface):
         if camera is not None:
             self.model.set_camera(camera)
 
-        self.pheromone_field = pheromone.PheromoneField(
-            pheromone_field_pos[0], pheromone_field_pos[1],
-            pheromone_field_panel_size, 1,
-            pheromone_field_shape[0], pheromone_field_shape[1],
-            sv, evaporate, diffusion, decrease,
-            None if window is None else self.model
-        )
+        self.pheromone_field = []
+        if len(sv) != len(evaporate) != len(diffusion) != len(decrease):
+            raise "Invalid pheromone parameter."
+        for i in range(0, len(sv)):
+            self.pheromone_field.append(pheromone.PheromoneField(
+                pheromone_field_pos[0], pheromone_field_pos[1],
+                pheromone_field_panel_size, 1,
+                pheromone_field_shape[0], pheromone_field_shape[1],
+                sv[i], evaporate[i], diffusion[i], decrease[i],
+                self.model if (window is not None and i == self.show_pheromone_index) else None
+            ))
 
         self.robots = [_Robot(copy.deepcopy(brain), self.model, i) for i in range(0, len(robot_pos))]
         self.obstacles = [_Obstacle(self.model, i) for i in range(0, len(obstacle_pos))]
@@ -478,18 +487,15 @@ class Environment(optimizer.MuJoCoEnvInterface):
 
         self.loss = 0.0
 
-        for _ in range(0, 15):
-            self.pheromone_field.set_liquid(self.nest_pos[0], self.nest_pos[1], 800)
+        for _ in range(0, 5):
             self.model.step()
-            for _ in range(5):
-                self.pheromone_field.update_cells(0.033333 / 5)
 
     def calc_step(self) -> float:
         # Calculate
         self.model.step()
-        self.pheromone_field.set_liquid(self.nest_pos[0], self.nest_pos[1], 800)
-        for _ in range(5):
-            self.pheromone_field.update_cells(0.033333 / 5)
+        for pf in self.pheromone_field:
+            for _ in range(5):
+                pf.update_cells(0.033333 / 5)
 
         # Stop unstable state
         z_axis = numpy.array([0, 0, 1])
@@ -506,9 +512,11 @@ class Environment(optimizer.MuJoCoEnvInterface):
         robot_pos = [r.get_pos() for r in self.robots]
         feed_pos = [f.get_pos() for f in self.feeds]
         for r, rp in zip(self.robots, robot_pos):
-            pheromone_value = self.pheromone_field.get_gas(rp[0], rp[1])
-            secretion = r.act(pheromone_value, self.nest_pos, robot_pos, self.obstacle_pos, feed_pos)
-            self.pheromone_field.add_liquid(rp[0], rp[1], secretion)
+            pheromone_values = [pf.get_gas(rp[0], rp[1]) for pf in self.pheromone_field]
+            secretion = r.act(pheromone_values, self.nest_pos, robot_pos, self.obstacle_pos, feed_pos)
+
+            for i, s in enumerate(secretion):
+                self.pheromone_field[i].add_liquid(rp[0], rp[1], s)
 
         # Calculate loss
         feed_range = 10000.0
@@ -549,7 +557,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
         if self.window is not None:
             if not self.window.render(self.model, self.camera):
                 exit()
-            self.pheromone_field.update_panels()
+            self.pheromone_field[self.show_pheromone_index].update_panels()
             self.model.draw_text(f"{self.loss}", 0, 0, (1, 1, 1))
             self.window.flush()
 
@@ -568,13 +576,14 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
         self.robot_pos: list[(float, float)] = [(0, 0)]
         self.obstacle_pos: list[(float, float)] = [(0, 0)]
         self.feed_pos: list[(float, float)] = [(0, 0)]
-        self.sv: float = 0.0
-        self.evaporate: float = 0.0
-        self.diffusion: float = 0.0
-        self.decrease: float = 0.0
+        self.sv: list[float] = [0.0]
+        self.evaporate: list[float] = [0.0]
+        self.diffusion: list[float] = [0.0]
+        self.decrease: list[float] = [0.0]
         self.pheromone_field_panel_size: float = 0.0
         self.pheromone_field_pos: (float, float) = (0, 0)
         self.pheromone_field_shape: (int, int) = (0, 0)
+        self.show_pheromone_index: int = 0
         self.timestep: int = 100
 
     def save(self):
@@ -591,7 +600,9 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
         packed.extend([struct.pack("<I", len(self.feed_pos))])
         packed.extend([struct.pack("<dd", p[0], p[1]) for p in self.feed_pos])
 
-        packed.extend([struct.pack("<dddd", self.sv, self.evaporate, self.diffusion, self.decrease)])
+        packed.extend([struct.pack("<I", len(self.sv))])
+        for i in range(0, len(self.sv)):
+            packed.extend([struct.pack("<dddd", self.sv[i], self.evaporate[i], self.diffusion[i], self.decrease[i])])
 
         packed.extend([struct.pack("<d", self.pheromone_field_panel_size)])
         packed.extend([struct.pack("<dd", self.pheromone_field_pos[0], self.pheromone_field_pos[1])])
@@ -644,8 +655,20 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
 
         # フェロモンの設定
         s = e
-        e = s + 8 + 8 + 8 + 8
-        self.sv, self.evaporate, self.diffusion, self.decrease = struct.unpack("<dddd", data[s:e])[0:4]
+        e = s + 4
+        num = struct.unpack("<I", data[s:e])[0]
+        self.sv.clear()
+        self.evaporate.clear()
+        self.diffusion.clear()
+        self.decrease.clear()
+        for _ in range(0, num):
+            s = e
+            e = s + 32
+            sv, evaporate, diffusion, decrease = struct.unpack("<dddd", data[s:e])[0:4]
+            self.sv.append(sv)
+            self.evaporate.append(evaporate)
+            self.diffusion.append(diffusion)
+            self.decrease.append(decrease)
 
         # MuJoCo上でのフェロモンのパネルの大きさ
         s = e
@@ -688,6 +711,7 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
             self.pheromone_field_pos,
             self.pheromone_field_shape,
             self.timestep,
+            self.show_pheromone_index,
             None,
             None
         )
@@ -708,6 +732,7 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
             self.pheromone_field_pos,
             self.pheromone_field_shape,
             self.timestep,
+            self.show_pheromone_index,
             window,
             camera
         )
