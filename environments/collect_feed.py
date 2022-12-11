@@ -329,8 +329,8 @@ class RobotBrain:
 
         state_calculator = nn_tools.Calculator(10)  # 1->1
         state_calculator.add_layer(nn_tools.FilterLayer([0, 1, 2, 3, 4, 5, 6, 7]))  # 1->1->0
-        state_calculator.add_layer(nn_tools.AffineLayer(10))  # 1->1->1
-        state_calculator.add_layer(nn_tools.TanhLayer(10))  # 1->1->2
+        state_calculator.add_layer(nn_tools.AffineLayer(15))  # 1->1->1
+        state_calculator.add_layer(nn_tools.TanhLayer(15))  # 1->1->2
         state_calculator.add_layer(nn_tools.AffineLayer(4))  # 1->1->3
 
         self._calculator.add_layer(nn_tools.ParallelLayer([  # 1
