@@ -503,6 +503,10 @@ class Environment(optimizer.MuJoCoEnvInterface):
         for r in self.robots:
             c = numpy.dot(z_axis, r.get_direction())
             if not (-0.5 < c < 0.5):
+                print("Catch warning!")
+                return float("inf")
+            if self.model.count_raised_warning() > 0:
+                print("Catch warning!")
                 return float("inf")
 
         # Act
