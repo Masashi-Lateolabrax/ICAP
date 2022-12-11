@@ -292,7 +292,7 @@ class _Feed:
 
 
 class ConvertPheromone(nn_tools.interface.CalcActivator):
-    def __init__(self, num_node: int, pheromone_indexes: len[int]):
+    def __init__(self, num_node: int, pheromone_indexes: list[int]):
         super().__init__(num_node)
         self.mask = [False] * num_node
         for i in pheromone_indexes:
@@ -395,7 +395,7 @@ class _Robot:
 
     def act(
             self,
-            pheromone_values: len[float],
+            pheromone_values: list[float],
             nest_pos: numpy.ndarray,
             robot_pos: list[numpy.ndarray],
             obstacle_pos: list[numpy.ndarray],
@@ -437,10 +437,10 @@ class Environment(optimizer.MuJoCoEnvInterface):
             robot_pos: list[(float, float)],
             obstacle_pos: list[(float, float)],
             feed_pos: list[(float, float)],
-            sv: len[float],
-            evaporate: len[float],
-            diffusion: len[float],
-            decrease: len[float],
+            sv: list[float],
+            evaporate: list[float],
+            diffusion: list[float],
+            decrease: list[float],
             pheromone_field_panel_size: float,
             pheromone_field_pos: (float, float),
             pheromone_field_shape: (int, int),
