@@ -290,6 +290,12 @@ class WrappedModel:
         self.camera.elevation = -cam.vertical_angle
         self.camera.azimuth = cam.horizontal_angle
 
+    def count_raised_warning(self) -> int:
+        s = 0
+        for i in self.data.warning.number:
+            s += i
+        return s
+
     def get_ctx(self) -> mujoco.MjrContext:
         if self._ctx is None:
             self._ctx = mujoco.MjrContext(self.model, mujoco.mjtFontScale.mjFONTSCALE_100.value)
