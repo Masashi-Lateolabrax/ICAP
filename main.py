@@ -19,7 +19,7 @@ def set_env_creator(env_creator: EnvCreator):
     env_creator.pheromone_field_pos = (0, 550)
     env_creator.pheromone_field_panel_size = 20
     env_creator.pheromone_field_shape = (60, 80)
-    env_creator.show_pheromone_index = 1
+    env_creator.show_pheromone_index = 0
 
     env_creator.sv = [10.0]
     env_creator.evaporate = [5.0]
