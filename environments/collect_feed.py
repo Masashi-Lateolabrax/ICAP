@@ -426,7 +426,7 @@ class _Robot:
         ctrl = self.brain.calc(input_)
 
         self.rotate_wheel(ctrl[0], ctrl[1])
-        return 30 * ctrl[2]
+        return 30 * ctrl[2],
 
 
 class Environment(optimizer.MuJoCoEnvInterface):
