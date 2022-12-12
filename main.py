@@ -65,7 +65,7 @@ if __name__ == "__main__":
         scale: int = 1
         window = miscellaneous.Window(len(env_creator.sv) * width * scale, height * scale)
         camera = wrap_mjc.Camera((0, 600, 0), 2500, 90, 90)
-        window.set_recorder(miscellaneous.Recorder("replay.mp4", 30, len(env_creator.sv) * width, height))
+        window.set_recorder(miscellaneous.Recorder("result.mp4", 30, len(env_creator.sv) * width, height))
 
         envs = []
         for i in range(0, len(env_creator.sv)):
