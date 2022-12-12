@@ -24,7 +24,7 @@ def set_env_creator(env_creator: EnvCreator):
     env_creator.sv = [10.0]
     env_creator.evaporate = [5.0]
     env_creator.diffusion = [30.0]
-    env_creator.decrease = [0.05]
+    env_creator.decrease = [0.01]
 
     env_creator.timestep = int(30 / 0.033333)
 
