@@ -131,9 +131,9 @@ class PheromoneField:
         :param dt: 刻み幅
         :return: None
         """
-        dif_liquid = numpy.minimum(self._liquid * dt, (self._sv - self._gas) * self._eva * dt)
+        dif_liquid = numpy.minimum(self._liquid, (self._sv - self._gas) * self._eva * dt)
         dif_gas = dif_liquid + (scipy.signal.convolve2d(self._gas, self._c, "same") - self._gas * self._dec) * dt
-        self._liquid += dif_liquid
+        self._liquid -= dif_liquid
         self._gas += dif_gas
 
     def _rk_update(self, dt: float):
