@@ -1,10 +1,9 @@
 from collections.abc import Sequence
-from studyLib import nn_tools
-from studyLib.nn_tools import interface, la
+from studyLib.nn_tools import interface, la, BufLayer
 
 
 class ReadLayer(interface.CalcActivator):
-    def __init__(self, buf_layer: nn_tools.BufLayer):
+    def __init__(self, buf_layer: BufLayer):
         super().__init__(0)
         self._buf = buf_layer.buf
         self._num_input = 0
