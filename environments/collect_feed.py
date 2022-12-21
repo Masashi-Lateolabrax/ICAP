@@ -505,7 +505,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
         self.model.step()
         for pf in self.pheromone_field:
             for _ in range(5):
-                pf.update_cells(0.033333 / 5)
+                pf.update_cells(self.timestep / 5)
 
         # Stop unstable state
         z_axis = numpy.array([0, 0, 1])
