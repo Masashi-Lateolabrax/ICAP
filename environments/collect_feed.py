@@ -8,6 +8,7 @@ from studyLib import optimizer, wrap_mjc, miscellaneous, nn_tools
 
 
 def _gen_env(
+        timestep: float,
         nest_pos: (float, float),
         robot_pos: list[(float, float, float)],
         obstacle_pos: list[(float, float)],
@@ -19,7 +20,7 @@ def _gen_env(
     generator = wrap_mjc.MuJoCoXMLGenerator("co-behavior")
 
     generator.add_option({
-        "timestep": 0.033333,
+        "timestep": f"{timestep}",
         "gravity": "0 0 -981.0",
         "impratio": "3",
     })
@@ -292,6 +293,10 @@ class _Feed:
 
 
 class ConvertPheromone(nn_tools.interface.CalcActivator):
+    """
+    指定したインデックスをTanHの出力と見て、Sigmoid型に変換する。
+    """
+
     def __init__(self, num_node: int, pheromone_indexes: list[int]):
         super().__init__(num_node)
         self.mask = [False] * num_node
@@ -444,7 +449,8 @@ class Environment(optimizer.MuJoCoEnvInterface):
             pheromone_field_panel_size: float,
             pheromone_field_pos: (float, float),
             pheromone_field_shape: (int, int),
-            timestep: int,
+            timestep: float,
+            time: int,
             show_pheromone_index: int = 0,
             window: miscellaneous.Window = None,
             camera: wrap_mjc.Camera = None
@@ -452,6 +458,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
         from environments import pheromone
 
         self.timestep = timestep
+        self.time = time
         self.show_pheromone_index = show_pheromone_index
         self.window = window
         self.camera = camera
@@ -459,6 +466,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
         robot_pos = [(rp[0], rp[1], 0) for i, rp in enumerate(robot_pos)]
 
         xml = _gen_env(
+            timestep,
             nest_pos, robot_pos, obstacle_pos, feed_pos,
             pheromone_field_panel_size, pheromone_field_pos, pheromone_field_shape
         )
@@ -547,7 +555,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
         return self.loss
 
     def calc(self) -> float:
-        for t in range(0, self.timestep):
+        for t in range(0, int(self.time / self.timestep)):
             score = self.calc_step()
             if numpy.isinf(score):
                 return score
@@ -563,7 +571,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
                 self.window.flush()
 
     def calc_and_show(self, rect: (int, int, int, int) = None) -> float:
-        for t in range(0, self.timestep):
+        for t in range(0, int(self.time / self.timestep)):
             score = self.calc_step()
             if numpy.isinf(score):
                 return score
@@ -585,7 +593,8 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
         self.pheromone_field_pos: (float, float) = (0, 0)
         self.pheromone_field_shape: (int, int) = (0, 0)
         self.show_pheromone_index: int = 0
-        self.timestep: int = 100
+        self.timestep: float = 0.033333
+        self.time: int = 30
 
     def save(self):
         import struct
@@ -609,7 +618,8 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
         packed.extend([struct.pack("<dd", self.pheromone_field_pos[0], self.pheromone_field_pos[1])])
         packed.extend([struct.pack("<II", self.pheromone_field_shape[0], self.pheromone_field_shape[1])])
 
-        packed.extend([struct.pack("<I", self.timestep)])
+        packed.extend([struct.pack("<d", self.timestep)])
+        packed.extend([struct.pack("<I", self.time)])
 
         return b"".join(packed)
 
@@ -688,8 +698,13 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
 
         # MuJoCoのタイムステップ
         s = e
+        e = s + 8
+        self.timestep = struct.unpack("<d", data[s:e])[0]
+
+        # エピソードの長さ
+        s = e
         e = s + 4
-        self.timestep = struct.unpack("<I", data[s:e])[0]
+        self.time = struct.unpack("<I", data[s:e])[0]
 
         return e - offset
 
@@ -712,6 +727,7 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
             self.pheromone_field_pos,
             self.pheromone_field_shape,
             self.timestep,
+            self.time,
             self.show_pheromone_index,
             None,
             None
@@ -733,6 +749,7 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
             self.pheromone_field_pos,
             self.pheromone_field_shape,
             self.timestep,
+            self.time,
             self.show_pheromone_index,
             window,
             camera
