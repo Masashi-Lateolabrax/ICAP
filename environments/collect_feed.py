@@ -328,7 +328,7 @@ class RobotBrain:
         vision_recurrent = nn_tools.BufLayer(3)
         self._calculator.add_layer(nn_tools.ParallelLayer(  # 1
             [
-                [  # 1-0
+                [  # 1-0 # Pheromone
                     nn_tools.FilterLayer([6]),  # 1-0-0
                     nn_tools.ReadLayer(pheromone_recurrent),  # 1-0-1
                     nn_tools.BufLayer(4),  # 1-0-2
@@ -352,26 +352,24 @@ class RobotBrain:
                         ]
                     ),
                 ],
-                [  # 1-1
+                [  # 1-1 # Vision
                     nn_tools.FilterLayer([0, 1, 2, 3, 4, 5]),  # 1-1-0
                     nn_tools.ReadLayer(vision_recurrent),  # 1-1-1
                     nn_tools.BufLayer(9),  # 1-1-2
                     nn_tools.AffineLayer(6),  # 1-1-3
                     nn_tools.TanhLayer(6),  # 1-1-4
                     nn_tools.AffineLayer(6),  # 1-1-5
-                    nn_tools.TanhLayer(6),  # 1-1-6
-                    nn_tools.AffineLayer(6),  # 1-1-7
-                    nn_tools.BufLayer(6),  # 1-1-8
-                    nn_tools.ParallelLayer(  # 1-1-9
+                    nn_tools.BufLayer(6),  # 1-1-6
+                    nn_tools.ParallelLayer(  # 1-1-7
                         [
-                            [  # 1-1-9-0
-                                nn_tools.FilterLayer([0, 1, 2]),  # 1-1-9-0-0
+                            [  # 1-1-7-0
+                                nn_tools.FilterLayer([0, 1, 2]),  # 1-1-7-0-0
                             ],
-                            [  # 1-1-9-1
-                                nn_tools.FilterLayer([3, 4, 5]),  # 1-1-9-1-0
-                                nn_tools.TanhLayer(3),  # 1-1-9-1-1
-                                vision_recurrent,  # 1-1-9-1-2
-                                nn_tools.BlockLayer()  # 1-1-9-1-3
+                            [  # 1-1-7-1
+                                nn_tools.FilterLayer([3, 4, 5]),  # 1-1-7-1-0
+                                nn_tools.TanhLayer(3),  # 1-1-7-1-1
+                                vision_recurrent,  # 1-1-7-1-2
+                                nn_tools.BlockLayer()  # 1-1-7-1-3
                             ]
                         ]
                     ),
@@ -397,17 +395,25 @@ class RobotBrain:
         buf_layer: nn_tools.BufLayer = self._calculator.get_layer(0)
         return buf_layer.buf.copy()
 
-    def get_feature_values(self) -> numpy.ndarray:
-        buf_layer: nn_tools.BufLayer = self._calculator.get_layer(2)
-        return buf_layer.buf.copy()
-
     def get_output(self) -> numpy.ndarray:
-        buf_layer: nn_tools.BufLayer = self._calculator.get_layer(6)
+        buf_layer: nn_tools.BufLayer = self._calculator.get_layer(5)
         return buf_layer.buf.copy()
 
     def get_pheromone_calculator(self) -> nn_tools.Calculator:
         parallel_layer: nn_tools.ParallelLayer = self._calculator.get_layer(1)
-        return parallel_layer.calcs[0]
+        pheromone_calc: nn_tools.Calculator = parallel_layer.calcs[0]
+        return pheromone_calc
+
+    def get_pheromone_state(self) -> numpy.ndarray:
+        pheromone_calc = self.get_pheromone_calculator()
+        buf_layer: nn_tools.BufLayer = pheromone_calc.get_layer(2)
+        return numpy.array(buf_layer.buf[1:4])
+
+    def get_vision_state(self) -> numpy.ndarray:
+        parallel_layer: nn_tools.ParallelLayer = self._calculator.get_layer(1)
+        pheromone_calc: nn_tools.Calculator = parallel_layer.calcs[1]
+        buf_layer: nn_tools.BufLayer = pheromone_calc.get_layer(2)
+        return numpy.array(buf_layer.buf[6:9])
 
 
 class _Robot:
@@ -416,6 +422,20 @@ class _Robot:
         self._body = model.get_body(f"robot{number}")
         self._left_act = model.get_act(f"act_robot{number}_left")
         self._right_act = model.get_act(f"act_robot{number}_right")
+
+        self._state_ball = None
+
+    def draw_state(self, model: wrap_mjc.WrappedModel):
+        pos = self._body.get_xpos()
+
+        if self._state_ball is None:
+            self._state_ball = model.add_deco_geom(mujoco.mjtGeom.mjGEOM_SPHERE)
+            self._state_ball.set_size([20, 20, 20])
+
+        self._state_ball.set_pos([pos[0], pos[1], 5])
+
+        state_p = self.brain.get_pheromone_state()
+        self._state_ball.set_rgba([state_p[0], state_p[1], state_p[2], 1.0])
 
     def get_pos(self) -> numpy.ndarray:
         return self._body.get_xpos().copy()
@@ -590,7 +610,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
         dt_loss_feed_nest *= 0.1 / len(self.feeds)
         dt_loss_feed_robot *= 1.0 / (len(self.feeds) * len(self.robots))
         # dt_loss_obstacle_robot *= 1e12 / (len(self.obstacle_pos) * len(self.robots))
-        self.loss += dt_loss_feed_nest + dt_loss_feed_robot  # + dt_loss_obstacle_robot
+        self.loss += (dt_loss_feed_nest + dt_loss_feed_robot) * self.timestep  # + dt_loss_obstacle_robot
 
         return self.loss
 
