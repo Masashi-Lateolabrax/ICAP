@@ -1,5 +1,7 @@
 from collections.abc import Sequence
-from studyLib.nn_tools import interface, la, BufLayer
+from studyLib.nn_tools import interface, la
+
+from studyLib.nn_tools.activator.buf_layer import BufLayer
 
 
 class ReadLayer(interface.CalcActivator):
