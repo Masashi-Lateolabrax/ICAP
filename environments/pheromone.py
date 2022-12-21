@@ -161,8 +161,8 @@ class PheromoneField:
         self._gas += dif_gas
 
     def update_cells(self, dt: float = 0.03333):
-        self._rk_update(dt)
-        # self._euler_update(dt)
+        # self._rk_update(dt)
+        self._euler_update(dt)
 
     def update_panels(self, func=lambda x: x):
         if len(self._panels) != 0:
