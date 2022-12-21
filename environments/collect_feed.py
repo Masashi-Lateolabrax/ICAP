@@ -417,16 +417,16 @@ class _Robot:
         for rp in robot_pos:
             rs.sense(rp)
 
-        os = sensor.OmniSensor(pos, mat, 17.5 + 60.0, 70)
-        for op in obstacle_pos:
-            os.sense(op)
+        # os = sensor.OmniSensor(pos, mat, 17.5 + 60.0, 70)
+        # for op in obstacle_pos:
+        #     os.sense(op)
 
         fs = sensor.OmniSensor(pos, mat, 17.5 + 50.0, 70)
         for fp in feed_pos:
             fs.sense(fp)
 
         input_ = numpy.concatenate(
-            [ref_nest_pos, rs.value, os.value, fs.value, pheromone_values]
+            [ref_nest_pos, rs.value, fs.value, pheromone_values]
         )
         ctrl = self.brain.calc(input_)
 
@@ -464,6 +464,8 @@ class Environment(optimizer.MuJoCoEnvInterface):
         self.camera = camera
 
         robot_pos = [(rp[0], rp[1], 0) for i, rp in enumerate(robot_pos)]
+
+        obstacle_pos = []  # 障害物の無効化
 
         xml = _gen_env(
             timestep,
