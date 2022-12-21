@@ -485,6 +485,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
             pheromone_field_panel_size: float,
             pheromone_field_pos: (float, float),
             pheromone_field_shape: (int, int),
+            pheromone_iteration: int,
             timestep: float,
             time: int,
             show_pheromone_index: int = 0,
@@ -495,6 +496,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
 
         self.timestep = timestep
         self.time = time
+        self.pheromone_iteration = pheromone_iteration
         self.show_pheromone_index = show_pheromone_index
         self.window = window
         self.camera = camera
@@ -540,8 +542,8 @@ class Environment(optimizer.MuJoCoEnvInterface):
         # Calculate
         self.model.step()
         for pf in self.pheromone_field:
-            for _ in range(5):
-                pf.update_cells(self.timestep / 5)
+            for _ in range(self.pheromone_iteration):
+                pf.update_cells(self.timestep / self.pheromone_iteration)
 
         # Stop unstable state
         z_axis = numpy.array([0, 0, 1])
@@ -587,8 +589,8 @@ class Environment(optimizer.MuJoCoEnvInterface):
 
         dt_loss_feed_nest *= 0.1 / len(self.feeds)
         dt_loss_feed_robot *= 1.0 / (len(self.feeds) * len(self.robots))
-        dt_loss_obstacle_robot *= 1e12 / (len(self.obstacle_pos) * len(self.robots))
-        self.loss += dt_loss_feed_nest + dt_loss_feed_robot + dt_loss_obstacle_robot
+        # dt_loss_obstacle_robot *= 1e12 / (len(self.obstacle_pos) * len(self.robots))
+        self.loss += dt_loss_feed_nest + dt_loss_feed_robot  # + dt_loss_obstacle_robot
 
         return self.loss
 
@@ -630,6 +632,7 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
         self.pheromone_field_panel_size: float = 0.0
         self.pheromone_field_pos: (float, float) = (0, 0)
         self.pheromone_field_shape: (int, int) = (0, 0)
+        self.pheromone_iteration: int = 4
         self.show_pheromone_index: int = 0
         self.timestep: float = 0.033333
         self.time: int = 30
@@ -655,6 +658,7 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
         packed.extend([struct.pack("<d", self.pheromone_field_panel_size)])
         packed.extend([struct.pack("<dd", self.pheromone_field_pos[0], self.pheromone_field_pos[1])])
         packed.extend([struct.pack("<II", self.pheromone_field_shape[0], self.pheromone_field_shape[1])])
+        packed.extend([struct.pack("<I", self.pheromone_iteration)])
 
         packed.extend([struct.pack("<d", self.timestep)])
         packed.extend([struct.pack("<I", self.time)])
@@ -734,6 +738,11 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
         e = s + 8
         self.pheromone_field_shape = struct.unpack("<II", data[s:e])[0:2]
 
+        # フェロモンのイテレーション回数
+        s = e
+        e = s + 4
+        self.pheromone_iteration = struct.unpack("<I", data[s:e])[0]
+
         # MuJoCoのタイムステップ
         s = e
         e = s + 8
@@ -764,6 +773,7 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
             self.pheromone_field_panel_size,
             self.pheromone_field_pos,
             self.pheromone_field_shape,
+            self.pheromone_iteration,
             self.timestep,
             self.time,
             self.show_pheromone_index,
@@ -786,6 +796,7 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
             self.pheromone_field_panel_size,
             self.pheromone_field_pos,
             self.pheromone_field_shape,
+            self.pheromone_iteration,
             self.timestep,
             self.time,
             self.show_pheromone_index,
