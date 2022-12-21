@@ -3,15 +3,23 @@ from studyLib.nn_tools import interface, la, Calculator
 
 
 class ParallelLayer(interface.CalcLayer):
-    def __init__(self, calcs: list[Calculator]):
-        num_node = 0
-        for c in calcs:
-            num_node += c.num_output()
-        super().__init__(num_node)
-        self.calcs = calcs
+    def __init__(self, layers: list[list[interface.CalcLayer]], buf: Calculator.CalcBuffer = None):
+        self._buf = Calculator.CalcBuffer() if buf is None else buf
+        self._layers = layers
+        self.calcs: list[Calculator] = []
         self._input_buf = la.zeros(0)
 
+        num_node = 0
+        for layer_for_calc in layers:
+            num_node += layer_for_calc[-1].num_node
+        super().__init__(num_node)
+
     def init(self, num_input: int) -> None:
+        for layer_for_calc in self._layers:
+            calc = Calculator(num_input, self._buf)
+            for layer in layer_for_calc:
+                calc.add_layer(layer)
+            self.calcs.append(calc)
         self._input_buf = la.zeros(num_input)
 
     def calc(self, input_: la.ndarray, output: la.ndarray) -> int:
