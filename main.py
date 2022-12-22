@@ -7,7 +7,7 @@ from studyLib import wrap_mjc, miscellaneous, optimizer
 
 def set_env_creator(env_creator: EnvCreator):
     env_creator.timestep = 0.033333
-    env_creator.time = 5
+    env_creator.time = 30
 
     env_creator.nest_pos = (0, 0)
     env_creator.robot_pos = [
