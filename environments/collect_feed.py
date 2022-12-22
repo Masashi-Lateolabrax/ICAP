@@ -554,7 +554,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
         self.nest_pos = numpy.array([nest_pos[0], nest_pos[1], 0])
         self.obstacle_pos = [o.get_pos() for o in self.obstacles]
 
-        self.loss = l2
+        self.loss = l2 * 1e-5
 
         for _ in range(0, 5):
             self.model.step()
@@ -611,6 +611,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
         dt_loss_feed_nest *= 0.1 / len(self.feeds)
         dt_loss_feed_robot *= 1.0 / (len(self.feeds) * len(self.robots))
         # dt_loss_obstacle_robot *= 1e12 / (len(self.obstacle_pos) * len(self.robots))
+        # print(self.loss, dt_loss_feed_nest, dt_loss_feed_robot)
         self.loss += (dt_loss_feed_nest + dt_loss_feed_robot) * self.timestep  # + dt_loss_obstacle_robot
 
         return self.loss
