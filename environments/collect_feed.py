@@ -493,6 +493,7 @@ class _Robot:
 class Environment(optimizer.MuJoCoEnvInterface):
     def __init__(
             self,
+            l2: float,
             brain: RobotBrain,
             nest_pos: (float, float),
             robot_pos: list[(float, float)],
@@ -553,7 +554,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
         self.nest_pos = numpy.array([nest_pos[0], nest_pos[1], 0])
         self.obstacle_pos = [o.get_pos() for o in self.obstacles]
 
-        self.loss = 0.0
+        self.loss = l2
 
         for _ in range(0, 5):
             self.model.step()
@@ -779,8 +780,10 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
         return RobotBrain(None).num_dim()
 
     def create(self, para) -> Environment:
+        l2 = numpy.linalg.norm(para, ord=2)
         brain = RobotBrain(para)
         return Environment(
+            l2,
             brain,
             self.nest_pos,
             self.robot_pos,
@@ -802,8 +805,10 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
         )
 
     def create_mujoco_env(self, para, window: miscellaneous.Window, camera: wrap_mjc.Camera) -> Environment:
+        l2 = numpy.linalg.norm(para, ord=2)
         brain = RobotBrain(para)
         return Environment(
+            l2,
             brain,
             self.nest_pos,
             self.robot_pos,
