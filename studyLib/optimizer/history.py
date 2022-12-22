@@ -33,7 +33,7 @@ class Hist:
 
     def save(self, file_path: str = None):
         if file_path is None:
-            file_path = f"./TMP_HIST.log"
+            file_path = f"./TMP_HIST.tmp"
 
         meta = numpy.array([self.dim, self.population, self.mu])
 
