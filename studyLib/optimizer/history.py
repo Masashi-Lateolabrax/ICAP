@@ -62,7 +62,8 @@ class Hist:
             sigmas=sigmas,
         )
 
-    def load(self, file_path: str):
+    @staticmethod
+    def load(file_path: str):
         npz = numpy.load(file_path)
         meta = npz["meta"]
         time = npz["time"]
@@ -72,15 +73,14 @@ class Hist:
         score = npz["score"]
         sigmas = npz["sigmas"]
 
-        self.dim = meta[0]
-        self.population = meta[1]
-        self.mu = meta[2]
+        this = Hist(dim=meta[0], population=meta[1], mu=meta[2])
 
-        self.queues.clear()
         for t, centroid, min_p, max_p, s, sigma_ in zip(time, centroids, min_para, max_para, score, sigmas):
             q = Queue(s[0], centroid, s[1], min_p, s[2], max_p, sigma_)
             q.time = datetime.datetime.strptime(t, "%Y-%m-%d %H:%M:%S.%f")
-            self.queues.append(q)
+            this.queues.append(q)
+
+        return this
 
     def add(
             self,
