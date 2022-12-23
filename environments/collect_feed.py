@@ -528,7 +528,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
         self.window = window
         self.camera = camera
 
-        robot_pos = [(rp[0], rp[1], 0) for i, rp in enumerate(robot_pos)]
+        robot_pos = [(rp[0], rp[1], 180) for i, rp in enumerate(robot_pos)]
 
         obstacle_pos = []  # 障害物の無効化
 
