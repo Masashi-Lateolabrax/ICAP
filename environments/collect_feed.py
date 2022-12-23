@@ -493,7 +493,7 @@ class _Robot:
         ctrl = self.brain.calc(input_)
 
         self.rotate_wheel(ctrl[0], ctrl[1])
-        return 30 * ctrl[2],
+        return numpy.linalg.norm(ctrl, ord=2), (ctrl[2] * 30.0,)
 
 
 class Environment(optimizer.MuJoCoEnvInterface):
@@ -584,12 +584,14 @@ class Environment(optimizer.MuJoCoEnvInterface):
                 return float("inf")
 
         # Act
+        dt_exhaustion = 0.0
         robot_pos = [r.get_pos() for r in self.robots]
         feed_pos = [f.get_pos() for f in self.feeds]
         for r, rp in zip(self.robots, robot_pos):
             pheromone_values = [pf.get_gas(rp[0], rp[1]) for pf in self.pheromone_field]
-            secretion = r.act(pheromone_values, self.nest_pos, robot_pos, self.obstacle_pos, feed_pos)
+            exhaustion, secretion = r.act(pheromone_values, self.nest_pos, robot_pos, self.obstacle_pos, feed_pos)
 
+            dt_exhaustion += exhaustion
             for i, s in enumerate(secretion):
                 self.pheromone_field[i].add_liquid(rp[0], rp[1], s)
 
