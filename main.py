@@ -83,8 +83,8 @@ if __name__ == "__main__":
         # para, sigma = load_best_para_from_hist("./TMP_HIST.log.npz")
 
         para, hist = optimize(
-            generation=1000,
-            population=100,
+            generation=100,
+            population=500,
             mu=30,
             sigma=sigma,
             centroid=para,
