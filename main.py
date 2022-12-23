@@ -83,18 +83,21 @@ if __name__ == "__main__":
         # para, sigma = load_best_para_from_hist("./TMP_HIST.log.npz")
 
         para, hist = optimize(
-            generation=100,
-            population=500,
-            mu=30,
+            generation=500,
+            population=100,
+            mu=5,
             sigma=sigma,
             centroid=para,
             env_creator=env_creator,
             server_client=True
         )
 
-        width: int = 500
-        height: int = 700
+        shape = (5, 7)
+        dpi = 100
         scale: int = 1
+
+        width = shape[0] * dpi
+        height = shape[1] * dpi
         window = miscellaneous.Window(len(env_creator.sv) * width * scale, height * scale)
         camera = wrap_mjc.Camera((0, 600, 0), 2500, 90, 90)
         window.set_recorder(
