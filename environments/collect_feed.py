@@ -327,68 +327,33 @@ class ConvertPheromone(nn_tools.interface.CalcActivator):
 
 class RobotBrain:
     def __init__(self, para):
-        self._calculator = nn_tools.Calculator(7)
-        self._calculator.add_layer(nn_tools.BufLayer(7))  # 0
+        self._calculator = nn_tools.Calculator(101)
 
-        pheromone_recurrent = nn_tools.BufLayer(3)
-        vision_recurrent = nn_tools.BufLayer(3)
-        self._calculator.add_layer(nn_tools.ParallelLayer(  # 1
+        self._calculator.add_layer(nn_tools.ParallelLayer(
             [
-                [  # 1-0 # Pheromone
-                    nn_tools.FilterLayer([6]),  # 1-0-0
-                    nn_tools.ReadLayer(pheromone_recurrent),  # 1-0-1
-                    nn_tools.BufLayer(4),  # 1-0-2
-                    nn_tools.AffineLayer(6),  # 1-0-3
-                    nn_tools.TanhLayer(6),  # 1-0-4
-                    nn_tools.AffineLayer(6),  # 1-0-5
-                    nn_tools.TanhLayer(6),  # 1-0-6
-                    nn_tools.AffineLayer(6),  # 1-0-7
-                    nn_tools.BufLayer(6),  # 1-0-8
-                    nn_tools.ParallelLayer(  # 1-0-9
-                        [
-                            [  # 1-0-9-0
-                                nn_tools.FilterLayer([0, 1, 2]),  # 1-0-9-0-0
-                            ],
-                            [  # 1-0-9-1
-                                nn_tools.FilterLayer([3, 4, 5]),  # 1-0-9-1-0
-                                nn_tools.IsMaxLayer(3),  # 1-0-9-1-1
-                                pheromone_recurrent,  # 1-0-9-1-2
-                                nn_tools.BlockLayer()  # 1-0-9-1-3
-                            ]
-                        ]
-                    ),
+                [
+                    nn_tools.FilterLayer([i for i in range(0, 100)]),
+                    nn_tools.AffineLayer(33),
+                    nn_tools.TanhLayer(33),
+                    nn_tools.AffineLayer(11),
+                    nn_tools.TanhLayer(11),
+                    nn_tools.AffineLayer(3),
+                    nn_tools.IsMaxLayer(3)
                 ],
-                [  # 1-1 # Vision
-                    nn_tools.FilterLayer([0, 1, 2, 3, 4, 5]),  # 1-1-0
-                    nn_tools.ReadLayer(vision_recurrent),  # 1-1-1
-                    nn_tools.BufLayer(9),  # 1-1-2
-                    nn_tools.AffineLayer(6),  # 1-1-3
-                    nn_tools.TanhLayer(6),  # 1-1-4
-                    nn_tools.AffineLayer(6),  # 1-1-5
-                    nn_tools.BufLayer(6),  # 1-1-6
-                    nn_tools.ParallelLayer(  # 1-1-7
-                        [
-                            [  # 1-1-7-0
-                                nn_tools.FilterLayer([0, 1, 2]),  # 1-1-7-0-0
-                            ],
-                            [  # 1-1-7-1
-                                nn_tools.FilterLayer([3, 4, 5]),  # 1-1-7-1-0
-                                nn_tools.TanhLayer(3),  # 1-1-7-1-1
-                                vision_recurrent,  # 1-1-7-1-2
-                                nn_tools.BlockLayer()  # 1-1-7-1-3
-                            ]
-                        ]
-                    ),
+                [
+                    nn_tools.FilterLayer([100]),
                 ]
             ]
         ))
 
-        self._calculator.add_layer(nn_tools.BufLayer(6))  # 2
-        self._calculator.add_layer(nn_tools.AddFoldLayer(3))  # 3
-        self._calculator.add_layer(nn_tools.SigmoidLayer(3))  # 4
-        self._calculator.add_layer(nn_tools.BufLayer(3))  # 5
+        self._calculator.add_layer(nn_tools.AffineLayer(4))
+        self._calculator.add_layer(nn_tools.TanhLayer(4))
+        self._calculator.add_layer(nn_tools.AffineLayer(4))
+        self._calculator.add_layer(nn_tools.TanhLayer(4))
+        self._calculator.add_layer(nn_tools.AffineLayer(3))
+        self._calculator.add_layer(nn_tools.SigmoidLayer(3))
 
-        if not (para is None):
+        if para is not None:
             self._calculator.load(para)
 
     def num_dim(self):
