@@ -13,7 +13,7 @@ class PheromoneField:
             nx: int, ny: int,
             sv: float,
             evaporate: float, diffusion: float, decrease: float,
-            model: wrap_mjc.WrappedModel = None, z: float = -1,
+            z: float = -1
     ):
         # セルの数
         self._nx = nx
@@ -41,18 +41,6 @@ class PheromoneField:
             [1.0, -4.0, 1.0],
             [0.0, 1.0, 0.0],
         ]) * self._diffusion / (ds * ds)
-
-        self._panels = []
-        if model is not None:
-            for y in range(0, self._ny):
-                for x in range(0, self._nx):
-                    px = ((x / (self._nx - 1.0)) - 0.5) * self._size * self._nx + self._px
-                    py = ((y / (self._ny - 1.0)) - 0.5) * self._size * self._ny + self._py
-                    deco_geom = model.add_deco_geom(mujoco.mjtGeom.mjGEOM_PLANE)
-                    deco_geom.set_pos([px, py, 0.05])
-                    deco_geom.set_size([self._size * 0.5, self._size * 0.5, 0.05])
-                    deco_geom.set_quat([0, 0, 1], 0)
-                    self._panels.append(deco_geom)
 
     def _pos_to_index(self, x: float, y: float) -> (float, float):
         """
@@ -116,15 +104,6 @@ class PheromoneField:
             a += e * self._get_gas(x, y)
         return a
 
-    def _get_deco_geom(self, ix: int, iy: int):
-        if len(self._panels) == 0:
-            return None
-        return self._panels[self._nx * iy + ix]
-
-    def _set_deco_geom_color(self, ix: int, iy: int, color: (float, float, float, float)):
-        plane = self._get_deco_geom(ix, iy)
-        plane.set_rgba(color)
-
     def _euler_update(self, dt: float):
         """
         オイラー法による計算
@@ -164,13 +143,6 @@ class PheromoneField:
         # self._rk_update(dt)
         self._euler_update(dt)
 
-    def update_panels(self, func=lambda x: x):
-        if len(self._panels) != 0:
-            for p, g in zip(self._panels, numpy.clip(self._gas / 10.0, 0.0, 1.0).ravel()):
-                v = func(g)
-                color = colorsys.hsv_to_rgb(0.66 * (1.0 - v), 1.0, 1.0)
-                p.set_rgba((color[0], color[1], color[2], 0.7))
-
     def get_gas_grad(self, pos: numpy.ndarray, direction: numpy.ndarray) -> numpy.ndarray:
         h_direction = numpy.array([
             numpy.cos(numpy.radians(-90)) * direction[0] - numpy.sin(numpy.radians(-90)) * direction[1],
@@ -185,3 +157,44 @@ class PheromoneField:
         h1 = self.get_gas(h1_pos[0], h1_pos[1])
         h2 = self.get_gas(h2_pos[0], h2_pos[1])
         return numpy.array([(v1 - v2) * 0.5 / self._ds, (h1 - h2) * 0.5 / self._ds])
+
+
+class PheromoneFieldForMujoco(PheromoneField):
+    def __init__(
+            self,
+            px: float, py: float,
+            size: float, ds: float,
+            nx: int, ny: int,
+            sv: float, evaporate: float, diffusion: float, decrease: float,
+            model: wrap_mjc.WrappedModel = None,
+            z: float = -1
+    ):
+        super().__init__(px, py, size, ds, nx, ny, sv, evaporate, diffusion, decrease, z)
+
+        self._panels = []
+        if model is not None:
+            for y in range(0, self._ny):
+                for x in range(0, self._nx):
+                    px = ((x / (self._nx - 1.0)) - 0.5) * self._size * self._nx + self._px
+                    py = ((y / (self._ny - 1.0)) - 0.5) * self._size * self._ny + self._py
+                    deco_geom = model.add_deco_geom(mujoco.mjtGeom.mjGEOM_PLANE)
+                    deco_geom.set_pos([px, py, 0.05])
+                    deco_geom.set_size([self._size * 0.5, self._size * 0.5, 0.05])
+                    deco_geom.set_quat([0, 0, 1], 0)
+                    self._panels.append(deco_geom)
+
+    def _get_deco_geom(self, ix: int, iy: int):
+        if len(self._panels) == 0:
+            return None
+        return self._panels[self._nx * iy + ix]
+
+    def _set_deco_geom_color(self, ix: int, iy: int, color: (float, float, float, float)):
+        plane = self._get_deco_geom(ix, iy)
+        plane.set_rgba(color)
+
+    def update_panels(self, func=lambda x: x):
+        if len(self._panels) != 0:
+            for p, g in zip(self._panels, self._gas.ravel()):
+                v = func(g)
+                color = colorsys.hsv_to_rgb(0.66 * (1.0 - v), 1.0, 1.0)
+                p.set_rgba((color[0], color[1], color[2], 0.7))
