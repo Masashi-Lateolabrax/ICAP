@@ -13,7 +13,6 @@ class PheromoneField:
             nx: int, ny: int,
             sv: float,
             evaporate: float, diffusion: float, decrease: float,
-            z: float = -1
     ):
         # セルの数
         self._nx = nx
@@ -92,7 +91,7 @@ class PheromoneField:
             if 0 <= ix < self._nx and 0 <= iy < self._ny:
                 self._liquid[iy, ix] = value * e
 
-    def _get_gas(self, ix: int, iy: int) -> float:
+    def get_gas_raw(self, ix: int, iy: int) -> float:
         if 0 <= ix < self._nx and 0 <= iy < self._ny:
             return self._gas[iy, ix]
         return 0.0
@@ -101,7 +100,7 @@ class PheromoneField:
         dico = self._calc_dico(x, y)
         a = 0
         for x, y, e in dico:
-            a += e * self._get_gas(x, y)
+            a += e * self.get_gas_raw(x, y)
         return a
 
     def _euler_update(self, dt: float):
@@ -139,7 +138,7 @@ class PheromoneField:
         self._liquid -= dif_liquid
         self._gas += dif_gas
 
-    def update_cells(self, dt: float = 0.03333):
+    def update(self, dt: float = 0.03333):
         # self._rk_update(dt)
         self._euler_update(dt)
 
@@ -159,42 +158,31 @@ class PheromoneField:
         return numpy.array([(v1 - v2) * 0.5 / self._ds, (h1 - h2) * 0.5 / self._ds])
 
 
-class PheromoneFieldForMujoco(PheromoneField):
+class PheromonePanels:
     def __init__(
             self,
+            model: wrap_mjc.WrappedModel,
             px: float, py: float,
-            size: float, ds: float,
+            size: float,
             nx: int, ny: int,
-            sv: float, evaporate: float, diffusion: float, decrease: float,
-            model: wrap_mjc.WrappedModel = None,
-            z: float = -1
+            z: float = 0.05,
     ):
-        super().__init__(px, py, size, ds, nx, ny, sv, evaporate, diffusion, decrease, z)
-
         self._panels = []
-        if model is not None:
-            for y in range(0, self._ny):
-                for x in range(0, self._nx):
-                    px = ((x / (self._nx - 1.0)) - 0.5) * self._size * self._nx + self._px
-                    py = ((y / (self._ny - 1.0)) - 0.5) * self._size * self._ny + self._py
-                    deco_geom = model.add_deco_geom(mujoco.mjtGeom.mjGEOM_PLANE)
-                    deco_geom.set_pos([px, py, 0.05])
-                    deco_geom.set_size([self._size * 0.5, self._size * 0.5, 0.05])
-                    deco_geom.set_quat([0, 0, 1], 0)
-                    self._panels.append(deco_geom)
+        for xi in range(0, nx):
+            self._panels.append([])
+            for yi in range(0, ny):
+                px = ((xi / (nx - 1.0)) - 0.5) * size * nx + px
+                py = ((yi / (ny - 1.0)) - 0.5) * size * ny + py
+                deco_geom = model.add_deco_geom(mujoco.mjtGeom.mjGEOM_PLANE)
+                deco_geom.set_pos([px, py, z])
+                deco_geom.set_size([size * 0.5, size * 0.5, 0.05])
+                deco_geom.set_quat([0, 0, 1], 0)
+                self._panels[xi].append(deco_geom)
 
-    def _get_deco_geom(self, ix: int, iy: int):
-        if len(self._panels) == 0:
-            return None
-        return self._panels[self._nx * iy + ix]
-
-    def _set_deco_geom_color(self, ix: int, iy: int, color: (float, float, float, float)):
-        plane = self._get_deco_geom(ix, iy)
-        plane.set_rgba(color)
-
-    def update_panels(self, func=lambda x: x):
-        if len(self._panels) != 0:
-            for p, g in zip(self._panels, self._gas.ravel()):
-                v = func(g)
+    def update(self, pheromone_field: PheromoneField, func=lambda x: x):
+        for xi, xs in enumerate(self._panels):
+            for yi, p in enumerate(xs):
+                gas = pheromone_field.get_gas_raw(xi, yi)
+                v = func(gas)
                 color = colorsys.hsv_to_rgb(0.66 * (1.0 - v), 1.0, 1.0)
                 p.set_rgba((color[0], color[1], color[2], 0.7))
