@@ -296,6 +296,12 @@ class WrappedModel:
             s += i
         return s
 
+    def get_depth_map(self, rect: mujoco.MjrRect, depth_map=None) -> numpy.ndarray:
+        if depth_map is None:
+            depth_map = numpy.zeros((rect.height, rect.width))
+        mujoco.mjr_readPixels(rgb=None, depth=depth_map, con=self.get_ctx())
+        return depth_map
+
     def get_ctx(self) -> mujoco.MjrContext:
         if self._ctx is None:
             self._ctx = mujoco.MjrContext(self.model, mujoco.mjtFontScale.mjFONTSCALE_100.value)
