@@ -1,5 +1,4 @@
 import copy
-from typing import Sequence
 
 import mujoco
 import numpy
@@ -279,50 +278,23 @@ def _gen_env(
 
 
 class _Obstacle:
-    def __init__(self, model: wrap_mjc.WrappedModel, number: int):
-        self._pos = model.get_geom(f"obstacle{number}").get_pos()
+    def __init__(self, pos):
+        self._pos = pos
 
     def get_pos(self):
         return self._pos.copy()
 
 
 class _Feed:
-    def __init__(self, model: wrap_mjc.WrappedModel, number: int):
-        self._body = model.get_body(f"feed{number}")
-        self._velocity_sensor = model.get_sensor(f"sensor_feed{number}_velocity")
+    def __init__(self, body: wrap_mjc.WrappedBody, velocity_sensor):
+        self._body = body
+        self._velocity_sensor = velocity_sensor
 
     def get_pos(self):
         return self._body.get_xpos().copy()
 
     def get_velocity(self) -> numpy.ndarray:
         return self._velocity_sensor.get_data()
-
-
-class ConvertPheromone(nn_tools.interface.CalcActivator):
-    """
-    指定したインデックスをTanHの出力と見て、Sigmoid型に変換する。
-    """
-
-    def __init__(self, num_node: int, pheromone_indexes: list[int]):
-        super().__init__(num_node)
-        self.mask = [False] * num_node
-        for i in pheromone_indexes:
-            self.mask[i] = True
-
-    def calc(self, input_: nn_tools.la.ndarray, output: nn_tools.la.ndarray) -> int:
-        nn_tools.la.copyto(output, input_)
-        output[self.mask] += 1.0
-        output[self.mask] *= 0.5
-        return self.num_node
-
-    def num_dim(self) -> int:
-        return 0
-
-    def load(self, offset: int, array: Sequence) -> int:
-        return 0
-
-    def save(self, array: list) -> None:
-        return None
 
 
 class RobotBrain:
@@ -362,51 +334,13 @@ class RobotBrain:
     def calc(self, array):
         return self._calculator.calc(array)
 
-    def get_input(self) -> numpy.ndarray:
-        buf_layer: nn_tools.BufLayer = self._calculator.get_layer(0)
-        return buf_layer.buf.copy()
-
-    def get_output(self) -> numpy.ndarray:
-        buf_layer: nn_tools.BufLayer = self._calculator.get_layer(5)
-        return buf_layer.buf.copy()
-
-    def get_pheromone_calculator(self) -> nn_tools.Calculator:
-        parallel_layer: nn_tools.ParallelLayer = self._calculator.get_layer(1)
-        pheromone_calc: nn_tools.Calculator = parallel_layer.calcs[0]
-        return pheromone_calc
-
-    def get_pheromone_state(self) -> numpy.ndarray:
-        pheromone_calc = self.get_pheromone_calculator()
-        buf_layer: nn_tools.BufLayer = pheromone_calc.get_layer(2)
-        return numpy.array(buf_layer.buf[1:4])
-
-    def get_vision_state(self) -> numpy.ndarray:
-        parallel_layer: nn_tools.ParallelLayer = self._calculator.get_layer(1)
-        pheromone_calc: nn_tools.Calculator = parallel_layer.calcs[1]
-        buf_layer: nn_tools.BufLayer = pheromone_calc.get_layer(2)
-        return numpy.array(buf_layer.buf[6:9])
-
 
 class _Robot:
-    def __init__(self, brain: RobotBrain, model: wrap_mjc.WrappedModel, number: int):
-        self.brain = brain
-        self._body = model.get_body(f"robot{number}")
-        self._left_act = model.get_act(f"act_robot{number}_left")
-        self._right_act = model.get_act(f"act_robot{number}_right")
-
-        self._state_ball = None
-
-    def draw_state(self, model: wrap_mjc.WrappedModel):
-        pos = self._body.get_xpos()
-
-        if self._state_ball is None:
-            self._state_ball = model.add_deco_geom(mujoco.mjtGeom.mjGEOM_SPHERE)
-            self._state_ball.set_size([20, 20, 20])
-
-        self._state_ball.set_pos([pos[0], pos[1], 5])
-
-        state_p = self.brain.get_pheromone_state()
-        self._state_ball.set_rgba([state_p[0], state_p[1], state_p[2], 1.0])
+    def __init__(self, body: wrap_mjc.WrappedBody, left_act, right_act, sight):
+        self._body = body
+        self._left_act = left_act
+        self._right_act = right_act
+        self._sight = sight
 
     def get_pos(self) -> numpy.ndarray:
         return self._body.get_xpos().copy()
@@ -418,6 +352,7 @@ class _Robot:
 
     def get_direction(self) -> numpy.ndarray:
         a = numpy.dot(self.get_orientation(), [0.0, 1.0, 0.0])
+        a[2] = 0.0
         d = numpy.linalg.norm(a, ord=2)
         return a / d
 
@@ -425,15 +360,17 @@ class _Robot:
         self._left_act.ctrl = 1000 * left
         self._right_act.ctrl = 1000 * right
 
+    def look(self):
+
     def act(
             self,
+            vision: list[float],
             pheromone_values: list[float],
             nest_pos: numpy.ndarray,
-            robot_pos: list[numpy.ndarray],
-            obstacle_pos: list[numpy.ndarray],
-            feed_pos: list[numpy.ndarray]
     ):
         from environments import sensor
+
+        wrap_mjc.
 
         pos = self.get_pos()
         mat = self.get_orientation()
@@ -461,10 +398,132 @@ class _Robot:
         return numpy.linalg.norm(ctrl, ord=2), (ctrl[2] * 30.0,)
 
 
+class _World:
+    def __init__(
+            self,
+            nest_pos: (float, float),
+            robot_pos: list[(float, float)],
+            obstacle_pos: list[(float, float)],
+            feed_pos: list[(float, float)],
+            sv: list[float],
+            evaporate: list[float],
+            diffusion: list[float],
+            decrease: list[float],
+            pheromone_field_panel_size: float,
+            pheromone_field_pos: (float, float),
+            pheromone_field_shape: (int, int),
+            pheromone_iteration: int,
+            timestep: float,
+    ):
+        self.timestep = timestep
+        self.pheromone_iteration = pheromone_iteration
+        self.num_robots = len(robot_pos)
+        self.num_obstacles = len(obstacle_pos)
+        self.num_feeds = len(feed_pos)
+
+        xml = _gen_env(
+            timestep,
+            nest_pos, robot_pos, obstacle_pos, feed_pos,
+            pheromone_field_panel_size, pheromone_field_pos, pheromone_field_shape
+        )
+        self.model = wrap_mjc.WrappedModel(xml)
+
+        # Create Pheromone Field
+        self.pheromone_field = []
+        if len(sv) != len(evaporate) != len(diffusion) != len(decrease):
+            raise "Invalid pheromone parameter."
+        for i in range(0, len(sv)):
+            self.pheromone_field.append(miscellaneous.pheromone.PheromoneField(
+                pheromone_field_pos[0], pheromone_field_pos[1],
+                pheromone_field_panel_size, 1,
+                pheromone_field_shape[0], pheromone_field_shape[1],
+                sv[i], evaporate[i], diffusion[i], decrease[i]
+            ))
+
+        # Create Pheromone Panels
+        self.pheromone_panel = miscellaneous.PheromonePanels(
+            self.model,
+            pheromone_field_pos[0], pheromone_field_pos[1],
+            pheromone_field_panel_size,
+            pheromone_field_shape[0], pheromone_field_shape[1],
+            0.05
+        )
+
+    def get_robot(self, index: int) -> _Robot:
+        body = self.model.get_body(f"robot{index}")
+        act_left = self.model.get_act(f"act_robot{index}_left")
+        act_right = self.model.get_act(f"act_robot{index}_left")
+
+        rot_mat = numpy.zeros(9).reshape(3, 3)
+        mujoco.mju_quat2Mat(rot_mat.ravel(), body.get_xquat())
+        inv_rot_mat = numpy.linalg.inv(rot_mat)
+
+        convertor = lambda d, t, k1, k2: (1.0 if -k1 <= t <= k1 else 0.0) * numpy.exp(d ** 2 / -k2)
+
+        sight = numpy.zeros(180)
+        for (name, num, offset) in [
+            ("robot", self.num_robots, 17.5),
+            ("feed", self.num_feeds, 17.5),
+            ("obstacle", self.num_obstacles, 17.5)
+        ]:
+            for i in range(num):
+                sub_vector = numpy.dot(inv_rot_mat, self.model.get_body(f"{name}{i}").get_xpos() - body.get_xpos())
+                distance = numpy.linalg.norm(sub_vector, ord=2) - offset - 17.5
+                theta = numpy.arctan2(sub_vector[1], sub_vector[0])
+                value = convertor(distance, theta, numpy.pi * 0.5, 1)
+                sight_index = int(len(sight) * (0.5 - 0.5 * theta / numpy.pi) + 0.5)
+                if sight[sight_index] < value:
+                    sight[sight_index] = value
+
+        return _Robot(body, act_left, act_right, sight)
+
+    def get_feed(self, index: int):
+        body = self.model.get_body(f"feed{index}")
+        velocity_sensor = self.model.get_sensor(f"sensor_feed{index}_velocity")
+        return _Feed(body, velocity_sensor)
+
+    def get_obstacle(self, index):
+        pos = self.model.get_geom(f"obstacle{index}").get_pos()
+        return _Obstacle(pos)
+
+    def calc_step(self) -> True:
+        self.model.step()
+
+        # Calculate Pheromone.
+        for pf in self.pheromone_field:
+            for _ in range(self.pheromone_iteration):
+                pf.update(self.timestep / self.pheromone_iteration)
+
+        # Stop unstable state.
+        if self.model.count_raised_warning() > 0:
+            print("Catch warning!")
+            return False
+
+        return True
+
+    def render(
+            self,
+            loss: float,
+            show_pheromone_index,
+            window: miscellaneous.Window,
+            camera: wrap_mjc.Camera,
+            rect: (int, int, int, int) = None,
+            flush: bool = True
+    ):
+        if not window.render(self.model, camera, rect):
+            exit()
+        pf = self.pheromone_field[show_pheromone_index]
+        self.pheromone_panel.update(pf)
+
+        self.model.draw_text(f"{loss}", 0, 0, (1, 1, 1))
+
+        if flush:
+            window.flush()
+
+
 class Environment(optimizer.MuJoCoEnvInterface):
     def __init__(
             self,
-            l2: float,
             brain: RobotBrain,
             nest_pos: (float, float),
             robot_pos: list[(float, float)],
@@ -484,53 +543,31 @@ class Environment(optimizer.MuJoCoEnvInterface):
             window: miscellaneous.Window = None,
             camera: wrap_mjc.Camera = None
     ):
-        from environments import pheromone
-
-        self.timestep = timestep
-        self.time = time
-        self.pheromone_iteration = pheromone_iteration
-        self.show_pheromone_index = show_pheromone_index
-        self.window = window
-        self.camera = camera
-
-        robot_pos = [(rp[0], rp[1], 180) for i, rp in enumerate(robot_pos)]
-
-        obstacle_pos = []  # 障害物の無効化
-
-        xml = _gen_env(
-            timestep,
-            nest_pos, robot_pos, obstacle_pos, feed_pos,
-            pheromone_field_panel_size, pheromone_field_pos, pheromone_field_shape
+        self._world = _World(
+            nest_pos,
+            robot_pos,
+            obstacle_pos,
+            feed_pos,
+            sv,
+            evaporate,
+            diffusion,
+            decrease,
+            pheromone_field_panel_size,
+            pheromone_field_pos,
+            pheromone_field_shape,
+            pheromone_iteration,
+            timestep
         )
-        self.model = wrap_mjc.WrappedModel(xml)
-
-        if camera is not None:
-            self.model.set_camera(camera)
-
-        self.pheromone_field = []
-        if len(sv) != len(evaporate) != len(diffusion) != len(decrease):
-            raise "Invalid pheromone parameter."
-        for i in range(0, len(sv)):
-            self.pheromone_field.append(pheromone.PheromoneField(
-                pheromone_field_pos[0], pheromone_field_pos[1],
-                pheromone_field_panel_size, 1,
-                pheromone_field_shape[0], pheromone_field_shape[1],
-                sv[i], evaporate[i], diffusion[i], decrease[i],
-                self.model if (window is not None and i == self.show_pheromone_index) else None
-            ))
-
-        self.robots = [_Robot(copy.deepcopy(brain), self.model, i) for i in range(0, len(robot_pos))]
-        self.obstacles = [_Obstacle(self.model, i) for i in range(0, len(obstacle_pos))]
-        self.feeds = [_Feed(self.model, i) for i in range(0, len(feed_pos))]
-        self.nest_pos = numpy.array([nest_pos[0], nest_pos[1], 0])
-        self.obstacle_pos = [o.get_pos() for o in self.obstacles]
-
-        self.loss = l2 * 1e-5
 
         for _ in range(0, 5):
-            self.model.step()
+            self._world.calc_step()
 
     def calc_step(self) -> float:
+        for i in range(self._world.num_robots):
+            robot = self._world.get_robot(i)
+
+        self._world.calc_step()
+
         # Calculate
         self.model.step()
         for pf in self.pheromone_field:
@@ -596,7 +633,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
                 return score
         return self.loss
 
-    def render(self, rect: (int, int, int, int) = None, flush: bool = True):
+    def render(self, ):
         if self.window is not None:
             if not self.window.render(self.model, self.camera, rect):
                 exit()
