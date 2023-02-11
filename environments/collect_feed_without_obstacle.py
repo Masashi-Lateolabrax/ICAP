@@ -437,7 +437,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
             window: miscellaneous.Window = None,
             camera: wrap_mjc.Camera = None
     ):
-        from environments import pheromone
+        from studyLib.miscellaneous import pheromone
 
         self.timestep = timestep
         self.window = window

@@ -2,7 +2,8 @@ import struct
 import mujoco
 import numpy
 
-from environments import sensor, pheromone
+from environments import sensor
+from studyLib.miscellaneous import pheromone
 from studyLib import nn_tools, optimizer, wrap_mjc, miscellaneous
 from studyLib.optimizer import EnvInterface, MuJoCoEnvInterface
 
