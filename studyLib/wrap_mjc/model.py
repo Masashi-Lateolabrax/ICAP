@@ -282,7 +282,7 @@ class WrappedModel:
         self.coolback()
         mujoco.mj_step(self.model, self.data)
 
-    def set_camera(self, cam: Camera):
+    def set_global_camera(self, cam: Camera):
         self.camera.lookat[0] = cam.look_at[0]
         self.camera.lookat[1] = cam.look_at[1]
         self.camera.lookat[2] = cam.look_at[2]
