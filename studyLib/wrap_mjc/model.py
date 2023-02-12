@@ -290,6 +290,9 @@ class WrappedModel:
         self.camera.elevation = -cam.vertical_angle
         self.camera.azimuth = cam.horizontal_angle
 
+    def get_camera(self, name: str):
+        self.model.camera(name)
+
     def count_raised_warning(self) -> int:
         s = 0
         for i in self.data.warning.number:
