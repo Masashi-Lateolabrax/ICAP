@@ -17,6 +17,23 @@ class Camera:
         self.vertical_angle = vertical_angle
 
 
+class WrappedCamera:
+    def __init__(self, raw_camera):
+        self._raw = raw_camera
+
+    def get_id(self):
+        return self._raw.id
+
+    def get_name(self):
+        return self._raw.name
+
+    def get_xmat(self):
+        return self._raw.xmat
+
+    def get_xpos(self):
+        return self._raw.xpos
+
+
 class DecoGeom(mujoco.MjvGeom):
     def __init__(self, geom_type: mujoco.mjtGeom):
         super().__init__()
@@ -290,8 +307,9 @@ class WrappedModel:
         self.camera.elevation = -cam.vertical_angle
         self.camera.azimuth = cam.horizontal_angle
 
-    def get_camera(self, name: str):
-        self.model.camera(name)
+    def get_camera(self, name: str) -> WrappedCamera:
+        raw_camera = self.data.camera(name)
+        return WrappedCamera(raw_camera)
 
     def count_raised_warning(self) -> int:
         s = 0
