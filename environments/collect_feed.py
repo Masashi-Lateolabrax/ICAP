@@ -16,7 +16,7 @@ def _gen_env(
         pheromone_field_pos: (float, float),
         pheromone_field_shape: (int, int)
 ):
-    generator = wrap_mjc.MuJoCoXMLGenerator("co-behavior")
+    generator = wrap_mjc.MuJoCoXMLGenerator("game_env")
 
     generator.add_option({
         "timestep": f"{timestep}",
@@ -216,16 +216,16 @@ def _gen_env(
     # Create Feeds
     ######################################################################################################
     for i, fp in enumerate(feed_pos):
-        feed_body = worldbody.add_body({
-            "name": f"feed{i}",
-            "pos": f"{fp[0]} {fp[1]} 11"
-        })
+        feed_body = worldbody.add_body(
+            name=f"feed{i}",
+            pos=(fp[0], fp[1], 11)
+        )
         feed_body.add_freejoint()
-        feed_body.add_site({"name": f"site_feed{i}"})
+        feed_body.add_site({"name": f"feed{i}_center_site"})
         feed_body.add_geom({"class": "feeds"})
         sensor.add_velocimeter({
-            "name": f"sensor_feed{i}_velocity",
-            "site": f"site_feed{i}"
+            "name": f"feed{i}_velocity_sensor",
+            "site": f"feed{i}_center_site"
         })
 
     ######################################################################################################
@@ -233,41 +233,46 @@ def _gen_env(
     ######################################################################################################
     depth = 1.0
     for i, rp in enumerate(robot_pos):
-        robot_body = worldbody.add_body({
-            "name": f"robot{i}",
-            "pos": f"{rp[0]} {rp[1]} {10 + depth + 0.5}",
-            "axisangle": f"0 0 1 {rp[2]}",
-        })
+        robot_body = worldbody.add_body(
+            name=f"robot{i}",
+            pos=(rp[0], rp[1], 10 + depth + 0.5),
+            axisangle=((0, 0, 1), rp[2])
+        )
         robot_body.add_freejoint()
+        robot_body.add_site({"name": f"robot{i}_center_site"})
         robot_body.add_geom({"class": "robot_body"})
 
-        right_wheel_body = robot_body.add_body({"pos": f"10 0 -{depth}"})
-        right_wheel_body.add_joint({"name": f"joint_robot{i}_right", "type": "hinge", "axis": "-1 0 0"})
+        right_wheel_body = robot_body.add_body(pos=(10, 0, -depth))
+        right_wheel_body.add_joint({"name": f"robot{i}_right_joint", "type": "hinge", "axis": "-1 0 0"})
         right_wheel_body.add_geom({"class": "robot_wheel"})
 
-        left_wheel_body = robot_body.add_body({"pos": f"-10 0 -{depth}"})
-        left_wheel_body.add_joint({"name": f"joint_robot{i}_left", "type": "hinge", "axis": "-1 0 0"})
+        left_wheel_body = robot_body.add_body(pos=(-10, 0, -depth))
+        left_wheel_body.add_joint({"name": f"robot{i}_left_joint", "type": "hinge", "axis": "-1 0 0"})
         left_wheel_body.add_geom({"class": "robot_wheel"})
 
-        front_wheel_body = robot_body.add_body({"pos": f"0 15 {-5 + 1.5 - depth}"})
+        front_wheel_body = robot_body.add_body(pos=(0, 15, -5 + 1.5 - depth))
         front_wheel_body.add_joint({"type": "ball"})
         front_wheel_body.add_geom({"class": "robot_ball"})
 
-        rear_wheel_body = robot_body.add_body({"pos": f"0 -15 {-5 + 1.5 - depth}"})
+        rear_wheel_body = robot_body.add_body(pos=(0, -15, -5 + 1.5 - depth))
         rear_wheel_body.add_joint({"type": "ball"})
         rear_wheel_body.add_geom({"class": "robot_ball"})
 
         act.add_velocity({
-            "name": f"act_robot{i}_left",
-            "joint": f"joint_robot{i}_left",
+            "name": f"robot{i}_left_act",
+            "joint": f"robot{i}_left_joint",
             "kv": "100",
             "gear": "30",
         })
         act.add_velocity({
-            "name": f"act_robot{i}_right",
-            "joint": f"joint_robot{i}_right",
+            "name": f"robot{i}_right_act",
+            "joint": f"robot{i}_right_joint",
             "kv": "100",
             "gear": "30"
+        })
+        sensor.add_velocimeter({
+            "name": f"robot{i}_velocimeter",
+            "site": f"robot{i}_center_site"
         })
 
     ######################################################################################################
@@ -279,22 +284,13 @@ def _gen_env(
 
 class _Obstacle:
     def __init__(self, pos):
-        self._pos = pos
-
-    def get_pos(self):
-        return self._pos.copy()
+        self.pos = pos
 
 
 class _Feed:
-    def __init__(self, body: wrap_mjc.WrappedBody, velocity_sensor):
-        self._body = body
-        self._velocity_sensor = velocity_sensor
-
-    def get_pos(self):
-        return self._body.get_xpos().copy()
-
-    def get_velocity(self) -> numpy.ndarray:
-        return self._velocity_sensor.get_data()
+    def __init__(self, pos, velocity):
+        self.pos = pos
+        self.velocity = velocity
 
 
 class RobotBrain:
@@ -336,66 +332,16 @@ class RobotBrain:
 
 
 class _Robot:
-    def __init__(self, body: wrap_mjc.WrappedBody, left_act, right_act, sight):
-        self._body = body
-        self._left_act = left_act
-        self._right_act = right_act
-        self._sight = sight
-
-    def get_pos(self) -> numpy.ndarray:
-        return self._body.get_xpos().copy()
-
-    def get_orientation(self) -> numpy.ndarray:
-        rot_mat = numpy.zeros(9).reshape(3, 3)
-        mujoco.mju_quat2Mat(rot_mat.ravel(), self._body.get_xquat())
-        return rot_mat
-
-    def get_direction(self) -> numpy.ndarray:
-        a = numpy.dot(self.get_orientation(), [0.0, 1.0, 0.0])
-        a[2] = 0.0
-        d = numpy.linalg.norm(a, ord=2)
-        return a / d
+    def __init__(self, pos, direction, velocity, act_left, act_right):
+        self._act_left = act_left
+        self._act_right = act_right
+        self.pos = pos
+        self.direction = direction
+        self.velocity = velocity
 
     def rotate_wheel(self, left, right):
-        self._left_act.ctrl = 1000 * left
-        self._right_act.ctrl = 1000 * right
-
-    def look(self):
-
-    def act(
-            self,
-            vision: list[float],
-            pheromone_values: list[float],
-            nest_pos: numpy.ndarray,
-    ):
-        from environments import sensor
-
-        wrap_mjc.
-
-        pos = self.get_pos()
-        mat = self.get_orientation()
-
-        ref_nest_pos = numpy.dot(numpy.linalg.inv(mat), nest_pos - pos)[:2]
-
-        rs = sensor.OmniSensor(pos, mat, 17.5, 70)
-        for rp in robot_pos:
-            rs.sense(rp)
-
-        # os = sensor.OmniSensor(pos, mat, 17.5 + 60.0, 70)
-        # for op in obstacle_pos:
-        #     os.sense(op)
-
-        fs = sensor.OmniSensor(pos, mat, 17.5 + 50.0, 70)
-        for fp in feed_pos:
-            fs.sense(fp)
-
-        input_ = numpy.concatenate(
-            [ref_nest_pos, rs.value, fs.value, pheromone_values]
-        )
-        ctrl = self.brain.calc(input_)
-
-        self.rotate_wheel(ctrl[0], ctrl[1])
-        return numpy.linalg.norm(ctrl, ord=2), (ctrl[2] * 30.0,)
+        self._act_left.ctrl = 1000 * left
+        self._act_right.ctrl = 1000 * right
 
 
 class _World:
@@ -416,6 +362,7 @@ class _World:
             timestep: float,
     ):
         self.timestep = timestep
+        self.nest_pos = nest_pos
         self.pheromone_iteration = pheromone_iteration
         self.num_robots = len(robot_pos)
         self.num_obstacles = len(obstacle_pos)
@@ -449,38 +396,56 @@ class _World:
             0.05
         )
 
+    def calc_robot_sight(self, robot: _Robot, start, end, div):
+        i = 0
+        mat = numpy.zeros((3, 3))
+        mat[2, 2] = 1.0
+        step = (end - start) / div
+        res = numpy.zeros(div)
+
+        for i in range(div):
+            theta = start + step * i
+            mat[0, 0] = numpy.cos(theta)
+            mat[0, 1] = numpy.sin(theta)
+            mat[1, 0] = -numpy.sin(theta)
+            mat[1, 1] = numpy.cos(theta)
+            _, distance = self.model.calc_ray(
+                robot.pos + robot.direction * 17.5,
+                numpy.dot(mat, robot.direction)
+            )
+            res[i] = distance
+
+        return res
+
     def get_robot(self, index: int) -> _Robot:
+        def calc_robot_direction(robot_body: wrap_mjc.WrappedBody):
+            rot_mat = numpy.zeros(9).reshape(3, 3)
+            mujoco.mju_quat2Mat(rot_mat.ravel(), robot_body.get_xquat())
+            inv_rot_mat = numpy.linalg.inv(rot_mat)
+            direction = numpy.dot(inv_rot_mat, [0, 1, 0])
+            direction[2] = 0
+            distance = numpy.linalg.norm(direction, ord=2)
+            direction /= distance
+            return direction
+
         body = self.model.get_body(f"robot{index}")
-        act_left = self.model.get_act(f"act_robot{index}_left")
-        act_right = self.model.get_act(f"act_robot{index}_left")
+        act_left = self.model.get_act(f"robot{index}_left_act")
+        act_right = self.model.get_act(f"robot{index}_right_act")
+        velocimeter = self.model.get_sensor(f"robot{index}_velocimeter")
 
-        rot_mat = numpy.zeros(9).reshape(3, 3)
-        mujoco.mju_quat2Mat(rot_mat.ravel(), body.get_xquat())
-        inv_rot_mat = numpy.linalg.inv(rot_mat)
+        pos = body.get_xpos()
+        velocity = velocimeter.get_data()
+        direction = calc_robot_direction(body)
 
-        convertor = lambda d, t, k1, k2: (1.0 if -k1 <= t <= k1 else 0.0) * numpy.exp(d ** 2 / -k2)
+        return _Robot(pos, direction, velocity, act_left, act_right)
 
-        sight = numpy.zeros(180)
-        for (name, num, offset) in [
-            ("robot", self.num_robots, 17.5),
-            ("feed", self.num_feeds, 17.5),
-            ("obstacle", self.num_obstacles, 17.5)
-        ]:
-            for i in range(num):
-                sub_vector = numpy.dot(inv_rot_mat, self.model.get_body(f"{name}{i}").get_xpos() - body.get_xpos())
-                distance = numpy.linalg.norm(sub_vector, ord=2) - offset - 17.5
-                theta = numpy.arctan2(sub_vector[1], sub_vector[0])
-                value = convertor(distance, theta, numpy.pi * 0.5, 1)
-                sight_index = int(len(sight) * (0.5 - 0.5 * theta / numpy.pi) + 0.5)
-                if sight[sight_index] < value:
-                    sight[sight_index] = value
-
-        return _Robot(body, act_left, act_right, sight)
+    def get_pheromone(self, x, y):
+        return [field.get_gas(x, y) for field in self.pheromone_field]
 
     def get_feed(self, index: int):
         body = self.model.get_body(f"feed{index}")
-        velocity_sensor = self.model.get_sensor(f"sensor_feed{index}_velocity")
-        return _Feed(body, velocity_sensor)
+        velocimeter = self.model.get_sensor(f"sensor_feed{index}_velocity")
+        return _Feed(body.get_xpos(), velocimeter.get_data())
 
     def get_obstacle(self, index):
         pos = self.model.get_geom(f"obstacle{index}").get_pos()
@@ -520,10 +485,15 @@ class _World:
         if flush:
             window.flush()
 
+    def secretion(self, pos, secretion):
+        for i, s in enumerate(secretion):
+            self.pheromone_field[i].add_liquid(pos[0], pos[1], s)
+
 
 class Environment(optimizer.MuJoCoEnvInterface):
     def __init__(
             self,
+            l2: float,
             brain: RobotBrain,
             nest_pos: (float, float),
             robot_pos: list[(float, float)],
@@ -543,6 +513,8 @@ class Environment(optimizer.MuJoCoEnvInterface):
             window: miscellaneous.Window = None,
             camera: wrap_mjc.Camera = None
     ):
+        self._loss = l2
+
         self._world = _World(
             nest_pos,
             robot_pos,
@@ -559,96 +531,78 @@ class Environment(optimizer.MuJoCoEnvInterface):
             timestep
         )
 
+        self.robot_brain = brain
+
+        self.time = time
+        self.show_pheromone_index = show_pheromone_index
+        self.window = window
+        self.camera = camera
+
         for _ in range(0, 5):
             self._world.calc_step()
 
     def calc_step(self) -> float:
+        if not self._world.calc_step():
+            return float("inf")
+
+        # Make robots think.
         for i in range(self._world.num_robots):
             robot = self._world.get_robot(i)
-
-        self._world.calc_step()
-
-        # Calculate
-        self.model.step()
-        for pf in self.pheromone_field:
-            for _ in range(self.pheromone_iteration):
-                pf.update_cells(self.timestep / self.pheromone_iteration)
-
-        # Stop unstable state
-        z_axis = numpy.array([0, 0, 1])
-        for r in self.robots:
-            c = numpy.dot(z_axis, r.get_direction())
-            if not (-0.5 < c < 0.5):
-                print("Catch warning!")
-                return float("inf")
-            if self.model.count_raised_warning() > 0:
-                print("Catch warning!")
-                return float("inf")
-
-        # Act
-        dt_exhaustion = 0.0
-        robot_pos = [r.get_pos() for r in self.robots]
-        feed_pos = [f.get_pos() for f in self.feeds]
-        for r, rp in zip(self.robots, robot_pos):
-            pheromone_values = [pf.get_gas(rp[0], rp[1]) for pf in self.pheromone_field]
-            exhaustion, secretion = r.act(pheromone_values, self.nest_pos, robot_pos, self.obstacle_pos, feed_pos)
-
-            dt_exhaustion += exhaustion
-            for i, s in enumerate(secretion):
-                self.pheromone_field[i].add_liquid(rp[0], rp[1], s)
+            robot_sight = self._world.calc_robot_sight(robot, -numpy.pi, numpy.pi, 100)
+            pheromone = self._world.get_pheromone(robot.pos[0], robot.pos[1])
+            decision = self.robot_brain.calc(numpy.concatenate([robot_sight, pheromone]))
+            robot.rotate_wheel(decision[0], decision[1])
+            self._world.secretion(robot.pos, decision[2:])
 
         # Calculate loss
         feed_range = 10000.0
+        obstacle_range = 200.0
         dt_loss_feed_nest = 0.0
         dt_loss_feed_robot = 0.0
-        for f, fp in zip(self.feeds, feed_pos):
-            feed_nest_vector = (self.nest_pos - fp)[0:2]
-            feed_nest_distance = numpy.linalg.norm(feed_nest_vector, ord=2)
-            valid_feed_velocity = numpy.dot(feed_nest_vector / feed_nest_distance, f.get_velocity()[0:2])
-            dt_loss_feed_nest -= valid_feed_velocity
-
-            for rp in robot_pos:
-                d = numpy.sum((fp[0:2] - rp[0:2]) ** 2)
-                dt_loss_feed_robot -= numpy.exp(-d / feed_range)
-
-        obstacle_range = 200.0
         dt_loss_obstacle_robot = 0.0
-        for rp in robot_pos:
-            for op in self.obstacle_pos:
-                d = numpy.sum((rp[0:2] - op[0:2]) ** 2)
-                dt_loss_obstacle_robot += numpy.exp(-d / obstacle_range)
+        for i in range(self._world.num_feeds):
+            feed = self._world.get_feed(i)
+            feed_nest_vector = (self._world.nest_pos - feed.pos)[0:2]
+            feed_nest_distance = numpy.linalg.norm(feed_nest_vector, ord=2)
+            dt_loss_feed_nest += feed_nest_distance
 
-        dt_loss_feed_nest *= 0.1 / len(self.feeds)
-        dt_loss_feed_robot *= 1.0 / (len(self.feeds) * len(self.robots))
-        # dt_loss_obstacle_robot *= 1e12 / (len(self.obstacle_pos) * len(self.robots))
-        # print(self.loss, dt_loss_feed_nest, dt_loss_feed_robot)
-        self.loss += (dt_loss_feed_nest + dt_loss_feed_robot) * self.timestep  # + dt_loss_obstacle_robot
+            for j in range(self._world.num_robots):
+                robot = self._world.get_robot(j)
+                feed_robot_vector = (robot.pos - feed.pos)[0:2]
+                feed_robot_distance = numpy.sum(feed_robot_vector ** 2)
+                dt_loss_feed_robot -= numpy.exp(-feed_robot_distance / feed_range)
 
-        return self.loss
+        for i in range(self._world.num_obstacles):
+            obstacle = self._world.get_obstacle(i)
+            for j in range(self._world.num_robots):
+                robot = self._world.get_robot(j)
+                obstacle_robot_vector = robot.pos - obstacle.pos
+                obstacle_robot_distance = numpy.sum(obstacle_robot_vector ** 2)
+                dt_loss_obstacle_robot -= numpy.exp(-obstacle_robot_distance / obstacle_range)
+
+        dt_loss_feed_nest *= 0.1 / self._world.num_feeds
+        dt_loss_feed_robot *= 1.0 / (self._world.num_feeds * self._world.num_robots)
+        dt_loss_obstacle_robot *= 1e12 / (self._world.num_obstacles * self._world.num_robots)
+        self._loss += (dt_loss_feed_nest + dt_loss_feed_robot + dt_loss_obstacle_robot) * self._world.timestep
+
+        return self._loss
 
     def calc(self) -> float:
-        for t in range(0, int(self.time / self.timestep)):
-            score = self.calc_step()
-            if numpy.isinf(score):
-                return score
-        return self.loss
+        raise NotImplementedError
 
-    def render(self, ):
-        if self.window is not None:
-            if not self.window.render(self.model, self.camera, rect):
-                exit()
-            self.pheromone_field[self.show_pheromone_index].update_panels()
-            self.model.draw_text(f"{self.loss}", 0, 0, (1, 1, 1))
-            if flush:
-                self.window.flush()
+    def render(self, rect: (int, int, int, int) = None, flush: bool = True) -> float:
+        self._world.render(
+            self._loss,
+            self.show_pheromone_index,
+            self.window,
+            self.camera,
+            rect,
+            flush
+        )
+        return 0.0
 
     def calc_and_show(self, rect: (int, int, int, int) = None) -> float:
-        for t in range(0, int(self.time / self.timestep)):
-            score = self.calc_step()
-            if numpy.isinf(score):
-                return score
-            self.render(rect)
-        return self.loss
+        raise NotImplementedError
 
 
 class EnvCreator(optimizer.MuJoCoEnvCreator):
