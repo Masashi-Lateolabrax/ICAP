@@ -127,7 +127,57 @@ class MuJoCoXMLGenerator:
             elif "name" in attributes:
                 self._name = attributes["name"]
 
-        def add_body(self, attributes={}):
+        def add_body(
+                self,
+                name: str = None,
+                childclass: str = None,
+                mocap: bool = False,
+                pos: (float, float, float) = None,
+                quat: (float, float, float, float) = (1, 0, 0, 0),
+                axisangle: ((float, float, float), float) = None,
+                xyaxes: ((float, float, float), (float, float, float)) = None,
+                zaxis: (float, float, float) = None,
+                euler: (float, float, float) = None,
+                gravcomp: float = 0,
+                user: str = None
+        ):
+
+            """
+            :param name: Name of the body.
+            :param childclass: If this attribute is present, all descendant elements that admit a defaults class will use the class specified here, unless they specify their own class or another body with a child class attribute is encountered along the chain of nested bodies.Recall Default settings.
+            :param mocap: If this attribute is “true”, the body is labeled as a mocap body. This is allowed only for bodies that are children of the world body and have no joints. Such bodies are fixed from the viewpoint of the dynamics, but nevertheless the forward kinematics set their position and orientation from the fields mjData.mocap_pos and mjData.mocap_quat at each time step. The size of these arrays is adjusted by the compiler so as to match the number of mocap bodies in the model. This mechanism can be used to stream motion capture data into the simulation. Mocap bodies can also be moved via mouse perturbations in the interactive visualizer, even in dynamic simulation mode. This can be useful for creating props with adjustable position and orientation. See also the mocap attribute of flag.
+            :param pos: The 3D position of the body frame, in local or global coordinates as determined by the coordinate attribute of compiler. Recall the earlier discussion of local and global coordinates in Coordinate frames. In local coordinates, if the body position is left undefined it defaults to (0, 0, 0). In global coordinates, an undefined body position is inferred by the compiler through the following steps:If the inertial frame is not defined via the inertial element, it is inferred from the geoms attached to thebody. If there are no geoms, the inertial frame remains undefined. This step is applied in both local and global coordinates. If both the body frame and the inertial frame are undefined, a compile error is generated. If one of these two frames is defined and the other is not, the defined one is copied into the undefinedone. At this point both frames are defined, in global coordinates. The inertial frame as well as all elements defined in the body are converted to local coordinates, relative to the body frame. Note that whether a frame is defined or not depends on its pos attribute, which is in the special undefined state by default. Orientation cannot be used to make this determination because it has an internal default(the unit quaternion).
+            :param quat: See [Frame orientations](https://mujoco.readthedocs.io/en/stable/modeling.html#corientation). Similar to position, the orientation specified here is interpreted in either local or global coordinates as determined by the coordinate attribute of compiler.Unlike position which is required in local coordinates, the orientation defaults to the unit quaternion, thus specifying it is optional even in local coordinates. If the body frame was copied from the body inertial frame per the above rules, the copy operation applies to both position and orientation, and the setting of the orientation - related attributes is ignored.
+            :param axisangle: See 'quat' attribute.
+            :param xyaxes: See 'quat' attribute.
+            :param zaxis: See 'quat' attribute.
+            :param euler: See 'quat' attribute.
+            :param gravcomp: Gravity compensation force, specified as fraction of body weight. This attribute creates an upwards force applied to the body’s center of mass, countering the force of gravity. As an example, a value of 1 creates an upward force equal to the body’s weight and compensates for gravity exactly. Values greater than 1 will create a net upwards force or buoyancy effect.
+            :param user: See [User parameters](https://mujoco.readthedocs.io/en/stable/modeling.html#cuser).
+            """
+
+            attributes = {}
+            for key, value in [("name", name), ("childclass", childclass), ("user", user)]:
+                if value is not None:
+                    attributes[key] = value
+
+            attributes["mocap"] = "false" if mocap is False else "true"
+            attributes["pos"] = f"{pos[0]} {pos[1]} {pos[2]}"
+            attributes["gravcomp"] = f"{gravcomp}"
+
+            if axisangle is not None:
+                attributes["axisangle"] = f"{axisangle[0][0]} {axisangle[0][1]} {axisangle[0][2]} {axisangle[1]}"
+            elif xyaxes is not None:
+                attributes["xyaxes"] \
+                    = f"{xyaxes[0][0]} {xyaxes[0][1]} {xyaxes[0][2]} {xyaxes[1][0]} {xyaxes[1][1]} {xyaxes[1][2]}"
+            elif zaxis is not None:
+                attributes["zaxis"] \
+                    = f"{zaxis[0][0]} {zaxis[0][1]} {zaxis[0][2]} {zaxis[1][0]} {zaxis[1][1]} {zaxis[1][2]}"
+            elif euler is not None:
+                attributes["euler"] = f"{euler[0]} {euler[1]} {euler[2]}"
+            else:
+                attributes["quat"] = f"{quat[0]} {quat[1]} {quat[2]} {quat[3]}"
+
             child_body = MuJoCoXMLGenerator.MuJoCoBody(False, attributes)
             self._child_body.append(child_body)
             return child_body
