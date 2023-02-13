@@ -119,6 +119,7 @@ class MuJoCoXMLGenerator:
             self._geoms = []
             self._site = []
             self._joint = []
+            self._camera = []
             self._child_body: list[MuJoCoXMLGenerator.MuJoCoBody] = []
 
             if self._worldbody:
@@ -143,6 +144,9 @@ class MuJoCoXMLGenerator:
         def add_freejoint(self):
             self.add_joint({"type": "free", "stiffness": "0", "damping": "0", "frictionloss": "0", "armature": "0"})
 
+        def add_camera(self, attributes):
+            self._camera.append(attributes)
+
         def to_string(self) -> str:
             if self._worldbody:
                 xml = "<worldbody>\n"
@@ -151,6 +155,12 @@ class MuJoCoXMLGenerator:
                 for k, v in self._attributes.items():
                     xml += f"{k}=\"{v}\" "
                 xml += ">\n"
+
+            for c in self._camera:
+                xml += "<camera "
+                for k, v in c.items():
+                    xml += f"{k}=\"{v}\" "
+                xml += "/>\n"
 
             for j in self._joint:
                 xml += "<joint "

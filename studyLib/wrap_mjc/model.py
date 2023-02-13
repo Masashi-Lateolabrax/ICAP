@@ -283,7 +283,6 @@ class WrappedModel:
     def __init__(self, xml: str):
         self.model = mujoco.MjModel.from_xml_string(xml)
         self.data = mujoco.MjData(self.model)
-        self.camera = mujoco.MjvCamera()
         self.deco_geoms: list[DecoGeom] = []
         self._scn: mujoco.MjvScene = None
         self._ctx: mujoco.MjrContext = None
@@ -308,7 +307,7 @@ class WrappedModel:
         self.camera.azimuth = cam.horizontal_angle
 
     def get_camera(self, name: str) -> WrappedCamera:
-        raw_camera = self.data.camera(name)
+        raw_camera = self.model.camera(name)
         return WrappedCamera(raw_camera)
 
     def count_raised_warning(self) -> int:
@@ -333,9 +332,11 @@ class WrappedModel:
         if not (cam is None):
             self.set_camera(cam)
 
+        camera = mujoco.MjvCamera()
+
         mujoco.mjv_updateScene(
             self.model, self.data,
-            mujoco.MjvOption(), None, self.camera,
+            mujoco.MjvOption(), None, camera,
             mujoco.mjtCatBit.mjCAT_ALL, self._scn
         )
 

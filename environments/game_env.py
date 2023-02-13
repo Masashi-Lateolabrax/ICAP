@@ -221,11 +221,11 @@ def _gen_env(
             "pos": f"{fp[0]} {fp[1]} 11"
         })
         feed_body.add_freejoint()
-        feed_body.add_site({"name": f"site_feed{i}"})
+        feed_body.add_site({"name": f"feed_center_site{i}"})
         feed_body.add_geom({"class": "feeds"})
         sensor.add_velocimeter({
-            "name": f"sensor_feed{i}_velocity",
-            "site": f"site_feed{i}"
+            "name": f"feed{i}_velocity_sensor",
+            "site": f"feed_center_site{i}"
         })
 
     ######################################################################################################
@@ -241,12 +241,18 @@ def _gen_env(
         robot_body.add_freejoint()
         robot_body.add_geom({"class": "robot_body"})
 
+        robot_camera = robot_body.add_camera({
+            "name": f"robot{i}_camera",
+            "pos": "0 17.5 0",
+            "axisangle": "90 0 0"
+        })
+
         right_wheel_body = robot_body.add_body({"pos": f"10 0 -{depth}"})
-        right_wheel_body.add_joint({"name": f"joint_robot{i}_right", "type": "hinge", "axis": "-1 0 0"})
+        right_wheel_body.add_joint({"name": f"robot{i}_right_joint", "type": "hinge", "axis": "-1 0 0"})
         right_wheel_body.add_geom({"class": "robot_wheel"})
 
         left_wheel_body = robot_body.add_body({"pos": f"-10 0 -{depth}"})
-        left_wheel_body.add_joint({"name": f"joint_robot{i}_left", "type": "hinge", "axis": "-1 0 0"})
+        left_wheel_body.add_joint({"name": f"robot{i}_left_joint", "type": "hinge", "axis": "-1 0 0"})
         left_wheel_body.add_geom({"class": "robot_wheel"})
 
         front_wheel_body = robot_body.add_body({"pos": f"0 15 {-5 + 1.5 - depth}"})
@@ -258,14 +264,14 @@ def _gen_env(
         rear_wheel_body.add_geom({"class": "robot_ball"})
 
         act.add_velocity({
-            "name": f"act_robot{i}_left",
-            "joint": f"joint_robot{i}_left",
+            "name": f"robot{i}_left_act",
+            "joint": f"robot{i}_left_joint",
             "kv": "100",
             "gear": "30",
         })
         act.add_velocity({
-            "name": f"act_robot{i}_right",
-            "joint": f"joint_robot{i}_right",
+            "name": f"robot{i}_right_act",
+            "joint": f"robot{i}_right_joint",
             "kv": "100",
             "gear": "30"
         })
@@ -337,6 +343,7 @@ class RobotBrain:
 
 class _Robot:
     def __init__(self, body: wrap_mjc.WrappedBody, left_act, right_act, sight):
+        self._model = model
         self._body = body
         self._left_act = left_act
         self._right_act = right_act
@@ -355,6 +362,8 @@ class _Robot:
         a[2] = 0.0
         d = numpy.linalg.norm(a, ord=2)
         return a / d
+
+    def get_sight(self):
 
     def rotate_wheel(self, left, right):
         self._left_act.ctrl = 1000 * left
@@ -451,8 +460,13 @@ class _World:
 
     def get_robot(self, index: int) -> _Robot:
         body = self.model.get_body(f"robot{index}")
-        act_left = self.model.get_act(f"act_robot{index}_left")
-        act_right = self.model.get_act(f"act_robot{index}_left")
+        act_left = self.model.get_act(f"robot{index}_left_act")
+        act_right = self.model.get_act(f"robot{index}_right_act")
+        robot_camera = self.model.get_camera(f"robot{index}_camera")
+
+        self.model.set_global_camera(
+            robot_camera.get_xpos()
+        )
 
         rot_mat = numpy.zeros(9).reshape(3, 3)
         mujoco.mju_quat2Mat(rot_mat.ravel(), body.get_xquat())
