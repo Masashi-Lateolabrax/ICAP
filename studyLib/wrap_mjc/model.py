@@ -377,3 +377,15 @@ class WrappedModel:
     # コールバック関数のタイポ．ループごとに実行される処理を記述．別に書かなくてもＯＫ．
     def coolback(self):
         pass
+
+    def calc_ray(self, start_point: (float, float, float), vector: (float, float, float)) -> (str, float):
+        i = numpy.array((1, 1))
+        distance = mujoco.mj_ray(
+            self.model, self.data,
+            start_point, vec=vector,
+            flag_static=1,
+            bodyexclude=0,
+            geomid=i
+        )
+        name = self.model.geom(i[0]).name
+        return name, distance
