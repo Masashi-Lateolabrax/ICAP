@@ -171,17 +171,17 @@ class PheromonePanels:
         for xi in range(0, nx):
             self._panels.append([])
             for yi in range(0, ny):
-                px = ((xi / (nx - 1.0)) - 0.5) * size * nx + px
-                py = ((yi / (ny - 1.0)) - 0.5) * size * ny + py
+                pos_x = ((xi / (nx - 1.0)) - 0.5) * size * nx + px
+                pos_y = ((yi / (ny - 1.0)) - 0.5) * size * ny + py
                 deco_geom = model.add_deco_geom(mujoco.mjtGeom.mjGEOM_PLANE)
-                deco_geom.set_pos([px, py, z])
+                deco_geom.set_pos([pos_x, pos_y, z])
                 deco_geom.set_size([size * 0.5, size * 0.5, 0.05])
                 deco_geom.set_quat([0, 0, 1], 0)
                 self._panels[xi].append(deco_geom)
 
     def update(self, pheromone_field: PheromoneField, func=lambda x: x):
-        for xi, xs in enumerate(self._panels):
-            for yi, p in enumerate(xs):
+        for xi, ps in enumerate(self._panels):
+            for yi, p in enumerate(ps):
                 gas = pheromone_field.get_gas_raw(xi, yi)
                 v = func(gas)
                 color = colorsys.hsv_to_rgb(0.66 * (1.0 - v), 1.0, 1.0)

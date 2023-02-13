@@ -36,10 +36,22 @@ class MuJoCoXMLGenerator:
 
     class MuJoCoVisual(ToString):
         def __init__(self):
-            pass
+            self._headlight = None
+
+        def add_headlight(self, attributes):
+            self._headlight = attributes
 
         def to_string(self) -> str:
-            return "Hello"
+            xml = "<visual>"
+
+            if self._headlight is not None:
+                xml += "<headlight "
+                for k, v in self._headlight.items():
+                    xml += f"{k}=\"{v}\" "
+                xml += "/>\n"
+
+            xml += "</visual>\n"
+            return xml
 
     class MuJoCoStatistic(ToString):
         def __init__(self):
@@ -131,14 +143,14 @@ class MuJoCoXMLGenerator:
                 self,
                 name: str = None,
                 childclass: str = None,
-                mocap: bool = False,
+                mocap: bool = None,
                 pos: (float, float, float) = None,
-                quat: (float, float, float, float) = (1, 0, 0, 0),
+                quat: (float, float, float, float) = None,
                 axisangle: ((float, float, float), float) = None,
                 xyaxes: ((float, float, float), (float, float, float)) = None,
                 zaxis: (float, float, float) = None,
                 euler: (float, float, float) = None,
-                gravcomp: float = 0,
+                gravcomp: float = None,
                 user: str = None
         ):
 
@@ -161,9 +173,12 @@ class MuJoCoXMLGenerator:
                 if value is not None:
                     attributes[key] = value
 
-            attributes["mocap"] = "false" if mocap is False else "true"
-            attributes["pos"] = f"{pos[0]} {pos[1]} {pos[2]}"
-            attributes["gravcomp"] = f"{gravcomp}"
+            if mocap is not None:
+                attributes["mocap"] = mocap
+            if pos is not None:
+                attributes["pos"] = f"{pos[0]} {pos[1]} {pos[2]}"
+            if gravcomp is not None:
+                attributes["gravcomp"] = f"{gravcomp}"
 
             if axisangle is not None:
                 attributes["axisangle"] = f"{axisangle[0][0]} {axisangle[0][1]} {axisangle[0][2]} {axisangle[1]}"
@@ -175,7 +190,7 @@ class MuJoCoXMLGenerator:
                     = f"{zaxis[0][0]} {zaxis[0][1]} {zaxis[0][2]} {zaxis[1][0]} {zaxis[1][1]} {zaxis[1][2]}"
             elif euler is not None:
                 attributes["euler"] = f"{euler[0]} {euler[1]} {euler[2]}"
-            else:
+            elif quat is not None:
                 attributes["quat"] = f"{quat[0]} {quat[1]} {quat[2]} {quat[3]}"
 
             child_body = MuJoCoXMLGenerator.MuJoCoBody(False, attributes)
@@ -431,7 +446,9 @@ class MuJoCoXMLGenerator:
         pass
 
     def add_visual(self) -> MuJoCoVisual:
-        pass
+        element = MuJoCoXMLGenerator.MuJoCoVisual()
+        self.elements.append(element)
+        return element
 
     def add_statistic(self) -> MuJoCoStatistic:
         pass

@@ -284,6 +284,7 @@ class WrappedModel:
         self.model = mujoco.MjModel.from_xml_string(xml)
         self.data = mujoco.MjData(self.model)
         self.deco_geoms: list[DecoGeom] = []
+        self.camera = mujoco.MjvCamera()
         self._scn: mujoco.MjvScene = None
         self._ctx: mujoco.MjrContext = None
 
@@ -329,14 +330,12 @@ class WrappedModel:
         elif self._scn.maxgeom != num_viewable_geom:
             self._scn = mujoco.MjvScene(self.model, maxgeom=num_viewable_geom)
 
-        if not (cam is None):
-            self.set_camera(cam)
-
-        camera = mujoco.MjvCamera()
+        if cam is not None:
+            self.set_global_camera(cam)
 
         mujoco.mjv_updateScene(
             self.model, self.data,
-            mujoco.MjvOption(), None, camera,
+            mujoco.MjvOption(), None, self.camera,
             mujoco.mjtCatBit.mjCAT_ALL, self._scn
         )
 
@@ -379,13 +378,16 @@ class WrappedModel:
         pass
 
     def calc_ray(self, start_point: (float, float, float), vector: (float, float, float)) -> (str, float):
-        i = numpy.array((1, 1))
+        i = numpy.zeros((1, 1), dtype=numpy.int32)
+        pnt = numpy.array(start_point).reshape((3, 1))
+        vec = numpy.array(vector).reshape((3, 1))
         distance = mujoco.mj_ray(
             self.model, self.data,
-            start_point, vec=vector,
-            flag_static=1,
-            bodyexclude=0,
+            pnt=pnt, vec=vec,
+            geomgroup=None,
+            flg_static=1,
+            bodyexclude=-1,
             geomid=i
         )
-        name = self.model.geom(i[0]).name
+        name = self.model.geom(i[0, 0]).name if distance >= 0.0 else ""
         return name, distance

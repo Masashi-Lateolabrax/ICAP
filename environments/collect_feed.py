@@ -24,6 +24,13 @@ def _gen_env(
         "impratio": "3",
     })
 
+    generator.add_visual().add_headlight({
+        "ambient": "0.3 0.3 0.3",
+        "diffuse": "0.4 0.4 0.4",
+        "specular": "0.0 0.0 0.0",
+        "active": "1"
+    })
+
     ######################################################################################################
     # Set Texture
     ######################################################################################################
@@ -224,7 +231,7 @@ def _gen_env(
         feed_body.add_site({"name": f"feed{i}_center_site"})
         feed_body.add_geom({"class": "feeds"})
         sensor.add_velocimeter({
-            "name": f"feed{i}_velocity_sensor",
+            "name": f"feed{i}_velocimeter",
             "site": f"feed{i}_center_site"
         })
 
@@ -397,10 +404,10 @@ class _World:
         )
 
     def calc_robot_sight(self, robot: _Robot, start, end, div):
-        i = 0
         mat = numpy.zeros((3, 3))
         mat[2, 2] = 1.0
         step = (end - start) / div
+        tmp = numpy.zeros(div)
         res = numpy.zeros(div)
 
         for i in range(div):
@@ -410,12 +417,17 @@ class _World:
             mat[1, 0] = -numpy.sin(theta)
             mat[1, 1] = numpy.cos(theta)
             _, distance = self.model.calc_ray(
-                robot.pos + robot.direction * 17.5,
+                robot.pos + robot.direction * 17.6,
                 numpy.dot(mat, robot.direction)
             )
             res[i] = distance
 
-        return res
+        mask = res < 0
+        numpy.multiply(0.01, res, out=tmp)
+        numpy.tanh(tmp, out=res)
+        numpy.subtract([1], res, out=tmp)
+        tmp[mask] = 0
+        return tmp
 
     def get_robot(self, index: int) -> _Robot:
         def calc_robot_direction(robot_body: wrap_mjc.WrappedBody):
@@ -444,7 +456,7 @@ class _World:
 
     def get_feed(self, index: int):
         body = self.model.get_body(f"feed{index}")
-        velocimeter = self.model.get_sensor(f"sensor_feed{index}_velocity")
+        velocimeter = self.model.get_sensor(f"feed{index}_velocimeter")
         return _Feed(body.get_xpos(), velocimeter.get_data())
 
     def get_obstacle(self, index):
@@ -488,6 +500,23 @@ class _World:
     def secretion(self, pos, secretion):
         for i, s in enumerate(secretion):
             self.pheromone_field[i].add_liquid(pos[0], pos[1], s)
+
+
+class RobotSightViewer:
+    def __init__(self, model: wrap_mjc.WrappedModel):
+        self.cells = []
+        offset = (700, 600)
+        w = 12
+        h = 300
+        for i in range(100):
+            geom = model.add_deco_geom(mujoco.mjtGeom.mjGEOM_PLANE)
+            self.cells.append(geom)
+            geom.set_size((w, h, 0.05))
+            geom.set_pos((w * i + offset[0], offset[1], 0))
+
+    def update(self, sight):
+        for i, s in enumerate(sight):
+            self.cells[i].set_rgba((s, s, s, 1))
 
 
 class Environment(optimizer.MuJoCoEnvInterface):
@@ -538,6 +567,8 @@ class Environment(optimizer.MuJoCoEnvInterface):
         self.window = window
         self.camera = camera
 
+        self.robot_sight = RobotSightViewer(self._world.model)
+
         for _ in range(0, 5):
             self._world.calc_step()
 
@@ -548,11 +579,13 @@ class Environment(optimizer.MuJoCoEnvInterface):
         # Make robots think.
         for i in range(self._world.num_robots):
             robot = self._world.get_robot(i)
-            robot_sight = self._world.calc_robot_sight(robot, -numpy.pi, numpy.pi, 100)
+            robot_sight = self._world.calc_robot_sight(robot, -numpy.pi * 0.5, numpy.pi * 0.5, 100)
             pheromone = self._world.get_pheromone(robot.pos[0], robot.pos[1])
             decision = self.robot_brain.calc(numpy.concatenate([robot_sight, pheromone]))
             robot.rotate_wheel(decision[0], decision[1])
             self._world.secretion(robot.pos, decision[2:])
+
+            self.robot_sight.update(robot_sight)
 
         # Calculate loss
         feed_range = 10000.0
@@ -562,7 +595,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
         dt_loss_obstacle_robot = 0.0
         for i in range(self._world.num_feeds):
             feed = self._world.get_feed(i)
-            feed_nest_vector = (self._world.nest_pos - feed.pos)[0:2]
+            feed_nest_vector = self._world.nest_pos - feed.pos[0:2]
             feed_nest_distance = numpy.linalg.norm(feed_nest_vector, ord=2)
             dt_loss_feed_nest += feed_nest_distance
 
