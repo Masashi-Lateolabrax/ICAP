@@ -205,7 +205,7 @@ class WrappedGeom:
         return self.data_geom.id
 
     def get_name(self):
-        return self.data_geom.name
+        return self.model_geom.name
 
     def get_xmat(self):
         return self.data_geom.xmat
