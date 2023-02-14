@@ -433,12 +433,11 @@ class _World:
         def calc_robot_direction(robot_body: wrap_mjc.WrappedBody):
             rot_mat = numpy.zeros(9).reshape(3, 3)
             mujoco.mju_quat2Mat(rot_mat.ravel(), robot_body.get_xquat())
-            inv_rot_mat = numpy.linalg.inv(rot_mat)
-            direction = numpy.dot(inv_rot_mat, [0, 1, 0])
-            direction[2] = 0
-            distance = numpy.linalg.norm(direction, ord=2)
-            direction /= distance
-            return direction
+            orientation = numpy.dot(rot_mat, [0, 1, 0])
+            orientation[2] = 0
+            distance = numpy.linalg.norm(orientation, ord=2)
+            orientation /= distance
+            return orientation
 
         body = self.model.get_body(f"robot{index}")
         act_left = self.model.get_act(f"robot{index}_left_act")
