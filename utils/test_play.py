@@ -7,7 +7,7 @@ def set_env_creator(env_creator: EnvCreator):
     env_creator.time = 30
 
     env_creator.nest_pos = (0, 0)
-    env_creator.robot_pos = [(0, 0, 0)]
+    env_creator.robot_pos = [(0, 0, 15)]
     env_creator.obstacle_pos = [(0, 300)]
     env_creator.feed_pos = [(0, 800), (0, 1100)]
 
