@@ -6,9 +6,9 @@ def cmaes_optimize(
         generation: int,
         population: int,
         mu: int,
-        sigma: float,
-        centroid,
         env_creator: optimizer.EnvCreator,
+        sigma: float = 0.3,
+        centroid=None,
         max_thread: int = 4,
         minimalize: bool = True,
 ) -> (numpy.ndarray, optimizer.Hist):
