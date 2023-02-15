@@ -19,6 +19,7 @@ class Calculator:
         ni = self._layer[-1].num_node if len(self._layer) > 0 else self._num_input
         self._layer.append(layer)
         self._layer[-1].init(ni)
+        return self
 
     def num_dim(self) -> int:
         n = 0
