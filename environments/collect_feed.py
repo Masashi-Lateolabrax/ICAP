@@ -302,29 +302,55 @@ class _Feed:
 
 class RobotBrain:
     def __init__(self, para):
-        self._calculator = nn_tools.Calculator(101)
+        self._calculator = nn_tools.Calculator(301)
 
         self._calculator.add_layer(nn_tools.ParallelLayer(
             [
                 [
-                    nn_tools.FilterLayer([i for i in range(0, 100)]),
-                    nn_tools.AffineLayer(33),
-                    nn_tools.TanhLayer(33),
-                    nn_tools.AffineLayer(11),
-                    nn_tools.TanhLayer(11),
+                    nn_tools.FilterLayer([i for i in range(0, 300)]),
+
+                    nn_tools.Conv1DLayer(
+                        18 * 3, 17,
+                        nn_tools.AffineLayer(3),
+                        1
+                    ),
+                    nn_tools.TanhLayer(54),
+
+                    nn_tools.Conv1DLayer(
+                        19 * 1, 3,
+                        nn_tools.AffineLayer(1),
+                        1
+                    ),
+                    nn_tools.TanhLayer(19),
+
+                    nn_tools.Conv1DLayer(
+                        6 * 1, 3,
+                        nn_tools.AffineLayer(1),
+                        1
+                    ),
+                    nn_tools.TanhLayer(6),
+
+                    nn_tools.AffineLayer(12),
+                    nn_tools.TanhLayer(12),
+
+                    nn_tools.AffineLayer(6),
+                    nn_tools.TanhLayer(6),
+
                     nn_tools.AffineLayer(3),
                     nn_tools.IsMaxLayer(3)
                 ],
                 [
-                    nn_tools.FilterLayer([100]),
+                    nn_tools.FilterLayer([300]),
                 ]
             ]
         ))
 
         self._calculator.add_layer(nn_tools.AffineLayer(4))
         self._calculator.add_layer(nn_tools.TanhLayer(4))
+
         self._calculator.add_layer(nn_tools.AffineLayer(4))
         self._calculator.add_layer(nn_tools.TanhLayer(4))
+
         self._calculator.add_layer(nn_tools.AffineLayer(3))
         self._calculator.add_layer(nn_tools.SigmoidLayer(3))
 
@@ -566,8 +592,6 @@ class Environment(optimizer.MuJoCoEnvInterface):
         self.window = window
         self.camera = camera
 
-        self.robot_sight = RobotSightViewer(self._world.model)
-
         for _ in range(0, 5):
             self._world.calc_step()
 
@@ -578,13 +602,11 @@ class Environment(optimizer.MuJoCoEnvInterface):
         # Make robots think.
         for i in range(self._world.num_robots):
             robot = self._world.get_robot(i)
-            robot_sight = self._world.calc_robot_sight(robot, -numpy.pi * 0.5, numpy.pi * 0.5, 100)
+            robot_sight = self._world.calc_robot_sight(robot, -numpy.pi * 0.5, numpy.pi * 0.5, 300)
             pheromone = self._world.get_pheromone(robot.pos[0], robot.pos[1])
             decision = self.robot_brain.calc(numpy.concatenate([robot_sight, pheromone]))
             robot.rotate_wheel(decision[0], decision[1])
             self._world.secretion(robot.pos, decision[2:])
-
-            self.robot_sight.update(robot_sight)
 
         # Calculate loss
         feed_range = 10000.0
