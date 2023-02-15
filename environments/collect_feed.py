@@ -656,7 +656,12 @@ class Environment(optimizer.MuJoCoEnvInterface):
         return 0.0
 
     def calc_and_show(self, rect: (int, int, int, int) = None) -> float:
-        raise NotImplementedError
+        for t in range(0, int(self.time / self._world.timestep)):
+            score = self.calc_step()
+            if numpy.isinf(score):
+                return score
+            self.render(rect)
+        return self._loss
 
 
 class EnvCreator(optimizer.MuJoCoEnvCreator):
