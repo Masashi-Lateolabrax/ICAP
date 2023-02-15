@@ -25,14 +25,14 @@ class _ConvLayer(interface.CalcLayer, ABC):
 
 
 class Conv1DLayer(_ConvLayer):
-    def __init__(self, num_node: int, window_size: int, window: interface.CalcLayer, num_pad: int):
+    def __init__(self, num_output: int, window_size: int, window: interface.CalcLayer, num_pad: int):
         if window_size < num_pad:
             print("'num_pad' is lager than 'window_size'. It is incorrect.")
 
-        super().__init__(num_node, window, window_size, num_pad)
+        super().__init__(num_output, window, window_size, num_pad)
         self.stride = 0
         self._in_buf = la.zeros(1)
-        self._out_buf = la.zeros(num_node)
+        self._out_buf = la.zeros(num_output)
 
     def init(self, num_input: int) -> None:
         self._num_input = num_input
