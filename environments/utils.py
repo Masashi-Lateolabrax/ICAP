@@ -21,10 +21,10 @@ def cmaes_optimize_server(
         generation: int,
         population: int,
         mu: int,
-        sigma: float,
-        centroid,
         env_creator: optimizer.EnvCreator,
         port: int = 52325,
+        sigma: float = 0.3,
+        centroid=None,
         minimalize: bool = True,
 ) -> (numpy.ndarray, optimizer.Hist):
     opt = optimizer.ServerCMAES(port, env_creator.dim(), generation, population, mu, sigma, centroid, minimalize)
