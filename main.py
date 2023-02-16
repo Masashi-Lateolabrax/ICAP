@@ -2,7 +2,7 @@ import numpy
 
 from environments import utils
 from environments.collect_feed import EnvCreator
-from studyLib import wrap_mjc, miscellaneous, optimizer
+from studyLib import miscellaneous, wrap_mjc
 
 
 def set_env_creator(env_creator: EnvCreator):
@@ -10,11 +10,7 @@ def set_env_creator(env_creator: EnvCreator):
     env_creator.time = 30
 
     env_creator.nest_pos = (0, 0)
-    env_creator.robot_pos = [
-        (-45, 45), (0, 45), (45, 45),
-        (-45, 0), (0, 0), (45, 0),
-        (-45, -45), (0, -45), (45, -45),
-    ]
+    env_creator.robot_pos = [(0, 0, 15)]
     env_creator.obstacle_pos = [(0, 300)]
     env_creator.feed_pos = [(0, 800), (0, 1100)]
 
@@ -30,83 +26,41 @@ def set_env_creator(env_creator: EnvCreator):
     env_creator.decrease = [0.01 / env_creator.timestep]
 
 
-def optimize(
-        generation: int, population: int,
-        mu: int, sigma: float, centroid,
-        env_creator: EnvCreator,
-        server_client: bool = False,
-) -> (numpy.ndarray, optimizer.Hist):
-    dim = env_creator.dim()
-    print(f"DIMENSION : {dim}")
-    print(f"population : {population}({int(3.0 * numpy.log(dim)) * 4})")
-    print(f"parent number : {mu}({int(3.0 * numpy.log(dim)) * 2})")
-
-    if len(centroid) < dim:
-        centroid = numpy.zeros(dim)
-
-    if server_client:
-        para, hist = utils.cmaes_optimize_server(generation, population, mu, sigma, centroid, env_creator, 52325, True)
-    else:
-        para, hist = utils.cmaes_optimize(generation, population, mu, sigma, centroid, env_creator, 2, True)
-
-    numpy.save("best_para.npy", para)
-    hist.save("history")
-
-    return para, hist
-
-
-def load_best_para_from_hist(hist_path) -> (numpy.ndarray, float):
-    hist = optimizer.Hist(0, 0, 0)
-    hist.load(hist_path)
-
-    best_score = float("inf")
-    para = numpy.zeros(0)
-    sigma = 0.0
-    for q in hist.queues:
-        if q.min_score < best_score:
-            para = q.min_para.copy()
-            sigma = q.sigma
-            best_score = q.min_score
-
-    return para, sigma
-
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     def main():
-        para = []
-        sigma = 0.3
         env_creator = EnvCreator()
         set_env_creator(env_creator)
 
-        # Resume
-        # para = numpy.load("best_para.npy")
-        # para, sigma = load_best_para_from_hist("./TMP_HIST.log.npz")
+        dim = env_creator.dim()
 
-        para, hist = optimize(
-            generation=500,
-            population=100,
-            mu=5,
-            sigma=sigma,
-            centroid=para,
-            env_creator=env_creator,
-            server_client=True
+        # para = numpy.zeros(dim)
+        para, hist = utils.cmaes_optimize(
+            10,
+            100,
+            10,
+            env_creator,
+            0.3,
+            None,
+            4,
+            True
         )
+        numpy.save("best_para.npy", para)
+        hist.save("history")
 
-        shape = (5, 7)
+        shape = (10, 7)
         dpi = 100
         scale: int = 1
 
         width = shape[0] * dpi
         height = shape[1] * dpi
-        window = miscellaneous.Window(len(env_creator.sv) * width * scale, height * scale)
-        camera = wrap_mjc.Camera((0, 600, 0), 2500, 90, 90)
+        window = miscellaneous.Window(width * scale, height * scale)
+        camera = wrap_mjc.Camera((600, 600, 0), 2500, 90, 90)
         window.set_recorder(
-            miscellaneous.Recorder("result.mp4", int(1.0 / env_creator.timestep), len(env_creator.sv) * width, height)
+            miscellaneous.Recorder("result.mp4", int(1.0 / env_creator.timestep), width, height)
         )
 
         env = env_creator.create_mujoco_env(para, window, camera)
-        score = env.calc_and_show()
-        print(f"Result : {score}")
+        env.calc_and_show()
 
 
     main()
