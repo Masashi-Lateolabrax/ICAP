@@ -632,7 +632,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
                 robot = self._world.get_robot(j)
                 obstacle_robot_vector = robot.pos - obstacle.pos
                 obstacle_robot_distance = numpy.sum(obstacle_robot_vector ** 2)
-                dt_loss_obstacle_robot -= numpy.exp(-obstacle_robot_distance / obstacle_range)
+                dt_loss_obstacle_robot += numpy.exp(-obstacle_robot_distance / obstacle_range)
 
         dt_loss_feed_nest *= 0.1 / self._world.num_feeds
         dt_loss_feed_robot *= 1.0 / (self._world.num_feeds * self._world.num_robots)
