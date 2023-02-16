@@ -31,17 +31,15 @@ if __name__ == '__main__':
         env_creator = EnvCreator()
         set_env_creator(env_creator)
 
-        dim = env_creator.dim()
-
         # para = numpy.zeros(dim)
-        para, hist = utils.cmaes_optimize(
-            10,
+        para, hist = utils.cmaes_optimize_server(
+            100,
             100,
             10,
             env_creator,
+            52325,
             0.3,
             None,
-            4,
             True
         )
         numpy.save("best_para.npy", para)
