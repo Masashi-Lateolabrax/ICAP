@@ -36,11 +36,11 @@ class _ServerProc(base.ProcInterface):
         import select
 
         r = []
-        for _ in range(5):
+        for ec in range(5):
             r, _, _ = select.select([self.listener], [], [], 60)
             if len(r) != 0:
                 break
-            print("[WARNING] Clients don't be coming.")
+            print(f"[WARNING({ec}/5)] Clients don't be coming.")
         if len(r) == 0:
             raise socket.timeout
 
