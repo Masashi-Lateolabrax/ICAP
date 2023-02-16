@@ -1,47 +1,64 @@
 import numpy
+
 from environments import utils
 from environments.collect_feed import EnvCreator
-from studyLib import wrap_mjc, miscellaneous
+from studyLib import miscellaneous, wrap_mjc
 
-if __name__ == "__main__":
+
+def set_env_creator(env_creator: EnvCreator):
+    env_creator.timestep = 0.033333
+    env_creator.time = 30
+
+    env_creator.nest_pos = (0, 0)
+    env_creator.robot_pos = [(0, 0, 15)]
+    env_creator.obstacle_pos = [(0, 300)]
+    env_creator.feed_pos = [(0, 800), (0, 1100)]
+
+    env_creator.pheromone_field_pos = (0, 550)
+    env_creator.pheromone_field_panel_size = 20
+    env_creator.pheromone_field_shape = (60, 80)
+    env_creator.show_pheromone_index = 0
+    env_creator.pheromone_iteration = 5
+
+    env_creator.sv = [10.0]
+    env_creator.evaporate = [1.0 / env_creator.timestep]
+    env_creator.diffusion = [1.0 / env_creator.timestep]
+    env_creator.decrease = [0.01 / env_creator.timestep]
+
+
+if __name__ == '__main__':
     def main():
         env_creator = EnvCreator()
-        env_creator.nest_pos = (0, 0)
-        env_creator.robot_pos = [
-            (-40, 30), (0, 30), (40, 30),
-            (-40, -30), (0, -30), (40, -30),
-        ]
-        env_creator.obstacle_pos = [(0, 300)]
-        env_creator.feed_pos = [(0, 700), (0, 1200)]
+        set_env_creator(env_creator)
 
-        env_creator.pheromone_field_pos = (0, 700)
-        env_creator.pheromone_field_panel_size = 20
-        env_creator.pheromone_field_shape = (60, 80)
-
-        env_creator.sv = 10.0
-        env_creator.evaporate = 20.0
-        env_creator.diffusion = 35.0
-        env_creator.decrease = 0.1
-
-        generation = 300
-        population = 100
-        mu = 10
-        sigma = 0.3
-        env_creator.timestep = int(60 / 0.033333)
-
-        width: int = 640
-        height: int = 640
-        scale: int = 1
-        window = miscellaneous.Window(width * scale, height * scale)
-        camera = wrap_mjc.Camera((0, 700, 0), 2000, 90, 90)
-
-        para, hist = utils.cmaes_optimize_server(generation, population, mu, sigma, env_creator, 52325, True, True)
+        # para = numpy.zeros(dim)
+        para, hist = utils.cmaes_optimize_server(
+            10,
+            100,
+            10,
+            env_creator,
+            52325,
+            0.3,
+            None,
+            True
+        )
         numpy.save("best_para.npy", para)
-        hist.save("history.log")
+        hist.save("history")
 
-        para = numpy.load("best_para.npy")
-        score = utils.show_mujoco_env(env_creator, para, window, camera)
-        print(f"Result : {score}")
+        shape = (10, 7)
+        dpi = 100
+        scale: int = 1
+
+        width = shape[0] * dpi
+        height = shape[1] * dpi
+        window = miscellaneous.Window(width * scale, height * scale)
+        camera = wrap_mjc.Camera((600, 600, 0), 2500, 90, 90)
+        window.set_recorder(
+            miscellaneous.Recorder("result.mp4", int(1.0 / env_creator.timestep), width, height)
+        )
+
+        env = env_creator.create_mujoco_env(para, window, camera)
+        env.calc_and_show()
 
 
     main()
