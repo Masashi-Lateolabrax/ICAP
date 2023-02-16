@@ -692,7 +692,7 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
         packed = [struct.pack("<dd", self.nest_pos[0], self.nest_pos[1])]
 
         packed.extend([struct.pack("<I", len(self.robot_pos))])
-        packed.extend([struct.pack("<dd", p[0], p[1]) for p in self.robot_pos])
+        packed.extend([struct.pack("<ddd", p[0], p[1], p[2]) for p in self.robot_pos])
 
         packed.extend([struct.pack("<I", len(self.obstacle_pos))])
         packed.extend([struct.pack("<dd", p[0], p[1]) for p in self.obstacle_pos])
@@ -729,8 +729,8 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
         self.robot_pos.clear()
         for _ in range(0, num):
             s = e
-            e = s + 16
-            rp = struct.unpack("<dd", data[s:e])[0:2]
+            e = s + 24
+            rp = struct.unpack("<ddd", data[s:e])[0:3]
             self.robot_pos.append(rp)
 
         # 障害物の座標
