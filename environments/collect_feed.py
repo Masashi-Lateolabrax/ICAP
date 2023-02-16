@@ -310,28 +310,28 @@ class RobotBrain:
                     nn_tools.FilterLayer([i for i in range(0, 300)]),
 
                     nn_tools.Conv1DLayer(
-                        18 * 3, 17,
+                        29, 22, 10,
                         nn_tools.AffineLayer(3),
                         1
                     ),
-                    nn_tools.TanhLayer(54),
+                    nn_tools.TanhLayer(87),
 
                     nn_tools.Conv1DLayer(
-                        19 * 1, 3,
-                        nn_tools.AffineLayer(1),
-                        1
+                        15, 17, 5,
+                        nn_tools.AffineLayer(3),
+                        0
                     ),
-                    nn_tools.TanhLayer(19),
+                    nn_tools.TanhLayer(45),
 
                     nn_tools.Conv1DLayer(
-                        6 * 1, 3,
-                        nn_tools.AffineLayer(1),
-                        1
+                        11, 15, 3,
+                        nn_tools.AffineLayer(3),
+                        0
                     ),
-                    nn_tools.TanhLayer(6),
+                    nn_tools.TanhLayer(33),
 
-                    nn_tools.AffineLayer(12),
-                    nn_tools.TanhLayer(12),
+                    nn_tools.AffineLayer(15),
+                    nn_tools.TanhLayer(15),
 
                     nn_tools.AffineLayer(6),
                     nn_tools.TanhLayer(6),
