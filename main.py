@@ -39,8 +39,8 @@ if __name__ == '__main__':
 
         # para = numpy.zeros(dim)
         para, hist = utils.cmaes_optimize_server(
-            1000,
-            300,
+            500,
+            150,
             100,
             env_creator,
             52325,
