@@ -302,7 +302,7 @@ class _Feed:
 
 class RobotBrain:
     def __init__(self, para):
-        self._calculator = nn_tools.Calculator(301)
+        self._calculator = nn_tools.Calculator(305)
 
         self._calculator.add_layer(nn_tools.ParallelLayer(
             [
@@ -329,30 +329,50 @@ class RobotBrain:
                         0
                     ),
                     nn_tools.TanhLayer(33),
-
-                    nn_tools.AffineLayer(15),
-                    nn_tools.TanhLayer(15),
-
-                    nn_tools.AffineLayer(6),
-                    nn_tools.TanhLayer(6),
-
-                    nn_tools.AffineLayer(3),
-                    nn_tools.IsMaxLayer(3)
                 ],
                 [
-                    nn_tools.FilterLayer([300]),
+                    nn_tools.FilterLayer([300, 301, 302, 303, 304]),
                 ]
             ]
         ))
 
-        self._calculator.add_layer(nn_tools.AffineLayer(4))
-        self._calculator.add_layer(nn_tools.TanhLayer(4))
+        self._calculator.add_layer(nn_tools.ParallelLayer(
+            [
+                [
+                    nn_tools.FilterLayer([i for i in range(0, 36)]),
+                    nn_tools.AffineLayer(10),
+                    nn_tools.TanhLayer(10),
+                    nn_tools.AffineLayer(5),
+                    nn_tools.TanhLayer(5),
+                    nn_tools.AffineLayer(3),
+                    nn_tools.IsMaxLayer(3)
+                ],
+                [
+                    nn_tools.FilterLayer([36, 37]),
+                ]
+            ]
+        ))
+
+        self._calculator.add_layer(nn_tools.AffineLayer(7))
+        self._calculator.add_layer(nn_tools.TanhLayer(7))
+
+        self._calculator.add_layer(nn_tools.AffineLayer(5))
+        self._calculator.add_layer(nn_tools.TanhLayer(5))
 
         self._calculator.add_layer(nn_tools.AffineLayer(4))
-        self._calculator.add_layer(nn_tools.TanhLayer(4))
 
-        self._calculator.add_layer(nn_tools.AffineLayer(3))
-        self._calculator.add_layer(nn_tools.SigmoidLayer(3))
+        self._calculator.add_layer(nn_tools.ParallelLayer(
+            [
+                [
+                    nn_tools.FilterLayer([0, 1]),
+                    nn_tools.SigmoidLayer(2)
+                ],
+                [
+                    nn_tools.FilterLayer([2, 3]),
+                    nn_tools.SoftmaxLayer(2)
+                ]
+            ]
+        ))
 
         if para is not None:
             self._calculator.load(para)
@@ -365,11 +385,13 @@ class RobotBrain:
 
 
 class _Robot:
-    def __init__(self, pos, direction, velocity, act_left, act_right):
+    def __init__(self, pos, direction, rot, inv_rot, velocity, act_left, act_right):
         self._act_left = act_left
         self._act_right = act_right
         self.pos = pos
         self.direction = direction
+        self.rot = rot
+        self.inv_rot = inv_rot
         self.velocity = velocity
 
     def rotate_wheel(self, left, right):
@@ -395,7 +417,7 @@ class _World:
             timestep: float,
     ):
         self.timestep = timestep
-        self.nest_pos = nest_pos
+        self.nest_pos = numpy.array([nest_pos[0], nest_pos[1], 0])
         self.pheromone_iteration = pheromone_iteration
         self.num_robots = len(robot_pos)
         self.num_obstacles = len(obstacle_pos)
@@ -463,7 +485,7 @@ class _World:
             orientation[2] = 0
             distance = numpy.linalg.norm(orientation, ord=2)
             orientation /= distance
-            return orientation
+            return orientation, rot_mat, numpy.linalg.inv(rot_mat)
 
         body = self.model.get_body(f"robot{index}")
         act_left = self.model.get_act(f"robot{index}_left_act")
@@ -472,9 +494,9 @@ class _World:
 
         pos = body.get_xpos()
         velocity = velocimeter.get_data()
-        direction = calc_robot_direction(body)
+        direction, rot, inv_rot = calc_robot_direction(body)
 
-        return _Robot(pos, direction, velocity, act_left, act_right)
+        return _Robot(pos, direction, rot, inv_rot, velocity, act_left, act_right)
 
     def get_pheromone(self, x, y):
         return [field.get_gas(x, y) for field in self.pheromone_field]
@@ -602,11 +624,22 @@ class Environment(optimizer.MuJoCoEnvInterface):
         # Make robots think.
         for i in range(self._world.num_robots):
             robot = self._world.get_robot(i)
-            robot_sight = self._world.calc_robot_sight(robot, -numpy.pi * 0.5, numpy.pi * 0.5, 300)
+
+            robot_sight = self._world.calc_robot_sight(robot, -numpy.pi * 0.55, numpy.pi * 0.55, 300)
             pheromone = self._world.get_pheromone(robot.pos[0], robot.pos[1])
-            decision = self.robot_brain.calc(numpy.concatenate([robot_sight, pheromone]))
+
+            nest_vec = numpy.dot(robot.inv_rot, self._world.nest_pos - robot.pos)
+            inv_nest_dist = 1.0 / numpy.linalg.norm(nest_vec, ord=2)
+            nest_vec *= inv_nest_dist
+            sensed_nest = [nest_vec[0], nest_vec[1], inv_nest_dist ** 2]
+
+            decision = self.robot_brain.calc(numpy.concatenate([robot_sight, sensed_nest, pheromone]))
             robot.rotate_wheel(decision[0], decision[1])
             self._world.secretion(robot.pos, decision[2:])
+
+        for i in range(self._world.num_obstacles):
+            o = self._world.get_obstacle(i)
+            self._world.secretion(o.pos, [2, 0])
 
         # Calculate loss
         feed_range = 10000.0
@@ -616,7 +649,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
         dt_loss_obstacle_robot = 0.0
         for i in range(self._world.num_feeds):
             feed = self._world.get_feed(i)
-            feed_nest_vector = self._world.nest_pos - feed.pos[0:2]
+            feed_nest_vector = self._world.nest_pos - feed.pos
             feed_nest_distance = numpy.linalg.norm(feed_nest_vector, ord=2)
             dt_loss_feed_nest += feed_nest_distance
 

@@ -26,10 +26,10 @@ def set_env_creator(env_creator: EnvCreator):
     env_creator.show_pheromone_index = 0
     env_creator.pheromone_iteration = 5
 
-    env_creator.sv = [10.0]
-    env_creator.evaporate = [1.0 / env_creator.timestep]
-    env_creator.diffusion = [1.0 / env_creator.timestep]
-    env_creator.decrease = [0.01 / env_creator.timestep]
+    env_creator.sv = [10.0, 10.0]
+    env_creator.evaporate = [1.0 / env_creator.timestep, 1.0 / env_creator.timestep]
+    env_creator.diffusion = [1.0 / env_creator.timestep, 1.0 / env_creator.timestep]
+    env_creator.decrease = [0.01 / env_creator.timestep, 0.01 / env_creator.timestep]
 
 
 if __name__ == '__main__':
@@ -37,19 +37,19 @@ if __name__ == '__main__':
         env_creator = EnvCreator()
         set_env_creator(env_creator)
 
-        # para = numpy.zeros(dim)
-        para, hist = utils.cmaes_optimize_server(
-            500,
-            150,
-            100,
-            env_creator,
-            52325,
-            0.3,
-            None,
-            True
-        )
-        numpy.save("best_para.npy", para)
-        hist.save("history")
+        para = numpy.random.rand(env_creator.dim())
+        # para, hist = utils.cmaes_optimize_server(
+        #     500,
+        #     150,
+        #     100,
+        #     env_creator,
+        #     52325,
+        #     0.3,
+        #     None,
+        #     True
+        # )
+        # numpy.save("best_para.npy", para)
+        # hist.save("history")
 
         shape = (10, 7)
         dpi = 100
@@ -63,6 +63,11 @@ if __name__ == '__main__':
             miscellaneous.Recorder("result.mp4", int(1.0 / env_creator.timestep), width, height)
         )
 
+        env_creator.show_pheromone_index = 0
+        env = env_creator.create_mujoco_env(para, window, camera)
+        env.calc_and_show()
+
+        env_creator.show_pheromone_index = 1
         env = env_creator.create_mujoco_env(para, window, camera)
         env.calc_and_show()
 
