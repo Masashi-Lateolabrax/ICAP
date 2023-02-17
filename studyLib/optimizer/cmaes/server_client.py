@@ -36,8 +36,8 @@ class _ServerProc(base.ProcInterface):
         import select
 
         r = []
-        for ec in range(5):
-            r, _, _ = select.select([self.listener], [], [], 60)
+        for ec in range(10):
+            r, _, _ = select.select([self.listener], [], [], 30)
             if len(r) != 0:
                 break
             print(f"[WARNING({ec + 1}/10)] Clients don't be coming.")
