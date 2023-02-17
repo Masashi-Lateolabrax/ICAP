@@ -45,7 +45,6 @@ class _ServerProc(base.ProcInterface):
             raise socket.timeout
 
         sct, addr = self.listener.accept()
-        print(f"accepted! : {addr}")
         event = threading.Event()
         event.wait(timeout=3)
 
