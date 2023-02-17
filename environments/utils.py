@@ -38,7 +38,8 @@ def _client_proc(
         address: str,
         port: int,
         buf_size: int,
-        timeout: float = 60.0
+        timeout: float,
+        retry: int,
 ):
     import time
     import datetime
@@ -59,6 +60,7 @@ def _client_proc(
         if result is optimizer.ClientCMAES.Result.Succeed:
             error_count = 0
             continue
+
         elif result is optimizer.ClientCMAES.Result.ErrorOccurred:
             if error_count >= 3:
                 print(f"[ERROR({t})] THREAD{proc_id} failed to reconnect the server. : ", pe)
@@ -67,9 +69,20 @@ def _client_proc(
             time.sleep(1)
             error_count += 1
             continue
+
         elif result is optimizer.ClientCMAES.Result.FatalErrorOccurred:
             print(f"[ERROR({t})] THREAD{proc_id} face fatal error : ", pe)
             break
+
+        elif result is optimizer.ClientCMAES.Result.Timeout:
+            print(f"[ERROR({t})] Connecting is timeout in THREAD{proc_id} : ", pe)
+            if error_count >= retry:
+                print(f"[ERROR({t})] THREAD{proc_id} failed to reconnect the server. : ", pe)
+                break
+            error_count += 1
+            print(f"[WARNING({t})] Connecting is retrying in THREAD{proc_id}. ({error_count}/{retry})")
+            time.sleep(1)
+            continue
 
 
 def cmaes_optimize_client(
@@ -78,7 +91,8 @@ def cmaes_optimize_client(
         address: str,
         buf_size: int = 3072,
         port: int = 52325,
-        timeout: float = 60.0
+        timeout: float = 10.0,
+        retry: int = 6,
 ):
     from multiprocessing import Process
 
@@ -86,7 +100,7 @@ def cmaes_optimize_client(
     for proc_id in range(num_thread):
         process = Process(
             target=_client_proc,
-            args=(proc_id, default_env_creator, address, port, buf_size, timeout)
+            args=(proc_id, default_env_creator, address, port, buf_size, timeout, retry)
         )
         process.start()
         process_list.append(process)
