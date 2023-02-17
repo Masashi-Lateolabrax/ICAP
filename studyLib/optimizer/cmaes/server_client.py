@@ -157,15 +157,16 @@ class ClientCMAES:
     def _return_score(self, sock: socket.socket, score: float):
         try:
             sock.send(struct.pack("<d", score))
-            sock.shutdown(socket.SHUT_RDWR)
-            sock.close()
 
         except socket.timeout as e:
+            sock.close()
             return ClientCMAES.Result.FatalErrorOccurred, e
 
         except socket.error as e:
+            sock.close()
             return ClientCMAES._treat_sock_error(sock, e)
 
+        sock.close()
         return ClientCMAES.Result.Succeed, None
 
     def optimize(self, default_env_creator: EnvCreator, timeout: float = 60.0):
