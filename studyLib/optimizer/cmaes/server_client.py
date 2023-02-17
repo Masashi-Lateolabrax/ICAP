@@ -26,6 +26,7 @@ def _proc(i: int, ind: base.Individual, env_creator: EnvCreator, queue: mp.Queue
     except Exception as e:
         print(f"[ERROR] {e} (ID:{i})")
         score = float("nan")
+    sct.close()
     queue.put(score)
 
 
