@@ -44,9 +44,10 @@ class _ServerProc(base.ProcInterface):
         if len(r) == 0:
             raise socket.timeout
 
-        sct, _addr = self.listener.accept()
+        sct, addr = self.listener.accept()
+        print(f"accepted! : {addr}")
         event = threading.Event()
-        event.wait(timeout=1)
+        event.wait(timeout=3)
 
         self.queue = mp.Queue(1)
         self.handle = threading.Thread(target=_proc, args=(i, ind, env_creator, self.queue, sct))
