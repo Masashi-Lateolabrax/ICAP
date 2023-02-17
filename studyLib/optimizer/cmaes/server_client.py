@@ -40,7 +40,7 @@ class _ServerProc(base.ProcInterface):
             r, _, _ = select.select([self.listener], [], [], 60)
             if len(r) != 0:
                 break
-            print(f"[WARNING({ec}/5)] Clients don't be coming.")
+            print(f"[WARNING({ec + 1}/10)] Clients don't be coming.")
         if len(r) == 0:
             raise socket.timeout
 
