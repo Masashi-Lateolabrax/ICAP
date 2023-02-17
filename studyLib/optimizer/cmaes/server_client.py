@@ -117,26 +117,29 @@ class ClientCMAES:
         os = platform.system()
         if os == "Windows":
             if e.errno == 10054:  # [WinError 10054] 既存の接続はリモート ホストに強制的に切断されました。
-                sock.close()
                 return ClientCMAES.Result.FatalErrorOccurred, e
             elif e.errno == 10057:  # [WinError 10057] ソケットが接続されていないか、sendto呼び出しを使ってデータグラムソケットで...
-                sock.close()
                 return ClientCMAES.Result.FatalErrorOccurred, e
             elif e.errno == 10060:  # [WinError 10060] 接続済みの呼び出し先が一定時間を過ぎても正しく応答しなかったため...
-                sock.close()
                 return ClientCMAES.Result.Timeout, e
             elif e.errno == 10061:  # [WinError 10061] 対象のコンピューターによって拒否されたため、接続できませんでした。
-                sock.close()
                 return ClientCMAES.Result.ErrorOccurred, e
 
         sock.shutdown(socket.SHUT_RDWR)
         sock.close()
         return ClientCMAES.Result.FatalErrorOccurred, e
 
-    def _receive_data(self, sock: socket.socket, default_env_creator: EnvCreator):
+    def _connect_server(self, sock: socket.socket):
         try:
             sock.connect((self._address, self._port))
+        except socket.timeout as e:
+            return ClientCMAES.Result.Timeout, e
+        except socket.error as e:
+            return ClientCMAES._treat_sock_error(sock, e)
+        return ClientCMAES.Result.Succeed, None
 
+    def _receive_data(self, sock: socket.socket, default_env_creator: EnvCreator):
+        try:
             buf = b""
             while len(buf) < 8:
                 buf = b"".join([buf, sock.recv(8)])
@@ -162,22 +165,26 @@ class ClientCMAES:
             sock.send(struct.pack("<d", score))
 
         except socket.timeout as e:
-            sock.close()
             return ClientCMAES.Result.FatalErrorOccurred, e
 
         except socket.error as e:
-            sock.close()
             return ClientCMAES._treat_sock_error(sock, e)
 
-        sock.close()
         return ClientCMAES.Result.Succeed, None
 
     def optimize(self, default_env_creator: EnvCreator, timeout: float = 60.0):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(timeout)
+
+        res, pe = self._connect_server(sock)
+        if res != ClientCMAES.Result.Succeed:
+            sock.close()
+            return res, pe
+
         res, pe = self._receive_data(sock, default_env_creator)
 
         if res != ClientCMAES.Result.Succeed:
+            sock.close()
             return res, pe
 
         para = pe[0]
@@ -188,8 +195,10 @@ class ClientCMAES:
         res, e = self._return_score(sock, score)
 
         if res != ClientCMAES.Result.Succeed:
+            sock.close()
             return res, e
 
+        sock.close()
         return ClientCMAES.Result.Succeed, (para, env)
 
     def optimize_and_show(
@@ -200,9 +209,16 @@ class ClientCMAES:
     ):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(timeout)
+
+        res, pe = self._connect_server(sock)
+        if res != ClientCMAES.Result.Succeed:
+            sock.close()
+            return res, pe
+
         res, pe = self._receive_data(sock, default_env_creator)
 
         if res != ClientCMAES.Result.Succeed:
+            sock.close()
             return res, pe
 
         para = pe[0]
@@ -213,6 +229,8 @@ class ClientCMAES:
         res, e = self._return_score(sock, score)
 
         if res != ClientCMAES.Result.Succeed:
+            sock.close()
             return res, e
 
+        sock.close()
         return ClientCMAES.Result.Succeed, (para, env)
