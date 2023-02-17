@@ -102,6 +102,7 @@ class ClientCMAES:
         Succeed = 1
         ErrorOccurred = 2
         FatalErrorOccurred = 3
+        Timeout = 4
 
     def __init__(self, address, port, buf_size: int = 1024):
         self._address = address
@@ -120,7 +121,7 @@ class ClientCMAES:
                 return ClientCMAES.Result.FatalErrorOccurred, e
             elif e.errno == 10060:  # [WinError 10060] 接続済みの呼び出し先が一定時間を過ぎても正しく応答しなかったため...
                 sock.close()
-                return ClientCMAES.Result.FatalErrorOccurred, e
+                return ClientCMAES.Result.Timeout, e
             elif e.errno == 10061:  # [WinError 10061] 対象のコンピューターによって拒否されたため、接続できませんでした。
                 sock.close()
                 return ClientCMAES.Result.ErrorOccurred, e
@@ -146,7 +147,7 @@ class ClientCMAES:
             para = [struct.unpack("<d", buf[i:i + 8])[0] for i in range(env_size, len(buf), 8)]
 
         except socket.timeout as e:
-            return ClientCMAES.Result.FatalErrorOccurred, e
+            return ClientCMAES.Result.Timeout, e
 
         except socket.error as e:
             return ClientCMAES._treat_sock_error(sock, e)
