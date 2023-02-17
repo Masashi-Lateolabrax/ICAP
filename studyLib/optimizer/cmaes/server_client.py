@@ -45,6 +45,8 @@ class _ServerProc(base.ProcInterface):
             raise socket.timeout
 
         sct, _addr = self.listener.accept()
+        event = threading.Event()
+        event.wait(timeout=1)
 
         self.queue = mp.Queue(1)
         self.handle = threading.Thread(target=_proc, args=(i, ind, env_creator, self.queue, sct))
