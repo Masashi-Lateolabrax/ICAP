@@ -37,19 +37,19 @@ if __name__ == '__main__':
         env_creator = EnvCreator()
         set_env_creator(env_creator)
 
-        para = numpy.random.rand(env_creator.dim())
-        # para, hist = utils.cmaes_optimize_server(
-        #     500,
-        #     150,
-        #     100,
-        #     env_creator,
-        #     52325,
-        #     0.3,
-        #     None,
-        #     True
-        # )
-        # numpy.save("best_para.npy", para)
-        # hist.save("history")
+        # para = numpy.random.rand(env_creator.dim())
+        para, hist = utils.cmaes_optimize_server(
+            500,
+            150,
+            100,
+            env_creator,
+            52325,
+            0.3,
+            None,
+            True
+        )
+        numpy.save("best_para.npy", para)
+        hist.save("history")
 
         shape = (10, 7)
         dpi = 100
