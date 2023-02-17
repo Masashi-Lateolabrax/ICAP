@@ -46,8 +46,6 @@ class _ServerProc(base.ProcInterface):
             raise socket.timeout
 
         sct, addr = self.listener.accept()
-        event = threading.Event()
-        event.wait(timeout=3)
 
         self.queue = mp.Queue(1)
         self.handle = threading.Thread(target=_proc, args=(i, ind, env_creator, self.queue, sct))
@@ -124,9 +122,6 @@ class ClientCMAES:
                 return ClientCMAES.Result.Timeout, e
             elif e.errno == 10061:  # [WinError 10061] 対象のコンピューターによって拒否されたため、接続できませんでした。
                 return ClientCMAES.Result.ErrorOccurred, e
-
-        sock.shutdown(socket.SHUT_RDWR)
-        sock.close()
         return ClientCMAES.Result.FatalErrorOccurred, e
 
     def _connect_server(self, sock: socket.socket):
