@@ -39,7 +39,6 @@ class Conv1DLayer(_ConvLayer):
         super().__init__(num_window, window, window_size, num_pad)
         self.stride = stride
         self._in_buf = la.zeros(self._window_size)
-        self._out_buf = la.zeros(self.num_node)
 
     def init(self, num_input: int) -> None:
         self._num_input = num_input
