@@ -629,9 +629,10 @@ class Environment(optimizer.MuJoCoEnvInterface):
             pheromone = self._world.get_pheromone(robot.pos[0], robot.pos[1])
 
             nest_vec = numpy.dot(robot.inv_rot, self._world.nest_pos - robot.pos)
-            inv_nest_dist = 1.0 / numpy.linalg.norm(nest_vec, ord=2)
-            nest_vec *= inv_nest_dist
-            sensed_nest = [nest_vec[0], nest_vec[1], inv_nest_dist ** 2]
+            nest_dist = numpy.linalg.norm(nest_vec, ord=2)
+            nest_vec /= nest_dist if nest_dist > 0.0 else 0.0
+            decreased_nest_dist = (1.0 / (nest_dist + 1.0)) ** 2
+            sensed_nest = [nest_vec[0], nest_vec[1], decreased_nest_dist]
 
             decision = self.robot_brain.calc(numpy.concatenate([robot_sight, sensed_nest, pheromone]))
             robot.rotate_wheel(decision[0], decision[1])
