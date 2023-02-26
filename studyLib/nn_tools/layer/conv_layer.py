@@ -60,7 +60,7 @@ class Conv1DLayer(_ConvLayer):
 
             print("Could it be that ...")
             if nw >= 1 and nw.is_integer():
-                print(f"\t'num_window' = {nw}?")
+                print(f"\t'num_window' = {int(nw)}?")
             print(f"\t'window_size' = {ws}?")
             if np >= 0 and np.is_integer():
                 print(f"\t'num_pad' = {int(np)}?")
