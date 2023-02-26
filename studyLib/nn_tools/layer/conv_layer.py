@@ -44,13 +44,30 @@ class Conv1DLayer(_ConvLayer):
         self._num_input = num_input
         stride: float = (self._num_input + self._num_pad * 2 - self._window_size) / (self._num_window - 1)
 
-        if not stride.is_integer():
-            print(
-                f"Failed to calculate stride size({stride}). "
-                f"({self._num_input}, {self._num_pad}, {self._window_size}, {self._num_window})"
-            )
-        elif self.stride != int(stride):
-            print("Invalid parameters are passed.")
+        if not stride.is_integer() or self.stride != int(stride):
+            if not stride.is_integer():
+                print(
+                    f"Failed to calculate stride size({stride}). "
+                    f"({self._num_input}, {self._num_pad}, {self._window_size}, {self._num_window})"
+                )
+            elif self.stride != int(stride):
+                print("Invalid parameters are passed.")
+
+            nw = ((self._num_input + self._num_pad * 2 - self._window_size) / self.stride) + 1
+            ws = self._num_input + self._num_pad * 2 - (self._num_window - 1) * self.stride
+            np = ((self._num_window - 1) * self.stride + self._window_size - self._num_input) * 0.5
+            s = (self._num_input + self._num_pad * 2 - self._window_size) / (self._num_window - 1)
+
+            print("Could it be that ...")
+            if nw >= 1 and nw.is_integer():
+                print(f"\t'num_window' = {nw}?")
+            print(f"\t'window_size' = {ws}?")
+            if np >= 0 and np.is_integer():
+                print(f"\t'num_pad' = {int(np)}?")
+            if s >= 1 and s.is_integer():
+                print(f"\t'stride' = {int(s)}?")
+
+            raise "Failed to set Conv1DLayer."
 
     def calc(self, input_: la.ndarray, output: la.ndarray) -> int:
         input_index = 0
