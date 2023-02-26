@@ -72,7 +72,7 @@ class Conv1DLayer(_ConvLayer):
 
             self._window.calc(
                 self._in_buf,
-                self._out_buf[out_buf_index:out_buf_index + self._window.num_node]
+                output[out_buf_index:out_buf_index + self._window.num_node]
             )
             out_buf_index += self._window.num_node
 
