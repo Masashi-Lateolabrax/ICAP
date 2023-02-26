@@ -302,36 +302,36 @@ class _Feed:
 
 class RobotBrain:
     def __init__(self, para):
-        self._calculator = nn_tools.Calculator(305)
+        self._calculator = nn_tools.Calculator(105)
 
         self._calculator.add_layer(nn_tools.ParallelLayer(
             [
                 [
-                    nn_tools.FilterLayer([i for i in range(0, 300)]),
+                    nn_tools.FilterLayer([i for i in range(0, 100)]),
 
                     nn_tools.Conv1DLayer(
-                        29, 22, 10,
+                        50, 4, 2,
                         nn_tools.AffineLayer(3),
                         1
                     ),
-                    nn_tools.TanhLayer(87),
+                    nn_tools.TanhLayer(150),
 
                     nn_tools.Conv1DLayer(
-                        15, 17, 5,
+                        24, 12, 6,
                         nn_tools.AffineLayer(3),
                         0
                     ),
-                    nn_tools.TanhLayer(45),
+                    nn_tools.TanhLayer(72),
 
                     nn_tools.Conv1DLayer(
-                        11, 15, 3,
+                        11, 12, 6,
                         nn_tools.AffineLayer(3),
                         0
                     ),
                     nn_tools.TanhLayer(33),
                 ],
                 [
-                    nn_tools.FilterLayer([300, 301, 302, 303, 304]),
+                    nn_tools.FilterLayer([100, 101, 102, 103, 104]),
                 ]
             ]
         ))
@@ -340,10 +340,10 @@ class RobotBrain:
             [
                 [
                     nn_tools.FilterLayer([i for i in range(0, 36)]),
+                    nn_tools.AffineLayer(20),
+                    nn_tools.TanhLayer(20),
                     nn_tools.AffineLayer(10),
                     nn_tools.TanhLayer(10),
-                    nn_tools.AffineLayer(5),
-                    nn_tools.TanhLayer(5),
                     nn_tools.AffineLayer(3),
                     nn_tools.IsMaxLayer(3)
                 ],
@@ -365,7 +365,7 @@ class RobotBrain:
             [
                 [
                     nn_tools.FilterLayer([0, 1]),
-                    nn_tools.SigmoidLayer(2)
+                    nn_tools.ReluLayer(2)
                 ],
                 [
                     nn_tools.FilterLayer([2, 3]),
@@ -625,7 +625,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
         for i in range(self._world.num_robots):
             robot = self._world.get_robot(i)
 
-            robot_sight = self._world.calc_robot_sight(robot, -numpy.pi * 0.55, numpy.pi * 0.55, 300)
+            robot_sight = self._world.calc_robot_sight(robot, -numpy.pi * 0.55, numpy.pi * 0.55, 100)
             pheromone = self._world.get_pheromone(robot.pos[0], robot.pos[1])
 
             nest_vec = numpy.dot(robot.inv_rot, self._world.nest_pos - robot.pos)
