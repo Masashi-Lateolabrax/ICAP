@@ -64,13 +64,16 @@ if __name__ == '__main__':
             miscellaneous.Recorder("result.mp4", int(1.0 / env_creator.timestep), width, height)
         )
 
-        env_creator.show_pheromone_index = 0
         env = env_creator.create_mujoco_env(para, window, camera)
-        env.calc_and_show()
+        for _ in range(int(env_creator.time / env_creator.timestep)):
+            env.calc_step()
 
-        env_creator.show_pheromone_index = 1
-        env = env_creator.create_mujoco_env(para, window, camera)
-        env.calc_and_show()
+            env.show_pheromone_index = 0
+            env.render((0, 0, width * scale, height * scale), False)
+            env.show_pheromone_index = 1
+            env.render((width * scale, 0, width * scale, height * scale), False)
+
+            window.flush()
 
 
     main()
