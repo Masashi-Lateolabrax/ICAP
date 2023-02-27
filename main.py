@@ -37,12 +37,13 @@ if __name__ == '__main__':
     def main():
         env_creator = EnvCreator()
         set_env_creator(env_creator)
+        print(f"DIMENSION : {env_creator.dim()}")
 
         # para = numpy.random.rand(env_creator.dim())
         para, hist = utils.cmaes_optimize_server(
             100,
             100,
-            10,
+            50,
             env_creator,
             52325,
             0.3,
