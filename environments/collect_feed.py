@@ -648,7 +648,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
 
         for i in range(self._world.num_obstacles):
             o = self._world.get_obstacle(i)
-            self._world.secretion(o.pos, [2, 0])
+            self._world.secretion(o.pos, [3, 0])
 
         # Calculate loss
         feed_gain_s = 9.5
