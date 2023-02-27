@@ -240,7 +240,7 @@ def _gen_env(
     for i, rp in enumerate(robot_pos):
         robot_body = worldbody.add_body(
             name=f"robot{i}",
-            pos=(rp[0], rp[1], 10 + depth + 0.5),
+            pos=(rp[0], rp[1], 5 + depth + 2.0),
             axisangle=((0, 0, 1), rp[2])
         )
         robot_body.add_freejoint()
@@ -267,13 +267,13 @@ def _gen_env(
             "name": f"robot{i}_left_act",
             "joint": f"robot{i}_left_joint",
             "kv": "100",
-            "gear": "30",
+            "gear": "50",
         })
         act.add_velocity({
             "name": f"robot{i}_right_act",
             "joint": f"robot{i}_right_joint",
             "kv": "100",
-            "gear": "30"
+            "gear": "50"
         })
         sensor.add_velocimeter({
             "name": f"robot{i}_velocimeter",
@@ -511,8 +511,8 @@ class _World:
             act_right = self.model.get_act(f"robot{ri}_right_act")
             pos = self.model.get_body(f"robot{ri}").get_xpos()
 
-            act_left.ctrl = 350 * rd[0]
-            act_right.ctrl = 350 * rd[1]
+            act_left.ctrl = 250 * rd[0]
+            act_right.ctrl = 250 * rd[1]
             self.secretion(pos, rd[2:])
 
         self.model.step()
@@ -626,9 +626,6 @@ class Environment(optimizer.MuJoCoEnvInterface):
             self._world.calc_step()
 
     def calc_step(self) -> float:
-        if not self._world.calc_step():
-            return float("inf")
-
         if self._thinking_counter <= 0:
             for i in range(self._world.num_robots):
                 robot = self._world.get_robot(i)
@@ -688,6 +685,9 @@ class Environment(optimizer.MuJoCoEnvInterface):
         dt_loss_feed_robot *= 1e11 / (self._world.num_feeds * self._world.num_robots)
         dt_loss_obstacle_robot *= 1e32 / (self._world.num_obstacles * self._world.num_robots)
         self._loss += (dt_loss_feed_nest + dt_loss_feed_robot + dt_loss_obstacle_robot) * self._world.timestep
+
+        if not self._world.calc_step():
+            return float("inf")
 
         return self._loss
 
