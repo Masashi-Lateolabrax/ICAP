@@ -53,19 +53,20 @@ if __name__ == '__main__':
         numpy.save("best_para.npy", para)
         hist.save("history")
 
-        shape = (10, 7)
+        shape = (5, 7)
         dpi = 100
         scale: int = 1
 
         width = shape[0] * dpi
         height = shape[1] * dpi
-        window = miscellaneous.Window(width * scale, height * scale)
-        camera = wrap_mjc.Camera((600, 600, 0), 2500, 90, 90)
-        window.set_recorder(
-            miscellaneous.Recorder("result.mp4", int(1.0 / env_creator.timestep), width, height)
-        )
+        window = miscellaneous.Window(width * scale * 2, height * scale)
+        camera = wrap_mjc.Camera((0, 600, 0), 2500, 90, 90)
+        window.set_recorder(miscellaneous.Recorder(
+            "replay.mp4", 60 * int(1.0 / env_creator.timestep), width, height
+        ))
 
         env = env_creator.create_mujoco_env(para, window, camera)
+
         for _ in range(int(env_creator.time / env_creator.timestep)):
             env.calc_step()
 
