@@ -594,7 +594,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
             window: miscellaneous.Window = None,
             camera: wrap_mjc.Camera = None
     ):
-        self._loss = l2
+        self._loss = l2 * 1e-6
 
         self._thinking_interval = thinking_interval
         self._thinking_counter = 0
