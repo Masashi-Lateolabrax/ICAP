@@ -1,5 +1,3 @@
-import copy
-
 import mujoco
 import numpy
 
@@ -385,18 +383,14 @@ class RobotBrain:
 
 
 class _Robot:
-    def __init__(self, pos, direction, rot, inv_rot, velocity, act_left, act_right):
-        self._act_left = act_left
-        self._act_right = act_right
+    def __init__(self, pos, direction, rot, inv_rot, velocity, decision):
         self.pos = pos
         self.direction = direction
         self.rot = rot
         self.inv_rot = inv_rot
         self.velocity = velocity
 
-    def rotate_wheel(self, left, right):
-        self._act_left.ctrl = 1000 * left
-        self._act_right.ctrl = 1000 * right
+        self.decision = decision
 
 
 class _World:
@@ -451,6 +445,8 @@ class _World:
             0.05
         )
 
+        self.robot_decisions = numpy.zeros((self.num_robots, 2 + len(self.pheromone_field)))
+
     def calc_robot_sight(self, robot: _Robot, start, end, div):
         mat = numpy.zeros((3, 3))
         mat[2, 2] = 1.0
@@ -488,15 +484,13 @@ class _World:
             return orientation, rot_mat, numpy.linalg.inv(rot_mat)
 
         body = self.model.get_body(f"robot{index}")
-        act_left = self.model.get_act(f"robot{index}_left_act")
-        act_right = self.model.get_act(f"robot{index}_right_act")
         velocimeter = self.model.get_sensor(f"robot{index}_velocimeter")
 
         pos = body.get_xpos()
         velocity = velocimeter.get_data()
         direction, rot, inv_rot = calc_robot_direction(body)
 
-        return _Robot(pos, direction, rot, inv_rot, velocity, act_left, act_right)
+        return _Robot(pos, direction, rot, inv_rot, velocity, self.robot_decisions[index])
 
     def get_pheromone(self, x, y):
         return [field.get_gas(x, y) for field in self.pheromone_field]
@@ -511,6 +505,16 @@ class _World:
         return _Obstacle(pos)
 
     def calc_step(self) -> True:
+        # Make robots move
+        for ri, rd in enumerate(self.robot_decisions):
+            act_left = self.model.get_act(f"robot{ri}_left_act")
+            act_right = self.model.get_act(f"robot{ri}_right_act")
+            pos = self.model.get_body(f"robot{ri}").get_xpos()
+
+            act_left.ctrl = 350 * rd[0]
+            act_right.ctrl = 350 * rd[1]
+            self.secretion(pos, rd[2:])
+
         self.model.step()
 
         # Calculate Pheromone.
@@ -585,11 +589,15 @@ class Environment(optimizer.MuJoCoEnvInterface):
             pheromone_iteration: int,
             timestep: float,
             time: int,
+            thinking_interval,
             show_pheromone_index: int = 0,
             window: miscellaneous.Window = None,
             camera: wrap_mjc.Camera = None
     ):
         self._loss = l2
+
+        self._thinking_interval = thinking_interval
+        self._thinking_counter = 0
 
         self._world = _World(
             nest_pos,
@@ -621,22 +629,24 @@ class Environment(optimizer.MuJoCoEnvInterface):
         if not self._world.calc_step():
             return float("inf")
 
-        # Make robots think.
-        for i in range(self._world.num_robots):
-            robot = self._world.get_robot(i)
+        if self._thinking_counter <= 0:
+            for i in range(self._world.num_robots):
+                robot = self._world.get_robot(i)
 
-            robot_sight = self._world.calc_robot_sight(robot, -numpy.pi * 0.55, numpy.pi * 0.55, 100)
-            pheromone = self._world.get_pheromone(robot.pos[0], robot.pos[1])
+                robot_sight = self._world.calc_robot_sight(robot, -numpy.pi * 0.55, numpy.pi * 0.55, 100)
+                pheromone = self._world.get_pheromone(robot.pos[0], robot.pos[1])
 
-            nest_vec = numpy.dot(robot.inv_rot, self._world.nest_pos - robot.pos)
-            nest_dist = numpy.linalg.norm(nest_vec, ord=2)
-            nest_vec /= nest_dist if nest_dist > 0.0 else 0.0
-            decreased_nest_dist = (1.0 / (nest_dist + 1.0)) ** 2
-            sensed_nest = [nest_vec[0], nest_vec[1], decreased_nest_dist]
+                nest_vec = numpy.dot(robot.inv_rot, self._world.nest_pos - robot.pos)
+                nest_dist = numpy.linalg.norm(nest_vec, ord=2)
+                nest_vec /= nest_dist if nest_dist > 0.0 else 0.0
+                decreased_nest_dist = (1.0 / (nest_dist + 1.0)) ** 2
+                sensed_nest = [nest_vec[0], nest_vec[1], decreased_nest_dist]
 
-            decision = self.robot_brain.calc(numpy.concatenate([robot_sight, sensed_nest, pheromone]))
-            robot.rotate_wheel(decision[0], decision[1])
-            self._world.secretion(robot.pos, decision[2:])
+                robot.decision[:] = self.robot_brain.calc(numpy.concatenate([robot_sight, sensed_nest, pheromone]))
+
+        if self._thinking_counter <= 0:
+            self._thinking_counter = self._thinking_interval
+        self._thinking_counter -= 1
 
         for i in range(self._world.num_obstacles):
             o = self._world.get_obstacle(i)
@@ -719,6 +729,7 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
         self.show_pheromone_index: int = 0
         self.timestep: float = 0.033333
         self.time: int = 30
+        self.think_interval: int = 0
 
     def save(self):
         import struct
@@ -745,6 +756,7 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
 
         packed.extend([struct.pack("<d", self.timestep)])
         packed.extend([struct.pack("<I", self.time)])
+        packed.extend([struct.pack("<I", self.think_interval)])
 
         return b"".join(packed)
 
@@ -836,6 +848,11 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
         e = s + 4
         self.time = struct.unpack("<I", data[s:e])[0]
 
+        # ロボットの演算の間隔
+        s = e
+        e = s + 4
+        self.think_interval = struct.unpack("<I", data[s:e])[0]
+
         return e - offset
 
     def dim(self) -> int:
@@ -861,6 +878,7 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
             self.pheromone_iteration,
             self.timestep,
             self.time,
+            self.think_interval,
             self.show_pheromone_index,
             None,
             None
@@ -886,6 +904,7 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
             self.pheromone_iteration,
             self.timestep,
             self.time,
+            self.think_interval,
             self.show_pheromone_index,
             window,
             camera
