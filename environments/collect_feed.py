@@ -653,16 +653,22 @@ class Environment(optimizer.MuJoCoEnvInterface):
             self._world.secretion(o.pos, [2, 0])
 
         # Calculate loss
-        feed_range = 10000.0
+        feed_range = 15000.0
         obstacle_range = 200.0
         dt_loss_feed_nest = 0.0
         dt_loss_feed_robot = 0.0
         dt_loss_obstacle_robot = 0.0
+        feed_speed = numpy.zeros(3)
         for i in range(self._world.num_feeds):
             feed = self._world.get_feed(i)
+
             feed_nest_vector = self._world.nest_pos - feed.pos
             feed_nest_distance = numpy.linalg.norm(feed_nest_vector, ord=2)
-            dt_loss_feed_nest += feed_nest_distance
+            normed_feed_nest_vector = feed_nest_vector / feed_nest_distance
+            feed_speed[:] = feed.velocity
+            feed_speed[2] = 0
+
+            dt_loss_feed_nest -= numpy.dot(feed_speed, normed_feed_nest_vector)
 
             for j in range(self._world.num_robots):
                 robot = self._world.get_robot(j)
@@ -678,9 +684,9 @@ class Environment(optimizer.MuJoCoEnvInterface):
                 obstacle_robot_distance = numpy.sum(obstacle_robot_vector ** 2)
                 dt_loss_obstacle_robot += numpy.exp(-obstacle_robot_distance / obstacle_range)
 
-        dt_loss_feed_nest *= 0.1 / self._world.num_feeds
-        dt_loss_feed_robot *= 1.0 / (self._world.num_feeds * self._world.num_robots)
-        dt_loss_obstacle_robot *= 1e12 / (self._world.num_obstacles * self._world.num_robots)
+        dt_loss_feed_nest *= 1e0 / self._world.num_feeds
+        dt_loss_feed_robot *= 1e11 / (self._world.num_feeds * self._world.num_robots)
+        dt_loss_obstacle_robot *= 1e32 / (self._world.num_obstacles * self._world.num_robots)
         self._loss += (dt_loss_feed_nest + dt_loss_feed_robot + dt_loss_obstacle_robot) * self._world.timestep
 
         return self._loss
