@@ -21,7 +21,7 @@ def set_env_creator(env_creator: EnvCreator):
         (-140, -140, theta), (-70, -140, theta), (0, -140, theta), (70, -140, theta), (140, -140, theta),
     ]
     # env_creator.robot_pos = [(0, 700, theta)]
-    env_creator.obstacle_pos = [(0, 300)]
+    env_creator.obstacle_pos = [(0, 450)]
     env_creator.feed_pos = [(0, 800), (0, 1100)]
 
     env_creator.pheromone_field_pos = (0, 550)
