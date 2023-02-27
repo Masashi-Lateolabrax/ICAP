@@ -6,8 +6,9 @@ from studyLib import miscellaneous, wrap_mjc
 
 
 def set_env_creator(env_creator: EnvCreator):
-    env_creator.timestep = 0.033333
-    env_creator.time = 30
+    env_creator.timestep = 0.02
+    env_creator.time = 900
+    env_creator.think_interval = 15
 
     env_creator.nest_pos = (0, 0)
     env_creator.robot_pos = [
