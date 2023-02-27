@@ -112,7 +112,7 @@ def _gen_env(
     feed_default = default.add_default("feeds")
     feed_default.add_geom({
         "type": "cylinder",
-        "size": "35 10",
+        "size": "70 10",
         "mass": "3000",  # 3kg = 3000g
         "rgba": "0 1 1 1",
         "condim": "3",
@@ -650,7 +650,10 @@ class Environment(optimizer.MuJoCoEnvInterface):
             self._world.secretion(o.pos, [2, 0])
 
         # Calculate loss
-        feed_range = 15000.0
+        feed_gain_s = 9.5
+        feed_range_s = 4000.0
+        feed_gain_l = 0.2
+        feed_range_l = 100000.0
         obstacle_range = 200.0
         dt_loss_feed_nest = 0.0
         dt_loss_feed_robot = 0.0
@@ -671,7 +674,8 @@ class Environment(optimizer.MuJoCoEnvInterface):
                 robot = self._world.get_robot(j)
                 feed_robot_vector = (robot.pos - feed.pos)[0:2]
                 feed_robot_distance = numpy.sum(feed_robot_vector ** 2)
-                dt_loss_feed_robot -= numpy.exp(-feed_robot_distance / feed_range)
+                dt_loss_feed_robot -= numpy.exp(-feed_robot_distance / feed_range_s) * feed_gain_s
+                dt_loss_feed_robot -= numpy.exp(-feed_robot_distance / feed_range_l) * feed_gain_l
 
         for i in range(self._world.num_obstacles):
             obstacle = self._world.get_obstacle(i)
@@ -682,8 +686,9 @@ class Environment(optimizer.MuJoCoEnvInterface):
                 dt_loss_obstacle_robot += numpy.exp(-obstacle_robot_distance / obstacle_range)
 
         dt_loss_feed_nest *= 1e0 / self._world.num_feeds
-        dt_loss_feed_robot *= 1e11 / (self._world.num_feeds * self._world.num_robots)
-        dt_loss_obstacle_robot *= 1e32 / (self._world.num_obstacles * self._world.num_robots)
+        dt_loss_feed_robot *= 1e0 / (self._world.num_feeds * self._world.num_robots)
+        dt_loss_obstacle_robot *= 1e13 / (self._world.num_obstacles * self._world.num_robots)
+        # print(dt_loss_feed_nest, dt_loss_feed_robot, dt_loss_obstacle_robot)
         self._loss += (dt_loss_feed_nest + dt_loss_feed_robot + dt_loss_obstacle_robot) * self._world.timestep
 
         if not self._world.calc_step():

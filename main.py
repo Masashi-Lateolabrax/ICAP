@@ -20,6 +20,7 @@ def set_env_creator(env_creator: EnvCreator):
         (-140, -70, theta), (-70, -70, theta), (0, -70, theta), (70, -70, theta), (140, -70, theta),
         (-140, -140, theta), (-70, -140, theta), (0, -140, theta), (70, -140, theta), (140, -140, theta),
     ]
+    # env_creator.robot_pos = [(0, 700, theta)]
     env_creator.obstacle_pos = [(0, 300)]
     env_creator.feed_pos = [(0, 800), (0, 1100)]
 
@@ -64,7 +65,7 @@ if __name__ == '__main__':
         window = miscellaneous.Window(width * scale * 2, height * scale)
         camera = wrap_mjc.Camera((0, 600, 0), 2500, 90, 90)
         window.set_recorder(miscellaneous.Recorder(
-            "replay.mp4", 60 * int(1.0 / env_creator.timestep), width, height
+            "replay.mp4", int(1.0 / env_creator.timestep), width * 2, height
         ))
 
         env = env_creator.create_mujoco_env(para, window, camera)
