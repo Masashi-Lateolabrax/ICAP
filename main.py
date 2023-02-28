@@ -65,7 +65,7 @@ if __name__ == '__main__':
         window = miscellaneous.Window(width * scale * 2, height * scale)
         camera = wrap_mjc.Camera((0, 600, 0), 2500, 90, 90)
         window.set_recorder(miscellaneous.Recorder(
-            "replay.mp4", int(1.0 / env_creator.timestep), width * 2, height
+            "result.mp4", int(1.0 / env_creator.timestep), width * 2, height
         ))
 
         env = env_creator.create_mujoco_env(para, window, camera)
