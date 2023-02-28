@@ -65,6 +65,7 @@ class MuJoCoXMLGenerator:
             self._class_name = class_name
             self._children: list[MuJoCoXMLGenerator.MuJoCoDefault] = []
             self._geom_attributes = []
+            self._velocity_attributes = []
             pass
 
         def add_default(self, class_name: str):
@@ -75,11 +76,20 @@ class MuJoCoXMLGenerator:
         def add_geom(self, attributes):
             self._geom_attributes.append(attributes)
 
+        def add_velocity(self, attributes):
+            self._velocity_attributes.append(attributes)
+
         def to_string(self) -> str:
             xml = f"<default class=\"{self._class_name}\">\n"
 
             for a in self._geom_attributes:
                 xml += "<geom "
+                for k, v in a.items():
+                    xml += f"{k}=\"{v}\" "
+                xml += "/>\n"
+
+            for a in self._velocity_attributes:
+                xml += "<velocity "
                 for k, v in a.items():
                     xml += f"{k}=\"{v}\" "
                 xml += "/>\n"
