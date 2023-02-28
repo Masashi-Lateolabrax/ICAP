@@ -426,6 +426,20 @@ class MuJoCoXMLGenerator:
             element += "/>"
             self.sensor.append(element)
 
+        def add_actuatorpos(self, attributes):
+            element = "<actuatorpos "
+            for k, v in attributes.items():
+                element += f"{k}=\"{v}\" "
+            element += "/>"
+            self.sensor.append(element)
+
+        def add_actuatorvel(self, attributes):
+            element = "<actuatorvel "
+            for k, v in attributes.items():
+                element += f"{k}=\"{v}\" "
+            element += "/>"
+            self.sensor.append(element)
+
         def to_string(self) -> str:
             xml = "<sensor>\n"
             for e in self.sensor:
