@@ -19,7 +19,7 @@ def _gen_env(
     generator.add_option({
         "timestep": f"{timestep}",
         "gravity": "0 0 -981.0",
-        "impratio": "3",
+        "impratio": "10",
     })
 
     generator.add_visual().add_headlight({
@@ -133,6 +133,8 @@ def _gen_env(
         "rgba": "1 1 0 0.3",
         "condim": "1",
         "priority": "0",
+        "solimp": "0.9 0.95 0.001 0.5 2",  # 0.9 0.95 0.001 0.5 2
+        "solref": "0.02 1",  # 0.02 1
         "contype": "2",
         "conaffinity": "2"
     })
@@ -144,7 +146,9 @@ def _gen_env(
         "axisangle": "0 1 0 90",
         "condim": "6",
         "priority": "1",
-        "friction": "0.2 0.01 0.01",
+        "friction": "1.0 0.0 0.0",
+        "solimp": "0.9 0.95 0.001 0.5 2",  # 0.9 0.95 0.001 0.5 2
+        "solref": "0.02 1",  # 0.02 1
         "contype": "1",
         "conaffinity": "1",
         "material": "wheel_material"
@@ -154,6 +158,11 @@ def _gen_env(
         "type": "sphere",
         "size": "1.5",
         "condim": "1",
+    })
+    act_default = default.add_default("robot_actuator")
+    act_default.add_velocity({
+        "kv": "80000",
+        "gear": "2",
     })
 
     worldbody = generator.get_body()
@@ -266,14 +275,12 @@ def _gen_env(
         act.add_velocity({
             "name": f"robot{i}_left_act",
             "joint": f"robot{i}_left_joint",
-            "kv": "100",
-            "gear": "50",
+            "class": "robot_actuator"
         })
         act.add_velocity({
             "name": f"robot{i}_right_act",
             "joint": f"robot{i}_right_joint",
-            "kv": "100",
-            "gear": "50"
+            "class": "robot_actuator"
         })
         sensor.add_velocimeter({
             "name": f"robot{i}_velocimeter",
@@ -499,8 +506,8 @@ class _World:
             act_right = self.model.get_act(f"robot{ri}_right_act")
             pos = self.model.get_body(f"robot{ri}").get_xpos()
 
-            act_left.ctrl = 250 * rd[0]
-            act_right.ctrl = 250 * rd[1]
+            act_left.ctrl = 40 * rd[0]
+            act_right.ctrl = 40 * rd[1]
             self.secretion(pos, rd[2:])
 
         self.model.step()
