@@ -13,12 +13,9 @@ def set_env_creator(env_creator: EnvCreator):
     theta = 0
 
     env_creator.nest_pos = (0, 0)
+    pos = (0, 0, 65)
     env_creator.robot_pos = [
-        (-140, 140, theta), (-70, 140, theta), (0, 140, theta), (70, 140, theta), (140, 140, theta),
-        (-140, 70, theta), (-70, 70, theta), (0, 70, theta), (70, 70, theta), (140, 70, theta),
-        (-140, 0, theta), (-70, 0, theta), (0, 0, theta), (70, 0, theta), (140, 0, theta),
-        (-140, -70, theta), (-70, -70, theta), (0, -70, theta), (70, -70, theta), (140, -70, theta),
-        (-140, -140, theta), (-70, -140, theta), (0, -140, theta), (70, -140, theta), (140, -140, theta),
+        (pos[0] + pos[2] * ix, pos[1] + pos[2] * iy, theta) for iy in range(-2, 3) for ix in range(-2, 3)
     ]
     # env_creator.robot_pos = [(0, 700, theta)]
     env_creator.obstacle_pos = [(0, 450)]

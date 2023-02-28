@@ -19,7 +19,7 @@ def _gen_env(
     generator.add_option({
         "timestep": f"{timestep}",
         "gravity": "0 0 -981.0",
-        "impratio": "10",
+        "impratio": "10"
     })
 
     generator.add_visual().add_headlight({
@@ -59,8 +59,8 @@ def _gen_env(
     default = generator.add_default()
     default.add_geom({
         "density": "1",  # Unit is g/cm^3. (1000kg/m^3 = 1g/cm^3)
-        "solimp": "0.9 0.95 1.0 0.5 2",
-        "solref": "0.002 100.0",
+        "solimp": "0.8 0.95 1 1 2",  # 0.9 0.95 0.001 0.5 2
+        "solref": "0.1 10",  # 0.02 1
     })
 
     ######################################################################################################
@@ -133,8 +133,6 @@ def _gen_env(
         "rgba": "1 1 0 0.3",
         "condim": "1",
         "priority": "0",
-        "solimp": "0.9 0.95 0.001 0.5 2",  # 0.9 0.95 0.001 0.5 2
-        "solref": "0.02 1",  # 0.02 1
         "contype": "2",
         "conaffinity": "2"
     })
@@ -147,8 +145,6 @@ def _gen_env(
         "condim": "6",
         "priority": "1",
         "friction": "1.0 0.0 0.0",
-        "solimp": "0.9 0.95 0.001 0.5 2",  # 0.9 0.95 0.001 0.5 2
-        "solref": "0.02 1",  # 0.02 1
         "contype": "1",
         "conaffinity": "1",
         "material": "wheel_material"
