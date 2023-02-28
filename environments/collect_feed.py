@@ -113,7 +113,7 @@ def _gen_env(
     feed_default.add_geom({
         "type": "cylinder",
         "size": "70 10",
-        "mass": "3000",  # 3kg = 3000g
+        "mass": "1500",  # 1.5kg = 1500g
         "rgba": "0 1 1 1",
         "condim": "3",
         "priority": "1",
@@ -342,8 +342,8 @@ class RobotBrain:
                     nn_tools.TanhLayer(20),
                     nn_tools.AffineLayer(10),
                     nn_tools.TanhLayer(10),
-                    nn_tools.AffineLayer(3),
-                    nn_tools.IsMaxLayer(3)
+                    nn_tools.AffineLayer(5),
+                    nn_tools.IsMaxLayer(5)
                 ],
                 [
                     nn_tools.FilterLayer([36, 37]),
@@ -358,19 +358,7 @@ class RobotBrain:
         self._calculator.add_layer(nn_tools.TanhLayer(5))
 
         self._calculator.add_layer(nn_tools.AffineLayer(4))
-
-        self._calculator.add_layer(nn_tools.ParallelLayer(
-            [
-                [
-                    nn_tools.FilterLayer([0, 1]),
-                    nn_tools.ReluLayer(2)
-                ],
-                [
-                    nn_tools.FilterLayer([2, 3]),
-                    nn_tools.SoftmaxLayer(2)
-                ]
-            ]
-        ))
+        self._calculator.add_layer(nn_tools.SigmoidLayer(4))
 
         if para is not None:
             self._calculator.load(para)
@@ -648,14 +636,14 @@ class Environment(optimizer.MuJoCoEnvInterface):
 
         for i in range(self._world.num_obstacles):
             o = self._world.get_obstacle(i)
-            self._world.secretion(o.pos, [3, 0])
+            self._world.secretion(o.pos, [5, 0])
 
         # Calculate loss
         feed_gain_s = 9.5
         feed_range_s = 4000.0
         feed_gain_l = 0.2
         feed_range_l = 100000.0
-        obstacle_range = 200.0
+        obstacle_range = 270.0
         dt_loss_feed_nest = 0.0
         dt_loss_feed_robot = 0.0
         dt_loss_obstacle_robot = 0.0
@@ -687,9 +675,9 @@ class Environment(optimizer.MuJoCoEnvInterface):
                 dt_loss_obstacle_robot += numpy.exp(-obstacle_robot_distance / obstacle_range)
 
         dt_loss_feed_nest *= 1e0 / self._world.num_feeds
-        dt_loss_feed_robot *= 1e0 / (self._world.num_feeds * self._world.num_robots)
-        dt_loss_obstacle_robot *= 1e13 / (self._world.num_obstacles * self._world.num_robots)
-        # print(dt_loss_feed_nest, dt_loss_feed_robot, dt_loss_obstacle_robot)
+        dt_loss_feed_robot *= 1e0
+        dt_loss_obstacle_robot *= 1e13
+        print(dt_loss_feed_nest, dt_loss_feed_robot, dt_loss_obstacle_robot)
         self._loss += (dt_loss_feed_nest + dt_loss_feed_robot + dt_loss_obstacle_robot) * self._world.timestep
 
         if not self._world.calc_step():
