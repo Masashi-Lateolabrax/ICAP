@@ -14,6 +14,7 @@ from .layer.read_layer import ReadLayer
 from .layer.rbf_layer import GaussianRadialBasisLayer
 
 from .activator.buf_layer import BufLayer
+from .activator.clip_layer import ClipLayer
 from .activator.is_max import IsMaxLayer
 from .activator.is_min import IsMinLayer
 from .activator.relu_layer import ReluLayer
