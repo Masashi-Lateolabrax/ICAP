@@ -677,7 +677,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
         dt_loss_feed_nest *= 1e0 / self._world.num_feeds
         dt_loss_feed_robot *= 1e0
         dt_loss_obstacle_robot *= 1e13
-        print(dt_loss_feed_nest, dt_loss_feed_robot, dt_loss_obstacle_robot)
+        # print(dt_loss_feed_nest, dt_loss_feed_robot, dt_loss_obstacle_robot)
         self._loss += (dt_loss_feed_nest + dt_loss_feed_robot + dt_loss_obstacle_robot) * self._world.timestep
 
         if not self._world.calc_step():
