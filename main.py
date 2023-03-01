@@ -8,7 +8,7 @@ from studyLib import miscellaneous, wrap_mjc
 def set_env_creator(env_creator: EnvCreator):
     env_creator.timestep = 0.01
     env_creator.time = 60
-    env_creator.think_interval = 50
+    env_creator.think_interval = 10
 
     theta = 0
 
