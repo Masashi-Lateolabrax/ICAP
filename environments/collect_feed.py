@@ -551,11 +551,11 @@ class _World:
 
 
 class RobotSightViewer:
-    def __init__(self, model: wrap_mjc.WrappedModel, offset: tuple[float, float]):
+    def __init__(self, model: wrap_mjc.WrappedModel, offset: tuple[float, float], div: int):
         self.cells = []
         w = 12
         h = 300
-        for i in range(100):
+        for i in range(div):
             geom = model.add_deco_geom(mujoco.mjtGeom.mjGEOM_PLANE)
             self.cells.append(geom)
             geom.set_size((w, h, 0.05))
@@ -618,7 +618,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
         self.window = window
         self.camera = camera
 
-        self._sight_viewer = RobotSightViewer(self._world.model, (700, 600))
+        self._sight_viewer = RobotSightViewer(self._world.model, (700, 600), 15)
 
         for _ in range(0, 5):
             self._world.calc_step()
