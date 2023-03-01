@@ -4,12 +4,11 @@ from studyLib.nn_tools import interface, la
 
 
 class _ConvLayer(interface.CalcLayer, ABC):
-    def __init__(self, num_window: int, window: interface.CalcLayer, window_size: int, num_pad: int):
+    def __init__(self, num_window: int, window: interface.CalcLayer, window_size: int):
         super().__init__(num_window * window.num_node)
         self._window = window
         self._num_window = num_window
         self._window_size = window_size
-        self._num_pad = num_pad
         self._num_input = 0
 
         self._window.init(window_size)
@@ -24,7 +23,7 @@ class _ConvLayer(interface.CalcLayer, ABC):
         self._window.save(array)
 
 
-class Conv1DLayer(_ConvLayer):
+class ZeroPaddedConv1DLayer(_ConvLayer):
     def __init__(
             self,
             num_window: int,
