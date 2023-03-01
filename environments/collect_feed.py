@@ -19,7 +19,9 @@ def _gen_env(
     generator.add_option({
         "timestep": f"{timestep}",
         "gravity": "0 0 -981.0",
-        "impratio": "10"
+        "impratio": "5",
+        "noslip_iterations": "15",
+        "cone": "pyramidal"
     })
 
     generator.add_visual().add_headlight({
@@ -59,8 +61,8 @@ def _gen_env(
     default = generator.add_default()
     default.add_geom({
         "density": "1",  # Unit is g/cm^3. (1000kg/m^3 = 1g/cm^3)
-        "solimp": "0.8 0.95 1 1 2",  # 0.9 0.95 0.001 0.5 2
-        "solref": "0.1 10",  # 0.02 1
+        "solimp": "0.9 0.95 0.001 0.5 2",  # 0.9 0.95 0.001 0.5 2
+        "solref": "0.02 1",  # 0.02 1
     })
 
     ######################################################################################################
