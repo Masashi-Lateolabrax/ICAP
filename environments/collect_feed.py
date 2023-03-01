@@ -624,7 +624,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
         self.window = window
         self.camera = camera
 
-        self._sight_viewer = RobotSightViewer(self._world.model, (700, 600), 15)
+        self._sight_viewer = RobotSightViewer(self._world.model, (700, 600), 30)
 
         for _ in range(0, 5):
             self._world.calc_step()
@@ -634,11 +634,11 @@ class Environment(optimizer.MuJoCoEnvInterface):
             for i in range(self._world.num_robots):
                 robot = self._world.get_robot(i)
 
-                # 100度(0.55piRAD)まで．15度=0.083piRAD
-                robot_sight = self._world.calc_robot_sight(robot, -numpy.pi * 0.55, numpy.pi * 0.55, 15)
+                # 約6.65度
+                robot_sight = self._world.calc_robot_sight(robot, -numpy.pi * 0.55, numpy.pi * 0.55, 30)
                 pheromone = self._world.get_pheromone(robot.pos[0], robot.pos[1])
 
-                if i == 0:
+                if i == 7:
                     self._sight_viewer.update(robot_sight)
 
                 nest_vec = numpy.dot(robot.inv_rot, self._world.nest_pos - robot.pos)
