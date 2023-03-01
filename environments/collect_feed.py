@@ -722,9 +722,9 @@ class Environment(optimizer.MuJoCoEnvInterface):
 class EnvCreator(optimizer.MuJoCoEnvCreator):
     def __init__(self):
         self.nest_pos: (float, float) = (0, 0)
-        self.robot_pos: list[(float, float)] = [(0, 0)]
-        self.obstacle_pos: list[(float, float)] = [(0, 0)]
-        self.feed_pos: list[(float, float)] = [(0, 0)]
+        self.robot_pos: list[(float, float)] = []
+        self.obstacle_pos: list[(float, float)] = []
+        self.feed_pos: list[(float, float)] = []
         self.sv: list[float] = [0.0]
         self.evaporate: list[float] = [0.0]
         self.diffusion: list[float] = [0.0]
