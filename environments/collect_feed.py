@@ -390,7 +390,8 @@ class RobotBrain:
 
 
 class _Robot:
-    def __init__(self, pos, direction, rot, inv_rot, velocity, decision):
+    def __init__(self, id_, pos, direction, rot, inv_rot, velocity, decision):
+        self.id = id_
         self.pos = pos
         self.direction = direction
         self.rot = rot
@@ -492,11 +493,12 @@ class _World:
         body = self.model.get_body(f"robot{index}")
         velocimeter = self.model.get_sensor(f"robot{index}_velocimeter")
 
+        id_ = body.get_id()
         pos = body.get_xpos()
         velocity = velocimeter.get_data()
         direction, rot, inv_rot = calc_robot_direction(body)
 
-        return _Robot(pos, direction, rot, inv_rot, velocity, self.robot_decisions[index])
+        return _Robot(id_, pos, direction, rot, inv_rot, velocity, self.robot_decisions[index])
 
     def get_pheromone(self, x, y):
         return [field.get_gas(x, y) for field in self.pheromone_field]
