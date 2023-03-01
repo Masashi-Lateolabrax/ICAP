@@ -95,6 +95,7 @@ class BaseCMAES:
             centroid=None,
             minimalize: bool = True,
             max_thread: int = 1,
+            cmatrix=None
     ):
         self._best_para: array.array = array.array("d", [0.0] * dim)
         self._history: Hist = Hist(dim, population, mu)
@@ -123,6 +124,7 @@ class BaseCMAES:
             sigma=sigma,
             lambda_=population,
             mu=mu,
+            cmatrix=cmatrix
         )
 
         self._individuals: list[Individual] = self._strategy.generate(self._ind_type)
@@ -172,7 +174,8 @@ class BaseCMAES:
             min_para,
             max_score,
             max_para,
-            self._strategy.sigma
+            self._strategy.sigma,
+            self._strategy.C
         )
 
         self._strategy.update(self._individuals)
