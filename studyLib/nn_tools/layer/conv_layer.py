@@ -72,16 +72,19 @@ class Conv1DLayer(_ConvLayer):
     def calc(self, input_: la.ndarray, output: la.ndarray) -> int:
         input_index = 0
         out_buf_index = 0
+        padding_i = int(self._num_pad / self.stride) + 1 if self._num_pad > 0 else 0
 
         for i in range(self._num_window):
-            if self._num_pad > 0 and (i == 0 or i == self._num_window - 1):
-                if i == 0:
-                    self._in_buf[:self._num_pad] = 0
-                    self._in_buf[self._num_pad:] = input_[input_index:input_index + self._window_size - self._num_pad]
-                    input_index += self.stride - self._num_pad
-                else:
-                    self._in_buf[:-self._num_pad] = input_[input_index:input_index + self._window_size - self._num_pad]
-                    self._in_buf[-self._num_pad:] = 0
+            if i < padding_i:
+                np = self._num_pad - i * self.stride
+                self._in_buf[:np] = 0
+                self._in_buf[np:] = input_[input_index:input_index + self._window_size - np]
+                input_index += self.stride - np if self.stride - np > 0 else 0
+            elif self._num_window - i <= padding_i:
+                np = self._num_pad - (self._num_window - i - 1) * self.stride
+                self._in_buf[:-np] = input_[input_index:input_index + self._window_size - np]
+                self._in_buf[-np:] = 0
+                input_index += self.stride
             else:
                 self._in_buf[:] = input_[input_index:input_index + self._window_size]
                 input_index += self.stride
