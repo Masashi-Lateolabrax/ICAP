@@ -456,6 +456,8 @@ class _World:
         self.robot_decisions = numpy.zeros((self.num_robots, 2 + len(self.pheromone_field)))
 
     def calc_robot_sight(self, robot: _Robot, start, end, div):
+        # 50cm先のロボットを鮮明に認識するためにはtheta<19.29を満たさなくてはならない．
+
         mat = numpy.zeros((3, 3))
         mat[2, 2] = 1.0
         step = (end - start) / div
@@ -639,7 +641,8 @@ class Environment(optimizer.MuJoCoEnvInterface):
             for i in range(self._world.num_robots):
                 robot = self._world.get_robot(i)
 
-                robot_sight = self._world.calc_robot_sight(robot, -numpy.pi * 0.55, numpy.pi * 0.55, 100)
+                # 100度(0.55piRAD)まで．15度=0.083piRAD
+                robot_sight = self._world.calc_robot_sight(robot, -numpy.pi * 0.55, numpy.pi * 0.55, 15)
                 pheromone = self._world.get_pheromone(robot.pos[0], robot.pos[1])
 
                 nest_vec = numpy.dot(robot.inv_rot, self._world.nest_pos - robot.pos)
