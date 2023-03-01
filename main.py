@@ -48,6 +48,7 @@ if __name__ == '__main__':
             52325,
             0.3,
             None,
+            None,
             True
         )
         numpy.save("best_para.npy", para)
