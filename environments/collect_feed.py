@@ -628,7 +628,10 @@ class Environment(optimizer.MuJoCoEnvInterface):
 
                 nest_vec = numpy.dot(robot.inv_rot, self._world.nest_pos - robot.pos)
                 nest_dist = numpy.linalg.norm(nest_vec, ord=2)
-                nest_vec /= nest_dist if nest_dist > 0.0 else 0.0
+                if nest_dist > 0.0:
+                    nest_vec /= nest_dist
+                else:
+                    nest_vec[:] = 0.0
                 decreased_nest_dist = (1.0 / (nest_dist + 1.0)) ** 2
                 sensed_nest = [nest_vec[0], nest_vec[1], decreased_nest_dist]
 
