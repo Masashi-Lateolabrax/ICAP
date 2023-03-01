@@ -556,7 +556,7 @@ class _World:
 class RobotSightViewer:
     def __init__(self, model: wrap_mjc.WrappedModel, offset: tuple[float, float], div: int):
         self.cells = []
-        w = 12
+        w = 30
         h = 300
         for i in range(div):
             geom = model.add_deco_geom(mujoco.mjtGeom.mjGEOM_PLANE)
@@ -565,7 +565,10 @@ class RobotSightViewer:
             geom.set_pos((w * i + offset[0], offset[1], 0))
 
     def update(self, sight):
+        offset = 0.01
         for i, s in enumerate(sight):
+            if s < offset:
+                s = offset
             self.cells[i].set_rgba((s, s, s, 1))
 
 
