@@ -30,6 +30,7 @@ class Hist:
         self.dim = dim
         self.population = population
         self.mu = mu
+        self.cmatrix = numpy.zeros(0)
 
     def save(self, file_path: str = None):
         if file_path is None:
@@ -60,6 +61,7 @@ class Hist:
             max_para=max_para,
             score=score,
             sigmas=sigmas,
+            cmatrix=self.cmatrix,
         )
 
     @staticmethod
@@ -72,8 +74,10 @@ class Hist:
         max_para = npz["max_para"]
         score = npz["score"]
         sigmas = npz["sigmas"]
+        cmatrix = npz["cmatrix"]
 
         this = Hist(dim=meta[0], population=meta[1], mu=meta[2])
+        this.cmatrix = cmatrix
 
         for t, centroid, min_p, max_p, s, sigma_ in zip(time, centroids, min_para, max_para, score, sigmas):
             q = Queue(s[0], centroid, s[1], min_p, s[2], max_p, sigma_)
@@ -90,9 +94,11 @@ class Hist:
             min_para: numpy.ndarray,
             max_score: float,
             max_para: numpy.ndarray,
-            sigma: float
+            sigma: float,
+            cmatrix: numpy.ndarray,
     ):
         self.queues.append(Queue(scores_avg, centroid, min_score, min_para, max_score, max_para, sigma))
+        self.cmatrix = cmatrix.copy()
 
     def get_min(self) -> (float, numpy.ndarray):
         para = self.queues[0].min_para
