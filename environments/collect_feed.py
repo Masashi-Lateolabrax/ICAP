@@ -313,25 +313,39 @@ class RobotBrain:
                     nn_tools.FilterLayer([i for i in range(0, 100)]),
 
                     nn_tools.Conv1DLayer(
-                        50, 4, 2,
-                        nn_tools.AffineLayer(3),
-                        1
+                        52, 4, 2,
+                        nn_tools.AffineLayer(6),
+                        3
                     ),
-                    nn_tools.TanhLayer(150),
+                    nn_tools.TanhLayer(312),
 
                     nn_tools.Conv1DLayer(
-                        24, 12, 6,
-                        nn_tools.AffineLayer(3),
+                        52, 6, 6,
+                        nn_tools.AffineLayer(4),
                         0
                     ),
-                    nn_tools.TanhLayer(72),
+                    nn_tools.TanhLayer(208),
 
                     nn_tools.Conv1DLayer(
-                        11, 12, 6,
-                        nn_tools.AffineLayer(3),
+                        25, 16, 8,
+                        nn_tools.AffineLayer(4),
                         0
                     ),
-                    nn_tools.TanhLayer(33),
+                    nn_tools.TanhLayer(100),
+
+                    nn_tools.Conv1DLayer(
+                        12, 16, 8,
+                        nn_tools.AffineLayer(4),
+                        2
+                    ),
+                    nn_tools.TanhLayer(48),
+
+                    nn_tools.Conv1DLayer(
+                        10, 12, 4,
+                        nn_tools.AffineLayer(4),
+                        0
+                    ),
+                    nn_tools.TanhLayer(40),
                 ],
                 [
                     nn_tools.FilterLayer([100, 101, 102, 103, 104]),
@@ -342,7 +356,7 @@ class RobotBrain:
         self._calculator.add_layer(nn_tools.ParallelLayer(
             [
                 [
-                    nn_tools.FilterLayer([i for i in range(0, 36)]),
+                    nn_tools.FilterLayer([i for i in range(0, 43)]),
                     nn_tools.AffineLayer(20),
                     nn_tools.TanhLayer(20),
                     nn_tools.AffineLayer(10),
