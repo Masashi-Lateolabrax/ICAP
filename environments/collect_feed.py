@@ -305,33 +305,33 @@ class _Feed:
 
 class RobotBrain:
     def __init__(self, para):
-        self._calculator = nn_tools.Calculator(15 + 3 + 2)
+        self._calculator = nn_tools.Calculator(30 + 3 + 2)
 
         self._calculator.add_layer(nn_tools.ParallelLayer(
             [
                 [
-                    nn_tools.FilterLayer([i for i in range(0, 15)]),
+                    nn_tools.FilterLayer([i for i in range(0, 30)]),
 
                     nn_tools.ZeroPaddedConv1DLayer(
-                        17, 3, 1,
+                        32, 3, 1,
                         nn_tools.AffineLayer(5),
                         (2, 2)
                     ),
-                    nn_tools.TanhLayer(85),
+                    nn_tools.TanhLayer(160),
 
                     nn_tools.ZeroPaddedConv1DLayer(
-                        17, 5, 5,
+                        32, 5, 5,
                         nn_tools.AffineLayer(3),
                         (0, 0)
                     ),
-                    nn_tools.TanhLayer(51),
+                    nn_tools.TanhLayer(96),
 
                     nn_tools.ZeroPaddedConv1DLayer(
-                        8, 12, 6,
-                        nn_tools.AffineLayer(3),
-                        (2, 1)
+                        17, 12, 6,
+                        nn_tools.AffineLayer(2),
+                        (6, 6)
                     ),
-                    nn_tools.TanhLayer(24),
+                    nn_tools.TanhLayer(34),
                 ],
                 [
                     nn_tools.FilterLayer([15, 16, 17, 18, 19]),
@@ -342,13 +342,11 @@ class RobotBrain:
         self._calculator.add_layer(nn_tools.ParallelLayer(
             [
                 [
-                    nn_tools.FilterLayer([i for i in range(0, 24 + 3)]),
+                    nn_tools.FilterLayer([i for i in range(34 + 3)]),
                     nn_tools.AffineLayer(10),
                     nn_tools.TanhLayer(10),
                     nn_tools.AffineLayer(10),
                     nn_tools.IsMaxLayer(10),
-                    nn_tools.AffineLayer(10),
-                    nn_tools.IsMaxLayer(10)
                 ],
                 [
                     nn_tools.FilterLayer([27, 28]),
@@ -358,9 +356,6 @@ class RobotBrain:
 
         self._calculator.add_layer(nn_tools.AffineLayer(12))
         self._calculator.add_layer(nn_tools.TanhLayer(12))
-
-        self._calculator.add_layer(nn_tools.AffineLayer(5))
-        self._calculator.add_layer(nn_tools.TanhLayer(5))
 
         self._calculator.add_layer(nn_tools.AffineLayer(4))
         self._calculator.add_layer(nn_tools.SigmoidLayer(4))
