@@ -119,6 +119,9 @@ class BaseCMAES:
         if centroid is None:
             centroid = numpy.zeros((dim,))
 
+        if cmatrix is None:
+            cmatrix = numpy.identity(dim)
+
         self._strategy = cma.Strategy(
             centroid=centroid,
             sigma=sigma,
