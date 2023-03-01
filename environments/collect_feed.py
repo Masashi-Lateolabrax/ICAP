@@ -442,12 +442,13 @@ class _World:
         self.robot_decisions = numpy.zeros((self.num_robots, 2 + len(self.pheromone_field)))
 
     def calc_robot_sight(self, robot: _Robot, start, end, div):
-        # 50cm先のロボットを鮮明に認識するためにはtheta<19.29を満たさなくてはならない．
-
         mat = numpy.zeros((3, 3))
         mat[2, 2] = 1.0
         step = (end - start) / div
         res = numpy.zeros(div)
+        start += step
+
+        offset = numpy.array([0, 0, 4.5])
 
         for i in range(div):
             theta = start + step * i
@@ -456,16 +457,18 @@ class _World:
             mat[1, 0] = -numpy.sin(theta)
             mat[1, 1] = numpy.cos(theta)
             _, distance = self.model.calc_ray(
-                robot.pos,
+                robot.pos + offset,
                 numpy.dot(mat, robot.direction),
+                exclude_id=robot.id
             )
-            res[i] = distance
 
-        mask = res < 0
-        res **= 2
-        res += 1.0
-        res = 1.0 / res
-        res[mask] = 0
+            res[i] = distance if distance >= 0 else float("inf")
+
+        # 約200cmで知覚値が0.001になる計算．
+        numpy.divide(res, 50, out=res)
+        numpy.tanh(res, out=res)
+        numpy.subtract(1.0, res, out=res)
+
         return res
 
     def get_robot(self, index: int) -> _Robot:
