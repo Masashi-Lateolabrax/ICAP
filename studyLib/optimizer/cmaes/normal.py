@@ -34,10 +34,11 @@ class CMAES:
             mu: int = -1,
             sigma: float = 0.3,
             centroid=None,
+            cmatrix=None,
             minimalize: bool = True,
             max_thread: int = 1,
     ):
-        self._base = base.BaseCMAES(dim, population, mu, sigma, centroid, minimalize, max_thread)
+        self._base = base.BaseCMAES(dim, population, mu, sigma, centroid, minimalize, max_thread, cmatrix)
         self._generation = generation
 
     def get_best_para(self) -> array.array:

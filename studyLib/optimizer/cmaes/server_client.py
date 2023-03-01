@@ -69,9 +69,10 @@ class ServerCMAES:
             mu: int = -1,
             sigma: float = 0.3,
             centroid=None,
+            cmatrix=None,
             minimalize: bool = True,
     ):
-        self._base = base.BaseCMAES(dim, population, mu, sigma, centroid, minimalize, population)
+        self._base = base.BaseCMAES(dim, population, mu, sigma, centroid, minimalize, population, cmatrix)
         self._generation = generation
 
         _ServerProc.listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
