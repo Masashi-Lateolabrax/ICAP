@@ -551,9 +551,8 @@ class _World:
 
 
 class RobotSightViewer:
-    def __init__(self, model: wrap_mjc.WrappedModel):
+    def __init__(self, model: wrap_mjc.WrappedModel, offset: tuple[float, float]):
         self.cells = []
-        offset = (700, 600)
         w = 12
         h = 300
         for i in range(100):
@@ -619,6 +618,8 @@ class Environment(optimizer.MuJoCoEnvInterface):
         self.window = window
         self.camera = camera
 
+        self._sight_viewer = RobotSightViewer(self._world.model, (700, 600))
+
         for _ in range(0, 5):
             self._world.calc_step()
 
@@ -630,6 +631,9 @@ class Environment(optimizer.MuJoCoEnvInterface):
                 # 100度(0.55piRAD)まで．15度=0.083piRAD
                 robot_sight = self._world.calc_robot_sight(robot, -numpy.pi * 0.55, numpy.pi * 0.55, 15)
                 pheromone = self._world.get_pheromone(robot.pos[0], robot.pos[1])
+
+                if i == 0:
+                    self._sight_viewer.update(robot_sight)
 
                 nest_vec = numpy.dot(robot.inv_rot, self._world.nest_pos - robot.pos)
                 nest_dist = numpy.linalg.norm(nest_vec, ord=2)
