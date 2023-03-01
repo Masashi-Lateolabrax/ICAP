@@ -541,7 +541,7 @@ class _World:
             window.flush()
 
     def secretion(self, pos, secretion):
-        gain = 5.0
+        gain = 20.0
         for i, s in enumerate(secretion):
             self.pheromone_field[i].add_liquid(pos[0], pos[1], s * self.timestep * gain)
 
