@@ -4,7 +4,7 @@ from .calculator import Calculator
 
 from .layer.affine_layer import AffineLayer
 from .layer.block_layer import BlockLayer
-from .layer.conv_layer import Conv1DLayer
+from .layer.conv_layer import ZeroPaddedConv1DLayer
 from .layer.filter_layer import FilterLayer
 from .layer.fold_layer import FoldLayer, AddFoldLayer, MulFoldLayer
 from .layer.iner_dot_layer import InnerDotLayer

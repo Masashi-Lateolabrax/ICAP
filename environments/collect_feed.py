@@ -305,50 +305,36 @@ class _Feed:
 
 class RobotBrain:
     def __init__(self, para):
-        self._calculator = nn_tools.Calculator(105)
+        self._calculator = nn_tools.Calculator(30 + 3 + 2)
 
         self._calculator.add_layer(nn_tools.ParallelLayer(
             [
                 [
-                    nn_tools.FilterLayer([i for i in range(0, 100)]),
+                    nn_tools.FilterLayer([i for i in range(0, 30)]),
 
-                    nn_tools.Conv1DLayer(
-                        52, 4, 2,
-                        nn_tools.AffineLayer(6),
-                        3
+                    nn_tools.ZeroPaddedConv1DLayer(
+                        32, 3, 1,
+                        nn_tools.AffineLayer(5),
+                        (2, 2)
                     ),
-                    nn_tools.TanhLayer(312),
+                    nn_tools.TanhLayer(160),
 
-                    nn_tools.Conv1DLayer(
-                        52, 6, 6,
-                        nn_tools.AffineLayer(4),
-                        0
+                    nn_tools.ZeroPaddedConv1DLayer(
+                        32, 5, 5,
+                        nn_tools.AffineLayer(3),
+                        (0, 0)
                     ),
-                    nn_tools.TanhLayer(208),
+                    nn_tools.TanhLayer(96),
 
-                    nn_tools.Conv1DLayer(
-                        25, 16, 8,
-                        nn_tools.AffineLayer(4),
-                        0
+                    nn_tools.ZeroPaddedConv1DLayer(
+                        17, 12, 6,
+                        nn_tools.AffineLayer(2),
+                        (6, 6)
                     ),
-                    nn_tools.TanhLayer(100),
-
-                    nn_tools.Conv1DLayer(
-                        12, 16, 8,
-                        nn_tools.AffineLayer(4),
-                        2
-                    ),
-                    nn_tools.TanhLayer(48),
-
-                    nn_tools.Conv1DLayer(
-                        10, 12, 4,
-                        nn_tools.AffineLayer(4),
-                        0
-                    ),
-                    nn_tools.TanhLayer(40),
+                    nn_tools.TanhLayer(34),
                 ],
                 [
-                    nn_tools.FilterLayer([100, 101, 102, 103, 104]),
+                    nn_tools.FilterLayer([15, 16, 17, 18, 19]),
                 ]
             ]
         ))
@@ -356,25 +342,20 @@ class RobotBrain:
         self._calculator.add_layer(nn_tools.ParallelLayer(
             [
                 [
-                    nn_tools.FilterLayer([i for i in range(0, 43)]),
-                    nn_tools.AffineLayer(30),
-                    nn_tools.TanhLayer(30),
-                    nn_tools.AffineLayer(20),
-                    nn_tools.TanhLayer(20),
+                    nn_tools.FilterLayer([i for i in range(34 + 3)]),
                     nn_tools.AffineLayer(10),
-                    nn_tools.IsMaxLayer(10)
+                    nn_tools.TanhLayer(10),
+                    nn_tools.AffineLayer(10),
+                    nn_tools.IsMaxLayer(10),
                 ],
                 [
-                    nn_tools.FilterLayer([36, 37]),
+                    nn_tools.FilterLayer([27, 28]),
                 ]
             ]
         ))
 
         self._calculator.add_layer(nn_tools.AffineLayer(12))
         self._calculator.add_layer(nn_tools.TanhLayer(12))
-
-        self._calculator.add_layer(nn_tools.AffineLayer(5))
-        self._calculator.add_layer(nn_tools.TanhLayer(5))
 
         self._calculator.add_layer(nn_tools.AffineLayer(4))
         self._calculator.add_layer(nn_tools.SigmoidLayer(4))
@@ -390,7 +371,8 @@ class RobotBrain:
 
 
 class _Robot:
-    def __init__(self, pos, direction, rot, inv_rot, velocity, decision):
+    def __init__(self, id_, pos, direction, rot, inv_rot, velocity, decision):
+        self.id = id_
         self.pos = pos
         self.direction = direction
         self.rot = rot
@@ -459,6 +441,9 @@ class _World:
         mat[2, 2] = 1.0
         step = (end - start) / div
         res = numpy.zeros(div)
+        start += step
+
+        offset = numpy.array([0, 0, 4.5])
 
         for i in range(div):
             theta = start + step * i
@@ -467,16 +452,18 @@ class _World:
             mat[1, 0] = -numpy.sin(theta)
             mat[1, 1] = numpy.cos(theta)
             _, distance = self.model.calc_ray(
-                robot.pos + robot.direction * 17.6,
-                numpy.dot(mat, robot.direction)
+                robot.pos + offset,
+                numpy.dot(mat, robot.direction),
+                exclude_id=robot.id
             )
-            res[i] = distance
 
-        mask = res < 0
-        res **= 2
-        res += 1.0
-        res = 1.0 / res
-        res[mask] = 0
+            res[i] = distance if distance >= 0 else float("inf")
+
+        # 約200cmで知覚値が0.001になる計算．
+        numpy.divide(res, 50, out=res)
+        numpy.tanh(res, out=res)
+        numpy.subtract(1.0, res, out=res)
+
         return res
 
     def get_robot(self, index: int) -> _Robot:
@@ -492,11 +479,12 @@ class _World:
         body = self.model.get_body(f"robot{index}")
         velocimeter = self.model.get_sensor(f"robot{index}_velocimeter")
 
+        id_ = body.get_id()
         pos = body.get_xpos()
         velocity = velocimeter.get_data()
         direction, rot, inv_rot = calc_robot_direction(body)
 
-        return _Robot(pos, direction, rot, inv_rot, velocity, self.robot_decisions[index])
+        return _Robot(id_, pos, direction, rot, inv_rot, velocity, self.robot_decisions[index])
 
     def get_pheromone(self, x, y):
         return [field.get_gas(x, y) for field in self.pheromone_field]
@@ -561,19 +549,21 @@ class _World:
 
 
 class RobotSightViewer:
-    def __init__(self, model: wrap_mjc.WrappedModel):
+    def __init__(self, model: wrap_mjc.WrappedModel, offset: tuple[float, float], div: int):
         self.cells = []
-        offset = (700, 600)
-        w = 12
+        w = 30
         h = 300
-        for i in range(100):
+        for i in range(div):
             geom = model.add_deco_geom(mujoco.mjtGeom.mjGEOM_PLANE)
             self.cells.append(geom)
             geom.set_size((w, h, 0.05))
             geom.set_pos((w * i + offset[0], offset[1], 0))
 
     def update(self, sight):
+        offset = 0.01
         for i, s in enumerate(sight):
+            if s < offset:
+                s = offset
             self.cells[i].set_rgba((s, s, s, 1))
 
 
@@ -629,6 +619,8 @@ class Environment(optimizer.MuJoCoEnvInterface):
         self.window = window
         self.camera = camera
 
+        self._sight_viewer = RobotSightViewer(self._world.model, (700, 600), 30)
+
         for _ in range(0, 5):
             self._world.calc_step()
 
@@ -637,8 +629,12 @@ class Environment(optimizer.MuJoCoEnvInterface):
             for i in range(self._world.num_robots):
                 robot = self._world.get_robot(i)
 
-                robot_sight = self._world.calc_robot_sight(robot, -numpy.pi * 0.55, numpy.pi * 0.55, 100)
+                # 約6.65度
+                robot_sight = self._world.calc_robot_sight(robot, -numpy.pi * 0.55, numpy.pi * 0.55, 30)
                 pheromone = self._world.get_pheromone(robot.pos[0], robot.pos[1])
+
+                if i == 7:
+                    self._sight_viewer.update(robot_sight)
 
                 nest_vec = numpy.dot(robot.inv_rot, self._world.nest_pos - robot.pos)
                 nest_dist = numpy.linalg.norm(nest_vec, ord=2)

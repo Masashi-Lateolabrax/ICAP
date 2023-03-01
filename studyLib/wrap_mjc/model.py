@@ -377,7 +377,12 @@ class WrappedModel:
     def coolback(self):
         pass
 
-    def calc_ray(self, start_point: (float, float, float), vector: (float, float, float)) -> (str, float):
+    def calc_ray(
+            self,
+            start_point: (float, float, float),
+            vector: (float, float, float),
+            exclude_id: int = -1
+    ) -> (str, float):
         i = numpy.zeros((1, 1), dtype=numpy.int32)
         pnt = numpy.array(start_point).reshape((3, 1))
         vec = numpy.array(vector).reshape((3, 1))
@@ -386,7 +391,7 @@ class WrappedModel:
             pnt=pnt, vec=vec,
             geomgroup=None,
             flg_static=1,
-            bodyexclude=-1,
+            bodyexclude=exclude_id,
             geomid=i
         )
         name = self.model.geom(i[0, 0]).name if distance >= 0.0 else ""
