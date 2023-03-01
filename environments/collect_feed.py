@@ -357,12 +357,12 @@ class RobotBrain:
             [
                 [
                     nn_tools.FilterLayer([i for i in range(0, 43)]),
+                    nn_tools.AffineLayer(30),
+                    nn_tools.TanhLayer(30),
                     nn_tools.AffineLayer(20),
                     nn_tools.TanhLayer(20),
                     nn_tools.AffineLayer(10),
-                    nn_tools.TanhLayer(10),
-                    nn_tools.AffineLayer(5),
-                    nn_tools.IsMaxLayer(5)
+                    nn_tools.IsMaxLayer(10)
                 ],
                 [
                     nn_tools.FilterLayer([36, 37]),
@@ -370,8 +370,8 @@ class RobotBrain:
             ]
         ))
 
-        self._calculator.add_layer(nn_tools.AffineLayer(7))
-        self._calculator.add_layer(nn_tools.TanhLayer(7))
+        self._calculator.add_layer(nn_tools.AffineLayer(12))
+        self._calculator.add_layer(nn_tools.TanhLayer(12))
 
         self._calculator.add_layer(nn_tools.AffineLayer(5))
         self._calculator.add_layer(nn_tools.TanhLayer(5))
