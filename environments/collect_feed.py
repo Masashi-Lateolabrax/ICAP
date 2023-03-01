@@ -456,8 +456,8 @@ class _World:
             mat[1, 0] = -numpy.sin(theta)
             mat[1, 1] = numpy.cos(theta)
             _, distance = self.model.calc_ray(
-                robot.pos + robot.direction * 17.6,
-                numpy.dot(mat, robot.direction)
+                robot.pos,
+                numpy.dot(mat, robot.direction),
             )
             res[i] = distance
 
