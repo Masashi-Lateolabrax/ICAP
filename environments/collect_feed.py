@@ -444,7 +444,6 @@ class _World:
         mat = numpy.zeros((3, 3))
         mat[2, 2] = 1.0
         step = (end - start) / div
-        tmp = numpy.zeros(div)
         res = numpy.zeros(div)
 
         for i in range(div):
@@ -460,11 +459,11 @@ class _World:
             res[i] = distance
 
         mask = res < 0
-        numpy.multiply(0.01, res, out=tmp)
-        numpy.tanh(tmp, out=res)
-        numpy.subtract([1], res, out=tmp)
-        tmp[mask] = 0
-        return tmp
+        res **= 2
+        res += 1.0
+        res = 1.0 / res
+        res[mask] = 0
+        return res
 
     def get_robot(self, index: int) -> _Robot:
         def calc_robot_direction(robot_body: wrap_mjc.WrappedBody):
