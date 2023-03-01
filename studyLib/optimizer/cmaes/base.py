@@ -174,7 +174,8 @@ class BaseCMAES:
             min_para,
             max_score,
             max_para,
-            self._strategy.sigma
+            self._strategy.sigma,
+            self._strategy.C
         )
 
         self._strategy.update(self._individuals)
