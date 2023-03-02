@@ -229,7 +229,7 @@ class BaseCMAES:
                     calculation_finished = False
 
                     p = proc(gen, i, ind, env_creator)
-                    if not h.finished():
+                    if not p.finished():
                         handles.append(p)
                     else:
                         r_gen, r_i, r_score = p.join()
