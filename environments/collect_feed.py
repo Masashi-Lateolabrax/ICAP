@@ -548,7 +548,7 @@ class _World:
             self.pheromone_field[i].add_liquid(pos[0], pos[1], s * self.timestep * gain)
 
 
-class RobotSightViewer:
+class RobotDebugger:
     def __init__(self, model: wrap_mjc.WrappedModel, offset: tuple[float, float], div: int):
         self.cells = []
         w = 30
@@ -619,7 +619,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
         self.window = window
         self.camera = camera
 
-        self._sight_viewer = None  # RobotSightViewer(self._world.model, (700, 600), 30)
+        # self._sight_viewer = RobotDebugger(self._world.model, (700, 600), 30)
 
         for _ in range(0, 5):
             self._world.calc_step()
@@ -651,9 +651,9 @@ class Environment(optimizer.MuJoCoEnvInterface):
             self._thinking_counter = self._thinking_interval
         self._thinking_counter -= 1
 
-        for i in range(self._world.num_obstacles):
-            o = self._world.get_obstacle(i)
-            self._world.secretion(o.pos, [5, 0])
+        for i in range(self._world.num_feeds):
+            f = self._world.get_feed(i)
+            self._world.secretion(f.pos, [5, 0])
 
         if not self._world.calc_step():
             return float("inf")
