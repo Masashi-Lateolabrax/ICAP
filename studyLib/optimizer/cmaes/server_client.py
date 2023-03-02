@@ -82,7 +82,6 @@ class _ServerProc(base.ProcInterface):
         self.queue = mp.Queue(1)
         self.handle = threading.Thread(target=_proc, args=(gen, i, ind, env_creator, self.queue, sct))
         self.handle.start()
-        time.sleep(1)
 
     def finished(self) -> bool:
         return self.queue.qsize() > 0
