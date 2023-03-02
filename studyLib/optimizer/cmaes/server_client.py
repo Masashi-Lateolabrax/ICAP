@@ -215,7 +215,7 @@ class ClientCMAES:
 
         return ClientCMAES.Result.Succeed, (gen, i, para, default_env_creator)
 
-    def _return_score(self, sock: socket.socket, score: float, gen: int, i: int):
+    def _return_score(self, sock: socket.socket, gen: int, i: int, score: float):
         res_type, res_data = self._connect_server(sock)
         if res_type != ClientCMAES.Result.Succeed:
             sock.close()

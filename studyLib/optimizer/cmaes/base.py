@@ -210,15 +210,18 @@ class BaseCMAES:
                 calculation_finished = True
 
                 index = 0
-                while index < len(handles) or self.max_thread <= len(handles):
+                while index < len(handles):
                     if handles[index].finished():
                         p = handles.pop(index)
                         r_gen, r_i, r_score = p.join()
-                        if r_gen == gen:
+                        if r_gen == gen and not numpy.isnan(r_score):
                             self._individuals[r_i].fitness.values = (r_score,)
-                    else:
-                        index += 1
-                    time.sleep(0.01)
+                        continue
+
+                    index += 1
+                    if self.max_thread <= len(handles) <= index:
+                        index = 0
+                        time.sleep(0.01)
 
                 for i, ind in enumerate(self._individuals):
                     if not numpy.isnan(ind.fitness.values[0]):
