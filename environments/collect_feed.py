@@ -655,6 +655,9 @@ class Environment(optimizer.MuJoCoEnvInterface):
             o = self._world.get_obstacle(i)
             self._world.secretion(o.pos, [5, 0])
 
+        if not self._world.calc_step():
+            return float("inf")
+
         # Calculate loss
         feed_gain_s = 9.5
         feed_range_s = 4000.0
@@ -696,9 +699,6 @@ class Environment(optimizer.MuJoCoEnvInterface):
         dt_loss_obstacle_robot *= 1e13
         # print(dt_loss_feed_nest, dt_loss_feed_robot, dt_loss_obstacle_robot)
         self._loss += (dt_loss_feed_nest + dt_loss_feed_robot + dt_loss_obstacle_robot) * self._world.timestep
-
-        if not self._world.calc_step():
-            return float("inf")
 
         return self._loss
 
