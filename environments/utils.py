@@ -1,4 +1,5 @@
 import numpy
+import multiprocessing
 from studyLib import optimizer, miscellaneous, wrap_mjc
 
 
@@ -46,7 +47,7 @@ def _client_proc(
         buf_size: int,
         timeout: float,
         retry: int,
-        global_gen: list[int]
+        global_gen: multiprocessing.Value
 ):
     import time
     import datetime
@@ -105,12 +106,10 @@ def cmaes_optimize_client(
         timeout: float = 10.0,
         retry: int = 6,
 ):
-    from multiprocessing import Process
-
-    global_gen = [0]
+    global_gen = multiprocessing.Value("i", 0)
     process_list = []
     for proc_id in range(num_thread):
-        process = Process(
+        process = multiprocessing.Process(
             target=_client_proc,
             args=(proc_id, default_env_creator, address, port, buf_size, timeout, retry, global_gen)
         )

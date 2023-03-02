@@ -66,7 +66,6 @@ class _ServerProc(base.ProcInterface):
 
     def __init__(self, gen: int, i: int, ind: base.Individual, env_creator: EnvCreator):
         import select
-        import time
 
         r = []
         for ec in range(10):
@@ -239,7 +238,7 @@ class ClientCMAES:
 
         return ClientCMAES.Result.Succeed, None
 
-    def optimize(self, default_env_creator: EnvCreator, global_gen: list[int], timeout: float = 60.0):
+    def optimize(self, default_env_creator: EnvCreator, global_gen: mp.Value, timeout: float = 60.0):
         import numpy
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -253,16 +252,16 @@ class ClientCMAES:
         gen, i, para, env_creator = res_data
         env = env_creator.create(para)
 
-        if global_gen[0] < gen:
-            global_gen[0] = gen
+        if global_gen.value < gen:
+            global_gen.value = gen
 
-        score = float("nan")
+        score = 0.0
         for t in range(int(env_creator.time / env_creator.timestep)):
-            score = env.calc_step()
             if numpy.isinf(score):
                 break
-            elif gen > global_gen[0]:
-                return ClientCMAES.Result.ForceTerminated, f"ServerCMAES has created new generation. ({gen} -> {global_gen[0]})"
+            elif gen < global_gen.value:
+                return ClientCMAES.Result.ForceTerminated, f"ServerCMAES has created new generation. ({gen} -> {global_gen.value})"
+            score = env.calc_step()
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(timeout)
