@@ -62,7 +62,7 @@ class _MinimalizeIndividual(Individual):
 
 class ProcInterface(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def __init__(self, i: int, ind: Individual, env_creator: EnvCreator):
+    def __init__(self, gen: int, i: int, ind: Individual, env_creator: EnvCreator):
         raise NotImplemented()
 
     @abc.abstractmethod
@@ -70,19 +70,21 @@ class ProcInterface(metaclass=abc.ABCMeta):
         raise NotImplemented()
 
     @abc.abstractmethod
-    def join(self) -> float:
+    def join(self) -> (int, int, float):
         raise NotImplemented()
 
 
 class _OneThreadProc(ProcInterface):
-    def __init__(self, ind: array.array, env_creator: EnvCreator):
+    def __init__(self, gen: int, i: int, ind: array.array, env_creator: EnvCreator):
+        self.gen = gen
+        self.i = i
         self.score = env_creator.create(ind).calc()
 
     def finished(self) -> bool:
         return True
 
-    def join(self) -> float:
-        return self.score
+    def join(self) -> (int, int, float):
+        return self.gen, self.i, self.score
 
 
 class BaseCMAES:
@@ -132,7 +134,7 @@ class BaseCMAES:
 
         self._individuals: list[Individual] = self._strategy.generate(self._ind_type)
 
-    def _generate_new_generation(self):
+    def _generate_new_generation(self) -> (int, float, float, float, numpy.array):
         num_error = 0
         avg = 0.0
         min_score = float("inf")
@@ -142,7 +144,7 @@ class BaseCMAES:
 
         for i, ind in enumerate(self._individuals):
             if numpy.isnan(ind.fitness.values[0]):
-                return None
+                raise "An unknown error occurred."
             elif numpy.isinf(ind.fitness.values[0]):
                 num_error += 1
                 continue
@@ -200,35 +202,35 @@ class BaseCMAES:
         start_time = datetime.datetime.now()
         self._start_handler(gen, generation, start_time)
 
-        recovery_mode = False
-        res = None
+        calculation_finished = False
+        handles = []
 
         try:
-            while res is None:
-                handles = {}
+            while not calculation_finished:
+                calculation_finished = True
+
+                index = 0
+                while index < len(handles) or self.max_thread <= len(handles):
+                    if handles[index].finished():
+                        p = handles.pop(index)
+                        r_gen, r_i, r_score = p.join()
+                        if r_gen == gen:
+                            self._individuals[r_i].fitness.values = (r_score,)
+                    else:
+                        index += 1
+                    time.sleep(0.01)
+
                 for i, ind in enumerate(self._individuals):
                     if not numpy.isnan(ind.fitness.values[0]):
                         continue
-                    elif recovery_mode:
-                        print(f"Retry No.{i}.")
 
-                    handles[i] = proc(i, ind, env_creator)
+                    calculation_finished = False
+                    handles.append(
+                        proc(gen, i, ind, env_creator)
+                    )
 
-                    while len(handles) >= self.max_thread:
-                        remove_list = []
-                        for key in handles.keys():
-                            if handles[key].finished():
-                                remove_list.append(key)
-                        for key in remove_list:
-                            p = handles.pop(key)
-                            self._individuals[key].fitness.values = (p.join(),)
-                        time.sleep(0.0001)
-
-                for key, p in handles.items():
-                    self._individuals[key].fitness.values = (p.join(),)
-
-                res = self._generate_new_generation()
-                recovery_mode = res is None
+                    if self.max_thread <= len(handles):
+                        break
 
         except KeyboardInterrupt:
             print(f"Interrupt CMAES Optimizing.")
@@ -243,7 +245,7 @@ class BaseCMAES:
             self._history.save()
             sys.exit()
 
-        num_error, avg, min_value, max_value, good_para = res
+        num_error, avg, min_value, max_value, good_para = self._generate_new_generation()
 
         finish_time = datetime.datetime.now()
         self._end_handler(

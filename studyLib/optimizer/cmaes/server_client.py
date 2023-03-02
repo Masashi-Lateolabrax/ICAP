@@ -12,29 +12,61 @@ from studyLib.optimizer import Hist, EnvCreator, MuJoCoEnvCreator
 from studyLib.optimizer.cmaes import base
 
 
-def _proc(i: int, ind: base.Individual, env_creator: EnvCreator, queue: mp.Queue, sct: socket.socket):
-    buf = [env_creator.save()]
-    buf.extend([struct.pack("<d", x) for x in ind])
-    data_bytes = b''.join(buf)
-    data_size = len(data_bytes)
+def _proc(gen: int, i: int, ind: base.Individual, env_creator: EnvCreator, queue: mp.Queue, sct: socket.socket):
+    received = b""
+    request_type = -1
+    r_gen = 0
+    r_i = 0
+    r_score = float("nan")
+
     try:
         sct.settimeout(600.0)
-        sct.send(struct.pack("<Q", data_size))
-        sct.send(data_bytes)
-        received = sct.recv(1024)
-        score = struct.unpack("<d", received)[0]
     except Exception as e:
-        print(f"[ERROR] {e} (ID:{i})")
-        score = float("nan")
+        print(f"[ERROR(NET1)] {e} (ID:{i})")
+
+    try:
+        received = sct.recv(1024)
+        while len(received) < 4:
+            received = b"".join([received, sct.recv(1)])
+        request_type = struct.unpack("<I", received[0:4])[0]
+        received = received[4:]
+    except Exception as e:
+        print(f"[ERROR(NET2)] {e} (ID:{i})")
+
+    if request_type == 1:  # Send Data
+        try:
+            buf = [struct.pack("<I", gen), struct.pack("<I", i)]
+            buf.extend([env_creator.save()])
+            buf.extend([struct.pack("<d", x) for x in ind])
+            data_bytes = b''.join(buf)
+            data_size = len(data_bytes)
+            sct.send(struct.pack("<Q", data_size))
+            sct.send(data_bytes)
+        except Exception as e:
+            print(f"[ERROR(NET3)] {e} (ID:{i})")
+
+    elif request_type == 2:  # Receive Result
+        size = 4 + 4 + 8
+        try:
+            while len(received) < size:
+                received = b"".join([received, sct.recv(1)])
+            r_gen, r_i, r_score = struct.unpack("<IId", received[0:size])
+        except Exception as e:
+            print(f"[ERROR(NET4)] {e} (ID:{i})")
+
+    else:
+        print(f"[ERROR(NET5)] An unknown error occurred. (ID:{i})")
+
     sct.close()
-    queue.put(score)
+    queue.put((r_gen, r_i, r_score))
 
 
 class _ServerProc(base.ProcInterface):
     listener: socket.socket = None
 
-    def __init__(self, i: int, ind: base.Individual, env_creator: EnvCreator):
+    def __init__(self, gen: int, i: int, ind: base.Individual, env_creator: EnvCreator):
         import select
+        import time
 
         r = []
         for ec in range(10):
@@ -48,13 +80,14 @@ class _ServerProc(base.ProcInterface):
         sct, addr = self.listener.accept()
 
         self.queue = mp.Queue(1)
-        self.handle = threading.Thread(target=_proc, args=(i, ind, env_creator, self.queue, sct))
+        self.handle = threading.Thread(target=_proc, args=(gen, i, ind, env_creator, self.queue, sct))
         self.handle.start()
+        time.sleep(1)
 
     def finished(self) -> bool:
         return self.queue.qsize() > 0
 
-    def join(self) -> float:
+    def join(self) -> (int, int, float):
         self.handle.join()
         return self.queue.get()
 
@@ -112,7 +145,7 @@ class ClientCMAES:
         self._buf_size = buf_size
 
     @staticmethod
-    def _treat_sock_error(sock: socket.socket, e):
+    def _treat_sock_error(e):
         os = platform.system()
         if os == "Windows":
             if e.errno == 10054:  # [WinError 10054] 既存の接続はリモート ホストに強制的に切断されました。
@@ -131,19 +164,45 @@ class ClientCMAES:
         except socket.timeout as e:
             return ClientCMAES.Result.Timeout, e
         except socket.error as e:
-            return ClientCMAES._treat_sock_error(sock, e)
+            return ClientCMAES._treat_sock_error(e)
+        return ClientCMAES.Result.Succeed, None
+
+    def _request_server(self, sock: socket.socket, request: int):
+        try:
+            sock.send(struct.pack("<I", request))
+
+        except socket.timeout as e:
+            return ClientCMAES.Result.FatalErrorOccurred, e
+
+        except socket.error as e:
+            return ClientCMAES._treat_sock_error(e)
+
         return ClientCMAES.Result.Succeed, None
 
     def _receive_data(self, sock: socket.socket, default_env_creator: EnvCreator):
-        try:
-            buf = b""
-            while len(buf) < 8:
-                buf = b"".join([buf, sock.recv(8)])
-            data_size = struct.unpack("<Q", buf[0:8])[0]
+        res_type, res_data = self._connect_server(sock)
+        if res_type != ClientCMAES.Result.Succeed:
+            sock.close()
+            return res_type, res_data
 
+        res_type, res_data = self._request_server(sock, 1)
+        if res_type != ClientCMAES.Result.Succeed:
+            sock.close()
+            return res_type, res_data
+
+        try:
+            buf = sock.recv(self._buf_size)
+
+            while len(buf) < 8:
+                buf = b"".join([buf, sock.recv(1)])
+            data_size = struct.unpack("<Q", buf[0:8])[0]
             buf = buf[8:]
+
             while len(buf) < data_size:
-                buf = b"".join([buf, sock.recv(self._buf_size)])
+                buf = b"".join([buf, sock.recv(1)])
+
+            gen, i = struct.unpack("<II", buf[0:8])
+            buf = buf[8:]
 
             env_size = default_env_creator.load(buf)
             para = [struct.unpack("<d", buf[i:i + 8])[0] for i in range(env_size, len(buf), 8)]
@@ -152,49 +211,55 @@ class ClientCMAES:
             return ClientCMAES.Result.Timeout, e
 
         except socket.error as e:
-            return ClientCMAES._treat_sock_error(sock, e)
+            return ClientCMAES._treat_sock_error(e)
 
-        return ClientCMAES.Result.Succeed, (para, default_env_creator)
+        return ClientCMAES.Result.Succeed, (gen, i, para, default_env_creator)
 
-    def _return_score(self, sock: socket.socket, score: float):
+    def _return_score(self, sock: socket.socket, score: float, gen: int, i: int):
+        res_type, res_data = self._connect_server(sock)
+        if res_type != ClientCMAES.Result.Succeed:
+            sock.close()
+            return res_type, res_data
+
+        res_type, res_data = self._request_server(sock, 2)
+        if res_type != ClientCMAES.Result.Succeed:
+            sock.close()
+            return res_type, res_data
+
         try:
+            sock.send(struct.pack("<I", gen))
+            sock.send(struct.pack("<I", i))
             sock.send(struct.pack("<d", score))
 
         except socket.timeout as e:
             return ClientCMAES.Result.FatalErrorOccurred, e
 
         except socket.error as e:
-            return ClientCMAES._treat_sock_error(sock, e)
+            return ClientCMAES._treat_sock_error(e)
 
         return ClientCMAES.Result.Succeed, None
 
     def optimize(self, default_env_creator: EnvCreator, timeout: float = 60.0):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(timeout)
-
-        res, pe = self._connect_server(sock)
-        if res != ClientCMAES.Result.Succeed:
+        res_type, res_data = self._receive_data(sock, default_env_creator)
+        if res_type != ClientCMAES.Result.Succeed:
             sock.close()
-            return res, pe
+            return res_type, res_data
+        sock.close()
 
-        res, pe = self._receive_data(sock, default_env_creator)
-
-        if res != ClientCMAES.Result.Succeed:
-            sock.close()
-            return res, pe
-
-        para = pe[0]
-        env_creator: EnvCreator = pe[1]
+        gen, i, para, env_creator = res_data
         env = env_creator.create(para)
         score = env.calc()
 
-        res, e = self._return_score(sock, score)
-
-        if res != ClientCMAES.Result.Succeed:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(timeout)
+        res_type, e = self._return_score(sock, gen, i, score)
+        if res_type != ClientCMAES.Result.Succeed:
             sock.close()
-            return res, e
-
+            return res_type, e
         sock.close()
+
         return ClientCMAES.Result.Succeed, (para, env)
 
     def optimize_and_show(
@@ -205,28 +270,22 @@ class ClientCMAES:
     ):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(timeout)
-
-        res, pe = self._connect_server(sock)
-        if res != ClientCMAES.Result.Succeed:
+        res_type, res_data = self._receive_data(sock, default_env_creator)
+        if res_type != ClientCMAES.Result.Succeed:
             sock.close()
-            return res, pe
+            return res_type, res_data
+        sock.close()
 
-        res, pe = self._receive_data(sock, default_env_creator)
-
-        if res != ClientCMAES.Result.Succeed:
-            sock.close()
-            return res, pe
-
-        para = pe[0]
-        env_creator: MuJoCoEnvCreator = pe[1]
+        gen, i, para, env_creator = res_data
         env = env_creator.create_mujoco_env(para, window, camera)
         score = env.calc_and_show()
 
-        res, e = self._return_score(sock, score)
-
-        if res != ClientCMAES.Result.Succeed:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(timeout)
+        res_type, e = self._return_score(sock, gen, i, score)
+        if res_type != ClientCMAES.Result.Succeed:
             sock.close()
-            return res, e
-
+            return res_type, e
         sock.close()
+
         return ClientCMAES.Result.Succeed, (para, env)
