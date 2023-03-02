@@ -137,6 +137,7 @@ class ClientCMAES:
         ErrorOccurred = 2
         FatalErrorOccurred = 3
         Timeout = 4
+        ForceTerminated = 5
 
     def __init__(self, address, port, buf_size: int = 1024):
         self._address = address
@@ -238,7 +239,9 @@ class ClientCMAES:
 
         return ClientCMAES.Result.Succeed, None
 
-    def optimize(self, default_env_creator: EnvCreator, timeout: float = 60.0):
+    def optimize(self, default_env_creator: EnvCreator, global_gen: list[int], timeout: float = 60.0):
+        import numpy
+
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(timeout)
         res_type, res_data = self._receive_data(sock, default_env_creator)
@@ -249,7 +252,17 @@ class ClientCMAES:
 
         gen, i, para, env_creator = res_data
         env = env_creator.create(para)
-        score = env.calc()
+
+        if global_gen[0] < gen:
+            global_gen[0] = gen
+
+        score = float("nan")
+        for t in range(int(env_creator.time / env_creator.timestep)):
+            score = env.calc_step()
+            if numpy.isinf(score):
+                break
+            elif gen > global_gen[0]:
+                return ClientCMAES.Result.ForceTerminated, f"ServerCMAES has created new generation. ({gen} -> {global_gen[0]})"
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(timeout)

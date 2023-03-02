@@ -46,6 +46,7 @@ def _client_proc(
         buf_size: int,
         timeout: float,
         retry: int,
+        global_gen: list[int]
 ):
     import time
     import datetime
@@ -60,7 +61,7 @@ def _client_proc(
     while True:
         t = datetime.datetime.now()
         print(f"[INFO({t})] THREAD{proc_id} is calculating")
-        result, pe = opt.optimize(default_env_creator, timeout)
+        result, pe = opt.optimize(default_env_creator, global_gen, timeout)
         # result, pe = opt.optimize_and_show(default_env_creator, window, camera, timeout)  # debug
 
         if result is optimizer.ClientCMAES.Result.Succeed:
@@ -90,6 +91,10 @@ def _client_proc(
             time.sleep(1)
             continue
 
+        elif result is optimizer.ClientCMAES.Result.ForceTerminated:
+            print(f"[DEBUG({t})] THREAD{proc_id} has been terminated forcibly: ", pe)
+            continue
+
 
 def cmaes_optimize_client(
         num_thread: int,
@@ -102,11 +107,12 @@ def cmaes_optimize_client(
 ):
     from multiprocessing import Process
 
+    global_gen = [0]
     process_list = []
     for proc_id in range(num_thread):
         process = Process(
             target=_client_proc,
-            args=(proc_id, default_env_creator, address, port, buf_size, timeout, retry)
+            args=(proc_id, default_env_creator, address, port, buf_size, timeout, retry, global_gen)
         )
         process.start()
         process_list.append(process)
