@@ -653,7 +653,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
 
         for i in range(self._world.num_feeds):
             f = self._world.get_feed(i)
-            self._world.secretion(f.pos, [5, 0])
+            self._world.secretion(f.pos, [30, 0])
 
         if not self._world.calc_step():
             return float("inf")
