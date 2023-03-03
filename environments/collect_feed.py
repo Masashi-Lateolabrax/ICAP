@@ -19,8 +19,8 @@ def _gen_env(
     generator.add_option({
         "timestep": f"{timestep}",
         "gravity": "0 0 -981.0",
-        "impratio": "5",
-        "noslip_iterations": "15",
+        "impratio": "3",
+        # "noslip_iterations": "15",
         "cone": "pyramidal"
     })
 
@@ -61,8 +61,8 @@ def _gen_env(
     default = generator.add_default()
     default.add_geom({
         "density": "1",  # Unit is g/cm^3. (1000kg/m^3 = 1g/cm^3)
-        "solimp": "0.9 0.95 0.001 0.5 2",  # 0.9 0.95 0.001 0.5 2
-        "solref": "0.02 1",  # 0.02 1
+        "solimp": "0.9 0.95 1.0 0.5 2",  # 0.9 0.95 0.001 0.5 2
+        "solref": "0.002 100.0",  # 0.02 1
     })
 
     ######################################################################################################
@@ -146,7 +146,7 @@ def _gen_env(
         "axisangle": "0 1 0 90",
         "condim": "6",
         "priority": "1",
-        "friction": "1.0 0.0 0.0",
+        "friction": "0.2 0.01 0.01",
         "contype": "1",
         "conaffinity": "1",
         "material": "wheel_material"
@@ -159,8 +159,10 @@ def _gen_env(
     })
     act_default = default.add_default("robot_actuator")
     act_default.add_velocity({
-        "kv": "80000",
-        "gear": "2",
+        "kv": "100",
+        "gear": "30",
+        # "forcelimited": "true",
+        # "forcerange": "0 100000"
     })
 
     worldbody = generator.get_body()
@@ -283,6 +285,18 @@ def _gen_env(
         sensor.add_velocimeter({
             "name": f"robot{i}_velocimeter",
             "site": f"robot{i}_center_site"
+        })
+        sensor.add_actuatorvel({
+            "name": f"robot{i}_actvel_left",
+            "actuator": f"robot{i}_left_act"
+        })
+        sensor.add_actuatorvel({
+            "name": f"robot{i}_actvel_right",
+            "actuator": f"robot{i}_right_act"
+        })
+        sensor.add_actuatorpos({
+            "name": f"robot{i}_actpos_right",
+            "actuator": f"robot{i}_right_act"
         })
 
     ######################################################################################################
@@ -505,9 +519,16 @@ class _World:
             act_right = self.model.get_act(f"robot{ri}_right_act")
             pos = self.model.get_body(f"robot{ri}").get_xpos()
 
-            act_left.ctrl = 40 * rd[0]
-            act_right.ctrl = 40 * rd[1]
+            act_left.ctrl[0] = 1000 * rd[0]
+            act_right.ctrl[0] = 1000 * rd[1]
             self.secretion(pos, rd[2:])
+
+            # actvel_left = self.model.get_sensor(f"robot{ri}_actvel_left").get_data()[0]
+            # actvel_right = self.model.get_sensor(f"robot{ri}_actvel_right").get_data()[0]
+            # actpos_right = self.model.get_sensor(f"robot{ri}_actpos_right").get_data()[0]
+            # print(
+            #     f"{ri} : vel_r={actvel_right}, vel_l={actvel_left.get_data()[0]}, pos_r={actpos_right}"
+            # )
 
         self.model.step()
 
