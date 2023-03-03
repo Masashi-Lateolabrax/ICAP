@@ -16,6 +16,39 @@ class DumpDate:
     def __init__(self):
         self.queue: list[DumpDate.Queue] = []
 
+    def save(self, name):
+        n = len(self.queue)
+        time = numpy.zeros(n)
+        robot_id = numpy.zeros(n)
+        input_ = numpy.zeros((n, len(self.queue[0].input)))
+        pattern = numpy.zeros((n, len(self.queue[0].pattern)))
+        output = numpy.zeros((n, len(self.queue[0].output)))
+        numpy.savez(
+            name,
+            time=time,
+            robot_id=robot_id,
+            input=input_,
+            pattern=pattern,
+            output=output
+        )
+
+    @staticmethod
+    def load(name):
+        npz = numpy.load(name)
+        time = npz["time"]
+        robot_id = npz["robot_id"]
+        input_ = npz["input"]
+        pattern = npz["pattern"]
+        output = npz["output"]
+
+        this = DumpDate()
+        for t, i, i_, p, o in zip(time, robot_id, input_, pattern, output):
+            this.queue.append(DumpDate.Queue(
+                t, i, i_, p, o
+            ))
+
+        return this
+
 
 def _gen_env(
         timestep: float,
