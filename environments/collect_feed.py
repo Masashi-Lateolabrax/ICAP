@@ -4,7 +4,7 @@ import numpy
 from studyLib import optimizer, wrap_mjc, miscellaneous, nn_tools
 
 
-class DumpDate:
+class DumpData:
     class Queue:
         def __init__(self, robot_id, input_, pattern, output):
             self.robot_id = robot_id
@@ -13,18 +13,16 @@ class DumpDate:
             self.output = output
 
     def __init__(self):
-        self.queue: list[DumpDate.Queue] = []
+        self.queue: list[DumpData.Queue] = []
 
     def save(self, name):
         n = len(self.queue)
-        time = numpy.zeros(n)
         robot_id = numpy.zeros(n)
         input_ = numpy.zeros((n, len(self.queue[0].input)))
         pattern = numpy.zeros((n, len(self.queue[0].pattern)))
         output = numpy.zeros((n, len(self.queue[0].output)))
         numpy.savez(
             name,
-            time=time,
             robot_id=robot_id,
             input=input_,
             pattern=pattern,
@@ -34,16 +32,15 @@ class DumpDate:
     @staticmethod
     def load(name):
         npz = numpy.load(name)
-        time = npz["time"]
         robot_id = npz["robot_id"]
         input_ = npz["input"]
         pattern = npz["pattern"]
         output = npz["output"]
 
-        this = DumpDate()
-        for t, i, i_, p, o in zip(time, robot_id, input_, pattern, output):
-            this.queue.append(DumpDate.Queue(
-                t, i, i_, p, o
+        this = DumpData()
+        for i, i_, p, o in zip(robot_id, input_, pattern, output):
+            this.queue.append(DumpData.Queue(
+                i, i_, p, o
             ))
 
         return this
@@ -393,7 +390,7 @@ class RobotBrain:
                     nn_tools.TanhLayer(34),
                 ],
                 [
-                    nn_tools.FilterLayer([15, 16, 17, 18, 19]),
+                    nn_tools.FilterLayer([30, 31, 32, 33, 34]),
                 ]
             ]
         ))
@@ -409,7 +406,7 @@ class RobotBrain:
                     nn_tools.BufLayer(10)
                 ],
                 [
-                    nn_tools.FilterLayer([27, 28]),
+                    nn_tools.FilterLayer([37, 38]),
                 ]
             ]
         ))
@@ -642,7 +639,7 @@ class RobotDebugger:
 class Environment(optimizer.MuJoCoEnvInterface):
     def __init__(
             self,
-            dump_data: DumpDate,
+            dump_data: DumpData,
             l2: float,
             brain: RobotBrain,
             nest_pos: (float, float),
@@ -723,7 +720,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
                 robot.decision[:] = self.robot_brain.calc(input_)
 
                 if self.dump_data is not None:
-                    self.dump_data.queue.append(DumpDate.Queue(
+                    self.dump_data.queue.append(DumpData.Queue(
                         i,
                         input_,
                         self.robot_brain.get_pattern(),
