@@ -6,8 +6,7 @@ from studyLib import optimizer, wrap_mjc, miscellaneous, nn_tools
 
 class DumpDate:
     class Queue:
-        def __init__(self, t, robot_id, input_, pattern, output):
-            self.time = t
+        def __init__(self, robot_id, input_, pattern, output):
             self.robot_id = robot_id
             self.input = input_
             self.pattern = pattern
