@@ -21,6 +21,12 @@ class DumpData:
         input_ = numpy.zeros((n, len(self.queue[0].input)))
         pattern = numpy.zeros((n, len(self.queue[0].pattern)))
         output = numpy.zeros((n, len(self.queue[0].output)))
+        for i, q in enumerate(self.queue):
+            robot_id[i] = q.robot_id
+            input_[i, :] = q.input
+            pattern[i, :] = q.pattern
+            output[i, :] = q.output
+
         numpy.savez(
             name,
             robot_id=robot_id,
