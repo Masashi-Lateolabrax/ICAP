@@ -422,6 +422,7 @@ class RobotBrain:
 
         self._calculator.add_layer(nn_tools.AffineLayer(4))
         self._calculator.add_layer(nn_tools.SigmoidLayer(4))
+        self._calculator.add_layer(nn_tools.BufLayer(4))
 
         if para is not None:
             self._calculator.load(para)
@@ -435,6 +436,14 @@ class RobotBrain:
     def get_pattern(self):
         parallel_layer: nn_tools.ParallelLayer = self._calculator.get_layer(1)
         buf_layer: nn_tools.BufLayer = parallel_layer.calcs[0].get_layer(5)
+        return buf_layer.buf.copy()
+
+    def calc_pheromone(self, pattern, pheromone):
+        input_ = numpy.zeros(12)
+        input_[pattern] = 1.0
+        input_[10:] = pheromone
+        affine_layer: nn_tools.AffineLayer = self._calculator.get_layer(2)
+        buf_layer: nn_tools.BufLayer = self._calculator.get_layer(6)
         return buf_layer.buf.copy()
 
 
