@@ -559,10 +559,9 @@ class _World:
             else:
                 res[i * 2 + 1] = 0.0
 
-            # 約200cmで知覚値が0.001になる計算．
+            # 約200cmで知覚値が0.1になる計算．
             if distance >= 0:
-                distance /= 140.0
-                res[i * 2] = 1.0 - numpy.tanh(distance)
+                res[i * 2] = 1.0 - numpy.tanh(distance / 140.0)
             else:
                 res[i * 2] = 0.0
 
@@ -652,7 +651,7 @@ class _World:
             window.flush()
 
     def secretion(self, pos, secretion):
-        gain = 20.0
+        gain = 50.0
         for i, s in enumerate(secretion):
             self.pheromone_field[i].add_liquid(pos[0], pos[1], s * self.timestep * gain)
 
