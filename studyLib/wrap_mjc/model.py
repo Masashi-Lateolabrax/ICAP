@@ -394,5 +394,5 @@ class WrappedModel:
             bodyexclude=exclude_id,
             geomid=i
         )
-        name = self.model.geom(i[0, 0]).name if distance >= 0.0 else ""
+        name = mujoco.mj_id2name(self.model, mujoco.mjtObj.mjOBJ_GEOM, i[0, 0]) if distance >= 0.0 else ""
         return name, distance

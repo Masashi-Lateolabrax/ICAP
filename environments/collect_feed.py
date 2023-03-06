@@ -220,7 +220,10 @@ def _gen_env(
     ######################################################################################################
     # Create Ground
     ######################################################################################################
-    worldbody.add_geom({"class": "ground"})
+    worldbody.add_geom({
+        "name": "ground",
+        "class": "ground"
+    })
 
     ######################################################################################################
     # Create Wall
@@ -234,21 +237,25 @@ def _gen_env(
         pheromone_field_panel_size * pheromone_field_shape[1]
     )
     worldbody.add_geom({
+        "name": "wall1",
         "class": "wall",
         "pos": f"{pheromone_field_pos[0] + 0.5 * (wall_size[0] + pheromone_field_panel_size)} {pheromone_field_pos[1]} {wall_height * 0.5}",
         "size": f"{pheromone_field_panel_size} {big_wall_size[1] * 0.5} {wall_height * 0.5}",
     })
     worldbody.add_geom({
+        "name": "wall2",
         "class": "wall",
         "pos": f"{pheromone_field_pos[0] - 0.5 * (wall_size[0] + pheromone_field_panel_size)} {pheromone_field_pos[1]} {wall_height * 0.5}",
         "size": f"{pheromone_field_panel_size} {big_wall_size[1] * 0.5} {wall_height * 0.5}",
     })
     worldbody.add_geom({
+        "name": "wall3",
         "class": "wall",
         "pos": f"{pheromone_field_pos[0]} {pheromone_field_pos[1] + 0.5 * (wall_size[1] + pheromone_field_panel_size)} {wall_height * 0.5}",
         "size": f"{wall_size[0] * 0.5} {pheromone_field_panel_size} {wall_height * 0.5}",
     })
     worldbody.add_geom({
+        "name": "wall4",
         "class": "wall",
         "pos": f"{pheromone_field_pos[0]} {pheromone_field_pos[1] - 0.5 * (wall_size[1] + pheromone_field_panel_size)} {wall_height * 0.5}",
         "size": f"{wall_size[0] * 0.5} {pheromone_field_panel_size} {wall_height * 0.5}",
@@ -302,23 +309,23 @@ def _gen_env(
         )
         robot_body.add_freejoint()
         robot_body.add_site({"name": f"robot{i}_center_site"})
-        robot_body.add_geom({"class": "robot_body"})
+        robot_body.add_geom({"name": f"robot{i}_body", "class": "robot_body"})
 
         right_wheel_body = robot_body.add_body(pos=(10, 0, -depth))
         right_wheel_body.add_joint({"name": f"robot{i}_right_joint", "type": "hinge", "axis": "-1 0 0"})
-        right_wheel_body.add_geom({"class": "robot_wheel"})
+        right_wheel_body.add_geom({"name": f"robot{i}_right_wheel", "class": "robot_wheel"})
 
         left_wheel_body = robot_body.add_body(pos=(-10, 0, -depth))
         left_wheel_body.add_joint({"name": f"robot{i}_left_joint", "type": "hinge", "axis": "-1 0 0"})
-        left_wheel_body.add_geom({"class": "robot_wheel"})
+        left_wheel_body.add_geom({"name": f"robot{i}_left_wheel", "class": "robot_wheel"})
 
         front_wheel_body = robot_body.add_body(pos=(0, 15, -5 + 1.5 - depth))
         front_wheel_body.add_joint({"type": "ball"})
-        front_wheel_body.add_geom({"class": "robot_ball"})
+        front_wheel_body.add_geom({"name": f"robot{i}_front_wheel", "class": "robot_ball"})
 
         rear_wheel_body = robot_body.add_body(pos=(0, -15, -5 + 1.5 - depth))
         rear_wheel_body.add_joint({"type": "ball"})
-        rear_wheel_body.add_geom({"class": "robot_ball"})
+        rear_wheel_body.add_geom({"name": f"robot{i}_rear_wheel", "class": "robot_ball"})
 
         act.add_velocity({
             "name": f"robot{i}_left_act",
@@ -367,37 +374,37 @@ class _Feed:
 
 class RobotBrain:
     def __init__(self, para):
-        self._calculator = nn_tools.Calculator(30 + 3 + 2)
+        self._calculator = nn_tools.Calculator(60 + 3 + 2)
 
         self._calculator.add_layer(nn_tools.ParallelLayer(
             [
                 [
-                    nn_tools.FilterLayer([i for i in range(0, 30)]),
+                    nn_tools.FilterLayer([i for i in range(0, 60)]),
 
                     nn_tools.ZeroPaddedConv1DLayer(
-                        32, 3, 1,
+                        30, 6, 2,
                         nn_tools.AffineLayer(5),
                         (2, 2)
                     ),
-                    nn_tools.TanhLayer(160),
+                    nn_tools.TanhLayer(150),
 
                     nn_tools.ZeroPaddedConv1DLayer(
-                        32, 5, 5,
+                        30, 5, 5,
                         nn_tools.AffineLayer(3),
                         (0, 0)
                     ),
-                    nn_tools.TanhLayer(96),
+                    nn_tools.TanhLayer(90),
 
                     nn_tools.ZeroPaddedConv1DLayer(
-                        17, 12, 6,
+                        14, 12, 6,
                         nn_tools.AffineLayer(2),
-                        (6, 6)
+                        (0, 0)
                     ),
-                    nn_tools.TanhLayer(34),
-                    nn_tools.BufLayer(34)
+                    nn_tools.TanhLayer(28),
+                    nn_tools.BufLayer(28)
                 ],
                 [
-                    nn_tools.FilterLayer([30, 31, 32, 33, 34]),
+                    nn_tools.FilterLayer([60, 61, 62, 63, 64]),
                 ]
             ]
         ))
@@ -405,7 +412,7 @@ class RobotBrain:
         self._calculator.add_layer(nn_tools.ParallelLayer(
             [
                 [
-                    nn_tools.FilterLayer([i for i in range(34 + 3)]),
+                    nn_tools.FilterLayer([i for i in range(28 + 3)]),
                     nn_tools.AffineLayer(10),
                     nn_tools.TanhLayer(10),
                     nn_tools.AffineLayer(10),
@@ -413,7 +420,7 @@ class RobotBrain:
                     nn_tools.BufLayer(10)
                 ],
                 [
-                    nn_tools.FilterLayer([37, 38]),
+                    nn_tools.FilterLayer([31, 32]),
                 ]
             ]
         ))
@@ -524,29 +531,40 @@ class _World:
         mat = numpy.zeros((3, 3))
         mat[2, 2] = 1.0
         step = (end - start) / div
-        res = numpy.zeros(div)
-        start += step
+        res = numpy.zeros(div * 2)
+        start += step * 0.8
 
         offset = numpy.array([0, 0, 4.5])
 
-        for i in range(div):
+        for i in range(0, div):
             theta = start + step * i
             mat[0, 0] = numpy.cos(theta)
             mat[0, 1] = numpy.sin(theta)
             mat[1, 0] = -numpy.sin(theta)
             mat[1, 1] = numpy.cos(theta)
-            _, distance = self.model.calc_ray(
+            geom_name, distance = self.model.calc_ray(
                 robot.pos + offset,
                 numpy.dot(mat, robot.direction),
                 exclude_id=robot.id
             )
 
-            res[i] = distance if distance >= 0 else float("inf")
+            if geom_name is None:
+                res[i * 2 + 1] = 0.0
+            elif geom_name.find("robot") != -1:
+                res[i * 2 + 1] = 0.3
+            elif geom_name.find("feed") != -1:
+                res[i * 2 + 1] = 0.6
+            elif geom_name.find("obstacle") != -1:
+                res[i * 2 + 1] = 0.9
+            else:
+                res[i * 2 + 1] = 0.0
 
-        # 約200cmで知覚値が0.001になる計算．
-        numpy.divide(res, 50, out=res)
-        numpy.tanh(res, out=res)
-        numpy.subtract(1.0, res, out=res)
+            # 約200cmで知覚値が0.001になる計算．
+            if distance >= 0:
+                distance /= 140.0
+                res[i * 2] = 1.0 - numpy.tanh(distance)
+            else:
+                res[i * 2] = 0.0
 
         return res
 
@@ -651,11 +669,17 @@ class RobotDebugger:
             geom.set_pos((w * i + offset[0], offset[1], 0))
 
     def update(self, sight):
-        offset = 0.01
-        for i, s in enumerate(sight):
-            if s < offset:
-                s = offset
-            self.cells[i].set_rgba((s, s, s, 1))
+        for i in range(len(self.cells)):
+            if sight[i * 2 + 1] == 0.3:
+                c = (1, 1, 0)
+            elif sight[i * 2 + 1] == 0.6:
+                c = (0, 0, 1)
+            elif sight[i * 2 + 1] == 0.9:
+                c = (1, 0, 0)
+            else:
+                c = (1., 1., 1.)
+            s = sight[i * 2] if sight[i * 2] > 0.1 else 0.1
+            self.cells[i].set_rgba((c[0] * s, c[1] * s, c[2] * s, 1))
 
 
 class Environment(optimizer.MuJoCoEnvInterface):
