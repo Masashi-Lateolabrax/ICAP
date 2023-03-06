@@ -4,6 +4,54 @@ import numpy
 from studyLib import optimizer, wrap_mjc, miscellaneous, nn_tools
 
 
+class DumpData:
+    class Queue:
+        def __init__(self, robot_id, input_, pattern, output):
+            self.robot_id = robot_id
+            self.input = input_
+            self.pattern = pattern
+            self.output = output
+
+    def __init__(self):
+        self.queue: list[DumpData.Queue] = []
+
+    def save(self, name):
+        n = len(self.queue)
+        robot_id = numpy.zeros(n)
+        input_ = numpy.zeros((n, len(self.queue[0].input)))
+        pattern = numpy.zeros((n, len(self.queue[0].pattern)))
+        output = numpy.zeros((n, len(self.queue[0].output)))
+        for i, q in enumerate(self.queue):
+            robot_id[i] = q.robot_id
+            input_[i, :] = q.input
+            pattern[i, :] = q.pattern
+            output[i, :] = q.output
+
+        numpy.savez(
+            name,
+            robot_id=robot_id,
+            input=input_,
+            pattern=pattern,
+            output=output
+        )
+
+    @staticmethod
+    def load(name):
+        npz = numpy.load(name)
+        robot_id = npz["robot_id"]
+        input_ = npz["input"]
+        pattern = npz["pattern"]
+        output = npz["output"]
+
+        this = DumpData()
+        for i, i_, p, o in zip(robot_id, input_, pattern, output):
+            this.queue.append(DumpData.Queue(
+                i, i_, p, o
+            ))
+
+        return this
+
+
 def _gen_env(
         timestep: float,
         nest_pos: (float, float),
@@ -346,9 +394,10 @@ class RobotBrain:
                         (6, 6)
                     ),
                     nn_tools.TanhLayer(34),
+                    nn_tools.BufLayer(34)
                 ],
                 [
-                    nn_tools.FilterLayer([15, 16, 17, 18, 19]),
+                    nn_tools.FilterLayer([30, 31, 32, 33, 34]),
                 ]
             ]
         ))
@@ -361,18 +410,25 @@ class RobotBrain:
                     nn_tools.TanhLayer(10),
                     nn_tools.AffineLayer(10),
                     nn_tools.IsMaxLayer(10),
+                    nn_tools.BufLayer(10)
                 ],
                 [
-                    nn_tools.FilterLayer([27, 28]),
+                    nn_tools.FilterLayer([37, 38]),
                 ]
             ]
         ))
 
-        self._calculator.add_layer(nn_tools.AffineLayer(12))
-        self._calculator.add_layer(nn_tools.TanhLayer(12))
+        self._calculator.add_layer(nn_tools.ParallelLayer(
+            [
+                [
+                    nn_tools.AffineLayer(12),
+                    nn_tools.TanhLayer(12),
 
-        self._calculator.add_layer(nn_tools.AffineLayer(4))
-        self._calculator.add_layer(nn_tools.SigmoidLayer(4))
+                    nn_tools.AffineLayer(4),
+                    nn_tools.SigmoidLayer(4)
+                ]
+            ]
+        ))
 
         if para is not None:
             self._calculator.load(para)
@@ -382,6 +438,20 @@ class RobotBrain:
 
     def calc(self, array):
         return self._calculator.calc(array)
+
+    def compressed_sight(self):
+        parallel_layer: nn_tools.ParallelLayer = self._calculator.get_layer(0)
+        buf_layer: nn_tools.BufLayer = parallel_layer.calcs[0].get_layer(7)
+        return buf_layer.buf.copy()
+
+    def get_pattern(self):
+        parallel_layer: nn_tools.ParallelLayer = self._calculator.get_layer(1)
+        buf_layer: nn_tools.BufLayer = parallel_layer.calcs[0].get_layer(5)
+        return buf_layer.buf.copy()
+
+    def get_decision_parts(self) -> nn_tools.Calculator:
+        parallel_layer: nn_tools.ParallelLayer = self._calculator.get_layer(2)
+        return parallel_layer.calcs[0]
 
 
 class _Robot:
@@ -591,6 +661,7 @@ class RobotDebugger:
 class Environment(optimizer.MuJoCoEnvInterface):
     def __init__(
             self,
+            dump_data: DumpData,
             l2: float,
             brain: RobotBrain,
             nest_pos: (float, float),
@@ -612,6 +683,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
             window: miscellaneous.Window = None,
             camera: wrap_mjc.Camera = None
     ):
+        self.dump_data = dump_data
         self._loss = l2 * 1e-6
 
         self._thinking_interval = thinking_interval
@@ -666,7 +738,16 @@ class Environment(optimizer.MuJoCoEnvInterface):
                 decreased_nest_dist = (1.0 / (nest_dist + 1.0)) ** 2
                 sensed_nest = [nest_vec[0], nest_vec[1], decreased_nest_dist]
 
-                robot.decision[:] = self.robot_brain.calc(numpy.concatenate([robot_sight, sensed_nest, pheromone]))
+                input_ = numpy.concatenate([robot_sight, sensed_nest, pheromone])
+                robot.decision[:] = self.robot_brain.calc(input_)
+
+                if self.dump_data is not None:
+                    self.dump_data.queue.append(DumpData.Queue(
+                        i,
+                        input_,
+                        self.robot_brain.get_pattern(),
+                        robot.decision.copy()
+                    ))
 
         if self._thinking_counter <= 0:
             self._thinking_counter = self._thinking_interval
@@ -768,6 +849,8 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
         self.timestep: float = 0.033333
         self.time: int = 30
         self.think_interval: int = 0
+
+        self.dump_data = None
 
     def save(self):
         import struct
@@ -900,6 +983,7 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
         l2 = numpy.linalg.norm(para, ord=2)
         brain = RobotBrain(para)
         return Environment(
+            self.dump_data,
             l2,
             brain,
             self.nest_pos,
@@ -926,6 +1010,7 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
         l2 = numpy.linalg.norm(para, ord=2)
         brain = RobotBrain(para)
         return Environment(
+            self.dump_data,
             l2,
             brain,
             self.nest_pos,
