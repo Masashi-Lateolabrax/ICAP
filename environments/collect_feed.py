@@ -669,11 +669,16 @@ class RobotDebugger:
             geom.set_pos((w * i + offset[0], offset[1], 0))
 
     def update(self, sight):
-        offset = 0.01
-        for i, s in enumerate(sight):
-            if s < offset:
-                s = offset
-            self.cells[i].set_rgba((s, s, s, 1))
+        for i in range(0, len(sight), 2):
+            if sight[i + 1] == 0.3:
+                c = (1, 1, 0)
+            elif sight[i + 1] == 0.6:
+                c = (0, 0, 1)
+            elif sight[i + 1] == 0.9:
+                c = (1, 0, 0)
+            else:
+                c = (0., 0., 0.)
+            self.cells[i].set_rgba((c[0] * sight[i], c[1] * sight[i], c[2] * sight[i], 1))
 
 
 class Environment(optimizer.MuJoCoEnvInterface):
