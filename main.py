@@ -27,10 +27,10 @@ def set_env_creator(env_creator: EnvCreator):
     env_creator.show_pheromone_index = 0
     env_creator.pheromone_iteration = 5
 
-    env_creator.sv = [10.0, 10.0]
-    env_creator.evaporate = [1.0 / env_creator.timestep, 1.0 / env_creator.timestep]
-    env_creator.diffusion = [1.0 / env_creator.timestep, 1.0 / env_creator.timestep]
-    env_creator.decrease = [0.01 / env_creator.timestep, 0.01 / env_creator.timestep]
+    env_creator.sv = [10.0]
+    env_creator.evaporate = [1.0 / env_creator.timestep]
+    env_creator.diffusion = [1.0 / env_creator.timestep]
+    env_creator.decrease = [0.01 / env_creator.timestep]
 
 
 if __name__ == '__main__':
@@ -39,7 +39,6 @@ if __name__ == '__main__':
         set_env_creator(env_creator)
         print(f"DIMENSION : {env_creator.dim()}")
 
-        # para = numpy.random.rand(env_creator.dim())
         para, hist = utils.cmaes_optimize_server(
             5,
             30,
@@ -57,13 +56,14 @@ if __name__ == '__main__':
         shape = (5, 7)
         dpi = 100
         scale: int = 1
+        gain_width = 1
 
         width = shape[0] * dpi
         height = shape[1] * dpi
-        window = miscellaneous.Window(width * scale * 2, height * scale)
+        window = miscellaneous.Window(gain_width * width * scale, height * scale)
         camera = wrap_mjc.Camera((0, 600, 0), 2500, 90, 90)
         window.set_recorder(miscellaneous.Recorder(
-            "result.mp4", int(1.0 / env_creator.timestep), width * 2, height
+            "result.mp4", int(1.0 / env_creator.timestep), width, height
         ))
 
         env = env_creator.create_mujoco_env(para, window, camera)
@@ -71,10 +71,8 @@ if __name__ == '__main__':
         for _ in range(int(env_creator.time / env_creator.timestep)):
             env.calc_step()
 
-            env.show_pheromone_index = 0
-            env.render((0, 0, width * scale, height * scale), False)
-            env.show_pheromone_index = 1
-            env.render((width * scale, 0, width * scale, height * scale), False)
+            for pi in range(len(env_creator.sv)):
+                env.render((width * scale * pi, 0, width * scale, height * scale), False)
 
             window.flush()
 

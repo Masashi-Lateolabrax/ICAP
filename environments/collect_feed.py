@@ -374,7 +374,7 @@ class _Feed:
 
 class RobotBrain:
     def __init__(self, para):
-        self._calculator = nn_tools.Calculator(60 + 3 + 2)
+        self._calculator = nn_tools.Calculator(60 + 3 + 1)
 
         self._calculator.add_layer(nn_tools.ParallelLayer(
             [
@@ -404,7 +404,7 @@ class RobotBrain:
                     nn_tools.BufLayer(28)
                 ],
                 [
-                    nn_tools.FilterLayer([60, 61, 62, 63, 64]),
+                    nn_tools.FilterLayer([60, 61, 62, 63]),
                 ]
             ]
         ))
@@ -420,7 +420,7 @@ class RobotBrain:
                     nn_tools.BufLayer(10)
                 ],
                 [
-                    nn_tools.FilterLayer([31, 32]),
+                    nn_tools.FilterLayer([31]),
                 ]
             ]
         ))
@@ -428,11 +428,11 @@ class RobotBrain:
         self._calculator.add_layer(nn_tools.ParallelLayer(
             [
                 [
-                    nn_tools.AffineLayer(12),
-                    nn_tools.TanhLayer(12),
+                    nn_tools.AffineLayer(11),
+                    nn_tools.TanhLayer(11),
 
-                    nn_tools.AffineLayer(4),
-                    nn_tools.SigmoidLayer(4)
+                    nn_tools.AffineLayer(3),
+                    nn_tools.SigmoidLayer(3)
                 ]
             ]
         ))
@@ -776,10 +776,6 @@ class Environment(optimizer.MuJoCoEnvInterface):
         if self._thinking_counter <= 0:
             self._thinking_counter = self._thinking_interval
         self._thinking_counter -= 1
-
-        for i in range(self._world.num_feeds):
-            f = self._world.get_feed(i)
-            self._world.secretion(f.pos, [30, 0])
 
         if not self._world.calc_step():
             return float("inf")
