@@ -40,9 +40,9 @@ if __name__ == '__main__':
         print(f"DIMENSION : {env_creator.dim()}")
 
         para, hist = utils.cmaes_optimize_server(
-            5,
-            30,
-            10,
+            100,
+            700,
+            350,
             env_creator,
             52325,
             0.3,
