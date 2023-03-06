@@ -421,11 +421,11 @@ class RobotBrain:
         self._calculator.add_layer(nn_tools.ParallelLayer(
             [
                 [
-                    self._calculator.add_layer(nn_tools.AffineLayer(12)),
-                    self._calculator.add_layer(nn_tools.TanhLayer(12)),
+                    nn_tools.AffineLayer(12),
+                    nn_tools.TanhLayer(12),
 
-                    self._calculator.add_layer(nn_tools.AffineLayer(4)),
-                    self._calculator.add_layer(nn_tools.SigmoidLayer(4))
+                    nn_tools.AffineLayer(4),
+                    nn_tools.SigmoidLayer(4)
                 ]
             ]
         ))
