@@ -11,6 +11,9 @@ class ParallelLayer(interface.CalcLayer):
 
         num_node = 0
         for layer_for_calc in layers:
+            for layer in layer_for_calc:
+                if layer is Calculator:
+                    raise "You passed a Calculator to a ParallelLayer. It is not supported!"
             num_node += layer_for_calc[-1].num_node
         super().__init__(num_node)
 
