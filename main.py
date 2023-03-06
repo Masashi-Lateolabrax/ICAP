@@ -41,8 +41,8 @@ if __name__ == '__main__':
 
         # para = numpy.random.rand(env_creator.dim())
         para, hist = utils.cmaes_optimize_server(
-            100,
-            50,
+            5,
+            30,
             10,
             env_creator,
             52325,
