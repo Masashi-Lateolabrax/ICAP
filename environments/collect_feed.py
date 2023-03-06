@@ -532,11 +532,11 @@ class _World:
         mat[2, 2] = 1.0
         step = (end - start) / div
         res = numpy.zeros(div * 2)
-        start += step
+        start += step * 0.8
 
         offset = numpy.array([0, 0, 4.5])
 
-        for i in range(0, div * 2, 2):
+        for i in range(0, div):
             theta = start + step * i
             mat[0, 0] = numpy.cos(theta)
             mat[0, 1] = numpy.sin(theta)
@@ -549,22 +549,22 @@ class _World:
             )
 
             if geom_name is None:
-                res[i + 1] = 0.0
+                res[i * 2 + 1] = 0.0
             elif geom_name.find("robot") != -1:
-                res[i + 1] = 0.3
+                res[i * 2 + 1] = 0.3
             elif geom_name.find("feed") != -1:
-                res[i + 1] = 0.6
+                res[i * 2 + 1] = 0.6
             elif geom_name.find("obstacle") != -1:
-                res[i + 1] = 0.9
+                res[i * 2 + 1] = 0.9
             else:
-                res[i + 1] = 0.0
+                res[i * 2 + 1] = 0.0
 
             # 約200cmで知覚値が0.001になる計算．
             if distance >= 0:
                 distance /= 140.0
-                res[i] = 1.0 - numpy.tanh(distance)
+                res[i * 2] = 1.0 - numpy.tanh(distance)
             else:
-                res[i] = 0.0
+                res[i * 2] = 0.0
 
         return res
 
