@@ -559,9 +559,9 @@ class _World:
             else:
                 res[i * 2 + 1] = 0.0
 
-            # 約200cmで知覚値が0.1になる計算．
+            half_width = 74.6228600044
             if distance >= 0:
-                res[i * 2] = 1.0 - numpy.tanh(distance / 140.0)
+                res[i * 2] = 1.0 - numpy.tanh(numpy.arctanh(0.5) * distance / half_width)
             else:
                 res[i * 2] = 0.0
 
