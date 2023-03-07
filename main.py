@@ -7,7 +7,7 @@ from studyLib import miscellaneous, wrap_mjc
 
 def set_env_creator(env_creator: EnvCreator):
     env_creator.timestep = 0.01
-    env_creator.time = 30
+    env_creator.time = 7
     env_creator.think_interval = 10
 
     theta = 0
@@ -19,11 +19,11 @@ def set_env_creator(env_creator: EnvCreator):
     ]
     # env_creator.robot_pos = [(0, 700, theta)]
     # env_creator.obstacle_pos = [(0, 450)]
-    env_creator.feed_pos = [(0, 800)]
+    env_creator.feed_pos = [(0, 300)]
 
-    env_creator.pheromone_field_pos = (0, 550)
+    env_creator.pheromone_field_pos = (0, 200)
     env_creator.pheromone_field_panel_size = 20
-    env_creator.pheromone_field_shape = (60, 80)
+    env_creator.pheromone_field_shape = (60, 40)
     env_creator.show_pheromone_index = 0
     env_creator.pheromone_iteration = 5
 
