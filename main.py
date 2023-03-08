@@ -10,15 +10,15 @@ def set_env_creator(env_creator: EnvCreator):
     env_creator.time = 7
     env_creator.think_interval = 10
 
-    theta = 0
-
     env_creator.nest_pos = (0, 0)
-    pos = (0, 0, 65)
-    env_creator.robot_pos = [
-        (pos[0] + pos[2] * ix, pos[1] + pos[2] * iy, theta) for iy in range(-1, 2) for ix in range(-1, 2)
-    ]
+    pos = (0, 0, 100)
+    for theta in range(0, 360, int(360 / 8)):
+        v_x = numpy.cos(theta / 180 * numpy.pi) * pos[2]
+        v_y = numpy.sin(theta / 180 * numpy.pi) * pos[2]
+        env_creator.robot_pos.append((pos[0] + v_x, pos[1] + v_y, theta))
     # env_creator.robot_pos = [(0, 700, theta)]
     # env_creator.obstacle_pos = [(0, 450)]
+
     env_creator.feed_pos = [(0, 300)]
 
     env_creator.pheromone_field_pos = (0, 200)
