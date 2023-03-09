@@ -163,7 +163,7 @@ def _gen_env(
     feed_default.add_geom({
         "type": "cylinder",
         "size": "70 10",
-        "mass": "1500",  # 1.5kg = 1500g
+        "mass": "3000",  # 1.5kg = 1500g
         "rgba": "0 1 1 1",
         "condim": "3",
         "priority": "1",
