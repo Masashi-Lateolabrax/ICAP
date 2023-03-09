@@ -16,6 +16,11 @@ def set_env_creator(env_creator: EnvCreator):
         v_x = numpy.cos(theta / 180 * numpy.pi) * pos[2]
         v_y = numpy.sin(theta / 180 * numpy.pi) * pos[2]
         env_creator.robot_pos.append((pos[0] + v_x, pos[1] + v_y, theta))
+
+    # env_creator.robot_pos = [
+    #     (pos[0] + pos[2] * ix, pos[1] + pos[2] * iy, 0) for iy in range(-1, 2) for ix in range(-1, 2)
+    # ]
+
     # env_creator.robot_pos = [(0, 700, theta)]
     # env_creator.obstacle_pos = [(0, 450)]
 
