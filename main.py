@@ -3,7 +3,6 @@ import numpy
 from environments import utils
 from environments.collect_feed import EnvCreator
 from studyLib import miscellaneous, wrap_mjc
-from studyLib.optimizer import Hist
 
 
 def set_env_creator(env_creator: EnvCreator):
@@ -45,8 +44,8 @@ if __name__ == '__main__':
         set_env_creator(env_creator)
         print(f"DIMENSION : {env_creator.dim()}")
 
-        hist = Hist.load("history_ebf772df.npz")
-        best = hist.get_min()
+        # hist = Hist.load("history_ebf772df.npz")
+        # best = hist.get_min()
 
         para, hist = utils.cmaes_optimize_server(
             1000,
@@ -54,9 +53,9 @@ if __name__ == '__main__':
             350,
             env_creator,
             52325,
-            best.sigma,
-            best.centroid,
-            hist.cmatrix,
+            0.3,
+            None,
+            None,
             True
         )
         numpy.save("best_para.npy", para)
