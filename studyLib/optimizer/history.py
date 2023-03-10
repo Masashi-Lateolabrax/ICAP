@@ -30,7 +30,11 @@ class Hist:
         self.dim = dim
         self.population = population
         self.mu = mu
-        self.cmatrix = numpy.zeros(0)
+        self.min_index = 0
+        self.max_index = 0
+        self.min_cmatrix = numpy.zeros(0)
+        self.max_cmatrix = numpy.zeros(0)
+        self.last_cmatrix = numpy.zeros(0)
 
     def save(self, file_path: str = None):
         if file_path is None:
@@ -61,24 +65,31 @@ class Hist:
             max_para=max_para,
             score=score,
             sigmas=sigmas,
-            cmatrix=self.cmatrix,
+            min_inedex=self.min_index,
+            min_cmatrix=self.min_cmatrix,
+            max_index=self.max_index,
+            max_cmatrix=self.max_cmatrix,
+            last_cmatrix=self.last_cmatrix,
         )
 
     @staticmethod
     def load(file_path: str):
         npz = numpy.load(file_path)
+
         meta = npz["meta"]
+        this = Hist(dim=meta[0], population=meta[1], mu=meta[2])
+        this.min_index = npz["min_index"]
+        this.min_cmatrix = npz["min_cmatrix"]
+        this.max_index = npz["max_index"]
+        this.max_cmatrix = npz["max_cmatrix"]
+        this.last_cmatrix = npz["last_sigmas"]
+
         time = npz["time"]
         centroids = npz["centroids"]
         min_para = npz["min_para"]
         max_para = npz["max_para"]
         score = npz["score"]
         sigmas = npz["sigmas"]
-        cmatrix = npz["cmatrix"]
-
-        this = Hist(dim=meta[0], population=meta[1], mu=meta[2])
-        this.cmatrix = cmatrix
-
         for t, centroid, min_p, max_p, s, sigma_ in zip(time, centroids, min_para, max_para, score, sigmas):
             q = Queue(s[0], centroid, s[1], min_p, s[2], max_p, sigma_)
             q.time = datetime.datetime.strptime(t, "%Y-%m-%d %H:%M:%S.%f")
@@ -98,18 +109,16 @@ class Hist:
             cmatrix: numpy.ndarray,
     ):
         self.queues.append(Queue(scores_avg, centroid, min_score, min_para, max_score, max_para, sigma))
-        self.cmatrix = cmatrix.copy()
+        self.last_cmatrix = cmatrix.copy()
+        if self.queues[self.min_index].min_score > min_score:
+            self.min_index = len(self.queues) - 1
+            self.min_cmatrix = self.last_cmatrix
+        if self.queues[self.max_index].max_score < max_score:
+            self.max_index = len(self.queues) - 1
+            self.max_cmatrix = self.last_cmatrix
 
     def get_min(self) -> Queue:
-        min_queue: Queue = self.queues[0]
-        for q in self.queues:
-            if min_queue.min_score > q.min_score:
-                min_queue = q
-        return min_queue
+        return self.queues[self.min_index]
 
     def get_max(self) -> Queue:
-        max_queue: Queue = self.queues[0]
-        for q in self.queues:
-            if max_queue.max_score < q.max_score:
-                max_queue = q
-        return max_queue
+        return self.queues[self.max_index]

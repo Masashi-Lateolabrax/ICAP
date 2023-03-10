@@ -559,7 +559,7 @@ class _World:
             else:
                 res[i * 2 + 1] = 0.0
 
-            half_width = 74.6228600044
+            half_width = 200
             if distance >= 0:
                 res[i * 2] = 1.0 - numpy.tanh(numpy.arctanh(0.5) * distance / half_width)
             else:
