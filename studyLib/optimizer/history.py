@@ -65,7 +65,7 @@ class Hist:
             max_para=max_para,
             score=score,
             sigmas=sigmas,
-            min_inedex=self.min_index,
+            min_index=self.min_index,
             min_cmatrix=self.min_cmatrix,
             max_index=self.max_index,
             max_cmatrix=self.max_cmatrix,
@@ -82,7 +82,7 @@ class Hist:
         this.min_cmatrix = npz["min_cmatrix"]
         this.max_index = npz["max_index"]
         this.max_cmatrix = npz["max_cmatrix"]
-        this.last_cmatrix = npz["last_sigmas"]
+        this.last_cmatrix = npz["last_cmatrix"]
 
         time = npz["time"]
         centroids = npz["centroids"]
