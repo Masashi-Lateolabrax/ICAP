@@ -45,8 +45,8 @@ if __name__ == '__main__':
         set_env_creator(env_creator)
         print(f"DIMENSION : {env_creator.dim()}")
 
-        hist = Hist.load("history_8059983d.npz")
-        best = hist.get_min()
+        # hist = Hist.load("history_8059983d.npz")
+        # best = hist.get_min()
 
         para, hist = utils.cmaes_optimize_server(
             1000,
@@ -54,9 +54,9 @@ if __name__ == '__main__':
             350,
             env_creator,
             52325,
-            best.sigma,
-            best.centroid,
-            hist.min_cmatrix,
+            0.3,  # best.sigma,
+            None,  # best.centroid,
+            None,  # hist.min_cmatrix,
             True
         )
         numpy.save("best_para.npy", para)
