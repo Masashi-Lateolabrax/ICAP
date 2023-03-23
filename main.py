@@ -45,7 +45,7 @@ if __name__ == '__main__':
         set_env_creator(env_creator)
         print(f"DIMENSION : {env_creator.dim()}")
 
-        hist = Hist.load("history_f45111fc.npz")
+        hist = Hist.load("history_08757a43.npz")
         best = hist.get_min()
 
         para, hist = utils.cmaes_optimize_server(
