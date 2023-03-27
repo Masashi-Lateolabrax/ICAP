@@ -16,7 +16,8 @@ def set_env_creator(env_creator: EnvCreator):
     for theta in range(0, 360, int(360 / 8)):
         v_x = numpy.cos(theta / 180 * numpy.pi) * pos[2]
         v_y = numpy.sin(theta / 180 * numpy.pi) * pos[2]
-        env_creator.robot_pos.append((pos[0] + v_x, pos[1] + v_y, theta))
+        env_creator.robot_pos_a.append((pos[0] + v_x, pos[1] + v_y, theta))
+        env_creator.robot_pos_b.append((pos[0] + v_x, pos[1] + v_y, 180 + theta))
 
     # env_creator.robot_pos = [
     #     (pos[0] + pos[2] * ix, pos[1] + pos[2] * iy, 0) for iy in range(-1, 2) for ix in range(-1, 2)
@@ -42,21 +43,19 @@ def set_env_creator(env_creator: EnvCreator):
 if __name__ == '__main__':
     def main():
         env_creator = EnvCreator()
-        set_env_creator(env_creator)
         print(f"DIMENSION : {env_creator.dim()}")
 
-        hist = Hist.load("history_4b815fdf.npz")
-        best = hist.get_min()
+        set_env_creator(env_creator)
 
         para, hist = utils.cmaes_optimize_server(
-            1000,
+            3000,
             700,
             350,
             env_creator,
             52325,
-            best.sigma,
-            best.centroid,
-            hist.min_cmatrix,
+            0.3,
+            None,
+            None,
             True
         )
         numpy.save("best_para.npy", para)
