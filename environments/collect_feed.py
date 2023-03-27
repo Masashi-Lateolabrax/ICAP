@@ -858,12 +858,12 @@ class EnvironmentPack(optimizer.EnvInterface):
     def calc_step(self) -> float:
         a = self._env_a.calc_step()
         b = self._env_b.calc_step()
-        return min(a, b)
+        return max(a, b)
 
     def calc(self) -> float:
         a = self._env_a.calc()
         b = self._env_b.calc()
-        return min(a, b)
+        return max(a, b)
 
 
 class EnvCreator(optimizer.MuJoCoEnvCreator):
