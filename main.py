@@ -66,6 +66,7 @@ if __name__ == '__main__':
         )
 
         for gen in range(1, cmaes.generation):
+            env_creator = EnvCreator()
             set_env_creator(env_creator)
             cmaes.optimize(gen, env_creator)
 
