@@ -162,7 +162,7 @@ def _gen_env(
     feed_default = default.add_default("feeds")
     feed_default.add_geom({
         "type": "cylinder",
-        "size": "70 10",
+        "size": "35 10",
         "mass": "3000",  # 1.5kg = 1500g
         "rgba": "0 1 1 1",
         "condim": "3",
@@ -643,7 +643,7 @@ class _World:
         if not window.render(self.model, camera, rect):
             exit()
         pf = self.pheromone_field[show_pheromone_index]
-        self.pheromone_panel.update(pf)
+        self.pheromone_panel.update(pf, lambda x: x / pf.sv)
 
         self.model.draw_text(f"{loss}", 0, 0, (1, 1, 1))
 
@@ -651,7 +651,7 @@ class _World:
             window.flush()
 
     def secretion(self, pos, secretion):
-        gain = 50.0
+        gain = 100.0
         for i, s in enumerate(secretion):
             self.pheromone_field[i].add_liquid(pos[0], pos[1], s * self.timestep * gain)
 
@@ -738,14 +738,13 @@ class Environment(optimizer.MuJoCoEnvInterface):
         self._robot_debugger = None  # RobotDebugger(self._world.model, (700, 600), 30)
 
         for _ in range(0, 5):
-            self._world.calc_step()
+            self._world.model.step()
 
     def calc_step(self) -> float:
         if self._thinking_counter <= 0:
             for i in range(self._world.num_robots):
                 robot = self._world.get_robot(i)
 
-                # 約6.65度
                 robot_sight = self._world.calc_robot_sight(robot, -numpy.pi * 0.55, numpy.pi * 0.55, 30)
                 pheromone = self._world.get_pheromone(robot.pos[0], robot.pos[1])
 
@@ -869,8 +868,7 @@ class EnvironmentPack(optimizer.EnvInterface):
 class EnvCreator(optimizer.MuJoCoEnvCreator):
     def __init__(self):
         self.nest_pos: (float, float) = (0, 0)
-        self.robot_pos_a: list[(float, float)] = []
-        self.robot_pos_b: list[(float, float)] = []
+        self.robot_pos: list[(float, float)] = []
         self.obstacle_pos: list[(float, float)] = []
         self.feed_pos: list[(float, float)] = []
         self.sv: list[float] = [0.0]
@@ -893,11 +891,8 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
 
         packed = [struct.pack("<dd", self.nest_pos[0], self.nest_pos[1])]
 
-        packed.extend([struct.pack("<I", len(self.robot_pos_a))])
-        packed.extend([struct.pack("<ddd", p[0], p[1], p[2]) for p in self.robot_pos_a])
-
-        packed.extend([struct.pack("<I", len(self.robot_pos_b))])
-        packed.extend([struct.pack("<ddd", p[0], p[1], p[2]) for p in self.robot_pos_b])
+        packed.extend([struct.pack("<I", len(self.robot_pos))])
+        packed.extend([struct.pack("<ddd", p[0], p[1], p[2]) for p in self.robot_pos])
 
         packed.extend([struct.pack("<I", len(self.obstacle_pos))])
         packed.extend([struct.pack("<dd", p[0], p[1]) for p in self.obstacle_pos])
@@ -928,27 +923,16 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
         e = s + 16
         self.nest_pos = struct.unpack("<dd", data[s:e])[0:2]
 
-        # ロボットの座標A
+        # ロボットの座標
         s = e
         e = s + 4
         num = struct.unpack("<I", data[s:e])[0]
-        self.robot_pos_a.clear()
+        self.robot_pos.clear()
         for _ in range(0, num):
             s = e
             e = s + 24
             rp = struct.unpack("<ddd", data[s:e])[0:3]
-            self.robot_pos_a.append(rp)
-
-        # ロボットの座標B
-        s = e
-        e = s + 4
-        num = struct.unpack("<I", data[s:e])[0]
-        self.robot_pos_b.clear()
-        for _ in range(0, num):
-            s = e
-            e = s + 24
-            rp = struct.unpack("<ddd", data[s:e])[0:3]
-            self.robot_pos_b.append(rp)
+            self.robot_pos.append(rp)
 
         # 障害物の座標
         s = e
@@ -1032,12 +1016,12 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
     def create(self, para) -> optimizer.EnvInterface:
         l2 = numpy.linalg.norm(para, ord=2)
         brain = RobotBrain(para)
-        env_a = Environment(
+        return Environment(
             self.dump_data,
             l2,
             brain,
             self.nest_pos,
-            self.robot_pos_a,
+            self.robot_pos,
             self.obstacle_pos,
             self.feed_pos,
             self.sv,
@@ -1055,30 +1039,6 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
             None,
             None
         )
-        env_b = Environment(
-            self.dump_data,
-            l2,
-            brain,
-            self.nest_pos,
-            self.robot_pos_b,
-            self.obstacle_pos,
-            self.feed_pos,
-            self.sv,
-            self.evaporate,
-            self.diffusion,
-            self.decrease,
-            self.pheromone_field_panel_size,
-            self.pheromone_field_pos,
-            self.pheromone_field_shape,
-            self.pheromone_iteration,
-            self.timestep,
-            self.time,
-            self.think_interval,
-            self.show_pheromone_index,
-            None,
-            None
-        )
-        return EnvironmentPack(env_a, env_b)
 
     def create_mujoco_env(self, para, window: miscellaneous.Window, camera: wrap_mjc.Camera) -> Environment:
         l2 = numpy.linalg.norm(para, ord=2)
@@ -1088,7 +1048,7 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
             l2,
             brain,
             self.nest_pos,
-            self.robot_pos_a,
+            self.robot_pos,
             self.obstacle_pos,
             self.feed_pos,
             self.sv,
