@@ -104,7 +104,7 @@ class ServerCMAES:
             minimalize: bool = True,
     ):
         self._base = base.BaseCMAES(dim, population, mu, sigma, centroid, minimalize, population, cmatrix)
-        self._generation = generation
+        self.generation = generation
 
         _ServerProc.listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         _ServerProc.listener.bind(("", port))
@@ -125,9 +125,14 @@ class ServerCMAES:
     def set_end_handler(self, handler=base.default_end_handler):
         self._base.set_end_handler(handler)
 
-    def optimize(self, env_creator: EnvCreator):
-        for gen in range(1, self._generation + 1):
-            self._base.optimize_current_generation(gen, self._generation, env_creator, _ServerProc)
+    def optimize(self, gen: int, env_creator: EnvCreator) -> array.array:
+        return self._base.optimize_current_generation(gen, self.generation, env_creator, _ServerProc)
+
+    def optimize_all(self, env_creator: EnvCreator) -> array.array:
+        para = None
+        for gen in range(1, self.generation + 1):
+            para = self.optimize(gen, env_creator)
+        return para
 
 
 class ClientCMAES:

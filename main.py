@@ -47,17 +47,25 @@ if __name__ == '__main__':
 
         set_env_creator(env_creator)
 
-        para, hist = utils.cmaes_optimize_server(
+        cmaes = optimizer.ServerCMAES(
+            52325,
+            env_creator.dim(),
             3000,
             700,
-            350,
-            env_creator,
-            52325,
+            -1,
             0.3,
             None,
             None,
-            True
+            True,
         )
+
+        for gen in range(1, cmaes.generation):
+            set_env_creator(env_creator)
+            cmaes.optimize(gen, env_creator)
+
+        para = cmaes.get_best_para()
+        hist = cmaes.get_history()
+
         numpy.save("best_para.npy", para)
         hist.save("history")
 

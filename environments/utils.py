@@ -35,7 +35,7 @@ def cmaes_optimize_server(
     opt = optimizer.ServerCMAES(
         port, env_creator.dim(), generation, population, mu, sigma, centroid, cmatrix, minimalize
     )
-    opt.optimize(env_creator)
+    opt.optimize_all(env_creator)
     return opt.get_best_para(), opt.get_history()
 
 
