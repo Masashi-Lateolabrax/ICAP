@@ -1,43 +1,49 @@
+import random
 import numpy
 
-from environments import utils
 from environments.collect_feed import EnvCreator
-from studyLib import miscellaneous, wrap_mjc
-from studyLib.optimizer import Hist
+from studyLib import miscellaneous, wrap_mjc, optimizer
 
 
 def set_env_creator(env_creator: EnvCreator):
     env_creator.timestep = 0.01
-    env_creator.time = 7
+    env_creator.time = 20
     env_creator.think_interval = 10
 
     env_creator.nest_pos = (0, 0)
-    pos = (0, 0, 100)
-    for theta in range(0, 360, int(360 / 8)):
-        v_x = numpy.cos(theta / 180 * numpy.pi) * pos[2]
-        v_y = numpy.sin(theta / 180 * numpy.pi) * pos[2]
-        env_creator.robot_pos_a.append((pos[0] + v_x, pos[1] + v_y, theta))
-        env_creator.robot_pos_b.append((pos[0] + v_x, pos[1] + v_y, 180 + theta))
 
-    # env_creator.robot_pos = [
-    #     (pos[0] + pos[2] * ix, pos[1] + pos[2] * iy, 0) for iy in range(-1, 2) for ix in range(-1, 2)
-    # ]
+    env_creator.feed_pos = [numpy.array([0, 300]), numpy.array([-250, -250])]
 
-    # env_creator.robot_pos = [(0, 700, theta)]
-    # env_creator.obstacle_pos = [(0, 450)]
+    pos = numpy.zeros(2)
+    for _ in range(10):
+        min_distance = 0
+        while min_distance < 40:
+            pos = (2.0 * numpy.random.rand(2) - 1.0) * 450
 
-    env_creator.feed_pos = [(0, 300)]
+            min_distance = min(
+                numpy.linalg.norm(pos - env_creator.feed_pos[0]),
+                numpy.linalg.norm(pos - env_creator.feed_pos[1])
+            ) + 15
 
-    env_creator.pheromone_field_pos = (0, 200)
+            for p in env_creator.robot_pos:
+                d = numpy.linalg.norm(p[:2] - pos)
+                min_distance = min(d, min_distance)
+
+        env_creator.robot_pos.append([
+            pos[0], pos[1],
+            (2.0 * random.random() - 1.0) * 180
+        ])
+
+    env_creator.pheromone_field_pos = (0, 0)
     env_creator.pheromone_field_panel_size = 20
-    env_creator.pheromone_field_shape = (60, 40)
+    env_creator.pheromone_field_shape = (50, 50)
     env_creator.show_pheromone_index = 0
     env_creator.pheromone_iteration = 5
 
     env_creator.sv = [10.0]
     env_creator.evaporate = [1.0 / env_creator.timestep]
-    env_creator.diffusion = [1.0 / env_creator.timestep]
-    env_creator.decrease = [0.01 / env_creator.timestep]
+    env_creator.diffusion = [0.03 / env_creator.timestep]
+    env_creator.decrease = [0.0 / env_creator.timestep]
 
 
 if __name__ == '__main__':
@@ -69,7 +75,7 @@ if __name__ == '__main__':
         numpy.save("best_para.npy", para)
         hist.save("history")
 
-        shape = (5, 7)
+        shape = (6, 6)
         dpi = 100
         scale: int = 1
         gain_width = 1
@@ -77,7 +83,7 @@ if __name__ == '__main__':
         width = shape[0] * dpi
         height = shape[1] * dpi
         window = miscellaneous.Window(gain_width * width * scale, height * scale)
-        camera = wrap_mjc.Camera((0, 600, 0), 2500, 90, 90)
+        camera = wrap_mjc.Camera((0, 0, 0), 1300, 90, 90)
         window.set_recorder(miscellaneous.Recorder(
             "result.mp4", int(1.0 / env_creator.timestep), width, height
         ))
