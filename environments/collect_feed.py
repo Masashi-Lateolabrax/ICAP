@@ -1060,7 +1060,7 @@ class EnvCreator(optimizer.MuJoCoEnvCreator):
             l2,
             brain,
             self.nest_pos,
-            self.robot_pos_a,
+            self.robot_pos_b,
             self.obstacle_pos,
             self.feed_pos,
             self.sv,
