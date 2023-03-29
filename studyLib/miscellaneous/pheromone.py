@@ -29,17 +29,17 @@ class PheromoneField:
         self._liquid = numpy.zeros((ny, nx))
         self._gas = numpy.zeros((ny, nx))
 
-        self._eva = evaporate  # 蒸発速度
-        self._sv = sv  # 飽和蒸気量
+        self.eva = evaporate  # 蒸発速度
+        self.sv = sv  # 飽和蒸気量
 
-        self._diffusion = diffusion  # 拡散速度
-        self._dec = decrease  # 分解速度
+        self.diffusion = diffusion  # 拡散速度
+        self.dec = decrease  # 分解速度
 
         self._c = numpy.array([
             [0.0, 1.0, 0.0],
             [1.0, -4.0, 1.0],
             [0.0, 1.0, 0.0],
-        ]) * self._diffusion / (ds * ds)
+        ]) * self.diffusion / (ds * ds)
 
     def _pos_to_index(self, x: float, y: float) -> (float, float):
         """
@@ -109,8 +109,8 @@ class PheromoneField:
         :param dt: 刻み幅
         :return: None
         """
-        dif_liquid = numpy.minimum(self._liquid, (self._sv - self._gas) * self._eva * dt)
-        dif_gas = dif_liquid + (scipy.signal.convolve2d(self._gas, self._c, "same") - self._gas * self._dec) * dt
+        dif_liquid = numpy.minimum(self._liquid, (self.sv - self._gas) * self.eva * dt)
+        dif_gas = dif_liquid + (scipy.signal.convolve2d(self._gas, self._c, "same") - self._gas * self.dec) * dt
         self._liquid -= dif_liquid
         self._gas += dif_gas
 
@@ -120,19 +120,19 @@ class PheromoneField:
         :param dt: 刻み幅
         :return: None
         """
-        k1 = (self._sv - self._gas) * self._eva * dt
-        k2 = 1.0 + 0.5 * self._eva * dt
-        k3 = (1.0 + 0.5 * (1.0 + 0.5 * self._eva * dt)) * self._eva * dt
-        k4 = (1.0 + (1.0 + 0.5 * (1.0 + 0.5 * self._eva * dt)) * self._eva * dt) * self._eva * dt
+        k1 = (self.sv - self._gas) * self.eva * dt
+        k2 = 1.0 + 0.5 * self.eva * dt
+        k3 = (1.0 + 0.5 * (1.0 + 0.5 * self.eva * dt)) * self.eva * dt
+        k4 = (1.0 + (1.0 + 0.5 * (1.0 + 0.5 * self.eva * dt)) * self.eva * dt) * self.eva * dt
         dif_liquid = numpy.minimum(self._liquid * dt, k1 * (1.0 + 2.0 * k2 + 2.0 * k3 + k4) * 0.166666666666667)
 
         # 計算コスト削減のため，k2,k3,k4の拡散項の計算でk1の値を流用しています．
         # 検証していませんが，おそらく厳密には拡散項も計算しなおさないといけません．
         # しかし，k1の値を流用することでk2,k3,k4を行列の計算からスカラーの計算に変えられるため劇的に高速化できます．
-        k1 = (scipy.signal.convolve2d(self._gas, self._c, "same") - self._gas * self._dec) * dt
-        k2 = (1.0 - 0.5 * self._dec * dt)
-        k3 = (1.0 - 0.5 * (1.0 - 0.5 * self._dec * dt) * self._dec * dt)
-        k4 = (1.0 - (1.0 - 0.5 * (1.0 - 0.5 * self._dec * dt) * self._dec * dt) * self._dec * dt)
+        k1 = (scipy.signal.convolve2d(self._gas, self._c, "same") - self._gas * self.dec) * dt
+        k2 = (1.0 - 0.5 * self.dec * dt)
+        k3 = (1.0 - 0.5 * (1.0 - 0.5 * self.dec * dt) * self.dec * dt)
+        k4 = (1.0 - (1.0 - 0.5 * (1.0 - 0.5 * self.dec * dt) * self.dec * dt) * self.dec * dt)
         dif_gas = dif_liquid + k1 * (1.0 + 2.0 * k2 + 2.0 * k3 + k4) * 0.166666666666667
 
         self._liquid -= dif_liquid
