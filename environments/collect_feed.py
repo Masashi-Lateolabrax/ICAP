@@ -415,9 +415,9 @@ class RobotBrain:
                     nn_tools.FilterLayer([i for i in range(28 + 3)]),
                     nn_tools.AffineLayer(10),
                     nn_tools.TanhLayer(10),
-                    nn_tools.AffineLayer(10),
-                    nn_tools.IsMaxLayer(10),
-                    nn_tools.BufLayer(10)
+                    nn_tools.AffineLayer(5),
+                    nn_tools.IsMaxLayer(5),
+                    nn_tools.BufLayer(5)
                 ],
                 [
                     nn_tools.FilterLayer([31]),
