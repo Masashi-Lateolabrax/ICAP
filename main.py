@@ -56,8 +56,8 @@ if __name__ == '__main__':
         cmaes = optimizer.ServerCMAES(
             52325,
             env_creator.dim(),
-            1000,
-            500,
+            3000,
+            400,
             -1,
             0.3,
             None,
