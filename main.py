@@ -57,7 +57,7 @@ if __name__ == '__main__':
             52325,
             env_creator.dim(),
             3000,
-            500,
+            400,
             -1,
             0.3,
             None,
