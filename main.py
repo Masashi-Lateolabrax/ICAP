@@ -3,6 +3,7 @@ import numpy
 
 from environments.collect_feed import EnvCreator
 from studyLib import miscellaneous, wrap_mjc, optimizer
+from studyLib.optimizer import Hist
 
 
 def set_env_creator(env_creator: EnvCreator):
@@ -53,15 +54,17 @@ if __name__ == '__main__':
 
         set_env_creator(env_creator)
 
+        # hist_old = Hist.load("history.npz")
+
         cmaes = optimizer.ServerCMAES(
             52325,
             env_creator.dim(),
             3000,
             400,
             -1,
-            0.3,
-            None,
-            None,
+            0.3,  # hist_old.queues[-1].sigma,
+            None,  # hist_old.queues[-1].centroid,
+            None,  # hist_old.last_cmatrix,
             True,
         )
 
@@ -71,7 +74,16 @@ if __name__ == '__main__':
             cmaes.optimize(gen, env_creator)
 
         para = cmaes.get_best_para()
+
         hist = cmaes.get_history()
+
+        # for h in hist.queues:
+        #     hist_old.add(
+        #         h.scores_avg, h.centroid, h.min_score, h.min_para, h.max_score, h.max_para, h.sigma, hist.last_cmatrix
+        #     )
+        # hist_old.max_cmatrix = hist.max_cmatrix
+        # hist_old.min_cmatrix = hist.min_cmatrix
+        # hist = hist_old
 
         numpy.save("best_para.npy", para)
         hist.save("history")
