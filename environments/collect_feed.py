@@ -659,7 +659,7 @@ class _World:
             window.flush()
 
     def secretion(self, pos, secretion):
-        gain = 100.0
+        gain = 50.0
         for i, s in enumerate(secretion):
             self.pheromone_field[i].add_liquid(pos[0], pos[1], s * self.timestep * gain)
 
@@ -715,7 +715,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
             camera: wrap_mjc.Camera = None
     ):
         self.dump_data = dump_data
-        self._loss = l2 * 1e-1
+        self._loss = l2 * 6e2
 
         self._thinking_interval = thinking_interval
         self._thinking_counter = 0
@@ -787,46 +787,14 @@ class Environment(optimizer.MuJoCoEnvInterface):
             return float("inf")
 
         # Calculate loss
-        feed_gain_s = 9.5
-        feed_range_s = 4000.0
-        feed_gain_l = 0.2
-        feed_range_l = 100000.0
-        obstacle_range = 270.0
         dt_loss_feed_nest = 0.0
-        dt_loss_feed_robot = 0.0
-        dt_loss_obstacle_robot = 0.0
-        feed_speed = numpy.zeros(3)
         for i in range(self._world.num_feeds):
             feed = self._world.get_feed(i)
-
             feed_nest_vector = self._world.nest_pos - feed.pos
-            feed_nest_distance = numpy.linalg.norm(feed_nest_vector, ord=2)
-            normed_feed_nest_vector = feed_nest_vector / feed_nest_distance
-            feed_speed[:] = feed.velocity
-            feed_speed[2] = 0
+            dt_loss_feed_nest += numpy.linalg.norm(feed_nest_vector, ord=2)
 
-            dt_loss_feed_nest -= numpy.dot(feed_speed, normed_feed_nest_vector)
-
-            for j in range(self._world.num_robots):
-                robot = self._world.get_robot(j)
-                feed_robot_vector = (robot.pos - feed.pos)[0:2]
-                feed_robot_distance = numpy.sum(feed_robot_vector ** 2)
-                dt_loss_feed_robot -= numpy.exp(-feed_robot_distance / feed_range_s) * feed_gain_s
-                dt_loss_feed_robot -= numpy.exp(-feed_robot_distance / feed_range_l) * feed_gain_l
-
-        for i in range(self._world.num_obstacles):
-            obstacle = self._world.get_obstacle(i)
-            for j in range(self._world.num_robots):
-                robot = self._world.get_robot(j)
-                obstacle_robot_vector = robot.pos - obstacle.pos
-                obstacle_robot_distance = numpy.sum(obstacle_robot_vector ** 2)
-                dt_loss_obstacle_robot += numpy.exp(-obstacle_robot_distance / obstacle_range)
-
-        dt_loss_feed_nest *= 1e0 / self._world.num_feeds
-        dt_loss_feed_robot *= 1e0
-        dt_loss_obstacle_robot *= 1e13
         # print(dt_loss_feed_nest, dt_loss_feed_robot, dt_loss_obstacle_robot)
-        self._loss += (dt_loss_feed_nest + dt_loss_feed_robot + dt_loss_obstacle_robot) * self._world.timestep
+        self._loss += dt_loss_feed_nest * self._world.timestep
 
         return self._loss
 

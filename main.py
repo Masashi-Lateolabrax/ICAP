@@ -42,8 +42,8 @@ def set_env_creator(env_creator: EnvCreator):
     env_creator.pheromone_iteration = 5
 
     env_creator.sv = [10.0]
-    env_creator.evaporate = [1.0 / env_creator.timestep]
-    env_creator.diffusion = [0.03 / env_creator.timestep]
+    env_creator.evaporate = [0.003 / env_creator.timestep]
+    env_creator.diffusion = [0.07 / env_creator.timestep]
     env_creator.decrease = [0.0 / env_creator.timestep]
 
 
