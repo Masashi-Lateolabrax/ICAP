@@ -402,8 +402,8 @@ class RobotBrain:
                     ),
                     nn_tools.TanhLayer(28),
 
-                    nn_tools.AffineLayer(3),
-                    nn_tools.TanhLayer(3),
+                    nn_tools.AffineLayer(10),
+                    nn_tools.TanhLayer(10),
                 ],
                 [
                     nn_tools.FilterLayer([60, 61, 62, 63]),
@@ -414,20 +414,18 @@ class RobotBrain:
         self._calculator.add_layer(nn_tools.ParallelLayer(
             [
                 [
-                    nn_tools.FilterLayer([i for i in range(6)]),
-                    nn_tools.AffineLayer(6),
-                    nn_tools.TanhLayer(6),
+                    nn_tools.FilterLayer([i for i in range(10 + 3)]),
+                    nn_tools.AffineLayer(10),
+                    nn_tools.TanhLayer(10),
 
-                    nn_tools.AffineLayer(4),
-                    nn_tools.TanhLayer(4),
+                    nn_tools.AffineLayer(10),
+                    nn_tools.TanhLayer(10),
 
-                    nn_tools.AffineLayer(2),
-                    nn_tools.IsMaxLayer(2),
-
-                    nn_tools.BufLayer(2)
+                    nn_tools.AffineLayer(10),
+                    nn_tools.IsMaxLayer(10),
                 ],
                 [
-                    nn_tools.FilterLayer([6]),
+                    nn_tools.FilterLayer([13]),
                 ]
             ]
         ))
@@ -435,11 +433,11 @@ class RobotBrain:
         self._calculator.add_layer(nn_tools.ParallelLayer(
             [
                 [
-                    nn_tools.AffineLayer(3),
-                    nn_tools.TanhLayer(3),
+                    nn_tools.AffineLayer(11),
+                    nn_tools.TanhLayer(11),
 
-                    nn_tools.AffineLayer(3),
-                    nn_tools.TanhLayer(3),
+                    nn_tools.AffineLayer(5),
+                    nn_tools.TanhLayer(5),
 
                     nn_tools.AffineLayer(3),
                     nn_tools.SigmoidLayer(3)
