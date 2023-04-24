@@ -809,7 +809,6 @@ class Environment(optimizer.MuJoCoEnvInterface):
 
         dt_loss_feed_robot *= a
 
-        print(dt_loss_feed_nest, dt_loss_feed_robot)
         self._loss += (dt_loss_feed_nest + dt_loss_feed_robot) * self._world.timestep
 
         return self._loss
