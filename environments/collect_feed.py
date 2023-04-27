@@ -423,6 +423,7 @@ class RobotBrain:
 
                     nn_tools.AffineLayer(10),
                     nn_tools.IsMaxLayer(10),
+                    nn_tools.BufLayer(10)
                 ],
                 [
                     nn_tools.FilterLayer([13]),
@@ -461,7 +462,7 @@ class RobotBrain:
 
     def get_pattern(self):
         parallel_layer: nn_tools.ParallelLayer = self._calculator.get_layer(1)
-        buf_layer: nn_tools.BufLayer = parallel_layer.calcs[0].get_layer(5)
+        buf_layer: nn_tools.BufLayer = parallel_layer.calcs[0].get_layer(7)
         return buf_layer.buf.copy()
 
     def get_decision_parts(self) -> nn_tools.Calculator:
@@ -788,13 +789,27 @@ class Environment(optimizer.MuJoCoEnvInterface):
 
         # Calculate loss
         dt_loss_feed_nest = 0.0
-        for i in range(self._world.num_feeds):
-            feed = self._world.get_feed(i)
+        dt_loss_feed_robot = 0.0
+        a = 50 * 20
+        b = 0.51
+        s1 = 0.000089
+        s2 = 0.000092
+        for fi in range(self._world.num_feeds):
+            feed = self._world.get_feed(fi)
             feed_nest_vector = self._world.nest_pos - feed.pos
-            dt_loss_feed_nest += numpy.linalg.norm(feed_nest_vector, ord=2)
+            feed_nest_distance = numpy.linalg.norm(feed_nest_vector, ord=2)
+            dt_loss_feed_nest += feed_nest_distance
 
-        # print(dt_loss_feed_nest, dt_loss_feed_robot, dt_loss_obstacle_robot)
-        self._loss += dt_loss_feed_nest * self._world.timestep
+            for ri in range(self._world.num_robots):
+                robot = self._world.get_robot(ri)
+                hot_point = feed.pos - (feed_nest_vector / feed_nest_distance) * (17.5 + 35)
+                feed_nest_distance = numpy.sum((robot.pos - hot_point) ** 2)
+                dt_loss_feed_robot -= b * numpy.exp(-feed_nest_distance * s1) - (1.0 - b) * numpy.exp(
+                    -feed_nest_distance * s2)
+
+        dt_loss_feed_robot *= a
+
+        self._loss += (dt_loss_feed_nest + dt_loss_feed_robot) * self._world.timestep
 
         return self._loss
 

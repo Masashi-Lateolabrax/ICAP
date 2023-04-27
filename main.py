@@ -16,15 +16,14 @@ def set_env_creator(env_creator: EnvCreator):
     env_creator.feed_pos = [numpy.array([0, 300]), numpy.array([-250, -250])]
 
     pos = numpy.zeros(2)
-    for _ in range(10):
+    while len(env_creator.robot_pos) < 10:
         min_distance = 0
-        while min_distance < 40:
+        while min_distance < 17.5 + 35:
             pos = (2.0 * numpy.random.rand(2) - 1.0) * 450
 
-            min_distance = min(
-                numpy.linalg.norm(pos - env_creator.feed_pos[0]),
-                numpy.linalg.norm(pos - env_creator.feed_pos[1])
-            ) + 15
+            min_distance = numpy.linalg.norm(env_creator.feed_pos[0] - pos)
+            for fp in env_creator.feed_pos[1:]:
+                min_distance = min(min_distance, numpy.linalg.norm(fp - pos))
 
             for p in env_creator.robot_pos:
                 d = numpy.linalg.norm(p[:2] - pos)
