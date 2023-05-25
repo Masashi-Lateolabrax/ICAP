@@ -157,6 +157,9 @@ class PheromoneField:
         h2 = self.get_gas(h2_pos[0], h2_pos[1])
         return numpy.array([(v1 - v2) * 0.5 / self._ds, (h1 - h2) * 0.5 / self._ds])
 
+    def get_gas_max(self):
+        return numpy.max(self._gas)
+
 
 class PheromonePanels:
     def __init__(

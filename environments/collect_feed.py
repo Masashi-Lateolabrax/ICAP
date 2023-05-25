@@ -6,11 +6,12 @@ from studyLib import optimizer, wrap_mjc, miscellaneous, nn_tools
 
 class DumpData:
     class Queue:
-        def __init__(self, robot_id, input_, pattern, output):
+        def __init__(self, robot_id, input_, pattern, output, max_pheromone):
             self.robot_id = robot_id
             self.input = input_
             self.pattern = pattern
             self.output = output
+            self.max_pheromone = max_pheromone
 
     def __init__(self):
         self.queue: list[DumpData.Queue] = []
@@ -21,18 +22,21 @@ class DumpData:
         input_ = numpy.zeros((n, len(self.queue[0].input)))
         pattern = numpy.zeros((n, len(self.queue[0].pattern)))
         output = numpy.zeros((n, len(self.queue[0].output)))
+        max_pheromone = numpy.zeros((n, len(self.queue[0].max_pheromone)))
         for i, q in enumerate(self.queue):
             robot_id[i] = q.robot_id
             input_[i, :] = q.input
             pattern[i, :] = q.pattern
             output[i, :] = q.output
+            max_pheromone[i, :] = q.max_pheromone
 
         numpy.savez(
             name,
             robot_id=robot_id,
             input=input_,
             pattern=pattern,
-            output=output
+            output=output,
+            max_pheromone=max_pheromone
         )
 
     @staticmethod
@@ -42,11 +46,12 @@ class DumpData:
         input_ = npz["input"]
         pattern = npz["pattern"]
         output = npz["output"]
+        max_pheromone = npz["max_pheromone"]
 
         this = DumpData()
-        for i, i_, p, o in zip(robot_id, input_, pattern, output):
+        for i, in_, p, o, mp in zip(robot_id, input_, pattern, output, max_pheromone):
             this.queue.append(DumpData.Queue(
-                i, i_, p, o
+                i, in_, p, o, mp
             ))
 
         return this
@@ -777,7 +782,8 @@ class Environment(optimizer.MuJoCoEnvInterface):
                         i,
                         input_,
                         self.robot_brain.get_pattern(),
-                        robot.decision.copy()
+                        robot.decision.copy(),
+                        [f.get_gas_max() for f in self._world.pheromone_field]
                     ))
 
         if self._thinking_counter <= 0:
