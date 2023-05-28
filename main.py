@@ -15,7 +15,7 @@ def set_env_creator(env_creator: EnvCreator):
 
     env_creator.feed_pos = [numpy.array([0, 300]), numpy.array([-250, -250])]
 
-    numpy.random.seed(2305251107)
+    numpy.random.seed(230528)
 
     pos = numpy.zeros(2)
     while len(env_creator.robot_pos) < 10:
