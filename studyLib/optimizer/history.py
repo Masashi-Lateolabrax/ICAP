@@ -3,30 +3,29 @@ import datetime
 import numpy
 
 
-class Queue:
-    def __init__(
-            self,
-            scores_avg: float,
-            centroid: numpy.ndarray,
-            min_score: float,
-            min_para: numpy.ndarray,
-            max_score: float,
-            max_para: numpy.ndarray,
-            sigma: float
-    ):
-        self.time = datetime.datetime.now()
-        self.scores_avg: float = scores_avg
-        self.centroid: numpy.ndarray = centroid.copy()
-        self.min_score: float = min_score
-        self.min_para: numpy.ndarray = min_para.copy()
-        self.max_score: float = max_score
-        self.max_para: numpy.ndarray = max_para.copy()
-        self.sigma: float = sigma
-
-
 class Hist:
+    class Queue:
+        def __init__(
+                self,
+                scores_avg: float,
+                centroid: numpy.ndarray,
+                min_score: float,
+                min_para: numpy.ndarray,
+                max_score: float,
+                max_para: numpy.ndarray,
+                sigma: float
+        ):
+            self.time = datetime.datetime.now()
+            self.scores_avg: float = scores_avg
+            self.centroid: numpy.ndarray = centroid.copy()
+            self.min_score: float = min_score
+            self.min_para: numpy.ndarray = min_para.copy()
+            self.max_score: float = max_score
+            self.max_para: numpy.ndarray = max_para.copy()
+            self.sigma: float = sigma
+
     def __init__(self, dim: int, population: int, mu: int):
-        self.queues: list[Queue] = []
+        self.queues: list[Hist.Queue] = []
         self.dim = dim
         self.population = population
         self.mu = mu
@@ -91,7 +90,7 @@ class Hist:
         score = npz["score"]
         sigmas = npz["sigmas"]
         for t, centroid, min_p, max_p, s, sigma_ in zip(time, centroids, min_para, max_para, score, sigmas):
-            q = Queue(s[0], centroid, s[1], min_p, s[2], max_p, sigma_)
+            q = Hist.Queue(s[0], centroid, s[1], min_p, s[2], max_p, sigma_)
             q.time = datetime.datetime.strptime(t, "%Y-%m-%d %H:%M:%S.%f")
             this.queues.append(q)
 
@@ -108,7 +107,7 @@ class Hist:
             sigma: float,
             cmatrix: numpy.ndarray,
     ):
-        self.queues.append(Queue(scores_avg, centroid, min_score, min_para, max_score, max_para, sigma))
+        self.queues.append(Hist.Queue(scores_avg, centroid, min_score, min_para, max_score, max_para, sigma))
         self.last_cmatrix = cmatrix.copy()
         if self.queues[self.min_index].min_score > min_score:
             self.min_index = len(self.queues) - 1
@@ -122,3 +121,7 @@ class Hist:
 
     def get_max(self) -> Queue:
         return self.queues[self.max_index]
+
+    def get_rangking_Nth(self, n: int) -> Queue:
+        ranking = sorted(map(lambda x: (x[1].min_score, x[0]), enumerate(self.queues)))[0:5]
+        return self.queues[ranking[n][1]]

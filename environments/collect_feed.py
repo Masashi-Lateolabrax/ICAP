@@ -6,9 +6,11 @@ from studyLib import optimizer, wrap_mjc, miscellaneous, nn_tools
 
 class DumpData:
     class Queue:
-        def __init__(self, robot_id, input_, pattern, output, max_pheromone):
+        def __init__(self, robot_id, inputted_sight, inputted_nest, inputted_pheromone, pattern, output, max_pheromone):
             self.robot_id = robot_id
-            self.input = input_
+            self.inputted_sight = inputted_sight
+            self.inputted_nest = inputted_nest
+            self.inputted_pheromone = inputted_pheromone
             self.pattern = pattern
             self.output = output
             self.max_pheromone = max_pheromone
@@ -19,13 +21,17 @@ class DumpData:
     def save(self, name):
         n = len(self.queue)
         robot_id = numpy.zeros(n)
-        input_ = numpy.zeros((n, len(self.queue[0].input)))
+        inputted_sight = numpy.zeros((n, len(self.queue[0].inputted_sight)))
+        inputted_nest = numpy.zeros((n, len(self.queue[0].inputted_nest)))
+        inputted_pheromone = numpy.zeros((n, len(self.queue[0].inputted_pheromone)))
         pattern = numpy.zeros((n, len(self.queue[0].pattern)))
         output = numpy.zeros((n, len(self.queue[0].output)))
         max_pheromone = numpy.zeros((n, len(self.queue[0].max_pheromone)))
         for i, q in enumerate(self.queue):
             robot_id[i] = q.robot_id
-            input_[i, :] = q.input
+            inputted_sight[i, :] = q.inputted_sight
+            inputted_nest[i, :] = q.inputted_nest
+            inputted_pheromone[i, :] = q.inputted_pheromone
             pattern[i, :] = q.pattern
             output[i, :] = q.output
             max_pheromone[i, :] = q.max_pheromone
@@ -33,7 +39,9 @@ class DumpData:
         numpy.savez(
             name,
             robot_id=robot_id,
-            input=input_,
+            inputted_sight=inputted_sight,
+            inputted_nest=inputted_nest,
+            inputted_pheromone=inputted_pheromone,
             pattern=pattern,
             output=output,
             max_pheromone=max_pheromone
@@ -43,15 +51,18 @@ class DumpData:
     def load(name):
         npz = numpy.load(name)
         robot_id = npz["robot_id"]
-        input_ = npz["input"]
+        inputted_sight = npz["inputted_sight"]
+        inputted_nest = npz["inputted_nest"]
+        inputted_pheromone = npz["inputted_pheromone"]
         pattern = npz["pattern"]
         output = npz["output"]
         max_pheromone = npz["max_pheromone"]
 
         this = DumpData()
-        for i, in_, p, o, mp in zip(robot_id, input_, pattern, output, max_pheromone):
+        for i, in_s, in_n, in_p, p, o, mp in \
+                zip(robot_id, inputted_sight, inputted_nest, inputted_pheromone, pattern, output, max_pheromone):
             this.queue.append(DumpData.Queue(
-                i, in_, p, o, mp
+                i, in_s, in_n, in_p, p, o, mp
             ))
 
         return this
@@ -771,7 +782,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
                     nest_vec /= nest_dist
                 else:
                     nest_vec[:] = 0.0
-                decreased_nest_dist = (1.0 / (nest_dist + 1.0)) ** 2
+                decreased_nest_dist = (1.0 / (3e-2 * nest_dist + 1.0)) ** 2
                 sensed_nest = [nest_vec[0], nest_vec[1], decreased_nest_dist]
 
                 input_ = numpy.concatenate([robot_sight, sensed_nest, pheromone])
@@ -780,7 +791,9 @@ class Environment(optimizer.MuJoCoEnvInterface):
                 if self.dump_data is not None:
                     self.dump_data.queue.append(DumpData.Queue(
                         i,
-                        input_,
+                        robot_sight,
+                        sensed_nest,
+                        pheromone,
                         self.robot_brain.get_pattern(),
                         robot.decision.copy(),
                         [f.get_gas_max() for f in self._world.pheromone_field]
