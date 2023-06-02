@@ -782,7 +782,7 @@ class Environment(optimizer.MuJoCoEnvInterface):
                     nest_vec /= nest_dist
                 else:
                     nest_vec[:] = 0.0
-                decreased_nest_dist = (1.0 / (nest_dist + 1.0)) ** 2
+                decreased_nest_dist = (1.0 / (3e-2 * nest_dist + 1.0)) ** 2
                 sensed_nest = [nest_vec[0], nest_vec[1], decreased_nest_dist]
 
                 input_ = numpy.concatenate([robot_sight, sensed_nest, pheromone])
