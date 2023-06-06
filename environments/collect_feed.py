@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+import pickle
+
 import mujoco
 import numpy
 
@@ -5,67 +9,45 @@ from studyLib import optimizer, wrap_mjc, miscellaneous, nn_tools
 
 
 class DumpData:
-    class Queue:
-        def __init__(self, robot_id, inputted_sight, inputted_nest, inputted_pheromone, pattern, output, max_pheromone):
+    class RobotInfo:
+        def __init__(self, robot_id, inputted_sight, inputted_nest, inputted_pheromone, pattern, output):
             self.robot_id = robot_id
             self.inputted_sight = inputted_sight
             self.inputted_nest = inputted_nest
             self.inputted_pheromone = inputted_pheromone
             self.pattern = pattern
             self.output = output
-            self.max_pheromone = max_pheromone
+
+    class _Queue:
+        def __init__(self):
+            self.robot: list[DumpData.RobotInfo] = []
+            self.max_pheromone = []
 
     def __init__(self):
-        self.queue: list[DumpData.Queue] = []
+        self.current_queue = DumpData._Queue()
+        self.queue: list[DumpData._Queue] = []
+
+    def num_robots(self) -> int:
+        return len(self.queue[0].robot)
+
+    def add_robot_info(self, robot_info: RobotInfo):
+        self.current_queue.robot.append(robot_info)
+
+    def record_max_pheromone_value(self, max_pheromone_value: list[float]):
+        self.current_queue.max_pheromone = max_pheromone_value
+
+    def flush(self):
+        self.queue.append(self.current_queue)
+        self.current_queue = DumpData._Queue()
 
     def save(self, name):
-        n = len(self.queue)
-        robot_id = numpy.zeros(n)
-        inputted_sight = numpy.zeros((n, len(self.queue[0].inputted_sight)))
-        inputted_nest = numpy.zeros((n, len(self.queue[0].inputted_nest)))
-        inputted_pheromone = numpy.zeros((n, len(self.queue[0].inputted_pheromone)))
-        pattern = numpy.zeros((n, len(self.queue[0].pattern)))
-        output = numpy.zeros((n, len(self.queue[0].output)))
-        max_pheromone = numpy.zeros((n, len(self.queue[0].max_pheromone)))
-        for i, q in enumerate(self.queue):
-            robot_id[i] = q.robot_id
-            inputted_sight[i, :] = q.inputted_sight
-            inputted_nest[i, :] = q.inputted_nest
-            inputted_pheromone[i, :] = q.inputted_pheromone
-            pattern[i, :] = q.pattern
-            output[i, :] = q.output
-            max_pheromone[i, :] = q.max_pheromone
-
-        numpy.savez(
-            name,
-            robot_id=robot_id,
-            inputted_sight=inputted_sight,
-            inputted_nest=inputted_nest,
-            inputted_pheromone=inputted_pheromone,
-            pattern=pattern,
-            output=output,
-            max_pheromone=max_pheromone
-        )
+        with open(name, 'wb') as f:
+            pickle.dump(self, f)
 
     @staticmethod
-    def load(name):
-        npz = numpy.load(name)
-        robot_id = npz["robot_id"]
-        inputted_sight = npz["inputted_sight"]
-        inputted_nest = npz["inputted_nest"]
-        inputted_pheromone = npz["inputted_pheromone"]
-        pattern = npz["pattern"]
-        output = npz["output"]
-        max_pheromone = npz["max_pheromone"]
-
-        this = DumpData()
-        for i, in_s, in_n, in_p, p, o, mp in \
-                zip(robot_id, inputted_sight, inputted_nest, inputted_pheromone, pattern, output, max_pheromone):
-            this.queue.append(DumpData.Queue(
-                i, in_s, in_n, in_p, p, o, mp
-            ))
-
-        return this
+    def load(name) -> DumpData:
+        with open(name, 'rb') as f:
+            return pickle.load(f)
 
 
 def _gen_env(
@@ -437,9 +419,9 @@ class RobotBrain:
                     nn_tools.AffineLayer(7),
                     nn_tools.TanhLayer(7),
 
-                    nn_tools.AffineLayer(5),
-                    nn_tools.IsMaxLayer(5),
-                    nn_tools.BufLayer(5)
+                    nn_tools.AffineLayer(3),
+                    nn_tools.IsMaxLayer(3),
+                    nn_tools.BufLayer(3)
                 ],
                 [
                     nn_tools.FilterLayer([13]),
@@ -450,8 +432,8 @@ class RobotBrain:
         self._calculator.add_layer(nn_tools.ParallelLayer(
             [
                 [
-                    nn_tools.AffineLayer(6),
-                    nn_tools.TanhLayer(6),
+                    nn_tools.AffineLayer(4),
+                    nn_tools.TanhLayer(4),
 
                     nn_tools.AffineLayer(3),
                     nn_tools.TanhLayer(3),
@@ -789,15 +771,18 @@ class Environment(optimizer.MuJoCoEnvInterface):
                 robot.decision[:] = self.robot_brain.calc(input_)
 
                 if self.dump_data is not None:
-                    self.dump_data.queue.append(DumpData.Queue(
+                    self.dump_data.add_robot_info(DumpData.RobotInfo(
                         i,
                         robot_sight,
                         sensed_nest,
                         pheromone,
                         self.robot_brain.get_pattern(),
-                        robot.decision.copy(),
-                        [f.get_gas_max() for f in self._world.pheromone_field]
+                        robot.decision.copy()
                     ))
+
+        if self.dump_data is not None:
+            self.dump_data.record_max_pheromone_value([f.get_gas_max() for f in self._world.pheromone_field])
+            self.dump_data.flush()
 
         if self._thinking_counter <= 0:
             self._thinking_counter = self._thinking_interval

@@ -48,7 +48,7 @@ def set_env_creator(env_creator: EnvCreator):
 
 if __name__ == '__main__':
     def main():
-        numpy.random.seed(2306021638)
+        numpy.random.seed(2306061612)
 
         env_creator = EnvCreator()
         print(f"DIMENSION : {env_creator.dim()}")
