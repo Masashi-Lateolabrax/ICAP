@@ -15,9 +15,6 @@ class Recorder(rec_i.RecorderInterface):
     def __del__(self):
         self.writer.release()
 
-    def release(self):
-        self.writer.release()
-
     def record(self, viewer: vi.Viewer):
         w, h = viewer.get_size()
 
@@ -29,3 +26,6 @@ class Recorder(rec_i.RecorderInterface):
         self.writer.write(
             cv2.resize(numpy.flipud(self.buffer), dsize=(self.width, self.height), interpolation=cv2.INTER_NEAREST)
         )
+
+    def release(self):
+        self.writer.release()
