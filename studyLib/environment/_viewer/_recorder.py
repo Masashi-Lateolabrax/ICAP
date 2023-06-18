@@ -1,9 +1,10 @@
 import cv2
 import numpy
 import _viewer as vi
+import _recorder_interface as rec_i
 
 
-class Recorder:
+class Recorder(rec_i.RecorderInterface):
     def __init__(self, filepath: str, fps: int, video_size: (int, int)):
         codec = cv2.VideoWriter_fourcc("m", "p", "4", "v")
         self.writer = cv2.VideoWriter(filepath, codec, fps, video_size)
@@ -12,6 +13,9 @@ class Recorder:
         self.buffer = numpy.zeros(0)
 
     def __del__(self):
+        self.writer.release()
+
+    def release(self):
         self.writer.release()
 
     def record(self, viewer: vi.Viewer):
@@ -25,6 +29,3 @@ class Recorder:
         self.writer.write(
             cv2.resize(numpy.flipud(self.buffer), dsize=(self.width, self.height), interpolation=cv2.INTER_NEAREST)
         )
-
-    def release(self):
-        self.writer.release()
