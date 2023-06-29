@@ -15,8 +15,8 @@ class PheromoneField:
             evaporate: float, diffusion: float, decrease: float,
     ):
         # セルの数
-        self._nx = nx
-        self._ny = ny
+        self.nx = nx
+        self.ny = ny
 
         # セルの大きさ
         self._ds = ds
@@ -182,10 +182,9 @@ class PheromonePanels:
                 deco_geom.set_quat([0, 0, 1], 0)
                 self._panels[xi].append(deco_geom)
 
-    def update(self, pheromone_field: PheromoneField, func=lambda x: x):
+    def update(self, pheromone_field: PheromoneField, calc_color_from_scaler=lambda x: x):
         for xi, ps in enumerate(self._panels):
             for yi, p in enumerate(ps):
                 gas = pheromone_field.get_gas_raw(xi, yi)
-                v = func(gas)
-                color = colorsys.hsv_to_rgb(0.66 * (1.0 - v), 1.0, 1.0)
+                color = calc_color_from_scaler(gas)
                 p.set_rgba((color[0], color[1], color[2], 0.7))
