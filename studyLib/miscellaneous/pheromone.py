@@ -48,8 +48,8 @@ class PheromoneField:
         :param y: MuJoCo上のy座標
         :return: 対応するself._gasのインデックス
         """
-        ix = ((x - self._px) / (self._size * self._nx) + 0.5) * (self._nx - 1.0)
-        iy = ((y - self._py) / (self._size * self._ny) + 0.5) * (self._ny - 1.0)
+        ix = ((x - self._px) / (self._size * self.nx) + 0.5) * (self.nx - 1.0)
+        iy = ((y - self._py) / (self._size * self.ny) + 0.5) * (self.ny - 1.0)
         return ix, iy
 
     def _calc_dico(self, x: float, y: float):
@@ -82,17 +82,17 @@ class PheromoneField:
         """
         dico = self._calc_dico(x, y)
         for ix, iy, e in dico:
-            if 0 <= ix < self._nx and 0 <= iy < self._ny:
+            if 0 <= ix < self.nx and 0 <= iy < self.ny:
                 self._liquid[iy, ix] += value * e
 
     def set_liquid(self, x: float, y: float, value: float) -> None:
         dico = self._calc_dico(x, y)
         for ix, iy, e in dico:
-            if 0 <= ix < self._nx and 0 <= iy < self._ny:
+            if 0 <= ix < self.nx and 0 <= iy < self.ny:
                 self._liquid[iy, ix] = value * e
 
     def get_gas_raw(self, ix: int, iy: int) -> float:
-        if 0 <= ix < self._nx and 0 <= iy < self._ny:
+        if 0 <= ix < self.nx and 0 <= iy < self.ny:
             return self._gas[iy, ix]
         return 0.0
 
