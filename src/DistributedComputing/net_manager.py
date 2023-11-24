@@ -1,3 +1,5 @@
+import io
+
 from . import *
 
 
@@ -69,7 +71,7 @@ class NetManager:
 
         return NetworkResult(NetworkResultType.Succeed, (prefix, buf))
 
-    def send(self, prefix: int, cxt: bytes) -> NetworkResult:
+    def send(self, prefix: int, cxt: bytes | io.BytesIO) -> NetworkResult:
         import socket
         import struct
 
