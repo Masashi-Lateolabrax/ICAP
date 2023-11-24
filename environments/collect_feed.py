@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pickle
+import math
 
 import mujoco
 import numpy
@@ -647,10 +648,26 @@ class _World:
             rect: (int, int, int, int) = None,
             flush: bool = True
     ):
+
+        def sigmoid(x, gain=1.0, offset_x=0.0):
+            return (math.tanh(((x + offset_x) * gain) / 2) + 1) / 2
+
+        def colorBarRGB(x):
+            gain = 10
+            offset_x = 0.2
+            offset_green = 0.6
+
+            x = (x * 2) - 1
+            red = sigmoid(x, gain, -1 * offset_x)
+            blue = 1 - sigmoid(x, gain, offset_x)
+            green = sigmoid(x, gain, offset_green) + (1 - sigmoid(x, gain, -1 * offset_green))
+            green = green - 1.0
+            return red, green, blue
+
         if not window.render(self.model, camera, rect):
             exit()
         pf = self.pheromone_field[show_pheromone_index]
-        self.pheromone_panel.update(pf, lambda x: x / pf.sv)
+        self.pheromone_panel.update(pf, colorBarRGB)
 
         self.model.draw_text(f"{loss}", 0, 0, (1, 1, 1))
 

@@ -182,7 +182,7 @@ class PheromonePanels:
                 deco_geom.set_quat([0, 0, 1], 0)
                 self._panels[xi].append(deco_geom)
 
-    def update(self, pheromone_field: PheromoneField, calc_color_from_scaler=lambda x: x):
+    def update(self, pheromone_field: PheromoneField, calc_color_from_scaler=lambda x: [x, x, x]):
         for xi, ps in enumerate(self._panels):
             for yi, p in enumerate(ps):
                 gas = pheromone_field.get_gas_raw(xi, yi)
