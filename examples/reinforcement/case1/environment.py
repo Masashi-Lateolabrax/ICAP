@@ -6,10 +6,11 @@ class EnvironmentBuilder:
             self,
             pos,
             pole_length: float,
-            weight: float,
             kv: float,
+            body_weight=1000,
+            pole_weight=1000,
             timestep: float = 0.002,
-            name: str = "Title"
+            name: str = "Title",
     ):
         """
         :param pos: The position of vehicle. Its type should be like tuple[float,float,float].
@@ -23,7 +24,10 @@ class EnvironmentBuilder:
         self.timestep = timestep
         self.pos = pos
         self.pole_length = pole_length
-        self.weight = weight
+        self.weight = {
+            "pole": pole_weight,
+            "body": body_weight,
+        }
         self.kv = kv
 
     def build(self) -> mujoco.MjModel:
@@ -52,17 +56,13 @@ class EnvironmentBuilder:
                 
                 <site name="body_site"/>
                 
-                <geom name="vehicle_body1" type="box" size="2.5 0.5 0.5" pos="0 1.0 0" rgba="1.0 1.0 1.0 1.0"/>
-                <geom name="vehicle_body2" type="box" size="2.5 0.5 0.5" pos="0 -1.0 0" rgba="1.0 1.0 1.0 1.0"/>
+                <geom name="vehicle_body1" type="box" size="2.5 0.5 0.5" pos="0 1.0 0" rgba="1.0 1.0 1.0 1.0" condim="3" priority="1"  mass="{self.weight["body"]}"/>
+                <geom name="vehicle_body2" type="box" size="2.5 0.5 0.5" pos="0 -1.0 0" rgba="1.0 1.0 1.0 1.0" condim="3" priority="1" mass="{self.weight["body"]}"/>
                 
                 <body pos="0 0 -{self.pole_length * 0.5}">
                     <joint name="pole_joint" type="hinge" axis="0 1 0" pos="0 0 {self.pole_length * 0.5}"/>
                     
-                    <geom name="pole" type="cylinder" size="0.5 {self.pole_length * 0.5}" pos="0 0 0" mass="1" rgba="1.0 1.0 1.0 1.0" contype="2" conaffinity="2"/>
-                    
-                    <body pos="0 0 {-self.pole_length * 0.5 - 0.5}">
-                        <geom name="weight" type="box" size="0.5 0.5 0.5" mass="{self.weight}" rgba="1 1 1 1" contype="2" conaffinity="2"/>
-                    </body>
+                    <geom name="pole" type="cylinder" size="0.5 {self.pole_length * 0.5}" mass="{self.weight["pole"]}" pos="0 0 0" rgba="1.0 1.0 1.0 1.0" contype="2" conaffinity="2"/>
                 </body>
             </body>
         </worldbody>
