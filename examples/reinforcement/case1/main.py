@@ -3,7 +3,7 @@ import random
 import torch.optim
 
 
-def setup(time_step, replay_buf_size: int, device):
+def setup(time_step, replay_buf_size: int, device, learning_rate):
     import mujoco
     from examples.reinforcement.case1 import environment
     from examples.reinforcement.case1 import nn_model
@@ -14,7 +14,7 @@ def setup(time_step, replay_buf_size: int, device):
     prev_nn.eval()
 
     optimizer = torch.optim.Adam(
-        nn.parameters(), lr=1e-2
+        nn.parameters(), lr=learning_rate
     )
     replay_buf = nn_model.ReplayMemory(6, replay_buf_size)
 
@@ -52,14 +52,17 @@ def main():
     next_states = torch.tensor([[0.0] * 6] * setting.batch_size, device=device, requires_grad=False)
     targets = torch.tensor([[0.0]] * setting.batch_size, device=device, requires_grad=False)
 
-    nn, prev_nn, optimizer, replay_buf, model, data = setup(setting.time_step, setting.replay_buf_size, device)
+    nn, prev_nn, optimizer, replay_buf, model, data = setup(
+        setting.time_step, setting.replay_buf_size, device, setting.learning_rate
+    )
 
     mujoco.mj_step(model, data)
     with mujoco.viewer.launch_passive(model, data) as viewer:
         while viewer.is_running():
             game_step += 1
             think_step += 1
-            epsilon = setting.end_epsilon + (setting.start_epsilon - setting.end_epsilon) * math.exp(-1. * epoc / setting.epsilon_decay)
+            epsilon = setting.end_epsilon + (setting.start_epsilon - setting.end_epsilon) * math.exp(
+                -1. * epoc / setting.epsilon_decay)
 
             d = mujoco.mju_norm3(data.site("body_site").xpos)
             a = abs(data.sensor('pole_angle').data[0].item())

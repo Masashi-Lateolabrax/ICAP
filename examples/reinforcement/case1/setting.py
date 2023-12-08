@@ -1,3 +1,5 @@
+learning_rate = 0.01
+
 start_epsilon = 0.9
 end_epsilon = 0.05
 epsilon_decay = 10000
@@ -13,5 +15,3 @@ life_time = int((60 / time_step) * 1)
 area_size = 20
 
 replay_buf_size = int(life_time / think_interval) * 5
-
-
