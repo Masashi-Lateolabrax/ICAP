@@ -35,62 +35,50 @@ def main():
     import mujoco.viewer
     import torch
     import math
+    import setting
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-
-    start_epsilon = 0.9
-    end_epsilon = 0.05
-    epsilon_decay = 10000
-    gamma = 0.99
-
-    time_step = 0.02
-    area_size = 20
-    life_time = int((60 / time_step) * 1)
-    think_interval = 2
-
-    replay_buf_size = int(life_time / think_interval) * 5
-    batch_size = 16
 
     epoc = 0
     action_id = 0
     game_step = 0
     prev_pole_velocity = 0.0
-    think_step = think_interval
+    think_step = setting.think_interval
 
     loss = torch.Tensor([0.0])
     input_tensor = torch.tensor([0.0] * 6, device=device, requires_grad=False)
-    states = torch.tensor([[0.0] * 6] * batch_size, device=device, requires_grad=False)
-    actions = torch.tensor([[0]] * batch_size, dtype=torch.int64, device=device, requires_grad=False)
-    next_states = torch.tensor([[0.0] * 6] * batch_size, device=device, requires_grad=False)
-    targets = torch.tensor([[0.0]] * batch_size, device=device, requires_grad=False)
+    states = torch.tensor([[0.0] * 6] * setting.batch_size, device=device, requires_grad=False)
+    actions = torch.tensor([[0]] * setting.batch_size, dtype=torch.int64, device=device, requires_grad=False)
+    next_states = torch.tensor([[0.0] * 6] * setting.batch_size, device=device, requires_grad=False)
+    targets = torch.tensor([[0.0]] * setting.batch_size, device=device, requires_grad=False)
 
-    nn, prev_nn, optimizer, replay_buf, model, data = setup(time_step, replay_buf_size, device)
+    nn, prev_nn, optimizer, replay_buf, model, data = setup(setting.time_step, setting.replay_buf_size, device)
 
     mujoco.mj_step(model, data)
     with mujoco.viewer.launch_passive(model, data) as viewer:
         while viewer.is_running():
             game_step += 1
             think_step += 1
-            epsilon = end_epsilon + (start_epsilon - end_epsilon) * math.exp(-1. * epoc / epsilon_decay)
+            epsilon = setting.end_epsilon + (setting.start_epsilon - setting.end_epsilon) * math.exp(-1. * epoc / setting.epsilon_decay)
 
             d = mujoco.mju_norm3(data.site("body_site").xpos)
             a = abs(data.sensor('pole_angle').data[0].item())
 
-            if game_step >= life_time or d > area_size or a > 1.57:
-                if d < area_size and a < 1.57:
+            if game_step >= setting.life_time or d > setting.area_size or a > 1.57:
+                if d < setting.area_size and a < 1.57:
                     replay_buf.set_reward(game_step)
                 else:
-                    replay_buf.set_reward(-life_time)
+                    replay_buf.set_reward(-setting.life_time)
                 replay_buf.push_end_episode()
 
                 game_step = 0
-                think_step = think_interval
+                think_step = setting.think_interval
                 epoc += 1
                 print(f"epoc:{epoc}, epsilon:{epsilon}, loss{loss.item()}")
 
                 mujoco.mj_resetData(model, data)
 
-            if think_step >= think_interval:
+            if think_step >= setting.think_interval:
                 think_step = 0
 
                 replay_buf.set_reward(game_step)
@@ -99,13 +87,13 @@ def main():
                     prev_nn.load_state_dict(nn.state_dict())
 
                     with torch.no_grad():
-                        for i in range(batch_size):
+                        for i in range(setting.batch_size):
                             replay = replay_buf.select_randomly()
                             states[i, :] = replay["state"]
                             next_states[i, :] = replay["next_state"]
                             actions[i, 0] = replay["action"]
                             targets[i, 0] = replay["reward"]
-                        targets[:, 0] += prev_nn.forward(next_states).max(1).values * gamma
+                        targets[:, 0] += prev_nn.forward(next_states).max(1).values * setting.gamma
 
                     loss = torch.nn.functional.smooth_l1_loss(
                         nn.forward(states).gather(1, actions),
