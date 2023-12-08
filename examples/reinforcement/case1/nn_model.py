@@ -6,16 +6,13 @@ class ReplayMemory:
         def __init__(self, state_dim):
             self.is_valid = False
             self.state = torch.Tensor([0.0] * state_dim)
-            self.action_id = 0
             self.reward = 0.0
-            self.q = 0.0
-            self.max_q = 0.0
 
-        def set(self, state, reward: float, max_q: float):
+        def set(self, state, action_id, reward: float):
             self.is_valid = True
             self.state[:] = state
+            self.action_id = action_id
             self.reward = reward
-            self.max_q = max_q
 
         def disable(self):
             self.is_valid = False
@@ -29,8 +26,8 @@ class ReplayMemory:
     def is_filled(self) -> bool:
         return len(self.buffer) >= self.length
 
-    def _get_empty_episode(self):
-        if len(self.buffer) <= self.index:
+    def _push_empty_episode(self):
+        if not self.is_filled():
             episode = ReplayMemory._Episode(self.state_dim)
             self.buffer.append(episode)
         else:
@@ -42,27 +39,42 @@ class ReplayMemory:
 
         return episode
 
-    def push(self, state, reward, max_q):
-        episode = self._get_empty_episode()
-        episode.set(state, reward, max_q)
+    def _get_last_episode(self):
+        if len(self.buffer) == 0:
+            raise "This replay buffer is empty."
+
+        if self.index == 0:
+            return self.buffer[len(self.buffer) - 1]
+        return self.buffer[self.index - 1]
+
+    def push(self, state, action_id):
+        episode = self._push_empty_episode()
+        episode.set(state, action_id, 0.0)
 
     def push_end_episode(self):
-        episode = self._get_empty_episode()
+        episode = self._push_empty_episode()
         episode.disable()
+
+    def set_reward(self, reward):
+        if len(self.buffer) == 0:
+            return
+        episode = self._get_last_episode()
+        episode.reward = reward
 
     def select_randomly(self):
         import random
 
         i = random.randrange(0, len(self.buffer) - 1)
         next_i = (i + 1) % self.length
-        while not self.buffer[next_i].is_valid:
+        while not (self.buffer[i].is_valid and self.buffer[next_i].is_valid):
             i = random.randrange(0, len(self.buffer) - 1)
             next_i = (i + 1) % self.length
 
         return {
             "state": self.buffer[i].state,
+            "action": self.buffer[i].action_id,
             "reward": self.buffer[i].reward,
-            "next_max_q": self.buffer[next_i].max_q,
+            "next_state": self.buffer[i].state,
         }
 
     def reset(self):
@@ -78,18 +90,13 @@ class DQN(torch.nn.Module):
         super().__init__()
 
         self.seq = torch.nn.Sequential(OrderedDict([
-            ("body1", torch.nn.Linear(5, 32)),
+            ("body1", torch.nn.Linear(6, 128)),
             ("act1", torch.nn.Tanh()),
-            ("body2", torch.nn.Linear(32, 32)),
+            ("body2", torch.nn.Linear(128, 64)),
             ("act2", torch.nn.Tanh()),
-            ("body3", torch.nn.Linear(32, 16)),
+            ("body3", torch.nn.Linear(64, 32)),
             ("act3", torch.nn.Tanh()),
-            ("body4", torch.nn.Linear(16, 8)),
-            ("act4", torch.nn.Tanh()),
-            ("body5", torch.nn.Linear(8, 16)),
-            ("act5", torch.nn.Tanh()),
-            ("body6", torch.nn.Linear(16, 17)),
-            ("act6", torch.nn.Tanh()),
+            ("body4", torch.nn.Linear(32, 17)),
         ]))
 
     def forward(self, x) -> torch.Tensor:

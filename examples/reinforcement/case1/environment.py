@@ -56,13 +56,15 @@ class EnvironmentBuilder:
                 
                 <site name="body_site"/>
                 
-                <geom name="vehicle_body1" type="box" size="2.5 0.5 0.5" pos="0 1.0 0" rgba="1.0 1.0 1.0 1.0" condim="3" priority="1"  mass="{self.weight["body"]}"/>
-                <geom name="vehicle_body2" type="box" size="2.5 0.5 0.5" pos="0 -1.0 0" rgba="1.0 1.0 1.0 1.0" condim="3" priority="1" mass="{self.weight["body"]}"/>
+                <geom name="vehicle_body1" type="box" size="2.5 0.5 0.5" pos="0 1.0 0" rgba="1.0 1.0 1.0 1.0" condim="1" priority="1"  mass="{self.weight["body"]}"/>
+                <geom name="vehicle_body2" type="box" size="2.5 0.5 0.5" pos="0 -1.0 0" rgba="1.0 1.0 1.0 1.0" condim="1" priority="1" mass="{self.weight["body"]}"/>
                 
-                <body pos="0 0 -{self.pole_length * 0.5}">
-                    <joint name="pole_joint" type="hinge" axis="0 1 0" pos="0 0 {self.pole_length * 0.5}"/>
+                <body pos="0 0 {self.pole_length * 0.5}">
+                    <joint name="pole_joint" type="hinge" axis="0 1 0" pos="0 0 {-self.pole_length * 0.5}" />
                     
-                    <geom name="pole" type="cylinder" size="0.5 {self.pole_length * 0.5}" mass="{self.weight["pole"]}" pos="0 0 0" rgba="1.0 1.0 1.0 1.0" contype="2" conaffinity="2"/>
+                    <site name="pole_site"/>
+                    
+                    <geom name="pole" type="cylinder" size="0.5 {self.pole_length * 0.5}" mass="{self.weight["pole"]}" rgba="1.0 1.0 1.0 1.0" contype="2" conaffinity="2"/>
                 </body>
             </body>
         </worldbody>
@@ -75,6 +77,7 @@ class EnvironmentBuilder:
             <velocimeter name="body_velocity" site="body_site"/>
             <force name="body_force" site="body_site"/>
             
+            <torque name="pole_torque" site="pole_site"/>
             <jointpos name="pole_angle" joint="pole_joint"/>
             <jointvel name="pole_velocity" joint="pole_joint"/>
         </sensor>
