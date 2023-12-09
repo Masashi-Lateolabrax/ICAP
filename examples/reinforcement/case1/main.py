@@ -25,7 +25,7 @@ def main():
     )
     model: mujoco.MjModel = builder.build()
 
-    nn = nn_model.DQN()
+    nn = nn_model.DQN().to(device)
 
     optimization.optimize(
         device=device,

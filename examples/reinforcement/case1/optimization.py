@@ -29,7 +29,7 @@ def optimize(
     targets = torch.tensor([[0.0]] * batch_size, device=device, requires_grad=False)
     loss = torch.tensor([0.0], requires_grad=False)
 
-    prev_nn = nn.__class__()
+    prev_nn = nn.__class__().to(device)
     prev_nn.load_state_dict(
         nn.state_dict()
     )
