@@ -1,8 +1,3 @@
-import colorsys
-import numpy
-import scipy
-import mujoco
-
 import torch
 
 
@@ -101,5 +96,3 @@ class Pheromone:
 
         self.liquid -= dif_liquid
         self.gas += dif_gas
-
-        print(self.liquid)
