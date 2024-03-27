@@ -440,6 +440,19 @@ class MuJoCoXMLGenerator:
             element += "/>"
             self.sensor.append(element)
 
+        def add_jointpos(self, attributes):
+            element = "<jointpos "
+            for k, v in attributes.items():
+                element += f"{k}=\"{v}\" "
+            element += "/>"
+            self.sensor.append(element)
+
+        def add_framequat(self, attributes):
+            element = "<framequat "
+            for k, v in attributes.items():
+                element += f"{k}=\"{v}\" "
+            element += "/>"
+            self.sensor.append(element)
         def to_string(self) -> str:
             xml = "<sensor>\n"
             for e in self.sensor:

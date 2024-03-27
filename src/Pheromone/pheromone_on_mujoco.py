@@ -1,4 +1,4 @@
-from pheromone import Pheromone
+from src.Pheromone.pheromone import Pheromone
 from src.WrappedMujoco.deco_geom import DecoGeom
 
 
@@ -13,7 +13,7 @@ class PheromoneOnMujoco:
 
     def size(self) -> (int, int):
         size = self._pheromone.gas.size()
-        return size[0], size[1]
+        return size[1], size[2]
 
     def _map_mujoco_pos_to_pheromone_index(self, x: float, y: float):
         pheromone_width, pheromone_height = self.size()
