@@ -9,7 +9,7 @@ from environment import gen_xml
 
 
 def main():
-    app = App(gen_xml(), 640, 480)
+    app = App(gen_xml([(0, 0, 0)], [(0, 0, 0)]), 640, 480)
     app.mainloop()
 
 
@@ -34,6 +34,13 @@ class _InfoView(tk.Frame):
         if cnf is None:
             cnf = {}
         super().__init__(master, cnf, **kw)
+
+        def switch_move(x):
+            self.do_simulate = x
+
+        self.do_simulate = False
+        tk.Button(self, text="start", command=lambda: switch_move(True)).pack()
+        tk.Button(self, text="stop", command=lambda: switch_move(False)).pack()
 
         self.interval_label = tk.Label(self)
         self.interval_label.pack()
@@ -81,7 +88,10 @@ class App(tk.Tk):
         timestep = self._mujoco.get_timestep() - 0.001
         do_rendering = self._fps_manager.render_or_not(timestep)
 
-        self._mujoco.step()
+        if self._info_frame.do_simulate:
+            self._mujoco.step()
+            self.handler(self._mujoco.model, self._mujoco.data)
+
         if do_rendering:
             self._mujoco_view.render(self._mujoco.data, self._mujoco.renderer)
 
@@ -89,8 +99,6 @@ class App(tk.Tk):
             if cam_name != "":
                 self._camera_view.camera = cam_name
             self._camera_view.render(self._mujoco.data, self._mujoco.renderer)
-
-        self.handler(self._mujoco.model, self._mujoco.data)
 
         self._info_frame.interval_label.config(text=f"interval : {interval:.5f}")
         self._info_frame.skip_rate_label.config(text=f"skip rate : {self._fps_manager.skip_rate:.5f}")
