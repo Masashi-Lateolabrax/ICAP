@@ -1,107 +1,46 @@
-import time
-
 import mujoco
-import mujoco.viewer
+import numpy as np
 
-import mujoco_xml_generator as mjc_gen
-from mujoco_xml_generator import common as mjc_cmn
-from mujoco_xml_generator import WorldBody, Body, body
-from mujoco_xml_generator import Default, default
-
-
-def gen_xml() -> str:
-    generator = mjc_gen.Generator().add_children([
-        Default("goal").add_children([
-            default.Geom(
-                type_=mjc_cmn.GeomType.BOX, size=(0.20, 0.20, 0.01), rgba=(0, 1, 0, 1), contype=2, conaffinity=2
-            )
-        ]),
-
-        WorldBody().add_children([
-            body.Geom(
-                type_=mjc_cmn.GeomType.PLANE, size=(10, 10, 1), rgba=(1, 1, 1, 0.5)
-            ),
-
-            body.Geom(class_="goal", pos=(1, 0, 0.01)),
-            body.Geom(class_="goal", pos=(0, 1, 0.01)),
-            body.Geom(class_="goal", pos=(1, 1, 0.01)),
-            body.Geom(class_="goal", pos=(-1, 0, 0.01)),
-            body.Geom(class_="goal", pos=(0, -1, 0.01)),
-
-            Body(
-                name="bot1", pos=(0, 0, 0.06)
-            ).add_children([
-                body.Joint(type_=body.Joint.JointType.FREE),
-                body.Geom(type_=mjc_cmn.GeomType.CYLINDER, size=(0.15, 0.05), rgba=(1, 1, 0, 1)),
-                body.Camera("bot1cam", orientation=mjc_cmn.Orientation.AxisAngle(1, 0, 0, 90), pos=(0, 0.16, 0))
-            ])
-        ])
-    ])
-    return generator.build()
+import utils
+from viewer import App
+from environment import gen_xml
 
 
-def calc_robot_sight(model, bot_name, start, end, div):
-    import numpy
+class Main:
+    def __init__(self):
+        self.pos = np.zeros((3,))
+        self.prev_pos = np.zeros((3,))
+        self.time = 0
 
-    mat = numpy.zeros((3, 3))
-    mat[2, 2] = 1.0
-    step = (end - start) / div
-    res = numpy.zeros(div * 2)
-    start += step * 0.8
+    def step(self, _m: mujoco.MjModel, d: mujoco.MjData):
+        self.time += 1
 
-    offset = numpy.array([0, 0, 4.5])
+        act_rot = d.actuator("bot1.act.rot")
+        act_move = d.actuator("bot1.act.move")
 
-    for i in range(0, div):
-        theta = start + step * i
-        mat[0, 0] = numpy.cos(theta)
-        mat[0, 1] = numpy.sin(theta)
-        mat[1, 0] = -numpy.sin(theta)
-        mat[1, 1] = numpy.cos(theta)
-        geom_name, distance = model.calc_ray(
-            robot.pos + offset,
-            numpy.dot(mat, robot.direction),
-            exclude_id=robot.id
-        )
-
-        if geom_name is None:
-            res[i * 2 + 1] = 0.0
-        elif geom_name.find("robot") != -1:
-            res[i * 2 + 1] = 0.3
-        elif geom_name.find("feed") != -1:
-            res[i * 2 + 1] = 0.6
-        elif geom_name.find("obstacle") != -1:
-            res[i * 2 + 1] = 0.9
-        else:
-            res[i * 2 + 1] = 0.0
-
-        half_width = 200
-        if distance >= 0:
-            res[i * 2] = 1.0 - numpy.tanh(numpy.arctanh(0.5) * distance / half_width)
-        else:
-            res[i * 2] = 0.0
-
-    return res
+        if self.time > 3000:
+            act_move.ctrl[0] = -1.5
+        elif self.time > 2500:
+            act_rot.ctrl[0] = 0
+        elif self.time > 2000:
+            act_rot.ctrl[0] = 1.5
+        elif self.time > 1500:
+            act_move.ctrl[0] = 0
+        elif self.time > 1000:
+            act_move.ctrl[0] = 1.5
+        elif self.time > 500:
+            act_rot.ctrl[0] = 0
+        elif self.time > 0:
+            act_rot.ctrl[0] = 1.5
 
 
-def main():
-    model = mujoco.MjModel.from_xml_string(xml=gen_xml())
-    data = mujoco.MjData(model)
-
-    with mujoco.viewer.launch_passive(model, data) as viewer:
-        while viewer.is_running():
-            step_start = time.time()
-
-            mujoco.mj_step(model, data)
-
-            with viewer.lock():
-                viewer.opt.flags[mujoco.mjtVisFlag.mjVIS_CONTACTPOINT] = int(data.time % 2)
-
-            viewer.sync()
-
-            time_until_next_step = model.opt.timestep - (time.time() - step_start)
-            if time_until_next_step > 0:
-                time.sleep(time_until_next_step)
+def entry_point():
+    bot_pos = utils.generate_circles(3, 0.3, 5)
+    goal_pos = utils.generate_circles(3, 0.4, 5)
+    main = Main()
+    app = App(gen_xml(bot_pos, goal_pos), 640, 480, main.step)
+    app.mainloop()
 
 
 if __name__ == '__main__':
-    main()
+    entry_point()
