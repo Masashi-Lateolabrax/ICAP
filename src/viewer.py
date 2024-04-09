@@ -52,8 +52,10 @@ class _InfoView(tk.Frame):
 
 
 class App(tk.Tk):
-    def __init__(self, xml, width, height):
+    def __init__(self, xml, width, height, handler: lambda m, d: ()):
         super().__init__()
+
+        self.handler = handler
 
         self._mujoco = _MuJoCoProcess(xml, width, height)
         self._fps_manager = FPSManager(self._mujoco.get_timestep(), 60)
@@ -72,7 +74,7 @@ class App(tk.Tk):
 
         self.after(1, self.step)
 
-    def step(self, handler=lambda m, d: ()):
+    def step(self):
         self._fps_manager.record_start()
         timestep = self._mujoco.get_timestep()
         interval = self._fps_manager.ave_interval
@@ -87,7 +89,7 @@ class App(tk.Tk):
                 self._camera_view.camera = cam_name
             self._camera_view.render(self._mujoco.data, self._mujoco.renderer)
 
-        handler(self._mujoco.model, self._mujoco.data)
+        self.handler(self._mujoco.model, self._mujoco.data)
 
         self._info_frame.interval_label.config(text=f"interval : {interval:.5f}")
         self._info_frame.skip_rate_label.config(text=f"skip rate : {self._fps_manager.skip_rate:.5f}")
