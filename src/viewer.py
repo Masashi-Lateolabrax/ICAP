@@ -99,7 +99,7 @@ class App(tk.Tk):
 
         self._fps_manager.record_stop(do_rendering)
 
-        time_until_next_step = (timestep - interval) * 1000
+        time_until_next_step = (timestep - self._fps_manager.ave_interval) * 1000
         if time_until_next_step > 1.0:
             self.after(int(time_until_next_step + 0.5), self.step)
         else:
