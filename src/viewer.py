@@ -52,7 +52,7 @@ class _InfoView(tk.Frame):
 
 
 class App(tk.Tk):
-    def __init__(self, xml, width, height, handler: lambda m, d: ()):
+    def __init__(self, xml, width, height, handler=lambda m, d: ()):
         super().__init__()
 
         self.handler = handler
