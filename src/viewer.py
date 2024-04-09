@@ -75,9 +75,10 @@ class App(tk.Tk):
         self.after(1, self.step)
 
     def step(self):
+        interval = self._fps_manager.calc_interval()
+
         self._fps_manager.record_start()
-        timestep = self._mujoco.get_timestep()
-        interval = self._fps_manager.ave_interval
+        timestep = self._mujoco.get_timestep() - 0.001
         do_rendering = self._fps_manager.render_or_not(timestep)
 
         self._mujoco.step()
@@ -103,7 +104,7 @@ class App(tk.Tk):
 
         time_until_next_step = (timestep - self._fps_manager.ave_interval) * 1000
         if time_until_next_step > 1.0:
-            self.after(int(time_until_next_step + 0.5), self.step)
+            self.after(int(time_until_next_step), self.step)
         else:
             self.after(1, self.step)
 
