@@ -1,3 +1,4 @@
+import abc
 import tkinter as tk
 import tkinter.ttk as ttk
 
@@ -11,6 +12,12 @@ from environment import gen_xml
 def main():
     app = App(gen_xml([(0, 0, 0)], [(0, 0, 0)]), 640, 480)
     app.mainloop()
+
+
+class ViewerHandler(metaclass=abc.ABCMeta):
+    @abc.abstractmethod
+    def step(self, model: mujoco.MjModel, data: mujoco.MjData, gui: tk.Tk):
+        raise NotImplementedError
 
 
 class _MuJoCoProcess:
@@ -59,7 +66,7 @@ class _InfoView(tk.Frame):
 
 
 class App(tk.Tk):
-    def __init__(self, xml, width, height, handler=lambda m, d: ()):
+    def __init__(self, xml, width, height, handler: ViewerHandler | None = None):
         super().__init__()
 
         self.handler = handler
@@ -90,7 +97,8 @@ class App(tk.Tk):
 
         if self._info_frame.do_simulate:
             self._mujoco.step()
-            self.handler(self._mujoco.model, self._mujoco.data)
+            if self.handler is not None:
+                self.handler.step(self._mujoco.model, self._mujoco.data, self)
 
         if do_rendering:
             self._mujoco_view.render(self._mujoco.data, self._mujoco.renderer)
