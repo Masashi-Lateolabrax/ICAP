@@ -1,15 +1,17 @@
-# For Developers
+# mujoco-xml-generator
 
-## Git prefix definitions
+## For developers
 
-| Prefix       | Definition                                                                                  |
-|--------------|---------------------------------------------------------------------------------------------|
-| add / remove | When we add/remove new functions.                                                           |
-| change       | When we conduct destructive changes for functions.                                          |
-| revolution   | When we carry out destructive changes throughout the project.                               |
-| refactor     | When we edit codes to improve readability or efficiency, but don't occur interface changes. |
-| docs         | Edited documentations.                                                                      |
-| fix          | Fixed bugs.                                                                                 |
-| impl         | Implemented something functions.                                                            |
-| mod          | Updated functions contained destructive changes.                                            |
-| update       | Updated functions contained non-destructive changes.                                        |
+### Git prefix
+
+| Prefix | Definition                                                  |
+|--------|-------------------------------------------------------------|
+| add    | Indicates addition of new files or directories.             |
+| docs   | Indicates modifications made to documents or similar items. |
+| fix    | Indicates bug fixes.                                        |
+| impl   | Indicates implementation of new functions.                  |
+| mod    | Indicates changes not involving alternations to interfaces. |
+| mv     | Indicates movement or rename of files.                      |
+| remove | Indicates removal of files or directories.                  |
+| test   | Indicates something about tests.                            |
+| update | Indicates changes involving alternation to interfaces.      |
