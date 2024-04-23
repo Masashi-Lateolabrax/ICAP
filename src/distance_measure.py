@@ -22,12 +22,11 @@ class DistanceMeasure:
                 a = buf2
                 b = buf1
             np.copyto(vecs[i], a)
-            print(vecs[i])
             mujoco.mju_rotVecQuat(b, a, unit_quat)
         self.vecs = vecs.reshape((n * 3,)).copy()
 
-    def measure(self, m: mujoco.MjModel, d: mujoco.MjData, botname, exclude_id: int):
-        bot_body = d.body(botname)
+    def measure(self, m: mujoco.MjModel, d: mujoco.MjData, bot_body_id: int):
+        bot_body = d.body(bot_body_id)
         center_point = bot_body.xpos
         center_point[2] *= 0.5
 
@@ -37,7 +36,7 @@ class DistanceMeasure:
             vec=self.vecs,
             geomgroup=None,
             flg_static=1,
-            bodyexclude=exclude_id,
+            bodyexclude=bot_body_id,
             geomid=self._intersected_id,
             dist=self._intersected_dist,
             nray=self.n,
