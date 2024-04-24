@@ -14,6 +14,7 @@ class DistanceMeasure:
         self._buf1 = np.zeros((3, 1), dtype=np.float64)
         self._buf2 = np.zeros((3, 1), dtype=np.float64)
         self._vecs = np.zeros((n, 3))
+        self._calc_sight_buf = np.zeros((1, n + 1, 3), dtype=np.uint8)
 
     def measure(self, m: mujoco.MjModel, d: mujoco.MjData, bot_body_id: int, bot_body, bot_direction: np.ndarray):
         center_point = np.copy(bot_body.xpos)
@@ -45,3 +46,24 @@ class DistanceMeasure:
         )
 
         return self._intersected_id, self._intersected_dist
+
+    def measure_with_img(self, m: mujoco.MjModel, d: mujoco.MjData, bot_body_id: int, bot_body,
+                         bot_direction: np.ndarray):
+        ids, dists = self.measure(m, d, bot_body_id, bot_body, bot_direction)
+
+        self._calc_sight_buf.fill(0)
+        color = np.zeros((3,), dtype=np.float32)
+        for j, (id_, dist) in enumerate(zip(ids, dists)):
+            if id_ < 0:
+                continue
+
+            name = mujoco.mj_id2name(m, mujoco.mjtObj.mjOBJ_GEOM, id_)
+            if "bot" in name:
+                color[:] = [255, 255, 0]
+            elif "goal" in name:
+                color[:] = [0, 255, 0]
+
+            self._calc_sight_buf[0, j, :] = color / ((dist * 0.1 + 1) ** 2)
+
+        self._calc_sight_buf[0, -1, :] = self._calc_sight_buf[0, 0, :]
+        return self._calc_sight_buf
