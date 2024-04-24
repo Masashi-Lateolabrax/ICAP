@@ -57,8 +57,6 @@ class LidarView(tk.Frame):
         if cnf is None:
             cnf = {}
         super().__init__(master, cnf, **kw)
-        self.buf: np.ndarray | None = None
-
         self.canvas_shape: tuple[int, int] = (height, width)
         self.canvas = tk.Canvas(self, width=width, height=height)
         self.canvas.pack()
@@ -70,11 +68,7 @@ class LidarView(tk.Frame):
         self.canvas.create_image(0, 0, anchor=tk.NW, image=self.tkimg_buf)
 
     def render(self, img: np.ndarray):
-        if self.buf is None:
-            self.buf = np.zeros((1, img.shape[1] + 1, 3), dtype=np.uint8)
-        self.buf[0, 0:-1, :] = img[0, :, :]
-        self.buf[0, -1, :] = img[0, 0, :]
-        x = int(self.canvas_shape[1] / self.buf.shape[1] + 0.5)
+        x = int(self.canvas_shape[1] / img.shape[1] + 0.5)
         buf = np.repeat(img, x, axis=1)
         buf = np.repeat(buf, self.canvas_shape[0], axis=0)
         self.tkimg_buf.paste(
