@@ -1,3 +1,14 @@
+import pickle
+
+import mujoco
+import numpy as np
+
+import utils
+from optimizer import EnvCreator, EnvInterface
+from brain import NeuralNetwork
+from distance_measure import DistanceMeasure
+from robot import Robot
+
 import mujoco_xml_generator as mjc_gen
 import mujoco_xml_generator.common as mjc_cmn
 
@@ -90,6 +101,76 @@ def gen_xml(bots: list[tuple[float, float, float]], goals: list[tuple[float, flo
 
     xml = generator.build()
     return xml
+
+
+class Environment(EnvInterface):
+    def __init__(self, xml, brain, num_robot, num_goal):
+        self._num_robot = num_robot
+        self._num_goal = num_goal
+
+        self.m = mujoco.MjModel.from_xml_string(xml)
+        self.d = mujoco.MjData(self.m)
+
+        self.bots = [Robot(self.m, self.d, i, brain) for i in range(self._num_robot)]
+
+        self._measure = DistanceMeasure(64)
+        self._direction_buf = np.zeros((3, 1), dtype=np.float64)
+
+    def calc_step(self) -> float:
+        mujoco.mj_step(self.m, self.d)
+        for bot in self.bots:
+            direction = bot.calc_direction()
+            sight = self._measure.measure_with_img(
+                self.m, self.d,
+                bot.bot_body_id, bot.bot_body,
+                direction
+            )
+            bot.exec(sight)
+
+        evaluation = 0
+        for gi in range(self._num_goal):
+            goal_geom_id = mujoco.mj_name2id(self.m, mujoco.mjtObj.mjOBJ_GEOM, f"goal{gi}")
+            goal_geom = self.d.geom(goal_geom_id)
+            min_d = float("inf")
+            for ri in range(self._num_robot):
+                bot_body_id = mujoco.mj_name2id(self.m, mujoco.mjtObj.mjOBJ_BODY, f"bot{ri}.body")
+                bot_body = self.d.body(bot_body_id)
+                d = np.linalg.norm(bot_body.xpos - goal_geom.xpos)
+                if d < min_d:
+                    min_d = d
+            evaluation += min_d
+
+        return evaluation
+
+    def calc(self) -> float:
+        evaluation = 0
+        for _ in range(10):
+            evaluation += self.calc_step()
+        return evaluation
+
+
+class ECreator(EnvCreator):
+    def __init__(self, num_bot, num_goal):
+        self.num_bot = num_bot
+        self.num_goal = num_goal
+
+    def save(self) -> bytes:
+        return pickle.dumps(self)
+
+    def load(self, byte_data: bytes) -> int:
+        new_instance = pickle.loads(byte_data)
+        self.__dict__.update(new_instance.__dict__)
+        return len(byte_data)
+
+    def create(self, para) -> Environment:
+        bot_pos = utils.generate_circles(self.num_bot, 0.3 * 1.01, 5)
+        goal_pos = utils.generate_circles(self.num_goal, 0.4 * 1.01, 5)
+        xml = gen_xml(bot_pos, goal_pos)
+
+        brain = NeuralNetwork()
+        brain.load_para(para)
+
+        return Environment(xml, brain, self.num_bot, self.num_goal)
 
 
 if __name__ == '__main__':
