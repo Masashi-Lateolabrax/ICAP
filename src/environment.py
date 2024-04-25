@@ -119,13 +119,7 @@ class Environment(EnvInterface):
     def calc_step(self) -> float:
         mujoco.mj_step(self.m, self.d)
         for bot in self.bots:
-            direction = bot.calc_direction()
-            sight = self._measure.measure_with_img(
-                self.m, self.d,
-                bot.bot_body_id, bot.bot_body,
-                direction
-            )
-            bot.exec(sight)
+            bot.exec(self.m, self.d, self._measure)
 
         evaluation = 0
         for gi in range(self._num_goal):

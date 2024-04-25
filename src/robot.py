@@ -3,6 +3,8 @@ import torch
 import numpy as np
 from brain import NeuralNetwork
 
+from distance_measure import DistanceMeasure
+
 
 class Robot:
     def __init__(self, model: mujoco.MjModel, data: mujoco.MjData, i, brain: NeuralNetwork):
@@ -14,6 +16,7 @@ class Robot:
 
         self.brain = brain
 
+        self.bot_id = i
         self.bot_body_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, f"bot{i}.body")
         self.bot_body = data.body(self.bot_body_id)
         self.act_rot = data.actuator(f"bot{i}.act.rot")
@@ -24,6 +27,9 @@ class Robot:
         self._direction_buf_for_sight = np.zeros((3, 1), dtype=np.float64)
         self._direction_buf_for_act = np.zeros((3, 1), dtype=np.float64)
 
+        self.sight = np.zeros(1)
+        self.brightness_img = np.zeros((65,))
+
         self.movement = 0.0
         self.rotation = 0.0
 
@@ -33,12 +39,16 @@ class Robot:
         mujoco.mju_rotVecQuat(self._direction_buf_for_act, [0, 1, 0], self._quat_buf)
         return self._direction_buf_for_sight
 
-    def exec(self, sight, act=True):
+    def exec(self, m: mujoco.MjModel, d: mujoco.MjData, distance_measure: DistanceMeasure, act=True):
         self._current_frame += 1
         if self._skip_frame < self._current_frame:
             self._current_frame = 0
+            self.calc_direction()
 
             x = torch.from_numpy(sight[0, :, :]).float()
+            self.sight = distance_measure.measure_with_img(
+
+            x = torch.from_numpy(self.sight).float()
             x /= 255.0
             x.transpose_(0, 1)
             y = self.brain.forward(x)
