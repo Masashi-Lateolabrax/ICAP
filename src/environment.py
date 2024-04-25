@@ -140,15 +140,19 @@ class Environment(EnvInterface):
 
     def calc(self) -> float:
         evaluation = 0
-        for _ in range(10):
+        for _ in range(int(15 / self.timestep + 0.5)):
             evaluation += self.calc_step()
         return evaluation
 
 
 class ECreator(EnvCreator):
     def __init__(self, num_bot, num_goal):
+        import random
+        import math
         self.num_bot = num_bot
         self.num_goal = num_goal
+        self.bot_pos = [(0, -5, math.pi * random.random())]
+        self.goal_pos = [(0, 5, 0)]
 
     def save(self) -> bytes:
         return pickle.dumps(self)
@@ -159,9 +163,7 @@ class ECreator(EnvCreator):
         return len(byte_data)
 
     def create(self, para) -> Environment:
-        bot_pos = utils.generate_circles(self.num_bot, 0.3 * 1.01, 5)
-        goal_pos = utils.generate_circles(self.num_goal, 0.4 * 1.01, 5)
-        xml = gen_xml(bot_pos, goal_pos)
+        xml = gen_xml(self.bot_pos, self.goal_pos)
 
         brain = NeuralNetwork()
         brain.load_para(para)
