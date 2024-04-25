@@ -74,7 +74,7 @@ class ProcInterface(metaclass=abc.ABCMeta):
         raise NotImplemented()
 
 
-class _OneThreadProc(ProcInterface):
+class OneThreadProc(ProcInterface):
     def __init__(self, gen: int, i: int, ind: array.array, env_creator: EnvCreator):
         self.gen = gen
         self.i = i
