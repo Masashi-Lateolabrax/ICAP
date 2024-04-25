@@ -11,7 +11,7 @@ def _func(ind: base.Individual, env_creator: EnvCreator, queue: mp.Queue):
     queue.put(score)
 
 
-class _ThreadProc(base.ProcInterface):
+class ThreadProc(base.ProcInterface):
     def __init__(self, gen: int, i: int, ind: base.Individual, env_creator: EnvCreator):
         self.gen = gen
         self.i = i
@@ -58,6 +58,12 @@ class CMAES:
     def set_end_handler(self, handler=base.default_end_handler):
         self._base.set_end_handler(handler)
 
-    def optimize(self, env_creator: EnvCreator):
+    def get_generation(self):
+        return self._generation
+
+    def optimize_current_generation(self, gen: int, env_creator: EnvCreator, proc=ThreadProc):
+        self._base.optimize_current_generation(gen, self._generation, env_creator, proc)
+
+    def optimize(self, env_creator: EnvCreator, proc=ThreadProc):
         for gen in range(1, self._generation + 1):
-            self._base.optimize_current_generation(gen, self._generation, env_creator, _ThreadProc)
+            self.optimize_current_generation(gen, env_creator, proc)
