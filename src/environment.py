@@ -111,6 +111,8 @@ class Environment(EnvInterface):
         self.m = mujoco.MjModel.from_xml_string(xml)
         self.d = mujoco.MjData(self.m)
 
+        self.timestep = self.m.opt.timestep
+
         self.bots = [Robot(self.m, self.d, i, brain) for i in range(self._num_robot)]
 
         self._measure = DistanceMeasure(64)

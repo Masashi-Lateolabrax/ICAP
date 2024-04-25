@@ -45,12 +45,14 @@ class Robot:
             self._current_frame = 0
             self.calc_direction()
 
-            x = torch.from_numpy(sight[0, :, :]).float()
             self.sight = distance_measure.measure_with_img(
+                m, d, self.bot_body_id, self.bot_body, self._direction_buf_for_sight
+            )
+            self.brightness_img = np.dot(self.sight[0, :, :], np.array([[0.299], [0.587], [0.114]])).reshape((65,))
 
-            x = torch.from_numpy(self.sight).float()
+            x = torch.from_numpy(self.brightness_img).float()
             x /= 255.0
-            x.transpose_(0, 1)
+            # x.transpose_(0, 1)
             y = self.brain.forward(x)
             yi = torch.argmax(y[0:3])
 
