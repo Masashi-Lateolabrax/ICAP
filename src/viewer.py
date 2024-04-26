@@ -99,19 +99,22 @@ class App(tk.Tk):
         super().__init__()
 
         self._env = environment
+        self._env.mujoco.init_mujoco(0)
 
-        self.timestep = self._env.timestep
+        self.timestep = self._env.mujoco.timestep
         self._depth_img_buf = np.zeros((height, width), dtype=np.float32)
 
         self._fps_manager = FPSManager(self.timestep, 60)
 
-        self._renderer = mujoco.Renderer(self._env.m, height, width)
-        self._renderer_for_depth = mujoco.Renderer(self._env.m, height, width)
+        self._renderer = mujoco.Renderer(self._env.mujoco.m, height, width)
+        self._renderer_for_depth = mujoco.Renderer(self._env.mujoco.m, height, width)
         self._renderer_for_depth.enable_depth_rendering()
 
         self.resizable(False, False)
 
-        camera_names = [mujoco.mj_id2name(self._env.m, mujoco.mjtObj.mjOBJ_CAMERA, i) for i in range(self._env.m.ncam)]
+        camera_names = [
+            mujoco.mj_id2name(self._env.mujoco.m, mujoco.mjtObj.mjOBJ_CAMERA, i) for i in range(self._env.mujoco.m.ncam)
+        ]
         self.info_view = InfoView(self, camera_names)
         self.info_view.grid(row=0, column=0, rowspan=2)
 
@@ -148,11 +151,11 @@ class App(tk.Tk):
                 self._camera_view.camera = cam_name
                 self._depth_view.camera = cam_name
 
-            self._mujoco_view.render(self._env.d, self._renderer)
-            self._camera_view.render(self._env.d, self._renderer)
-            self._depth_view.render(self._env.d, self._renderer_for_depth, self._depth_img_buf)
+            self._mujoco_view.render(self._env.mujoco.d, self._renderer)
+            self._camera_view.render(self._env.mujoco.d, self._renderer)
+            self._depth_view.render(self._env.mujoco.d, self._renderer_for_depth, self._depth_img_buf)
 
-            for bot in self._env.bots:
+            for bot in self._env.mujoco.bots:
                 if cam_name != f"bot{bot.bot_id}.camera":
                     continue
                 # self.lidar_view.render(bot.sight)

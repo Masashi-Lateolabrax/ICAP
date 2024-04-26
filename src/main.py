@@ -12,18 +12,18 @@ def entry_point():
     from optimizer import CMAES
     cmaes = CMAES(dim, 1000, 100, sigma=0.03)
     for gen in range(1, 1 + cmaes.get_generation()):
-        env_creator = ECreator(n, n)
+        env_creator = ECreator(n, n, 3, 0.01)
         cmaes.optimize_current_generation(gen, env_creator, base.OneThreadProc)
     cmaes.get_history().save("history.npz")
     para = cmaes.get_best_para()
 
-    # history = base.Hist.load("history.npz")
-    # para = history.get_min().min_para
+    # history = base.Hist.load("history_4318e5cf.npz")
+    # para = history.queues[-1].min_para
 
     # import numpy as np
     # para = np.random.default_rng().random(dim)
 
-    env_creator = ECreator(n, n)
+    env_creator = ECreator(n, n, 1, 0.01)
     env = env_creator.create(para)
 
     app = App(500, 500, env)

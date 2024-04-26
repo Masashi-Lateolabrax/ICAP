@@ -19,9 +19,13 @@ from mujoco_xml_generator import Actuator, actuator
 from mujoco_xml_generator import Asset, asset
 
 
-def gen_xml(bots: list[tuple[float, float, float]], goals: list[tuple[float, float, float]]) -> str:
+def gen_xml(
+        bots: list[tuple[float, float, float]],
+        goals: list[tuple[float, float, float]],
+        timestep: float
+) -> str:
     generator = mjc_gen.Generator().add_children([
-        Option(timestep=0.01, impratio=10, noslip_iterations=5),
+        Option(timestep=timestep, impratio=10, noslip_iterations=5),
         Visual().add_children([
             visual.Global(offwidth=500, offheight=500)
         ]),
@@ -103,22 +107,40 @@ def gen_xml(bots: list[tuple[float, float, float]], goals: list[tuple[float, flo
     return xml
 
 
-class Environment(EnvInterface):
-    def __init__(self, xml, brain, num_robot, num_goal):
-        self._num_robot = num_robot
-        self._num_goal = num_goal
+class _MuJoCoProcess:
+    def __init__(
+            self,
+            brain,
+            bot_pos: list[list[tuple[float, float, float]]],
+            goal_pos: list[list[tuple[float, float, float]]],
+            timestep: float,
+    ):
+        self._brain = brain
+        self._measure = DistanceMeasure(64)
+
+        self._bot_pos = bot_pos
+        self._goal_pos = goal_pos
+
+        self._num_bot = len(self._bot_pos[0])
+        self._num_goal = len(self._goal_pos[0])
+        self.timestep = timestep
+
+        self.m: mujoco.MjModel = None
+        self.d: mujoco.MjData = None
+        self.bots: list[Robot] = None
+
+    def init_mujoco(self, try_count: int):
+        xml = gen_xml(
+            self._bot_pos[try_count],
+            self._goal_pos[try_count],
+            self.timestep
+        )
 
         self.m = mujoco.MjModel.from_xml_string(xml)
         self.d = mujoco.MjData(self.m)
+        self.bots = [Robot(self.m, self.d, i, self._brain) for i in range(self._num_bot)]
 
-        self.timestep = self.m.opt.timestep
-
-        self.bots = [Robot(self.m, self.d, i, brain) for i in range(self._num_robot)]
-
-        self._measure = DistanceMeasure(64)
-        self._direction_buf = np.zeros((3, 1), dtype=np.float64)
-
-    def calc_step(self) -> float:
+    def calc_step(self):
         mujoco.mj_step(self.m, self.d)
         for bot in self.bots:
             bot.exec(self.m, self.d, self._measure)
@@ -128,7 +150,7 @@ class Environment(EnvInterface):
             goal_geom_id = mujoco.mj_name2id(self.m, mujoco.mjtObj.mjOBJ_GEOM, f"goal{gi}")
             goal_geom = self.d.geom(goal_geom_id)
             min_d = float("inf")
-            for ri in range(self._num_robot):
+            for ri in range(self._num_bot):
                 bot_body_id = mujoco.mj_name2id(self.m, mujoco.mjtObj.mjOBJ_BODY, f"bot{ri}.body")
                 bot_body = self.d.body(bot_body_id)
                 d = np.linalg.norm(bot_body.xpos - goal_geom.xpos)
@@ -138,20 +160,47 @@ class Environment(EnvInterface):
 
         return evaluation
 
+
+class Environment(EnvInterface):
+    def __init__(
+            self,
+            bot_pos: list[list[tuple[float, float, float]]],
+            goal_pos: list[list[tuple[float, float, float]]],
+            brain,
+            timestep: float
+    ):
+        self._try_count = len(bot_pos)
+        self.mujoco = _MuJoCoProcess(brain, bot_pos, goal_pos, timestep)
+        self._direction_buf = np.zeros((3, 1), dtype=np.float64)
+
+    def calc_step(self) -> float:
+        return self.mujoco.calc_step()
+
     def calc(self) -> float:
-        evaluation = 0
-        for _ in range(int(15 / self.timestep + 0.5)):
-            evaluation += self.calc_step()
-        return evaluation
+        evaluations = np.zeros(self._try_count)
+        for t in range(self._try_count):
+            self.mujoco.init_mujoco(t)
+            for _ in range(int(15 / self.mujoco.timestep + 0.5)):
+                evaluations[t] += self.calc_step()
+        return np.median(evaluations)
 
 
 class ECreator(EnvCreator):
-    def __init__(self, num_bot, num_goal):
+    def __init__(self, num_bot, num_goal, try_count, timestep):
         import random
         self.num_bot = num_bot
         self.num_goal = num_goal
-        self.bot_pos = [(0, -5, 360 * random.random())]
-        self.goal_pos = [(0, 5, 0)]
+        self.try_count = try_count
+        self.timestep = timestep
+
+        self._brain = NeuralNetwork()
+
+        self.bot_pos = [
+            [(0, -5, 360 * random.random())] for _ in range(self.try_count)
+        ]
+        self.goal_pos = [
+            [(0, 5, 0)] for _ in range(self.try_count)
+        ]
 
     def save(self) -> bytes:
         return pickle.dumps(self)
@@ -162,13 +211,5 @@ class ECreator(EnvCreator):
         return len(byte_data)
 
     def create(self, para) -> Environment:
-        xml = gen_xml(self.bot_pos, self.goal_pos)
-
-        brain = NeuralNetwork()
-        brain.load_para(para)
-
-        return Environment(xml, brain, self.num_bot, self.num_goal)
-
-
-if __name__ == '__main__':
-    print(gen_xml([(0, 0, 0), (10, 0, 0)], []))
+        self._brain.load_para(para)
+        return Environment(self.bot_pos, self.goal_pos, self._brain, self.timestep)
