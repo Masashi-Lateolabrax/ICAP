@@ -63,7 +63,7 @@ class DistanceMeasure:
             elif "goal" in name:
                 color[:] = [0, 255, 0]
 
-            self._calc_sight_buf[0, j, :] = color / ((dist * 0.1 + 1) ** 2)
+            self._calc_sight_buf[0, j, :] = color / ((dist * 0.05 + 1) ** 2)
 
         self._calc_sight_buf[0, -1, :] = self._calc_sight_buf[0, 0, :]
         return self._calc_sight_buf
