@@ -148,10 +148,9 @@ class Environment(EnvInterface):
 class ECreator(EnvCreator):
     def __init__(self, num_bot, num_goal):
         import random
-        import math
         self.num_bot = num_bot
         self.num_goal = num_goal
-        self.bot_pos = [(0, -5, math.pi * random.random())]
+        self.bot_pos = [(0, -5, 360 * random.random())]
         self.goal_pos = [(0, 5, 0)]
 
     def save(self) -> bytes:
