@@ -3,8 +3,7 @@ import pickle
 import mujoco
 import numpy as np
 
-import utils
-from optimizer import EnvCreator, EnvInterface
+from optimizer import TaskGenerator, TaskInterface
 from brain import NeuralNetwork
 from distance_measure import DistanceMeasure
 from robot import Robot
@@ -161,7 +160,7 @@ class _MuJoCoProcess:
         return evaluation
 
 
-class Environment(EnvInterface):
+class Environment(TaskInterface):
     def __init__(
             self,
             bot_pos: list[list[tuple[float, float, float]]],
@@ -176,7 +175,7 @@ class Environment(EnvInterface):
     def calc_step(self) -> float:
         return self.mujoco.calc_step()
 
-    def calc(self) -> float:
+    def run(self) -> float:
         evaluations = np.zeros(self._try_count)
         for t in range(self._try_count):
             self.mujoco.init_mujoco(t)
@@ -185,7 +184,7 @@ class Environment(EnvInterface):
         return np.median(evaluations)
 
 
-class ECreator(EnvCreator):
+class ECreator(TaskGenerator):
     def __init__(self, num_bot, num_goal, try_count, timestep):
         import random
         self.num_bot = num_bot
@@ -210,6 +209,6 @@ class ECreator(EnvCreator):
         self.__dict__.update(new_instance.__dict__)
         return len(byte_data)
 
-    def create(self, para) -> Environment:
+    def generate(self, para) -> Environment:
         self._brain.load_para(para)
         return Environment(self.bot_pos, self.goal_pos, self._brain, self.timestep)
