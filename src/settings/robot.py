@@ -1,9 +1,9 @@
 import mujoco
 import torch
 import numpy as np
-from brain import NeuralNetwork
 
-from distance_measure import DistanceMeasure
+from .brain import NeuralNetwork
+from .distance_measure import DistanceMeasure
 
 
 class Robot:

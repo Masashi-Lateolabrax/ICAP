@@ -7,12 +7,7 @@ from PIL import Image as PILImage, ImageTk as PILImageTk
 
 from mujoco_xml_generator.utils import FPSManager, MuJoCoView
 
-from environment import gen_xml, Environment
-
-
-def main():
-    app = App(gen_xml([(0, 0, 0)], [(0, 0, 0)]), 640, 480)
-    app.mainloop()
+from src.settings import Task
 
 
 class LidarView(tk.Frame):
@@ -95,25 +90,26 @@ class InfoView(tk.Frame):
 
 
 class App(tk.Tk):
-    def __init__(self, width, height, environment: Environment):
+    def __init__(self, width, height, task: Task):
         super().__init__()
 
-        self._env = environment
-        self._env.mujoco.init_mujoco(0)
+        self._task = task
+        self._task.mujoco.init_mujoco(0)
 
-        self.timestep = self._env.mujoco.timestep
+        self.timestep = self._task.mujoco.timestep
         self._depth_img_buf = np.zeros((height, width), dtype=np.float32)
 
         self._fps_manager = FPSManager(self.timestep, 60)
 
-        self._renderer = mujoco.Renderer(self._env.mujoco.m, height, width)
-        self._renderer_for_depth = mujoco.Renderer(self._env.mujoco.m, height, width)
+        self._renderer = mujoco.Renderer(self._task.mujoco.m, height, width)
+        self._renderer_for_depth = mujoco.Renderer(self._task.mujoco.m, height, width)
         self._renderer_for_depth.enable_depth_rendering()
 
         self.resizable(False, False)
 
         camera_names = [
-            mujoco.mj_id2name(self._env.mujoco.m, mujoco.mjtObj.mjOBJ_CAMERA, i) for i in range(self._env.mujoco.m.ncam)
+            mujoco.mj_id2name(self._task.mujoco.m, mujoco.mjtObj.mjOBJ_CAMERA, i) for i in
+            range(self._task.mujoco.m.ncam)
         ]
         self.info_view = InfoView(self, camera_names)
         self.info_view.grid(row=0, column=0, rowspan=2)
@@ -143,7 +139,7 @@ class App(tk.Tk):
         do_rendering = self._fps_manager.render_or_not(timestep)
 
         if self.info_view.do_simulate:
-            self._env.calc_step()
+            self._task.calc_step()
 
         if do_rendering:
             cam_name = self.info_view.camera_names.get()
@@ -151,11 +147,11 @@ class App(tk.Tk):
                 self._camera_view.camera = cam_name
                 self._depth_view.camera = cam_name
 
-            self._mujoco_view.render(self._env.mujoco.d, self._renderer)
-            self._camera_view.render(self._env.mujoco.d, self._renderer)
-            self._depth_view.render(self._env.mujoco.d, self._renderer_for_depth, self._depth_img_buf)
+            self._mujoco_view.render(self._task.mujoco.d, self._renderer)
+            self._camera_view.render(self._task.mujoco.d, self._renderer)
+            self._depth_view.render(self._task.mujoco.d, self._renderer_for_depth, self._depth_img_buf)
 
-            for bot in self._env.mujoco.bots:
+            for bot in self._task.mujoco.bots:
                 if cam_name != f"bot{bot.bot_id}.camera":
                     continue
                 # self.lidar_view.render(bot.sight)
@@ -176,6 +172,20 @@ class App(tk.Tk):
             self.after(int(time_until_next_step), self.step)
         else:
             self.after(1, self.step)
+
+
+def main():
+    from src.optimizer import Hist
+    from src.settings import TaskGenerator
+
+    history = Hist.load("../../history.npz")
+    q = history.queues[-1]
+
+    env_creator = TaskGenerator()
+    env = env_creator.generate(q.min_para)
+
+    app = App(500, 500, env)
+    app.mainloop()
 
 
 if __name__ == '__main__':

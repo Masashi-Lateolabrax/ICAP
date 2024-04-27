@@ -10,7 +10,7 @@ class NeuralNetwork(nn.Module):
             nn.Tanh(),
             nn.Linear(30, 4),
         )
-        self.af1 = nn.Softmax()
+        self.af1 = nn.Softmax(dim=0)
         self.af2 = nn.Sigmoid()
 
     def forward(self, x):

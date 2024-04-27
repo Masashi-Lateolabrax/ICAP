@@ -1,12 +1,9 @@
-import pickle
-
 import mujoco
 import numpy as np
 
-from optimizer import TaskGenerator, TaskInterface
-from brain import NeuralNetwork
-from distance_measure import DistanceMeasure
-from robot import Robot
+from src.optimizer import TaskInterface
+from .distance_measure import DistanceMeasure
+from .robot import Robot
 
 import mujoco_xml_generator as mjc_gen
 import mujoco_xml_generator.common as mjc_cmn
@@ -160,7 +157,7 @@ class _MuJoCoProcess:
         return evaluation
 
 
-class Environment(TaskInterface):
+class Task(TaskInterface):
     def __init__(
             self,
             bot_pos: list[list[tuple[float, float, float]]],
@@ -182,33 +179,3 @@ class Environment(TaskInterface):
             for _ in range(int(15 / self.mujoco.timestep + 0.5)):
                 evaluations[t] += self.calc_step()
         return np.median(evaluations)
-
-
-class ECreator(TaskGenerator):
-    def __init__(self, num_bot, num_goal, try_count, timestep):
-        import random
-        self.num_bot = num_bot
-        self.num_goal = num_goal
-        self.try_count = try_count
-        self.timestep = timestep
-
-        self._brain = NeuralNetwork()
-
-        self.bot_pos = [
-            [(0, -5, 360 * random.random())] for _ in range(self.try_count)
-        ]
-        self.goal_pos = [
-            [(0, 5, 0)] for _ in range(self.try_count)
-        ]
-
-    def save(self) -> bytes:
-        return pickle.dumps(self)
-
-    def load(self, byte_data: bytes) -> int:
-        new_instance = pickle.loads(byte_data)
-        self.__dict__.update(new_instance.__dict__)
-        return len(byte_data)
-
-    def generate(self, para) -> Environment:
-        self._brain.load_para(para)
-        return Environment(self.bot_pos, self.goal_pos, self._brain, self.timestep)
