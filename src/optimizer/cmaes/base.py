@@ -70,7 +70,7 @@ class ProcInterface(metaclass=abc.ABCMeta):
         raise NotImplemented()
 
     @abc.abstractmethod
-    def join(self):
+    def join(self) -> (int, int):
         raise NotImplemented()
 
 
