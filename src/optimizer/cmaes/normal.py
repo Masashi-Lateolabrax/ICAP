@@ -65,6 +65,9 @@ class CMAES:
     def set_end_handler(self, handler=base.default_end_handler):
         self._base.set_end_handler(handler)
 
+    def get_generation(self):
+        return self._generation
+
     def optimize_current_generation(self, env_creator: TaskGenerator):
         self._current_generation += 1
         self._base.optimize_current_generation(
