@@ -8,7 +8,7 @@ from deap import cma, base
 import numpy
 import sys
 
-from src.optimizer import Hist, EnvCreator
+from src.optimizer import Hist, TaskGenerator
 
 
 def default_start_handler(gen, generation, start_time):
@@ -62,7 +62,7 @@ class _MinimalizeIndividual(Individual):
 
 class ProcInterface(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def __init__(self, gen: int, i: int, ind: Individual, env_creator: EnvCreator):
+    def __init__(self, gen: int, thread_id: int, individuals: list[Individual], task_generator: TaskGenerator):
         raise NotImplemented()
 
     @abc.abstractmethod
@@ -70,21 +70,24 @@ class ProcInterface(metaclass=abc.ABCMeta):
         raise NotImplemented()
 
     @abc.abstractmethod
-    def join(self) -> (int, int, float):
+    def join(self):
         raise NotImplemented()
 
 
-class _OneThreadProc(ProcInterface):
-    def __init__(self, gen: int, i: int, ind: array.array, env_creator: EnvCreator):
+class OneThreadProc(ProcInterface):
+    def __init__(self, gen: int, thread_id: int, individuals: list[Individual], task_generator: TaskGenerator):
         self.gen = gen
-        self.i = i
-        self.score = env_creator.create(ind).calc()
+        self.thread_id = thread_id
+        for ind in individuals:
+            task = task_generator.generate(ind)
+            score = task.run()
+            ind.fitness.values = (score,)
 
     def finished(self) -> bool:
         return True
 
-    def join(self) -> (int, int, float):
-        return self.gen, self.i, self.score
+    def join(self) -> (int, int):
+        return self.gen, self.thread_id
 
 
 class BaseCMAES:
@@ -96,14 +99,14 @@ class BaseCMAES:
             sigma: float = 0.3,
             centroid=None,
             minimalize: bool = True,
-            max_thread: int = 1,
+            split_tasks: int = 1,
             cmatrix=None
     ):
         self._best_para: array.array = array.array("d", [0.0] * dim)
         self._history: Hist = Hist(dim, population, mu)
         self._start_handler = default_start_handler
         self._end_handler = default_end_handler
-        self.max_thread: int = max_thread
+        self._split_tasks: int = split_tasks
 
         self._save_count = 10
         self._save_counter = self._save_count
@@ -195,49 +198,31 @@ class BaseCMAES:
         return num_error, avg, min_score, max_score, good_para
 
     def optimize_current_generation(
-            self, gen: int, generation: int, env_creator: EnvCreator, proc=ProcInterface
+            self, gen: int, generation: int, task_generator: TaskGenerator, proc=ProcInterface
     ) -> array.array:
         import time
 
         start_time = datetime.datetime.now()
         self._start_handler(gen, generation, start_time)
 
-        calculation_finished = False
-        handles = []
+        num_task = len(self._individuals) / self._split_tasks
+        tasks = [list(self._individuals[s * num_task:(s + 1) * num_task]) for s in range(self._split_tasks)]
+        for thread_id in range(len(self._individuals) % self._split_tasks):
+            tasks[thread_id].append(self._individuals[-1 - thread_id])
 
         try:
-            while not calculation_finished:
-                calculation_finished = True
+            handles = []
+            for i, ts in enumerate(tasks):
+                handles.append(proc(gen, i, ts, task_generator))
 
+            while len(handles) > 0:
                 index = 0
                 while index < len(handles):
                     if handles[index].finished():
-                        p = handles.pop(index)
-                        r_gen, r_i, r_score = p.join()
-                        if r_gen == gen and not numpy.isnan(r_score):
-                            self._individuals[r_i].fitness.values = (r_score,)
+                        handles.pop(index)
                         continue
-
                     index += 1
-                    if self.max_thread <= len(handles) <= index:
-                        index = 0
-                        time.sleep(0.01)
-
-                for i, ind in enumerate(self._individuals):
-                    if not numpy.isnan(ind.fitness.values[0]):
-                        continue
-                    calculation_finished = False
-
-                    p = proc(gen, i, ind, env_creator)
-                    if not p.finished():
-                        handles.append(p)
-                    else:
-                        r_gen, r_i, r_score = p.join()
-                        if r_gen == gen and not numpy.isnan(r_score):
-                            self._individuals[r_i].fitness.values = (r_score,)
-
-                    if self.max_thread <= len(handles):
-                        break
+                time.sleep(0.01)
 
         except KeyboardInterrupt:
             print(f"Interrupt CMAES Optimizing.")

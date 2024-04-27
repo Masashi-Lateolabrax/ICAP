@@ -1,4 +1,4 @@
-from .env_interface import EnvInterface, EnvCreator
+from .task_interface import TaskInterface, TaskGenerator
 from .history import Hist
 
 from .cmaes.normal import CMAES
