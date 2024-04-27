@@ -1,30 +1,36 @@
 import array
 import multiprocessing as mp
 
-from src.optimizer import Hist, EnvCreator
+from src.optimizer import Hist, TaskGenerator
 from src.optimizer.cmaes import base
 
 
-def _func(ind: base.Individual, env_creator: EnvCreator, queue: mp.Queue):
-    env = env_creator.create(ind)
-    score = env.calc()
-    queue.put(score)
+def _func(individuals: list[base.Individual], task_generator: TaskGenerator, queue: mp.Queue):
+    for ind in individuals:
+        task = task_generator.generate(ind)
+        ind.fitness.values = (task.run(),)
+        queue.put(ind)
 
 
-class _ThreadProc(base.ProcInterface):
-    def __init__(self, gen: int, i: int, ind: base.Individual, env_creator: EnvCreator):
+class ThreadProc(base.ProcInterface):
+    def __init__(self, gen: int, thread_id: int, individuals: list[base.Individual], task_generator: TaskGenerator):
         self.gen = gen
-        self.i = i
-        self.queue = mp.Queue(1)
-        self.handle = mp.Process(target=_func, args=(ind, env_creator, self.queue))
+        self.thread_id = thread_id
+        self.n = len(individuals)
+        self.individuals = individuals
+        self.queue = mp.Queue(len(individuals))
+        self.handle = mp.Process(target=_func, args=(individuals, task_generator, self.queue))
         self.handle.start()
 
     def finished(self) -> bool:
-        return self.queue.qsize() > 0
+        return self.queue.qsize() == self.n
 
-    def join(self) -> (int, int, float):
+    def join(self) -> (int, int):
         self.handle.join()
-        return self.gen, self.i, self.queue.get()
+        for origin in self.individuals:
+            result = self.queue.get()
+            origin.fitness.values = result.fitness.values
+        return self.gen, self.thread_id
 
 
 class CMAES:
@@ -42,6 +48,7 @@ class CMAES:
     ):
         self._base = base.BaseCMAES(dim, population, mu, sigma, centroid, minimalize, max_thread, cmatrix)
         self._generation = generation
+        self._current_generation = 0
 
     def get_best_para(self) -> array.array:
         return self._base.get_best_para()
@@ -58,6 +65,15 @@ class CMAES:
     def set_end_handler(self, handler=base.default_end_handler):
         self._base.set_end_handler(handler)
 
-    def optimize(self, env_creator: EnvCreator):
+    def optimize_current_generation(self, env_creator: TaskGenerator):
+        self._current_generation += 1
+        self._base.optimize_current_generation(
+            self._current_generation, self._generation, env_creator, ThreadProc
+        )
+
+    def optimize(self, env_creator: TaskGenerator):
         for gen in range(1, self._generation + 1):
-            self._base.optimize_current_generation(gen, self._generation, env_creator, _ThreadProc)
+            self._base.optimize_current_generation(
+                gen, self._generation, env_creator, ThreadProc
+            )
+        self._current_generation = self._generation
