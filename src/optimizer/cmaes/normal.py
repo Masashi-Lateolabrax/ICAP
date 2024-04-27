@@ -71,15 +71,15 @@ class CMAES:
     def get_current_generation(self):
         return self._current_generation
 
-    def optimize_current_generation(self, env_creator: TaskGenerator):
+    def optimize_current_generation(self, env_creator: TaskGenerator, proc=ThreadProc):
         self._current_generation += 1
         self._base.optimize_current_generation(
-            self._current_generation, self._generation, env_creator, ThreadProc
+            self._current_generation, self._generation, env_creator, proc
         )
 
-    def optimize(self, env_creator: TaskGenerator):
+    def optimize(self, env_creator: TaskGenerator, proc=ThreadProc):
         for gen in range(1, self._generation + 1):
             self._base.optimize_current_generation(
-                gen, self._generation, env_creator, ThreadProc
+                gen, self._generation, env_creator, proc
             )
         self._current_generation = self._generation
