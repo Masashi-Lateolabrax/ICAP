@@ -68,6 +68,9 @@ class CMAES:
     def get_generation(self):
         return self._generation
 
+    def get_current_generation(self):
+        return self._current_generation
+
     def optimize_current_generation(self, env_creator: TaskGenerator):
         self._current_generation += 1
         self._base.optimize_current_generation(
