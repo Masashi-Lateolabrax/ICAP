@@ -4,15 +4,14 @@
 
 ### Git prefix
 
-| Prefix | Definition                                                  |
-|--------|-------------------------------------------------------------|
-| add    | Indicates addition of new files or directories.             |
-| docs   | Indicates modifications made to documents or similar items. |
-| exp    | Indicates setup done for experiments.                       |
-| fix    | Indicates bug fixes.                                        |
-| impl   | Indicates implementation of new functions.                  |
-| mod    | Indicates changes not involving alternations to interfaces. |
-| mv     | Indicates movement or rename of files.                      |
-| remove | Indicates removal of files or directories.                  |
-| test   | Indicates something about tests.                            |
-| update | Indicates changes involving alternation to interfaces.      |
+| Prefix   | Definition                                                  |
+|----------|-------------------------------------------------------------|
+| add      | Indicates addition of new files or directories.             |
+| docs     | Indicates modifications made to documents or similar items. |
+| exp      | Indicates setup done for experiments.                       |
+| fix      | Indicates bug fixes.                                        |
+| impl     | Indicates implementation of new functions.                  |
+| mod      | Indicates changes not involving alternations to interfaces. |
+| refactor | Indicates refactoring.                                      |
+| test     | Indicates something about tests.                            |
+| update   | Indicates changes involving alternation to interfaces.      |
