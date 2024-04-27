@@ -1,36 +1,8 @@
 import array
-import multiprocessing as mp
 
 from src.optimizer import Hist, TaskGenerator
 from src.optimizer.cmaes import base
-
-
-def _func(individuals: list[base.Individual], task_generator: TaskGenerator, queue: mp.Queue):
-    for ind in individuals:
-        task = task_generator.generate(ind)
-        ind.fitness.values = (task.run(),)
-        queue.put(ind)
-
-
-class ThreadProc(base.ProcInterface):
-    def __init__(self, gen: int, thread_id: int, individuals: list[base.Individual], task_generator: TaskGenerator):
-        self.gen = gen
-        self.thread_id = thread_id
-        self.n = len(individuals)
-        self.individuals = individuals
-        self.queue = mp.Queue(len(individuals))
-        self.handle = mp.Process(target=_func, args=(individuals, task_generator, self.queue))
-        self.handle.start()
-
-    def finished(self) -> bool:
-        return self.queue.qsize() == self.n
-
-    def join(self) -> (int, int):
-        self.handle.join()
-        for origin in self.individuals:
-            result = self.queue.get()
-            origin.fitness.values = result.fitness.values
-        return self.gen, self.thread_id
+from src.optimizer.processe import MultiThreadProc
 
 
 class CMAES:
@@ -44,9 +16,9 @@ class CMAES:
             centroid=None,
             cmatrix=None,
             minimalize: bool = True,
-            max_thread: int = 1,
+            split_tasks: int = 1,
     ):
-        self._base = base.BaseCMAES(dim, population, mu, sigma, centroid, minimalize, max_thread, cmatrix)
+        self._base = base.BaseCMAES(dim, population, mu, sigma, centroid, minimalize, split_tasks, cmatrix)
         self._generation = generation
         self._current_generation = 0
 
@@ -71,13 +43,13 @@ class CMAES:
     def get_current_generation(self):
         return self._current_generation
 
-    def optimize_current_generation(self, env_creator: TaskGenerator, proc=ThreadProc):
+    def optimize_current_generation(self, env_creator: TaskGenerator, proc=MultiThreadProc):
         self._current_generation += 1
         self._base.optimize_current_generation(
             self._current_generation, self._generation, env_creator, proc
         )
 
-    def optimize(self, env_creator: TaskGenerator, proc=ThreadProc):
+    def optimize(self, env_creator: TaskGenerator, proc=MultiThreadProc):
         for gen in range(1, self._generation + 1):
             self._base.optimize_current_generation(
                 gen, self._generation, env_creator, proc

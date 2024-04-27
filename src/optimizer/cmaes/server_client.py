@@ -6,11 +6,11 @@ import socket
 import struct
 import threading
 
-from src.optimizer import Hist, EnvCreator
+from src.optimizer import Hist, TaskGenerator
 from src.optimizer.cmaes import base
 
 
-def _proc(gen: int, i: int, ind: base.Individual, env_creator: EnvCreator, queue: mp.Queue, sct: socket.socket):
+def _proc(gen: int, i: int, ind: base.Individual, env_creator: TaskGenerator, queue: mp.Queue, sct: socket.socket):
     received = b""
     request_type = -1
     r_gen = 0
@@ -62,7 +62,7 @@ def _proc(gen: int, i: int, ind: base.Individual, env_creator: EnvCreator, queue
 class _ServerProc(base.ProcInterface):
     listener: socket.socket = None
 
-    def __init__(self, gen: int, i: int, ind: base.Individual, env_creator: EnvCreator):
+    def __init__(self, gen: int, i: int, ind: base.Individual, env_creator: TaskGenerator):
         import select
 
         r = []
@@ -123,10 +123,10 @@ class ServerCMAES:
     def set_end_handler(self, handler=base.default_end_handler):
         self._base.set_end_handler(handler)
 
-    def optimize(self, gen: int, env_creator: EnvCreator) -> array.array:
+    def optimize(self, gen: int, env_creator: TaskGenerator) -> array.array:
         return self._base.optimize_current_generation(gen, self.generation, env_creator, _ServerProc)
 
-    def optimize_all(self, env_creator: EnvCreator) -> array.array:
+    def optimize_all(self, env_creator: TaskGenerator) -> array.array:
         para = None
         for gen in range(1, self.generation + 1):
             para = self.optimize(gen, env_creator)
@@ -181,7 +181,7 @@ class ClientCMAES:
 
         return ClientCMAES.Result.Succeed, None
 
-    def _receive_data(self, sock: socket.socket, default_env_creator: EnvCreator):
+    def _receive_data(self, sock: socket.socket, default_env_creator: TaskGenerator):
         res_type, res_data = self._connect_server(sock)
         if res_type != ClientCMAES.Result.Succeed:
             sock.close()
@@ -241,7 +241,7 @@ class ClientCMAES:
 
         return ClientCMAES.Result.Succeed, None
 
-    def optimize(self, default_env_creator: EnvCreator, global_gen: mp.Value, timeout: float = 60.0):
+    def optimize(self, default_env_creator: TaskGenerator, global_gen: mp.Value, timeout: float = 60.0):
         import numpy
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

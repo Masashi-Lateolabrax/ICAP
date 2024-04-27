@@ -1,14 +1,15 @@
-import abc
 import array
 import copy
 import datetime
 import socket
 
-from deap import cma, base
+from deap import cma
 import numpy
 import sys
 
 from src.optimizer import Hist, TaskGenerator
+from src.optimizer.individual import MinimalizeIndividual, MaximizeIndividual, Individual
+from src.optimizer.processe import ProcInterface
 
 
 def default_start_handler(gen, generation, start_time):
@@ -22,72 +23,6 @@ def default_end_handler(population, gen, generation, start_time, fin_time, num_e
     print(
         f"[{fin_time}] finish {gen} gen. speed[ind/s]:{spd}, error:{num_error}, avg:{avg}, min:{min_v}, max:{max_v}, best:{best}, etr:{e}"
     )
-
-
-class FitnessMax(base.Fitness):
-    weights = (1.0,)
-
-    def __init__(self, values=()):
-        super().__init__(values)
-
-
-class FitnessMin(base.Fitness):
-    weights = (-1.0,)
-
-    def __init__(self, values=()):
-        super().__init__(values)
-
-
-class Individual(array.array):
-    fitness: base.Fitness = None
-
-    def __new__(cls, fitness: base.Fitness, arr: numpy.ndarray):
-        this = super().__new__(cls, "d", arr)
-        if this.fitness is None:
-            this.fitness = fitness
-        return this
-
-
-class _MaximizeIndividual(Individual):
-    def __new__(cls, arr: numpy.ndarray):
-        this = super().__new__(cls, FitnessMax((float("nan"),)), arr)
-        return this
-
-
-class _MinimalizeIndividual(Individual):
-    def __new__(cls, arr: numpy.ndarray):
-        this = super().__new__(cls, FitnessMin((float("nan"),)), arr)
-        return this
-
-
-class ProcInterface(metaclass=abc.ABCMeta):
-    @abc.abstractmethod
-    def __init__(self, gen: int, thread_id: int, individuals: list[Individual], task_generator: TaskGenerator):
-        raise NotImplemented()
-
-    @abc.abstractmethod
-    def finished(self) -> bool:
-        raise NotImplemented()
-
-    @abc.abstractmethod
-    def join(self) -> (int, int):
-        raise NotImplemented()
-
-
-class OneThreadProc(ProcInterface):
-    def __init__(self, gen: int, thread_id: int, individuals: list[Individual], task_generator: TaskGenerator):
-        self.gen = gen
-        self.thread_id = thread_id
-        for ind in individuals:
-            task = task_generator.generate(ind)
-            score = task.run()
-            ind.fitness.values = (score,)
-
-    def finished(self) -> bool:
-        return True
-
-    def join(self) -> (int, int):
-        return self.gen, self.thread_id
 
 
 class BaseCMAES:
@@ -112,10 +47,10 @@ class BaseCMAES:
         self._save_counter = self._save_count
 
         if minimalize:
-            self._ind_type = _MinimalizeIndividual
+            self._ind_type = MinimalizeIndividual
             self._best_score = float("inf")
         else:
-            self._ind_type = _MaximizeIndividual
+            self._ind_type = MaximizeIndividual
             self._best_score = -float("inf")
 
         if mu <= 0:
@@ -164,7 +99,7 @@ class BaseCMAES:
 
         avg /= self._strategy.lambda_ - num_error
 
-        if self._ind_type is _MinimalizeIndividual:
+        if self._ind_type is MinimalizeIndividual:
             if self._best_score > min_score:
                 self._best_score = min_score
                 self._best_para = min_para.copy()
@@ -205,7 +140,7 @@ class BaseCMAES:
         start_time = datetime.datetime.now()
         self._start_handler(gen, generation, start_time)
 
-        num_task = len(self._individuals) / self._split_tasks
+        num_task = int(len(self._individuals) / self._split_tasks)
         tasks = [list(self._individuals[s * num_task:(s + 1) * num_task]) for s in range(self._split_tasks)]
         for thread_id in range(len(self._individuals) % self._split_tasks):
             tasks[thread_id].append(self._individuals[-1 - thread_id])
@@ -219,7 +154,8 @@ class BaseCMAES:
                 index = 0
                 while index < len(handles):
                     if handles[index].finished():
-                        handles.pop(index)
+                        h = handles.pop(index)
+                        h.join()
                         continue
                     index += 1
                 time.sleep(0.01)
