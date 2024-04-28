@@ -1,7 +1,7 @@
 import pickle
 
 import src.optimizer as opt
-from .brain import NeuralNetwork
+from .utils.brain import NeuralNetwork
 from .task import Task
 
 

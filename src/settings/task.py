@@ -2,8 +2,8 @@ import mujoco
 import numpy as np
 
 from src.optimizer import TaskInterface
-from .distance_measure import DistanceMeasure
-from .robot import Robot
+from .utils.distance_measure import DistanceMeasure
+from .utils.robot import Robot
 
 import mujoco_xml_generator as mjc_gen
 import mujoco_xml_generator.common as mjc_cmn
