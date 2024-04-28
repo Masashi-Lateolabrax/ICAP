@@ -8,6 +8,9 @@ from PIL import Image as PILImage, ImageTk as PILImageTk
 from mujoco_xml_generator.utils import FPSManager, MuJoCoView
 
 from src.settings import Task
+from src.optimizer import Hist
+from src.settings import TaskGenerator
+from src.utils import get_latest_history
 
 
 class LidarView(tk.Frame):
@@ -175,10 +178,9 @@ class App(tk.Tk):
 
 
 def main():
-    from src.optimizer import Hist
-    from src.settings import TaskGenerator
-
-    history = Hist.load("../../history.npz")
+    history = Hist.load(
+        get_latest_history("../../")
+    )
     q = history.queues[-1]
 
     env_creator = TaskGenerator()

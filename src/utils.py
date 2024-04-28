@@ -1,10 +1,12 @@
 import os
+import re
+import random
+import math
+import subprocess
 
 import cv2
 import numpy as np
 from moviepy.editor import ImageSequenceClip
-import random
-import math
 
 
 def is_overlap(new_circle, circles, r):
@@ -36,6 +38,33 @@ def generate_circles(n, r, area):
         print(f"Warning: Maximum attempts reached with {len(circles)} circles placed.")
 
     return circles
+
+
+def get_latest_history(directory_path):
+    def get_commit_timestamp(commit_hash):
+        command = ['git', 'log', '-n', '1', '--pretty=format:%at', commit_hash]
+        result = subprocess.run(command, cwd=directory_path, capture_output=True, text=True)
+        if result.returncode == 0:
+            return int(result.stdout.strip())
+        else:
+            return None
+
+    file_names = os.listdir(directory_path)
+    commit_timestamps = {}
+    commit_hash_regex = re.compile(r'history_([a-f0-9]+)\.npz')
+
+    for file_name in file_names:
+        res = commit_hash_regex.match(file_name)
+        if res:
+            hash_part = res.group(1)
+            timestamp = get_commit_timestamp(hash_part)
+            if timestamp is not None:
+                commit_timestamps[hash_part] = timestamp
+
+    latest_commit_hash = max(commit_timestamps, key=commit_timestamps.get)
+    latest_file = f'history_{latest_commit_hash}.npz'
+
+    return os.path.join(directory_path, latest_file)
 
 
 def save_video(frames, videopath: str, framerate=60, allow_fps_reducing=True):
