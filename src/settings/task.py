@@ -178,4 +178,4 @@ class Task(TaskInterface):
             self.mujoco.init_mujoco(t)
             for _ in range(int(15 / self.mujoco.timestep + 0.5)):
                 evaluations[t] += self.calc_step()
-        return np.median(evaluations)
+        return evaluations.max()
