@@ -11,8 +11,8 @@ class Robot:
         self.timestep = model.opt.timestep
         self.cam_name = f"bot{i}.camera"
 
-        self._current_frame = 0
-        self._skip_frame = int(0.1 / self.timestep)
+        self._skip_thinking = int(0.1 / self.timestep)
+        self._current_thinking_time = self._skip_thinking
 
         self.brain = brain
 
@@ -24,8 +24,8 @@ class Robot:
         self.act_move_y = data.actuator(f"bot{i}.act.pos_y")
 
         self._quat_buf = np.zeros((4, 1), dtype=np.float64)
-        self._direction_buf_for_sight = np.zeros((3, 1), dtype=np.float64)
-        self._direction_buf_for_act = np.zeros((3, 1), dtype=np.float64)
+        self._bot_direction = np.zeros((3, 1), dtype=np.float64)
+        self._act_vector = np.zeros((3, 1), dtype=np.float64)
 
         self.sight = np.zeros(1)
         self.brightness_img = np.zeros((65,))
@@ -34,19 +34,25 @@ class Robot:
         self.rotation = 0.0
 
     def calc_direction(self):
-        mujoco.mju_rotVecQuat(self._direction_buf_for_sight, [0, 1, 0], self.bot_body.xquat)
+        mujoco.mju_rotVecQuat(self._bot_direction, [0, 1, 0], self.bot_body.xquat)
         mujoco.mju_axisAngle2Quat(self._quat_buf, [0, 0, 1], self.act_rot.length)
-        mujoco.mju_rotVecQuat(self._direction_buf_for_act, [0, 1, 0], self._quat_buf)
-        return self._direction_buf_for_sight
+        mujoco.mju_rotVecQuat(self._act_vector, [0, 1, 0], self._quat_buf)
+        return self._bot_direction
+
+    def calc_relative_angle_to(self, pos):
+        v = (pos - self.bot_body.xpos)[0:2]
+        v /= np.linalg.norm(v)
+        theta = np.dot(v, self._bot_direction[0:2, 0])
+        return theta
 
     def exec(self, m: mujoco.MjModel, d: mujoco.MjData, distance_measure: DistanceMeasure, act=True):
-        self._current_frame += 1
-        if self._skip_frame < self._current_frame:
-            self._current_frame = 0
+        self._current_thinking_time += 1
+        if self._skip_thinking < self._current_thinking_time:
+            self._current_thinking_time = 0
             self.calc_direction()
 
             self.sight = distance_measure.measure_with_img(
-                m, d, self.bot_body_id, self.bot_body, self._direction_buf_for_sight
+                m, d, self.bot_body_id, self.bot_body, self._bot_direction
             )
             self.brightness_img = np.dot(self.sight[0, :, :], np.array([[0.299], [0.587], [0.114]])).reshape((65,))
 
@@ -68,5 +74,5 @@ class Robot:
 
         if act:
             self.act_rot.ctrl[0] += 0.5 * self.rotation * self.timestep
-            self.act_move_x.ctrl[0] += 1.2 * self._direction_buf_for_act[0] * self.movement * self.timestep
-            self.act_move_y.ctrl[0] += 1.2 * self._direction_buf_for_act[1] * self.movement * self.timestep
+            self.act_move_x.ctrl[0] += 1.2 * self._act_vector[0] * self.movement * self.timestep
+            self.act_move_y.ctrl[0] += 1.2 * self._act_vector[1] * self.movement * self.timestep

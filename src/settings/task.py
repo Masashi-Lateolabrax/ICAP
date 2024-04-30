@@ -145,14 +145,14 @@ class _MuJoCoProcess:
         for gi in range(self._num_goal):
             goal_geom_id = mujoco.mj_name2id(self.m, mujoco.mjtObj.mjOBJ_GEOM, f"goal{gi}")
             goal_geom = self.d.geom(goal_geom_id)
-            min_d = float("inf")
-            for ri in range(self._num_bot):
-                bot_body_id = mujoco.mj_name2id(self.m, mujoco.mjtObj.mjOBJ_BODY, f"bot{ri}.body")
-                bot_body = self.d.body(bot_body_id)
-                d = np.linalg.norm(bot_body.xpos - goal_geom.xpos)
-                if d < min_d:
-                    min_d = d
-            evaluation += min_d
+            min_bot = [float("inf"), 0]
+            for bot in self.bots:
+                d = np.linalg.norm(bot.bot_body.xpos - goal_geom.xpos)
+                theta = bot.calc_relative_angle_to(goal_geom.xpos)
+                if d < min_bot[0]:
+                    min_bot[0] = d
+                    min_bot[1] = theta
+            evaluation += min_bot[0] + 5 * 0.5 * abs(min_bot[1] - 1)
 
         return evaluation
 
@@ -178,4 +178,4 @@ class Task(TaskInterface):
             self.mujoco.init_mujoco(t)
             for _ in range(int(15 / self.mujoco.timestep + 0.5)):
                 evaluations[t] += self.calc_step()
-        return evaluations.max()
+        return np.median(evaluations)
