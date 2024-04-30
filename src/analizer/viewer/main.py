@@ -82,6 +82,9 @@ class InfoView(tk.Frame):
         self.skip_rate_label = tk.Label(self)
         self.skip_rate_label.pack()
 
+        self.evaluation_label = tk.Label(self)
+        self.evaluation_label.pack()
+
         self.camera_lookat_label = tk.Label(self)
         self.camera_lookat_label.pack()
 
@@ -141,8 +144,9 @@ class App(tk.Tk):
         timestep = self.timestep - 0.001
         do_rendering = self._fps_manager.render_or_not(timestep)
 
+        evaluation = 0
         if self.info_view.do_simulate:
-            self._task.calc_step()
+            evaluation = self._task.calc_step()
 
         if do_rendering:
             cam_name = self.info_view.camera_names.get()
@@ -162,6 +166,7 @@ class App(tk.Tk):
 
         self.info_view.interval_label.config(text=f"interval : {interval:.5f}")
         self.info_view.skip_rate_label.config(text=f"skip rate : {self._fps_manager.skip_rate:.5f}")
+        self.info_view.evaluation_label.config(text=f"evaluation : {evaluation:10.5f}")
         view_camera = self._mujoco_view.camera
         self.info_view.camera_lookat_label.config(
             text=f"camera lookat :\n {view_camera.lookat[0]:.3f}\n {view_camera.lookat[1]:.3f}\n {view_camera.lookat[2]:.3f}"
