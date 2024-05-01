@@ -4,7 +4,7 @@ from src.optimizer import CMAES, MultiThreadProc
 
 def main():
     dim = sum([p.numel() for p in NeuralNetwork().parameters() if p.requires_grad])
-    cmaes = CMAES(dim, 1000, 500, sigma=0.03, split_tasks=13)
+    cmaes = CMAES(dim, 1000, 500, sigma=1, split_tasks=13)
     for gen in range(1, 1 + cmaes.get_generation()):
         env_creator = TaskGenerator()
         cmaes.optimize_current_generation(env_creator, MultiThreadProc)
