@@ -5,10 +5,14 @@ from torch import nn
 class NeuralNetwork(nn.Module):
     def __init__(self):
         super(NeuralNetwork, self).__init__()
+
+        # The number of node in a layer is divided with 2.5^{the layer index} .
         self.sequence = nn.Sequential(
-            nn.Linear(65, 30),
+            nn.Linear(65, 26),
             nn.Tanh(),
-            nn.Linear(30, 4),
+            nn.Linear(26, 10),
+            nn.Tanh(),
+            nn.Linear(10, 4),
         )
         self.af1 = nn.Softmax(dim=0)
         self.af2 = nn.Sigmoid()
