@@ -7,9 +7,10 @@ from .distance_measure import DistanceMeasure
 
 
 class Robot:
-    def __init__(self, model: mujoco.MjModel, data: mujoco.MjData, i, brain: NeuralNetwork):
+    def __init__(self, model: mujoco.MjModel, data: mujoco.MjData, i, brain: NeuralNetwork, turn_speed: float):
         self.timestep = model.opt.timestep
         self.cam_name = f"bot{i}.camera"
+        self._turn_speed = turn_speed
 
         self._skip_thinking = int(0.1 / self.timestep)
         self._current_thinking_time = self._skip_thinking
@@ -67,12 +68,12 @@ class Robot:
                 self.rotation = 0.0
             elif yi == 1:
                 self.movement = 0.0
-                self.rotation = 0.5 * y[3].item()
+                self.rotation = self._turn_speed * y[3].item()
             else:
                 self.movement = 0.0
-                self.rotation = -0.5 * y[3].item()
+                self.rotation = -self._turn_speed * y[3].item()
 
         if act:
-            self.act_rot.ctrl[0] += 0.5 * self.rotation * self.timestep
-            self.act_move_x.ctrl[0] += 1.2 * self._act_vector[0] * self.movement * self.timestep
-            self.act_move_y.ctrl[0] += 1.2 * self._act_vector[1] * self.movement * self.timestep
+            self.act_rot.ctrl[0] += self.rotation * self.timestep
+            self.act_move_x.ctrl[0] += self._act_vector[0] * self.movement * self.timestep
+            self.act_move_y.ctrl[0] += self._act_vector[1] * self.movement * self.timestep

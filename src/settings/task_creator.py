@@ -10,6 +10,7 @@ class TaskGenerator(opt.TaskGenerator):
     NUM_BOT = 1
     NUM_GOAL = 1
     TRY_COUNT = 3
+    TURN_SPEED = 0.8
 
     def __init__(self):
         import random
@@ -33,4 +34,8 @@ class TaskGenerator(opt.TaskGenerator):
 
     def generate(self, para) -> Task:
         self._brain.load_para(para)
-        return Task(self.bot_pos, self.goal_pos, self._brain, TaskGenerator.TIMESTEP)
+        return Task(
+            self.bot_pos, self.goal_pos, self._brain,
+            TaskGenerator.TIMESTEP,
+            TaskGenerator.TURN_SPEED
+        )
