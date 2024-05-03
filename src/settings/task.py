@@ -154,7 +154,7 @@ class _MuJoCoProcess:
                 if d < min_bot[0]:
                     min_bot[0] = d
                     min_bot[1] = theta
-            evaluation += min_bot[0] + 5 * 0.5 * abs(min_bot[1] - 1)
+            evaluation += min_bot[0] + 15 * 0.5 * abs(min_bot[1] - 1)
 
         return evaluation
 
