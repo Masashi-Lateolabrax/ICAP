@@ -7,13 +7,12 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.11"
-mujoco-xml-generator = {git = "github:Masashi-Lateolabrax/mujoco-xml-generator.git", rev = "dev"}
-torch = {version = "^2.2.2+cpu", source = "torch"}
-torchvision = {version = "^0.17.2+cpu", source = "torch"}
-torchaudio = {version = "^2.2.2+cpu", source = "torch"}
+mujoco-xml-generator = { git = "https://github.com/Masashi-Lateolabrax/mujoco-xml-generator.git", rev = "dev" }
+torch = { version = "^2.2.2+cpu", source = "torch" }
+torchvision = { version = "^0.17.2+cpu", source = "torch" }
+torchaudio = { version = "^2.2.2+cpu", source = "torch" }
 opencv-python = "^4.9.0.80"
 moviepy = "^1.0.3"
-wrapped-mujoco-py = {git = "github:Masashi-Lateolabrax/wrapped-mujoco-py.git", rev = "dev"}
 mujoco = "^3.1.3"
 deap = "^1.4.1"
 
