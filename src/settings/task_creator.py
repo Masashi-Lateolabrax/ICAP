@@ -9,7 +9,7 @@ class TaskGenerator(opt.TaskGenerator):
     TIMESTEP = 0.01
     NUM_BOT = 1
     NUM_GOAL = 1
-    TRY_COUNT = 3
+    TRY_COUNT = 5
     TURN_SPEED = 0.3
 
     def __init__(self):
