@@ -1,4 +1,5 @@
 import array
+import psutil
 
 from src.optimizer import Hist, TaskGenerator
 from src.optimizer.cmaes import base
@@ -16,8 +17,15 @@ class CMAES:
             centroid=None,
             cmatrix=None,
             minimalize: bool = True,
-            split_tasks: int = 1,
+            split_tasks: int = 0,
     ):
+        num_cpu = psutil.cpu_count(logical=False)
+        if split_tasks <= 0:
+            if num_cpu < 2:
+                split_tasks = 1
+            else:
+                split_tasks = num_cpu - 2
+
         self._base = base.BaseCMAES(dim, population, mu, sigma, centroid, minimalize, split_tasks, cmatrix)
         self._generation = generation
         self._current_generation = 0
