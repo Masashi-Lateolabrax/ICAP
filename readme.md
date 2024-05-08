@@ -11,7 +11,6 @@
 | exp      | Indicates setup done for experiments.                       |
 | fix      | Indicates bug fixes.                                        |
 | impl     | Indicates implementation of new functions.                  |
-| mod      | Indicates changes not involving alternations to interfaces. |
-| refactor | Indicates refactoring.                                      |
+| refactor | Indicates changes not involving alternations to interfaces. |
 | test     | Indicates something about tests.                            |
 | update   | Indicates changes involving alternation to interfaces.      |
