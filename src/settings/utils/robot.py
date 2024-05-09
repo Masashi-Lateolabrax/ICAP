@@ -26,8 +26,6 @@ class _Actuator:
         ey = y / self.movement
         self.movement *= HyperParameters.MOVE_SPEED
         self.rotation = HyperParameters.TURN_SPEED * np.dot(ey, _Actuator.DIF_WHEEL_EV)
-        self.movement = 0
-        self.rotation = HyperParameters.TURN_SPEED
         return self.movement, self.rotation
 
     def _calc_ctrl_as_pattern_movement(self, y):
