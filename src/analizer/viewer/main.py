@@ -183,14 +183,17 @@ class App(tk.Tk):
 
 
 def main():
+    env_creator = TaskGenerator()
+    dim = env_creator.get_dim()
+    print(f"dim: {dim}")
+
     history = Hist.load(
         get_latest_history("../../")
     )
-    q = history.queues[-1]
+    para = history.queues[-1].min_para
+    # para = np.random.random(dim)
 
-    env_creator = TaskGenerator()
-    env = env_creator.generate(q.min_para)
-
+    env = env_creator.generate(para)
     app = App(500, 500, env)
     app.mainloop()
 
