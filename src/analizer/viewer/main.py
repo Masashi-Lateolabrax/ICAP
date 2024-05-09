@@ -187,11 +187,11 @@ def main():
     dim = env_creator.get_dim()
     print(f"dim: {dim}")
 
-    # history = Hist.load(
-    #     get_latest_history("../../")
-    # )
-    # para = history.queues[-1].min_para
-    para = np.random.random(dim)
+    history = Hist.load(
+        get_latest_history("../../")
+    )
+    para = history.queues[-1].min_para
+    # para = np.random.random(dim)
 
     env = env_creator.generate(para)
     app = App(500, 500, env)
