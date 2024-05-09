@@ -6,18 +6,17 @@ class NeuralNetwork(nn.Module):
     def __init__(self):
         super(NeuralNetwork, self).__init__()
 
+        # the number of node is 5.7^(an index of layer)
         self.sequence = nn.Sequential(
-            nn.Linear(65, 4),
+            nn.Linear(65, 11),
+            nn.Tanh(),
+            nn.Linear(11, 2),
+            nn.Tanh(),
         )
-        self.af1 = nn.Softmax(dim=0)
-        self.af2 = nn.Sigmoid()
 
-    def forward(self, x):
+    def forward(self, x) -> torch.Tensor:
         x = self.sequence.forward(x)
-        x1 = self.af1.forward(x[0:3])
-        x2 = self.af2.forward(x[3])
-        x2 = x2.unsqueeze(0)
-        return torch.cat([x1, x2])
+        return x
 
     def load_para(self, para):
         with torch.no_grad():

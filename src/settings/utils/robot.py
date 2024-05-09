@@ -7,9 +7,15 @@ from .distance_measure import DistanceMeasure
 
 
 class Robot:
-    def __init__(self, model: mujoco.MjModel, data: mujoco.MjData, i, brain: NeuralNetwork, turn_speed: float):
+    def __init__(
+            self,
+            model: mujoco.MjModel, data: mujoco.MjData,
+            i, brain: NeuralNetwork,
+            move_speed: float, turn_speed: float
+    ):
         self.timestep = model.opt.timestep
         self.cam_name = f"bot{i}.camera"
+        self._move_speed = move_speed
         self._turn_speed = turn_speed
 
         self._skip_thinking = int(0.1 / self.timestep)
@@ -27,6 +33,7 @@ class Robot:
         self._quat_buf = np.zeros((4, 1), dtype=np.float64)
         self._bot_direction = np.zeros((3, 1), dtype=np.float64)
         self._act_vector = np.zeros((3, 1), dtype=np.float64)
+        self._dif_wheel_ev = np.array([1, -1], dtype=np.float64) / 1.41421356237
 
         self.sight = np.zeros(1)
         self.brightness_img = np.zeros((65,))
@@ -46,11 +53,32 @@ class Robot:
         theta = np.dot(v, self._bot_direction[0:2, 0])
         return theta
 
+    def _act_as_dif_wheel(self, y):
+        movement = np.linalg.norm(y)
+        ey = y / movement
+        movement *= self._move_speed
+        rotation = self._turn_speed * np.dot(ey, self._dif_wheel_ev)
+        return movement, rotation
+
+    def _act_as_pattern_movement(self, y):
+        yi = torch.argmax(y[0:3])
+        if yi == 0:
+            movement = self._move_speed * y[3].item()
+            rotation = 0.0
+        elif yi == 1:
+            movement = 0.0
+            rotation = self._turn_speed * y[3].item()
+        else:
+            movement = 0.0
+            rotation = -self._turn_speed * y[3].item()
+        return movement, rotation
+
     def exec(self, m: mujoco.MjModel, d: mujoco.MjData, distance_measure: DistanceMeasure, act=True):
         self._current_thinking_time += 1
+        self.calc_direction()
+
         if self._skip_thinking < self._current_thinking_time:
             self._current_thinking_time = 0
-            self.calc_direction()
 
             self.sight = distance_measure.measure_with_img(
                 m, d, self.bot_body_id, self.bot_body, self._bot_direction
@@ -60,18 +88,9 @@ class Robot:
             x = torch.from_numpy(self.brightness_img).float()
             x /= 255.0
             # x.transpose_(0, 1)
-            y = self.brain.forward(x)
-            yi = torch.argmax(y[0:3])
+            y = self.brain.forward(x).detach().numpy()
 
-            if yi == 0:
-                self.movement = 1.2 * y[3].item()
-                self.rotation = 0.0
-            elif yi == 1:
-                self.movement = 0.0
-                self.rotation = self._turn_speed * y[3].item()
-            else:
-                self.movement = 0.0
-                self.rotation = -self._turn_speed * y[3].item()
+            self.movement, self.rotation = self._act_as_dif_wheel(y)
 
         if act:
             self.act_rot.ctrl[0] += self.rotation * self.timestep
