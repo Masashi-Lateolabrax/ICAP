@@ -56,7 +56,6 @@ class _Actuator:
 
 
 class Robot:
-
     def __init__(
             self,
             model: mujoco.MjModel, data: mujoco.MjData,
@@ -78,7 +77,7 @@ class Robot:
         self.bot_act = _Actuator(data, i)
 
         self.sight = np.zeros(1)
-        self.brightness_img = np.zeros((65,))
+        self.brightness_img = np.zeros((HyperParameters.NUM_LIDAR + 1,))
 
     def calc_relative_angle_to(self, pos):
         v = (pos - self.bot_body.xpos)[0:2]

@@ -47,8 +47,9 @@ class DistanceMeasure:
 
         return self._intersected_id, self._intersected_dist
 
-    def measure_with_img(self, m: mujoco.MjModel, d: mujoco.MjData, bot_body_id: int, bot_body,
-                         bot_direction: np.ndarray):
+    def measure_with_img(
+            self, m: mujoco.MjModel, d: mujoco.MjData, bot_body_id: int, bot_body, bot_direction: np.ndarray
+    ):
         ids, dists = self.measure(m, d, bot_body_id, bot_body, bot_direction)
 
         self._calc_sight_buf.fill(0)

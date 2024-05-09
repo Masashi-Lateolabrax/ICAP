@@ -5,3 +5,4 @@ class HyperParameters:
     TRY_COUNT = 5
     MOVE_SPEED = 1.2
     TURN_SPEED = 0.3
+    NUM_LIDAR = 64

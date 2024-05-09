@@ -53,8 +53,7 @@ class BrightnessImageView(tk.Frame):
         self.canvas.create_image(0, 0, anchor=tk.NW, image=self.tkimg_buf)
 
     def render(self, img: np.ndarray):
-        import math
-        x = math.floor(self.canvas_shape[1] / img.shape[0])
+        x = int(self.canvas_shape[1] / img.shape[0] + 0.5)
         buf = np.repeat(img, x, axis=0).reshape((1, img.shape[0] * x, 1))
         buf = np.repeat(buf, self.canvas_shape[0], axis=0)
         buf = np.repeat(buf, 3, axis=2)

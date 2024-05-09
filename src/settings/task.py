@@ -112,7 +112,7 @@ class _MuJoCoProcess:
             goal_pos: list[list[tuple[float, float, float]]]
     ):
         self._brain = brain
-        self._measure = DistanceMeasure(64)
+        self._measure = DistanceMeasure(HyperParameters.NUM_LIDAR)
 
         self._bot_pos = bot_pos
         self._goal_pos = goal_pos
