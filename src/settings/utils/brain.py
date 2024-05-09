@@ -7,7 +7,11 @@ class NeuralNetwork(nn.Module):
         super(NeuralNetwork, self).__init__()
 
         self.sequence = nn.Sequential(
-            nn.Linear(65, 4),
+            nn.Conv1d(1, 1, 4, 2),
+            nn.Tanh(),
+            nn.MaxPool1d(2),
+            nn.Flatten(0),
+            nn.Linear(15, 4),
         )
         self.af1 = nn.Softmax(dim=0)
         self.af2 = nn.Sigmoid()

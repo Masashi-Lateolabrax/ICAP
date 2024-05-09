@@ -59,7 +59,7 @@ class Robot:
 
             x = torch.from_numpy(self.brightness_img).float()
             x /= 255.0
-            # x.transpose_(0, 1)
+            x = x[np.newaxis, :]
             y = self.brain.forward(x)
             yi = torch.argmax(y[0:3])
 
