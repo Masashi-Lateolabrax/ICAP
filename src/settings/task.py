@@ -2,6 +2,7 @@ import mujoco
 import numpy as np
 
 from src.optimizer import TaskInterface
+from .hyper_parameters import HyperParameters
 from .utils.distance_measure import DistanceMeasure
 from .utils.robot import Robot
 
@@ -108,10 +109,7 @@ class _MuJoCoProcess:
             self,
             brain,
             bot_pos: list[list[tuple[float, float, float]]],
-            goal_pos: list[list[tuple[float, float, float]]],
-            timestep: float,
-            move_speed: float,
-            turn_speed: float,
+            goal_pos: list[list[tuple[float, float, float]]]
     ):
         self._brain = brain
         self._measure = DistanceMeasure(64)
@@ -121,9 +119,7 @@ class _MuJoCoProcess:
 
         self._num_bot = len(self._bot_pos[0])
         self._num_goal = len(self._goal_pos[0])
-        self.timestep = timestep
-        self._move_speed = move_speed
-        self._turn_speed = turn_speed
+        self.timestep = HyperParameters.TIMESTEP
 
         self.m: mujoco.MjModel = None
         self.d: mujoco.MjData = None
@@ -139,7 +135,7 @@ class _MuJoCoProcess:
         self.m = mujoco.MjModel.from_xml_string(xml)
         self.d = mujoco.MjData(self.m)
         self.bots = [
-            Robot(self.m, self.d, i, self._brain, self._move_speed, self._turn_speed) for i in range(self._num_bot)
+            Robot(self.m, self.d, i, self._brain) for i in range(self._num_bot)
         ]
 
     def calc_step(self):
@@ -169,12 +165,9 @@ class Task(TaskInterface):
             bot_pos: list[list[tuple[float, float, float]]],
             goal_pos: list[list[tuple[float, float, float]]],
             brain,
-            timestep: float,
-            move_speed: float,
-            turn_speed: float
     ):
         self._try_count = len(bot_pos)
-        self.mujoco = _MuJoCoProcess(brain, bot_pos, goal_pos, timestep, move_speed, turn_speed)
+        self.mujoco = _MuJoCoProcess(brain, bot_pos, goal_pos)
         self._direction_buf = np.zeros((3, 1), dtype=np.float64)
 
     def calc_step(self) -> float:

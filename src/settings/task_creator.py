@@ -3,26 +3,20 @@ import pickle
 import src.optimizer as opt
 from .utils.brain import NeuralNetwork
 from .task import Task
+from .hyper_parameters import HyperParameters
 
 
 class TaskGenerator(opt.TaskGenerator):
-    TIMESTEP = 0.01
-    NUM_BOT = 1
-    NUM_GOAL = 1
-    TRY_COUNT = 5
-    MOVE_SPEED = 1.2
-    TURN_SPEED = 0.3
-
     def __init__(self):
         import random
 
         self._brain = NeuralNetwork()
 
         self.bot_pos = [
-            [(0, -5, 360 * random.random())] for _ in range(TaskGenerator.TRY_COUNT)
+            [(0, -5, 360 * random.random())] for _ in range(HyperParameters.TRY_COUNT)
         ]
         self.goal_pos = [
-            [(0, 5, 0)] for _ in range(TaskGenerator.TRY_COUNT)
+            [(0, 5, 0)] for _ in range(HyperParameters.TRY_COUNT)
         ]
 
     def get_dim(self):
@@ -40,7 +34,4 @@ class TaskGenerator(opt.TaskGenerator):
         self._brain.load_para(para)
         return Task(
             self.bot_pos, self.goal_pos, self._brain,
-            TaskGenerator.TIMESTEP,
-            TaskGenerator.MOVE_SPEED,
-            TaskGenerator.TURN_SPEED
         )

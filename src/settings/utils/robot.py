@@ -4,6 +4,7 @@ import numpy as np
 
 from .brain import NeuralNetwork
 from .distance_measure import DistanceMeasure
+from ..hyper_parameters import HyperParameters
 
 
 class Robot:
@@ -11,14 +12,15 @@ class Robot:
             self,
             model: mujoco.MjModel, data: mujoco.MjData,
             i, brain: NeuralNetwork,
-            move_speed: float, turn_speed: float
     ):
-        self.timestep = model.opt.timestep
-        self.cam_name = f"bot{i}.camera"
-        self._move_speed = move_speed
-        self._turn_speed = turn_speed
+        self._quat_buf = np.zeros((4, 1), dtype=np.float64)
+        self._bot_direction = np.zeros((3, 1), dtype=np.float64)
+        self._act_vector = np.zeros((3, 1), dtype=np.float64)
+        self._dif_wheel_ev = np.array([1, -1], dtype=np.float64) / 1.41421356237
 
-        self._skip_thinking = int(0.1 / self.timestep)
+        self.cam_name = f"bot{i}.camera"
+
+        self._skip_thinking = int(0.1 / HyperParameters.TIMESTEP)
         self._current_thinking_time = self._skip_thinking
 
         self.brain = brain
@@ -29,11 +31,6 @@ class Robot:
         self.act_rot = data.actuator(f"bot{i}.act.rot")
         self.act_move_x = data.actuator(f"bot{i}.act.pos_x")
         self.act_move_y = data.actuator(f"bot{i}.act.pos_y")
-
-        self._quat_buf = np.zeros((4, 1), dtype=np.float64)
-        self._bot_direction = np.zeros((3, 1), dtype=np.float64)
-        self._act_vector = np.zeros((3, 1), dtype=np.float64)
-        self._dif_wheel_ev = np.array([1, -1], dtype=np.float64) / 1.41421356237
 
         self.sight = np.zeros(1)
         self.brightness_img = np.zeros((65,))
@@ -56,21 +53,21 @@ class Robot:
     def _act_as_dif_wheel(self, y):
         movement = np.linalg.norm(y)
         ey = y / movement
-        movement *= self._move_speed
-        rotation = self._turn_speed * np.dot(ey, self._dif_wheel_ev)
+        movement *= 1.2
+        rotation = HyperParameters.TURN_SPEED * np.dot(ey, self._dif_wheel_ev)
         return movement, rotation
 
     def _act_as_pattern_movement(self, y):
         yi = torch.argmax(y[0:3])
         if yi == 0:
-            movement = self._move_speed * y[3].item()
+            movement = 1.2 * y[3].item()
             rotation = 0.0
         elif yi == 1:
             movement = 0.0
-            rotation = self._turn_speed * y[3].item()
+            rotation = HyperParameters.TURN_SPEED * y[3].item()
         else:
             movement = 0.0
-            rotation = -self._turn_speed * y[3].item()
+            rotation = -HyperParameters.TURN_SPEED * y[3].item()
         return movement, rotation
 
     def exec(self, m: mujoco.MjModel, d: mujoco.MjData, distance_measure: DistanceMeasure, act=True):
@@ -93,6 +90,6 @@ class Robot:
             self.movement, self.rotation = self._act_as_dif_wheel(y)
 
         if act:
-            self.act_rot.ctrl[0] += self.rotation * self.timestep
-            self.act_move_x.ctrl[0] += self._act_vector[0] * self.movement * self.timestep
-            self.act_move_y.ctrl[0] += self._act_vector[1] * self.movement * self.timestep
+            self.act_rot.ctrl[0] += self.rotation * HyperParameters.TIMESTEP
+            self.act_move_x.ctrl[0] += self._act_vector[0] * self.movement * HyperParameters.TIMESTEP
+            self.act_move_y.ctrl[0] += self._act_vector[1] * self.movement * HyperParameters.TIMESTEP
