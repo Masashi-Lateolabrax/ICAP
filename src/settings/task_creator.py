@@ -24,6 +24,9 @@ class TaskGenerator(opt.TaskGenerator):
             [(0, 5, 0)] for _ in range(TaskGenerator.TRY_COUNT)
         ]
 
+    def get_dim(self):
+        return self._brain.num_dim()
+
     def save(self) -> bytes:
         return pickle.dumps(self)
 
