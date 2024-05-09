@@ -77,7 +77,13 @@ class Robot:
         self.bot_act = _Actuator(data, i)
 
         self.sight = np.zeros(1)
-        self.brightness_img = np.zeros((HyperParameters.NUM_LIDAR + 1,))
+        self.brightness_img = np.zeros((1, HyperParameters.NUM_LIDAR + 1))
+        self.input_buf = np.zeros((1, 38))
+
+        kernel_size = 16
+        self.shrink_filter = torch.nn.Conv1d(1, 1, kernel_size, int(kernel_size * 0.5), bias=False)
+        self.shrink_filter.weight.requires_grad_(False)
+        self.shrink_filter.weight.copy_(torch.ones(kernel_size, dtype=torch.float32, requires_grad=False) / kernel_size)
 
     def calc_relative_angle_to(self, pos):
         v = (pos - self.bot_body.xpos)[0:2]
@@ -94,10 +100,13 @@ class Robot:
         self.brightness_img = np.dot(
             self.sight[0, :, :], np.array([[0.299], [0.587], [0.114]])
         ).reshape(
-            (self.sight.shape[1],)
+            (1, self.sight.shape[1])
         )
 
-        x = torch.from_numpy(self.brightness_img).float()
+        x = self.shrink_filter.forward(
+            torch.from_numpy(self.brightness_img).float()
+        )
+        np.copyto(self.input_buf, x.numpy())
         x /= 255.0
         # x.transpose_(0, 1)
         y = self.brain.forward(x).detach().numpy()

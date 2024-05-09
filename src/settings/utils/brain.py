@@ -6,11 +6,12 @@ class NeuralNetwork(nn.Module):
     def __init__(self):
         super(NeuralNetwork, self).__init__()
 
-        # the number of node is 5.7^(an index of layer)
+        # the number of node is 4.1833^(an index of layer)
         self.sequence = nn.Sequential(
-            nn.Linear(65, 11),
+            nn.Flatten(0, -1),
+            nn.Linear(38, 8),
             nn.Tanh(),
-            nn.Linear(11, 2),
+            nn.Linear(8, 2),
             nn.Tanh(),
         )
 
