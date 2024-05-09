@@ -53,14 +53,14 @@ class Robot:
     def _act_as_dif_wheel(self, y):
         movement = np.linalg.norm(y)
         ey = y / movement
-        movement *= 1.2
+        movement *= HyperParameters.MOVE_SPEED
         rotation = HyperParameters.TURN_SPEED * np.dot(ey, self._dif_wheel_ev)
         return movement, rotation
 
     def _act_as_pattern_movement(self, y):
         yi = torch.argmax(y[0:3])
         if yi == 0:
-            movement = 1.2 * y[3].item()
+            movement = HyperParameters.MOVE_SPEED * y[3].item()
             rotation = 0.0
         elif yi == 1:
             movement = 0.0
