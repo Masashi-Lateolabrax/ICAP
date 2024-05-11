@@ -172,4 +172,4 @@ class Task(TaskInterface):
             self.mujoco.init_mujoco(bp, gp)
             for _ in range(int(15 / HyperParameters.TIMESTEP + 0.5)):
                 evaluations[t] += self.calc_step()
-        return np.max(evaluations)
+        return np.average(evaluations)
