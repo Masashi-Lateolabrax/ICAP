@@ -1,4 +1,5 @@
 import mujoco
+from mujoco._structs import _MjDataGeomViews
 import numpy as np
 
 from src.optimizer import TaskInterface
@@ -108,34 +109,27 @@ class _MuJoCoProcess:
     def __init__(
             self,
             brain,
-            bot_pos: list[list[tuple[float, float, float]]],
-            goal_pos: list[list[tuple[float, float, float]]]
     ):
         self._brain = brain
         self._measure = DistanceMeasure(HyperParameters.NUM_LIDAR)
 
-        self._bot_pos = bot_pos
-        self._goal_pos = goal_pos
-
-        self._num_bot = len(self._bot_pos[0])
-        self._num_goal = len(self._goal_pos[0])
-        self.timestep = HyperParameters.TIMESTEP
-
         self.m: mujoco.MjModel = None
         self.d: mujoco.MjData = None
         self.bots: list[Robot] = None
+        self._goal_geoms: list[_MjDataGeomViews] = None
 
-    def init_mujoco(self, try_count: int):
-        xml = gen_xml(
-            self._bot_pos[try_count],
-            self._goal_pos[try_count],
-            self.timestep
-        )
+    def init_mujoco(
+            self, bot_pos: list[tuple[float, float, float]], goal_pos: list[tuple[float, float, float]]
+    ):
+        xml = gen_xml(bot_pos, goal_pos, HyperParameters.TIMESTEP)
 
         self.m = mujoco.MjModel.from_xml_string(xml)
         self.d = mujoco.MjData(self.m)
         self.bots = [
-            Robot(self.m, self.d, i, self._brain) for i in range(self._num_bot)
+            Robot(self.m, self.d, i, self._brain) for i in range(len(bot_pos))
+        ]
+        self._goal_geoms = [
+            self.d.geom(mujoco.mj_name2id(self.m, mujoco.mjtObj.mjOBJ_GEOM, f"goal{i}")) for i in range(len(goal_pos))
         ]
 
     def calc_step(self):
@@ -144,9 +138,7 @@ class _MuJoCoProcess:
             bot.exec(self.m, self.d, self._measure)
 
         evaluation = 0
-        for gi in range(self._num_goal):
-            goal_geom_id = mujoco.mj_name2id(self.m, mujoco.mjtObj.mjOBJ_GEOM, f"goal{gi}")
-            goal_geom = self.d.geom(goal_geom_id)
+        for goal_geom in self._goal_geoms:
             min_bot = [float("inf"), 0]
             for bot in self.bots:
                 d = np.linalg.norm(bot.bot_body.xpos - goal_geom.xpos)
@@ -166,17 +158,18 @@ class Task(TaskInterface):
             goal_pos: list[list[tuple[float, float, float]]],
             brain,
     ):
-        self._try_count = len(bot_pos)
-        self.mujoco = _MuJoCoProcess(brain, bot_pos, goal_pos)
+        self.bot_pos = bot_pos
+        self.goal_pos = goal_pos
+        self.mujoco = _MuJoCoProcess(brain)
         self._direction_buf = np.zeros((3, 1), dtype=np.float64)
 
     def calc_step(self) -> float:
         return self.mujoco.calc_step()
 
     def run(self) -> float:
-        evaluations = np.zeros(self._try_count)
-        for t in range(self._try_count):
-            self.mujoco.init_mujoco(t)
-            for _ in range(int(15 / self.mujoco.timestep + 0.5)):
+        evaluations = np.zeros(HyperParameters.TRY_COUNT)
+        for (t, (bp, gp)) in enumerate(zip(self.bot_pos, self.goal_pos)):
+            self.mujoco.init_mujoco(bp, gp)
+            for _ in range(int(15 / HyperParameters.TIMESTEP + 0.5)):
                 evaluations[t] += self.calc_step()
-        return np.max(evaluations)
+        return np.average(evaluations)
