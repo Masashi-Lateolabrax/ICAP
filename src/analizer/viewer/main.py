@@ -8,9 +8,8 @@ from PIL import Image as PILImage, ImageTk as PILImageTk
 from mujoco_xml_generator.utils import FPSManager, MuJoCoView
 
 from src.settings import Task
-from src.optimizer import Hist
 from src.settings import TaskGenerator
-from src.utils import get_latest_history
+from src.settings import HyperParameters
 
 
 class LidarView(tk.Frame):
@@ -53,8 +52,8 @@ class BrightnessImageView(tk.Frame):
         self.canvas.create_image(0, 0, anchor=tk.NW, image=self.tkimg_buf)
 
     def render(self, img: np.ndarray):
-        x = int(self.canvas_shape[1] / img.shape[0] + 0.5)
-        buf = np.repeat(img, x, axis=0).reshape((1, img.shape[0] * x, 1))
+        x = int(self.canvas_shape[1] / img.shape[1] + 0.5)
+        buf = np.repeat(img, x, axis=1).reshape((1, img.shape[1] * x, 1))
         buf = np.repeat(buf, self.canvas_shape[0], axis=0)
         buf = np.repeat(buf, 3, axis=2)
         self.tkimg_buf.paste(
@@ -129,10 +128,13 @@ class App(tk.Tk):
         self._camera_view = MuJoCoView(self, width, height)
         self._camera_view.grid(row=0, column=3)
 
+        w = int(width * 3 / (HyperParameters.NUM_LIDAR + 1) + 0.5) * (HyperParameters.NUM_LIDAR + 1)
         # self.lidar_view = LidarView(self, width * 3, 50)
         # self.lidar_view.grid(row=1, column=1, columnspan=3)
-        self.brightness_view = BrightnessImageView(self, width * 3, 50)
+        self.brightness_view = BrightnessImageView(self, w, 50)
         self.brightness_view.grid(row=1, column=1, columnspan=3)
+        self.input_view = BrightnessImageView(self, w, 50)
+        self.input_view.grid(row=2, column=1, columnspan=3)
 
         self.after(1, self.step)
 
@@ -162,6 +164,7 @@ class App(tk.Tk):
                     continue
                 # self.lidar_view.render(bot.sight)
                 self.brightness_view.render(bot.brightness_img.astype(np.uint8))
+                self.input_view.render(bot.input_buf.astype(np.uint8))
 
         self.info_view.interval_label.config(text=f"interval : {interval:.5f}")
         self.info_view.skip_rate_label.config(text=f"skip rate : {self._fps_manager.skip_rate:.5f}")
