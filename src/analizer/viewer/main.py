@@ -8,8 +8,10 @@ from PIL import Image as PILImage, ImageTk as PILImageTk
 from mujoco_xml_generator.utils import FPSManager, MuJoCoView
 
 from src.settings import Task
+from src.optimizer import Hist
 from src.settings import TaskGenerator
 from src.settings import HyperParameters
+from src.utils import get_latest_history
 
 
 class LidarView(tk.Frame):
@@ -98,9 +100,8 @@ class App(tk.Tk):
         super().__init__()
 
         self._task = task
-        self._task.mujoco.init_mujoco(0)
+        self.timestep = task.mujoco.m.opt.timestep
 
-        self.timestep = self._task.mujoco.timestep
         self._depth_img_buf = np.zeros((height, width), dtype=np.float32)
 
         self._fps_manager = FPSManager(self.timestep, 60)
@@ -189,13 +190,16 @@ def main():
     dim = env_creator.get_dim()
     print(f"dim: {dim}")
 
-    # history = Hist.load(
-    #     get_latest_history("../../")
-    # )
-    # para = history.queues[-1].min_para
-    para = np.random.random(dim)
+    history = Hist.load(
+        get_latest_history("../../")
+    )
+    para = history.queues[-1].min_para
+    # para = np.random.random(dim)
 
     env = env_creator.generate(para)
+    env.mujoco.init_mujoco(
+        env_creator.bot_pos[0], env_creator.goal_pos[0]
+    )
     app = App(500, 500, env)
     app.mainloop()
 
