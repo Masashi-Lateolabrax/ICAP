@@ -68,15 +68,16 @@ def get_latest_history(directory_path):
 
 
 def get_current_history(directory_path):
-    command = ['git', 'rev-parse', '--short', "HEAD"]
+    command = ['git', 'rev-parse', "HEAD"]
     cmd_result = subprocess.run(command, cwd=directory_path, capture_output=True, text=True)
     if cmd_result.returncode != 0:
         raise "Failed to exec the command."
-    current_hash = cmd_result.stdout.strip()
+    current_hash = cmd_result.stdout.strip()[0:8]
 
     result = os.path.join(directory_path, f'history_{current_hash}.npz')
     if not os.path.exists(result):
-        raise f"Failed to find the history_{current_hash}.npz. Make sure to check out the correct commit."
+        print(os.path.abspath(result))
+        raise f"Failed to find the history_XXXXXXXX.npz. Make sure to check out the correct commit."
     return result
 
 
