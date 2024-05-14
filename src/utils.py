@@ -81,20 +81,6 @@ def get_current_history(directory_path):
     return result
 
 
-def get_current_history(directory_path):
-    command = ['git', 'rev-parse', "HEAD"]
-    cmd_result = subprocess.run(command, cwd=directory_path, capture_output=True, text=True)
-    if cmd_result.returncode != 0:
-        raise "Failed to exec the command."
-    current_hash = cmd_result.stdout.strip()[0:8]
-
-    result = os.path.join(directory_path, f'history_{current_hash}.npz')
-    if not os.path.exists(result):
-        print(os.path.abspath(result))
-        raise "Failed to find the history_XXXXXXXX.npz. Make sure to check out the correct commit."
-    return result
-
-
 def save_video(frames, videopath: str, framerate=60, allow_fps_reducing=True):
     """動画を保存する
 - frames: ndarrayのlistか、ndarray
