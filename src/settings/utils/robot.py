@@ -29,21 +29,21 @@ class _Actuator:
         return self.movement, self.rotation
 
     def _calc_ctrl_as_pattern_movement(self, y):
-        yi = torch.argmax(y[0:3])
+        yi = np.argmax(y[0:3])
         if yi == 0:
-            self.movement = HyperParameters.MOVE_SPEED * y[3].item()
+            self.movement = HyperParameters.MOVE_SPEED * y[3]
             self.rotation = 0.0
         elif yi == 1:
             self.movement = 0.0
-            self.rotation = HyperParameters.TURN_SPEED * y[3].item()
+            self.rotation = HyperParameters.TURN_SPEED * y[3]
         else:
             self.movement = 0.0
-            self.rotation = -HyperParameters.TURN_SPEED * y[3].item()
+            self.rotation = -HyperParameters.TURN_SPEED * y[3]
 
         return self.movement, self.rotation
 
     def update(self, y):
-        self._calc_ctrl_as_dif_wheels(y)
+        self._calc_ctrl_as_pattern_movement(y)
 
     def act(self):
         mujoco.mju_axisAngle2Quat(self._quat_buf, [0, 0, 1], self.act_rot.length)
