@@ -43,7 +43,7 @@ class _Actuator:
         return self.movement, self.rotation
 
     def update(self, y):
-        self._calc_ctrl_as_pattern_movement(y)
+        self._calc_ctrl_as_dif_wheels(y)
 
     def act(self):
         mujoco.mju_axisAngle2Quat(self._quat_buf, [0, 0, 1], self.act_rot.length)
