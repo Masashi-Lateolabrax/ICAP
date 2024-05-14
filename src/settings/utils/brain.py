@@ -13,17 +13,13 @@ class NeuralNetwork(nn.Module):
             nn.Tanh(),
             nn.Linear(18, 8),
             nn.Tanh(),
-            nn.Linear(8, 4),
+            nn.Linear(8, 2),
+            nn.Tanh()
         )
-        self.af1 = nn.Softmax(dim=0)
-        self.af2 = nn.Sigmoid()
 
     def forward(self, x) -> torch.Tensor:
         x = self.sequence.forward(x)
-        x1 = self.af1.forward(x[0:3])
-        x2 = self.af2.forward(x[3])
-        x2 = x2.unsqueeze(0)
-        return torch.cat([x1, x2])
+        return x
 
     def load_para(self, para):
         with torch.no_grad():
