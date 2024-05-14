@@ -11,7 +11,7 @@ from src.settings import Task
 from src.optimizer import Hist
 from src.settings import TaskGenerator
 from src.settings import HyperParameters
-from src.utils import get_latest_history
+from src.utils import get_current_history
 
 
 class LidarView(tk.Frame):
@@ -191,7 +191,7 @@ def main():
     print(f"dim: {dim}")
 
     history = Hist.load(
-        get_latest_history("../../")
+        get_current_history("../../")
     )
     para = history.queues[-1].min_para
     # para = np.random.random(dim)
