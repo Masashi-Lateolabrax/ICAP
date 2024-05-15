@@ -9,12 +9,10 @@ class NeuralNetwork(nn.Module):
         # the number of node is 2.1179^(an index of layer)
         self.sequence = nn.Sequential(
             nn.Flatten(0, -1),
-            nn.Linear(38, 18),
+            nn.Linear(16, 4),
             nn.Tanh(),
-            nn.Linear(18, 8),
+            nn.Linear(4, 2),
             nn.Tanh(),
-            nn.Linear(8, 2),
-            nn.Tanh()
         )
 
     def forward(self, x) -> torch.Tensor:

@@ -1,6 +1,8 @@
+import collections
 import mujoco
 import torch
 import numpy as np
+import math
 
 from .brain import NeuralNetwork
 from .distance_measure import DistanceMeasure
@@ -76,12 +78,25 @@ class Robot:
 
         self.sight = np.zeros(1)
         self.brightness_img = np.zeros((1, HyperParameters.NUM_LIDAR + 1))
-        self.input_buf = np.zeros((1, 38))
+        self.input_buf = np.zeros((1, 16))
 
-        kernel_size = 16
-        self.shrink_filter = torch.nn.Conv1d(1, 1, kernel_size, int(kernel_size * 0.5), bias=False)
-        self.shrink_filter.weight.requires_grad_(False)
-        self.shrink_filter.weight.copy_(torch.ones(kernel_size, dtype=torch.float32, requires_grad=False) / kernel_size)
+        kernel_size = 40
+
+        def normal_distribution(x) -> float:
+            mean = kernel_size * 0.5
+            sigma = kernel_size * 0.5 / 4
+            variance_2 = 2 * math.pow(sigma, 2)
+            return math.exp(-math.pow(x - mean, 2) / variance_2) / math.sqrt(math.pi * variance_2)
+
+        self.preparator = torch.nn.Sequential(collections.OrderedDict([
+            ("padding", torch.nn.CircularPad1d(int(kernel_size * 0.5 + 0.5))),
+            ("convolve", torch.nn.Conv1d(1, 1, kernel_size, int(kernel_size * 0.5), bias=False)),
+        ]))
+        self.preparator.requires_grad_(False)
+        self.preparator.convolve.weight.copy_(torch.tensor(
+            [normal_distribution(x) for x in range(0, kernel_size)],
+            dtype=torch.float32, requires_grad=False
+        ))
 
     def calc_relative_angle_to(self, pos):
         v = (pos - self.bot_body.xpos)[0:2]
@@ -101,7 +116,7 @@ class Robot:
             (1, self.sight.shape[1])
         )
 
-        x = self.shrink_filter.forward(
+        x = self.preparator.forward(
             torch.from_numpy(self.brightness_img).float()
         )
         np.copyto(self.input_buf, x.numpy())
