@@ -14,7 +14,7 @@ class DistanceMeasure:
         self._buf1 = np.zeros((3, 1), dtype=np.float64)
         self._buf2 = np.zeros((3, 1), dtype=np.float64)
         self._vecs = np.zeros((n, 3))
-        self._calc_sight_buf = np.zeros((1, n + 1, 3), dtype=np.uint8)
+        self._calc_sight_buf = np.zeros((1, n, 3), dtype=np.uint8)
 
     def measure(self, m: mujoco.MjModel, d: mujoco.MjData, bot_body_id: int, bot_body, bot_direction: np.ndarray):
         center_point = np.copy(bot_body.xpos)
@@ -65,6 +65,4 @@ class DistanceMeasure:
                 color[:] = [0, 255, 0]
 
             self._calc_sight_buf[0, j, :] = color / ((dist * 0.05 + 1) ** 2)
-
-        self._calc_sight_buf[0, -1, :] = self._calc_sight_buf[0, 0, :]
         return self._calc_sight_buf
