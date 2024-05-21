@@ -170,6 +170,6 @@ class Task(TaskInterface):
         evaluations = np.zeros(HyperParameters.TRY_COUNT)
         for (t, (bp, gp)) in enumerate(zip(self.bot_pos, self.goal_pos)):
             self.mujoco.init_mujoco(bp, gp)
-            for _ in range(int(15 / HyperParameters.TIMESTEP + 0.5)):
+            for _ in range(int(HyperParameters.EPISODE / HyperParameters.TIMESTEP + 0.5)):
                 evaluations[t] += self.calc_step()
         return np.average(evaluations)

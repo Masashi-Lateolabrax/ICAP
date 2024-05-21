@@ -1,4 +1,5 @@
 class HyperParameters:
+    EPISODE = 30
     TIMESTEP = 0.01
     NUM_BOT = 1
     NUM_GOAL = 1
