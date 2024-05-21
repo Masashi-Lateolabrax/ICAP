@@ -1,4 +1,7 @@
 class HyperParameters:
+    GENERATION = 1000
+    POPULATION = 50
+    SIGMA = 0.3
     EPISODE = 30
     TIMESTEP = 0.01
     NUM_BOT = 1
