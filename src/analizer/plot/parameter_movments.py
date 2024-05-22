@@ -3,12 +3,12 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 
 from src.optimizer import Hist
+from src.utils import get_current_history
 
 
 def main():
     history = Hist.load(
-        "../../history_2d9ecdae.npz"
-        # get_current_history("../../")
+        get_current_history("../../")
     )
     dim = range(0, history.dim)  # range(0, history.dim)
     generation = range(0, len(history.queues))  # range(0, len(history.queues))
