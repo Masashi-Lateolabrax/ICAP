@@ -36,4 +36,3 @@ class HyperParameters:
         SENSOR_PRECISION = 0.005
         MOVE_SPEED = 1.2
         TURN_SPEED = 1.0
-        NUM_LIDAR = 314
