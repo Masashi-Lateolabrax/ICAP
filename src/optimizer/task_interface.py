@@ -1,4 +1,5 @@
 import abc
+import pickle
 
 
 class TaskInterface(metaclass=abc.ABCMeta):
@@ -16,13 +17,13 @@ class TaskGenerator(metaclass=abc.ABCMeta):
     タスクを生成するためのクラスです．スレッドセーフでなければなりません．
     """
 
-    @abc.abstractmethod
     def save(self) -> bytes:
-        raise NotImplementedError()
+        return pickle.dumps(self)
 
-    @abc.abstractmethod
-    def load(self, data: bytes) -> int:
-        raise NotImplementedError()
+    def load(self, byte_data: bytes) -> int:
+        new_instance = pickle.loads(byte_data)
+        self.__dict__.update(new_instance.__dict__)
+        return len(byte_data)
 
     @abc.abstractmethod
     def generate(self, para) -> TaskInterface:

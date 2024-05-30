@@ -7,14 +7,10 @@ from PIL import Image as PILImage, ImageTk as PILImageTk
 
 from mujoco_xml_generator.utils import FPSManager, MuJoCoView
 
-from src.settings import Task
-from src.optimizer import Hist
-from src.settings import TaskGenerator
-from src.settings import HyperParameters
-from src.utils import get_current_history
+from src.settings import HyperParameters, Task, TaskGenerator
 
 
-class LidarView(tk.Frame):
+class InputView(tk.Frame):
     def __init__(self, master, width: int, height: int, cnf=None, **kw):
         if cnf is None:
             cnf = {}
@@ -33,31 +29,6 @@ class LidarView(tk.Frame):
         x = int(self.canvas_shape[1] / img.shape[1] + 0.5)
         buf = np.repeat(img, x, axis=1)
         buf = np.repeat(buf, self.canvas_shape[0], axis=0)
-        self.tkimg_buf.paste(
-            PILImage.fromarray(buf)
-        )
-
-
-class BrightnessImageView(tk.Frame):
-    def __init__(self, master, width: int, height: int, cnf=None, **kw):
-        if cnf is None:
-            cnf = {}
-        super().__init__(master, cnf, **kw)
-        self.canvas_shape: tuple[int, int] = (height, width)
-        self.canvas = tk.Canvas(self, width=width, height=height)
-        self.canvas.pack()
-
-        plk_img_buf = PILImage.fromarray(
-            np.zeros((height, width, 3), dtype=np.uint8)
-        )
-        self.tkimg_buf = PILImageTk.PhotoImage(image=plk_img_buf)
-        self.canvas.create_image(0, 0, anchor=tk.NW, image=self.tkimg_buf)
-
-    def render(self, img: np.ndarray):
-        x = int(self.canvas_shape[1] / img.shape[1] + 0.5)
-        buf = np.repeat(img, x, axis=1).reshape((1, img.shape[1] * x, 1))
-        buf = np.repeat(buf, self.canvas_shape[0], axis=0)
-        buf = np.repeat(buf, 3, axis=2)
         self.tkimg_buf.paste(
             PILImage.fromarray(buf)
         )
@@ -96,25 +67,25 @@ class InfoView(tk.Frame):
 
 
 class App(tk.Tk):
-    def __init__(self, width, height, task: Task):
+    def __init__(self, width, height, task: Task, manage_fps: bool = True):
         super().__init__()
 
         self._task = task
-        self.timestep = task.mujoco.m.opt.timestep
 
         self._depth_img_buf = np.zeros((height, width), dtype=np.float32)
 
-        self._fps_manager = FPSManager(self.timestep, 60)
+        self._manage_fps = manage_fps
+        self._fps_manager = FPSManager(60)
 
-        self._renderer = mujoco.Renderer(self._task.mujoco.m, height, width)
-        self._renderer_for_depth = mujoco.Renderer(self._task.mujoco.m, height, width)
+        self._renderer = mujoco.Renderer(self._task.get_model(), height, width)
+        self._renderer_for_depth = mujoco.Renderer(self._task.get_model(), height, width)
         self._renderer_for_depth.enable_depth_rendering()
 
         self.resizable(False, False)
 
         camera_names = [
-            mujoco.mj_id2name(self._task.mujoco.m, mujoco.mjtObj.mjOBJ_CAMERA, i) for i in
-            range(self._task.mujoco.m.ncam)
+            mujoco.mj_id2name(self._task.get_model(), mujoco.mjtObj.mjOBJ_CAMERA, i) for i in
+            range(self._task.get_model().ncam)
         ]
         self.info_view = InfoView(self, camera_names)
         self.info_view.grid(row=0, column=0, rowspan=2)
@@ -129,22 +100,14 @@ class App(tk.Tk):
         self._camera_view = MuJoCoView(self, width, height)
         self._camera_view.grid(row=0, column=3)
 
-        w = int(width * 3 / (HyperParameters.NUM_LIDAR + 1) + 0.5) * (HyperParameters.NUM_LIDAR + 1)
-        # self.lidar_view = LidarView(self, width * 3, 50)
-        # self.lidar_view.grid(row=1, column=1, columnspan=3)
-        self.brightness_view = BrightnessImageView(self, w, 50)
-        self.brightness_view.grid(row=1, column=1, columnspan=3)
-        self.input_view = BrightnessImageView(self, w, 50)
-        self.input_view.grid(row=2, column=1, columnspan=3)
-
         self.after(1, self.step)
 
     def step(self):
         interval = self._fps_manager.calc_interval()
 
         self._fps_manager.record_start()
-        timestep = self.timestep - 0.001
-        do_rendering = self._fps_manager.render_or_not(timestep)
+        timestep = HyperParameters.Simulator.TIMESTEP - 0.001
+        do_rendering = self._fps_manager.render_or_not(timestep) or (not self._manage_fps)
 
         evaluation = 0
         if self.info_view.do_simulate:
@@ -156,16 +119,9 @@ class App(tk.Tk):
                 self._camera_view.camera = cam_name
                 self._depth_view.camera = cam_name
 
-            self._mujoco_view.render(self._task.mujoco.d, self._renderer)
-            self._camera_view.render(self._task.mujoco.d, self._renderer)
-            self._depth_view.render(self._task.mujoco.d, self._renderer_for_depth, self._depth_img_buf)
-
-            for bot in self._task.mujoco.bots:
-                if cam_name != f"bot{bot.bot_id}.camera":
-                    continue
-                # self.lidar_view.render(bot.sight)
-                self.brightness_view.render(bot.brightness_img.astype(np.uint8))
-                self.input_view.render(bot.input_buf.astype(np.uint8))
+            self._mujoco_view.render(self._task.get_data(), self._renderer)
+            self._camera_view.render(self._task.get_data(), self._renderer)
+            self._depth_view.render(self._task.get_data(), self._renderer_for_depth, self._depth_img_buf)
 
         self.info_view.interval_label.config(text=f"interval : {interval:.5f}")
         self.info_view.skip_rate_label.config(text=f"skip rate : {self._fps_manager.skip_rate:.5f}")
@@ -187,20 +143,8 @@ class App(tk.Tk):
 
 def main():
     env_creator = TaskGenerator()
-    dim = env_creator.get_dim()
-    print(f"dim: {dim}")
-
-    history = Hist.load(
-        get_current_history("../../")
-    )
-    para = history.queues[-1].min_para
-    # para = np.random.random(dim)
-
-    env = env_creator.generate(para)
-    env.mujoco.init_mujoco(
-        env_creator.bot_pos[0], env_creator.goal_pos[0]
-    )
-    app = App(500, 500, env)
+    env = env_creator.generate(None)
+    app = App(500, 500, env, False)
     app.mainloop()
 
 

@@ -1,10 +1,7 @@
 import mujoco
-from mujoco._structs import _MjDataGeomViews
-import numpy as np
 
 from src.optimizer import TaskInterface
 from .hyper_parameters import HyperParameters
-from .utils.distance_measure import DistanceMeasure
 from .utils.robot import Robot
 
 import mujoco_xml_generator as mjc_gen
@@ -17,13 +14,12 @@ from mujoco_xml_generator import Actuator, actuator
 from mujoco_xml_generator import Asset, asset
 
 
-def gen_xml(
-        bots: list[tuple[float, float, float]],
-        goals: list[tuple[float, float, float]],
-        timestep: float
-) -> str:
+def gen_xml() -> str:
     generator = mjc_gen.Generator().add_children([
-        Option(timestep=timestep, impratio=10, noslip_iterations=5),
+        Option(
+            timestep=HyperParameters.Simulator.TIMESTEP,
+            integrator=mjc_cmn.IntegratorType.IMPLICITFACT
+        ),
         Visual().add_children([
             visual.Global(offwidth=500, offheight=500)
         ]),
@@ -35,141 +31,93 @@ def gen_xml(
             asset.Material(
                 name="ground", texture="simple_checker", texrepeat=(10, 10)
             )
-        ])
-    ])
-
-    worldbody = WorldBody().add_children([
-        body.Geom(
-            type_=mjc_cmn.GeomType.PLANE, pos=(0, 0, 0), size=(5, 5, 1), material="ground",
-        ),
-    ])
-    act = Actuator()
-
-    for i, p in enumerate(goals):
-        worldbody.add_children([
+        ]),
+        WorldBody().add_children([
             body.Geom(
-                name=f"goal{i}", type_=mjc_cmn.GeomType.CYLINDER, pos=(p[0], p[1], 0.025), size=(0.4, 0.025),
-                rgba=(0, 1, 0, 1), conaffinity=2, contype=2,
-            )
-        ])
+                type_=mjc_cmn.GeomType.PLANE, pos=(0, 0, 0), size=(10, 10, 1), material="ground",
+            ),
 
-    for i, p in enumerate(bots):
-        worldbody.add_children([
-            Body(
-                name=f"bot{i}.body", pos=(p[0], p[1], 0.06), orientation=mjc_cmn.Orientation.AxisAngle(0, 0, 1, p[2])
-            ).add_children([
+            Body(name=f"bot.body", pos=(0, 0, 0.06)).add_children([
                 body.Geom(
-                    name=f"bot{i}.geom", type_=mjc_cmn.GeomType.CYLINDER,
+                    name=f"bot.geom", type_=mjc_cmn.GeomType.CYLINDER,
                     size=(0.3, 0.05), rgba=(1, 1, 0, 0.5), mass=30e3,
                 ),
 
-                body.Joint(name=f"bot{i}.joint.slide_x", type_=mjc_cmn.JointType.SLIDE, axis=(1, 0, 0)),
-                body.Joint(name=f"bot{i}.joint.slide_y", type_=mjc_cmn.JointType.SLIDE, axis=(0, 1, 0)),
-                body.Joint(name=f"bot{i}.joint.hinge", type_=mjc_cmn.JointType.HINGE, axis=(0, 0, 1)),
+                body.Joint(name=f"bot.joint.slide_x", type_=mjc_cmn.JointType.SLIDE, axis=(1, 0, 0)),
+                body.Joint(name=f"bot.joint.slide_y", type_=mjc_cmn.JointType.SLIDE, axis=(0, 1, 0)),
+                body.Joint(name=f"bot.joint.hinge", type_=mjc_cmn.JointType.HINGE, axis=(0, 0, 1)),
 
                 body.Site(
                     type_=mjc_cmn.GeomType.SPHERE, size=(0.05,), rgba=(1, 0, 0, 1), pos=(0, 0.2, 0.051),
                 ),
-                body.Site(name=f"bot{i}.site.center", type_=mjc_cmn.GeomType.SPHERE, size=(0.05,)),
+                body.Site(name=f"bot.site.center", type_=mjc_cmn.GeomType.SPHERE, size=(0.05,)),
 
                 body.Camera(
-                    f"bot{i}.camera", pos=(0, 0.31, 0),
+                    f"bot.camera", pos=(0, 0.31, 0),
                     orientation=mjc_cmn.Orientation.AxisAngle(1, 0, 0, 90)
                 ),
                 body.Camera(
-                    f"bot{i}.camera_top", pos=(0, 0, 2),
+                    f"bot.camera_top", pos=(0, 0, 2),
                 )
             ])
+        ]),
+        Actuator().add_children([
+            actuator.Velocity(
+                name=f"bot.act.pos_x", joint=f"bot.joint.slide_x",
+                kv=10000000, forcelimited=mjc_cmn.BoolOrAuto.TRUE, forcerange=(-3000000, 3000000)
+            ),
+            actuator.Velocity(
+                name=f"bot.act.pos_y", joint=f"bot.joint.slide_y",
+                kv=10000000, forcelimited=mjc_cmn.BoolOrAuto.TRUE, forcerange=(-3000000, 3000000)
+            ),
+            actuator.Velocity(
+                name=f"bot.act.rot", joint=f"bot.joint.hinge",
+                kv=10000000
+            ),
         ])
-        act.add_children([
-            actuator.Position(
-                name=f"bot{i}.act.pos_x", joint=f"bot{i}.joint.slide_x",
-                kp=30000000, kv=1000000
-            ),
-            actuator.Position(
-                name=f"bot{i}.act.pos_y", joint=f"bot{i}.joint.slide_y",
-                kp=30000000, kv=1000000
-            ),
-            actuator.Position(
-                name=f"bot{i}.act.rot", joint=f"bot{i}.joint.hinge",
-                kp=1000000, kv=100000
-            ),
-        ])
-
-    generator.add_children([
-        worldbody,
-        act
     ])
 
     xml = generator.build()
     return xml
 
 
-class _MuJoCoProcess:
-    def __init__(
-            self,
-            brain,
-    ):
-        self._brain = brain
-        self._measure = DistanceMeasure(HyperParameters.NUM_LIDAR)
-
-        self.m: mujoco.MjModel = None
-        self.d: mujoco.MjData = None
-        self.bots: list[Robot] = None
-        self._goal_geoms: list[_MjDataGeomViews] = None
-
-    def init_mujoco(
-            self, bot_pos: list[tuple[float, float, float]], goal_pos: list[tuple[float, float, float]]
-    ):
-        xml = gen_xml(bot_pos, goal_pos, HyperParameters.TIMESTEP)
-
-        self.m = mujoco.MjModel.from_xml_string(xml)
-        self.d = mujoco.MjData(self.m)
-        self.bots = [
-            Robot(self.m, self.d, i, self._brain) for i in range(len(bot_pos))
-        ]
-        self._goal_geoms = [
-            self.d.geom(mujoco.mj_name2id(self.m, mujoco.mjtObj.mjOBJ_GEOM, f"goal{i}")) for i in range(len(goal_pos))
-        ]
-
-    def calc_step(self):
-        mujoco.mj_step(self.m, self.d)
-        for bot in self.bots:
-            bot.exec(self.m, self.d, self._measure)
-
-        evaluation = 0
-        for goal_geom in self._goal_geoms:
-            min_bot = [float("inf"), 0]
-            for bot in self.bots:
-                d = np.linalg.norm(bot.bot_body.xpos - goal_geom.xpos)
-                theta = bot.calc_relative_angle_to(goal_geom.xpos)
-                if d < min_bot[0]:
-                    min_bot[0] = d
-                    min_bot[1] = theta
-            evaluation += min_bot[0] + 15 * 0.5 * abs(min_bot[1] - 1)
-
-        return evaluation
-
-
 class Task(TaskInterface):
-    def __init__(
-            self,
-            bot_pos: list[list[tuple[float, float, float]]],
-            goal_pos: list[list[tuple[float, float, float]]],
-            brain,
-    ):
-        self.bot_pos = bot_pos
-        self.goal_pos = goal_pos
-        self.mujoco = _MuJoCoProcess(brain)
-        self._direction_buf = np.zeros((3, 1), dtype=np.float64)
+    def __init__(self):
+        xml = gen_xml()
+        self._model: mujoco.MjModel = mujoco.MjModel.from_xml_string(xml)
+        self._data: mujoco.MjData = mujoco.MjData(self._model)
+
+        self._bot = Robot(self._model, self._data)
+
+        self.counter = -1
+        self.input_ = 0
+
+    def get_model(self):
+        return self._model
+
+    def get_data(self):
+        return self._data
 
     def calc_step(self) -> float:
-        return self.mujoco.calc_step()
+        mujoco.mj_step(self._model, self._data)
+        self.counter += 1
+
+        if self.counter % int(HyperParameters.Simulator.TASK_INTERVAL / HyperParameters.Simulator.TIMESTEP) == 0:
+            self.input_ += 1
+            if self.input_ > 6:
+                self.input_ = 0
+            print(f"input: {self.input_}")
+
+        self._bot.exec(self.input_)
+
+        print(self._data.actuator_force)
+
+        return 0.0
 
     def run(self) -> float:
-        evaluations = np.zeros(HyperParameters.TRY_COUNT)
-        for (t, (bp, gp)) in enumerate(zip(self.bot_pos, self.goal_pos)):
-            self.mujoco.init_mujoco(bp, gp)
-            for _ in range(int(HyperParameters.EPISODE / HyperParameters.TIMESTEP + 0.5)):
-                evaluations[t] += self.calc_step()
-        return np.average(evaluations)
+        for _ in range(int(HyperParameters.Simulator.EPISODE / HyperParameters.Simulator.TIMESTEP + 0.5)):
+            self.calc_step()
+        return 0.0
+
+    def get_bots(self):
+        return [self._bot]
