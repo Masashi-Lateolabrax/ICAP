@@ -20,8 +20,6 @@ class _Actuator:
     def update(self, y: np.ndarray):
         self.movement = (y[0] + y[1]) * 0.5 * HyperParameters.Robot.MOVE_SPEED
         self.rotation = (y[0] - y[1]) * 0.5 * HyperParameters.Robot.TURN_SPEED
-        self.movement = HyperParameters.Robot.MOVE_SPEED
-        self.rotation = 0
 
     def act(self, bot_direction):
         move_vec = bot_direction * self.movement
