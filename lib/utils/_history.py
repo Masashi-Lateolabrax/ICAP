@@ -16,7 +16,7 @@ def load_parameter(dim: int, load_history_file: str | None = "", queue_index: in
 
     if isinstance(load_history_file, str):
         if load_history_file == "":
-            history = Hist.load(get_current_history("../../../"))
+            history = Hist.load(get_current_history("../../"))
         else:
             history = Hist.load(load_history_file)
         para = history.queues[queue_index].min_para

@@ -2,7 +2,7 @@ import mujoco
 import numpy as np
 import torch
 
-from lib.optimizer import TaskInterface
+from lib.optimizer import MjcTaskInterface
 from lib.sensor import trigono_omni_sensor, direction_sensor
 
 from .objects import Robot, Food
@@ -107,7 +107,7 @@ class _MuJoCoProcess:
         return self._positions.evaluate()
 
 
-class Task(TaskInterface):
+class Task(MjcTaskInterface):
     def __init__(self, brain: NeuralNetwork, ):
         self.mujoco = _MuJoCoProcess(brain)
 

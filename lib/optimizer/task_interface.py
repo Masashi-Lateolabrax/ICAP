@@ -1,6 +1,8 @@
 import abc
 import pickle
 
+import mujoco
+
 
 class TaskInterface(metaclass=abc.ABCMeta):
     """
@@ -9,6 +11,24 @@ class TaskInterface(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def run(self) -> float:
+        raise NotImplementedError()
+
+
+class MjcTaskInterface(TaskInterface):
+    """
+    mujocoを用いるタスクのインターフェイス．
+    """
+
+    @abc.abstractmethod
+    def get_model(self) -> mujoco.MjModel:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def get_data(self) -> mujoco.MjData:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def calc_step(self) -> float:
         raise NotImplementedError()
 
 

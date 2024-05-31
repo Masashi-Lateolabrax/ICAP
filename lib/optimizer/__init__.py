@@ -1,4 +1,4 @@
-from .task_interface import TaskInterface, TaskGenerator
+from .task_interface import TaskInterface, MjcTaskInterface, TaskGenerator
 from .history import Hist
 from .processe import MultiThreadProc, OneThreadProc
 

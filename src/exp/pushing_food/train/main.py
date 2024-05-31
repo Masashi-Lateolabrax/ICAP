@@ -15,7 +15,7 @@ def main():
         task_generator = TaskGenerator()
         cmaes.optimize_current_generation(task_generator, MultiThreadProc)
 
-    head_hash = get_head_hash()
+    head_hash = get_head_hash()[0:8]
     cmaes.get_history().save(f"../history_{head_hash}.npz")
 
 

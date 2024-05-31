@@ -166,7 +166,7 @@ def main():
 
     para = load_parameter(
         dim=dim,
-        load_history_file=None,
+        load_history_file="",
         queue_index=-1,
     )
 

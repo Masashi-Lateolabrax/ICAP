@@ -20,7 +20,10 @@ def gen_xml() -> str:
             integrator=mjc_cmn.IntegratorType.IMPLICITFACT
         ),
         Visual().add_children([
-            visual.Global(offwidth=500, offheight=500)
+            visual.Global(
+                offwidth=HyperParameters.Simulator.RESOLUTION[0],
+                offheight=HyperParameters.Simulator.RESOLUTION[1]
+            )
         ]),
         Asset().add_children([
             asset.Texture(

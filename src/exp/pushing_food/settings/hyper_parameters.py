@@ -10,6 +10,7 @@ class HyperParameters:
     class Simulator:
         EPISODE = 60
         TIMESTEP = 0.002
+        RESOLUTION = (900, 1350)
 
     class Evaluation:
         FOOD_RANGE = 5
