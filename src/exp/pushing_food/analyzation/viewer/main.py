@@ -8,7 +8,7 @@ from PIL import Image as PILImage, ImageTk as PILImageTk
 from mujoco_xml_generator.utils import FPSManager, MuJoCoView
 
 from src.exp.pushing_food.settings import HyperParameters, Task, TaskGenerator
-from lib.utils import load_parameter
+from lib.utils import load_parameter, get_head_hash
 
 
 class InputView(tk.Frame):
@@ -160,13 +160,16 @@ class App(tk.Tk):
 
 
 def main():
+    working_directory = "../../../../"
+
     task_generator = TaskGenerator()
     dim = task_generator.get_dim()
     print(f"dim: {dim}")
 
     para = load_parameter(
-        dim=dim,
-        load_history_file="",
+        dim=task_generator.get_dim(),
+        working_directory=working_directory,
+        git_hash=get_head_hash(),
         queue_index=-1,
     )
 

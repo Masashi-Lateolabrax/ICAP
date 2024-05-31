@@ -10,17 +10,20 @@ def get_current_history(directory_path):
     return result
 
 
-def load_parameter(dim: int, load_history_file: str | None = "", queue_index: int = -1):
-    import numpy as np
-    from ..optimizer import Hist
-
-    if isinstance(load_history_file, str):
-        if load_history_file == "":
-            history = Hist.load(get_current_history("../../"))
-        else:
-            history = Hist.load(load_history_file)
-        para = history.queues[queue_index].min_para
-    else:
+def load_parameter(
+        dim: int,
+        working_directory: str,
+        git_hash: str | None = None,
+        queue_index: int = -1
+):
+    if git_hash is None:
+        import numpy as np
         para = np.random.random(dim)
+    else:
+        from ..optimizer import Hist
+        import os
+        path = os.path.join(working_directory, f"history_{git_hash[0:8]}.npz")
+        history = Hist.load(path)
+        para = history.queues[queue_index].min_para
 
     return para

@@ -1,3 +1,5 @@
+import os.path
+
 import mujoco
 import numpy as np
 import cv2
@@ -13,6 +15,7 @@ def recorder(
         camera: mujoco.MjvCamera,
         length: int,
         timestep: float,
+        working_directory: str,
 ):
     time = datetime.now()
     timestamp = time.strftime("%Y%m%d_%H%M%S")
@@ -22,7 +25,8 @@ def recorder(
 
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     writer = cv2.VideoWriter(
-        f"./result_{timestamp}.mp4", fourcc, int(1 / timestep), (width, height)
+        os.path.join(working_directory, f"./result_{timestamp}.mp4"),
+        fourcc, int(1 / timestep), (width, height)
     )
 
     for t in range(length):
