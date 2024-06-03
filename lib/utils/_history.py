@@ -22,7 +22,9 @@ def load_parameter(
     else:
         from ..optimizer import Hist
         import os
-        path = os.path.join(working_directory, f"history_{git_hash[0:8]}.npz")
+        path = os.path.abspath(
+            os.path.join(working_directory, f"history_{git_hash[0:8]}.npz")
+        )
         history = Hist.load(path)
         para = history.queues[queue_index].min_para
 
