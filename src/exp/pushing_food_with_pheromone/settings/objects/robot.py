@@ -65,4 +65,4 @@ class Robot(BodyObject):
         if act:
             self._actuator.act(bot_direction)
 
-        return 30
+        return self._pheromone
