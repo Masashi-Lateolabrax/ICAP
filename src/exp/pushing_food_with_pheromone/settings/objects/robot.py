@@ -59,7 +59,7 @@ class Robot(BodyObject):
 
         if self._state.do_think():
             y = self.brain.forward(input_).detach().numpy()
-            self._pheromone = (y[2] + 1.0) * 0.5 * HyperParameters.Robot.MAX_SECRETION
+            self._pheromone = y[2] * HyperParameters.Robot.MAX_SECRETION
             self._actuator.update(y)
 
         if act:

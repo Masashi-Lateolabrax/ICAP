@@ -12,7 +12,7 @@ class NeuralNetwork(nn.Module):
             nn.Linear(6, 4),
             nn.Tanh(),
             nn.Linear(4, 3),
-            nn.Tanh(),
+            nn.Sigmoid(),
         )
 
     def forward(self, x) -> torch.Tensor:
