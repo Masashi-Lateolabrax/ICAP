@@ -1,6 +1,10 @@
-from exp.pushing_food import main
+from exp.pushing_food_with_pheromone import main
 
-# 2024-05-31 20:12
+# Date: 2024-06-04 15:55
+# Task: pushing-food-with-pheromone
+# Agent: 3
+# Food: 1
+# Objective: This experiment verify the task.
 
 if __name__ == '__main__':
     main()
