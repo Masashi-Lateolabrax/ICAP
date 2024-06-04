@@ -54,11 +54,11 @@ class Robot(BodyObject):
     def calc_direction(self, out: np.ndarray) -> None:
         mujoco.mju_rotVecQuat(out, [0, 1, 0], self.get_body().xquat)
 
-    def exec(self, bot_direction, input_: torch.Tensor, act=True):
+    def exec(self, bot_direction, input_: torch.Tensor, pheromone: torch.Tensor, act=True):
         self._state.update()
 
         if self._state.do_think():
-            y = self.brain.forward(input_).detach().numpy()
+            y = self.brain.forward(input_, pheromone).detach().numpy()
             self._pheromone = y[2] * HyperParameters.Robot.MAX_SECRETION
             self._actuator.update(y)
 

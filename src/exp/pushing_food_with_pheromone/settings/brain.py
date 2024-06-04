@@ -22,8 +22,8 @@ class NeuralNetwork(nn.Module):
         )
 
     def forward(self, sight, pheromone) -> torch.Tensor:
-        x1 = self.flatten.forward(sight)
-        x2 = self.flatten.forward(pheromone)
+        x1 = self.sequence1.forward(sight)
+        x2 = self.sequence2.forward(pheromone)
         return nn.functional.tanh((x1 + x2) * 0.7)
 
     def load_para(self, para):
