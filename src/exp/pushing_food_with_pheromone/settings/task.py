@@ -130,8 +130,10 @@ class _MuJoCoProcess:
             yi = bot.get_body().xpos[1] / s + (h - 1) * 0.5
             self._pheromone.add_liquid(xi, yi, pheromone)
 
-        for _ in range(10):
-            self._pheromone.update(HyperParameters.Simulator.TIMESTEP / 10)
+        pt = HyperParameters.Simulator.TIMESTEP / HyperParameters.Simulator.PHEROMONE_ITER
+        for _ in range(HyperParameters.Simulator.PHEROMONE_ITER):
+            self._pheromone.update(pt)
+
         for xi, yi, p in self.panels:
             pheromone = self._pheromone.get_gas(xi, yi)
             pheromone = np.clip(pheromone / 10, 0, 1)

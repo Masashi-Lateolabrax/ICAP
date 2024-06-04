@@ -15,6 +15,7 @@ class HyperParameters:
         TILE_SIZE = 0.2
         TILE_D = 1
         TILE_WH = (80, 90)
+        PHEROMONE_ITER = 5
 
     class Evaluation:
         FOOD_RANGE = 5
