@@ -2,6 +2,7 @@ import abc
 import pickle
 
 import mujoco
+from mujoco_xml_generator.utils import DummyGeom
 
 
 class TaskInterface(metaclass=abc.ABCMeta):
@@ -30,6 +31,9 @@ class MjcTaskInterface(TaskInterface):
     @abc.abstractmethod
     def calc_step(self) -> float:
         raise NotImplementedError()
+
+    def get_dummies(self) -> list[DummyGeom]:
+        return []
 
 
 class TaskGenerator(metaclass=abc.ABCMeta):

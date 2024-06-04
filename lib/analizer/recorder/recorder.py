@@ -5,6 +5,7 @@ import numpy as np
 import cv2
 
 from datetime import datetime
+from mujoco_xml_generator.utils.dummy_geom import draw_dummy_geoms
 
 from lib.optimizer import MjcTaskInterface
 
@@ -16,12 +17,13 @@ def recorder(
         length: int,
         timestep: float,
         working_directory: str,
+        max_geom: int = 10000
 ):
     time = datetime.now()
     timestamp = time.strftime("%Y%m%d_%H%M%S")
 
     img = np.zeros((height, width, 3), dtype=np.uint8)
-    renderer = mujoco.Renderer(task.get_model(), height, width)
+    renderer = mujoco.Renderer(task.get_model(), height, width, max_geom=max_geom)
 
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     writer = cv2.VideoWriter(
@@ -36,6 +38,7 @@ def recorder(
 
         task.calc_step()
         renderer.update_scene(task.get_data(), camera)
+        draw_dummy_geoms(task.get_dummies(), renderer)
         renderer.render(out=img)
         img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
         writer.write(img)
