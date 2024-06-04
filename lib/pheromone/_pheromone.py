@@ -29,8 +29,8 @@ class PheromoneField:
         self._nx = nx
         self._ny = ny
 
-        self._liquid = numpy.zeros((ny, nx))
-        self._gas = numpy.zeros((ny, nx))
+        self._liquid = numpy.zeros((nx, ny))
+        self._gas = numpy.zeros((nx, ny))
 
         self._eva = evaporate  # 蒸発速度
         self._sv = sv  # 飽和蒸気量
@@ -60,5 +60,5 @@ class PheromoneField:
     def update(self, dt: float):
         dif_liquid = numpy.minimum(self._liquid, (self._sv - self._gas) * self._eva) * dt
         dif_gas = dif_liquid + (scipy.signal.convolve2d(self._gas, self._c, "same") - self._gas * self._dec) * dt
-        self._liquid += dif_liquid
+        self._liquid -= dif_liquid
         self._gas += dif_gas
