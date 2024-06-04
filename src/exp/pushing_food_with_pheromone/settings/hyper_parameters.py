@@ -10,6 +10,7 @@ class HyperParameters:
     class Simulator:
         MAX_GEOM = 10000
         EPISODE = 10
+        MAX_GEOM = 7800
         TIMESTEP = 0.03
         RESOLUTION = (900, 1350)
         TILE_SIZE = 0.2
