@@ -140,7 +140,7 @@ class App(tk.Tk):
                 if cam_name != bot.cam_name:
                     continue
                 self._task.mujoco.last_exec_robot_index = i
-                input_ = self._task.mujoco.input_buf.detach().numpy()
+                input_ = self._task.mujoco.input_sight_buf.detach().numpy()
                 self._input_view.render(input_)
 
         self.info_view.interval_label.config(text=f"interval : {interval:.5f}")
@@ -171,7 +171,7 @@ def main():
     para = load_parameter(
         dim=task_generator.get_dim(),
         working_directory=working_directory,
-        git_hash=get_head_hash(),
+        git_hash=None,#get_head_hash(),
         queue_index=-1,
     )
 

@@ -3,18 +3,19 @@ cx, cy = (0, -8)
 
 class HyperParameters:
     class Optimization:
-        GENERATION = 1000
+        GENERATION = 300
         POPULATION = 20
         SIGMA = 0.3
 
     class Simulator:
-        MAX_GEOM = 10000
-        EPISODE = 10
-        TIMESTEP = 0.03
+        MAX_GEOM = 7800
+        EPISODE = 15
+        TIMESTEP = 0.01
         RESOLUTION = (900, 1350)
         TILE_SIZE = 0.2
         TILE_D = 1
         TILE_WH = (80, 90)
+        PHEROMONE_ITER = 5
 
     class Evaluation:
         FOOD_RANGE = 5

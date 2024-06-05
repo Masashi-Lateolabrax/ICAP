@@ -94,7 +94,8 @@ class _MuJoCoProcess:
 
         self._positions = _PositionManager(len(self._bots), len(self._food))
 
-        self.input_buf = torch.zeros((6, 1))
+        self.input_sight_buf = torch.zeros((6, 1))
+        self.input_pheromone_buf = torch.zeros((1,))
         self._direction_buf = np.zeros((3, 1), dtype=np.float64)
 
         self.last_exec_robot_index = -1
@@ -111,27 +112,30 @@ class _MuJoCoProcess:
         bot_list[self.last_exec_robot_index], bot_list[-1] = bot_list[-1], bot_list[self.last_exec_robot_index]
         for i, bot in bot_list:
             bot.calc_direction(out=self._direction_buf)
-            self.input_buf[0], self.input_buf[1] = trigono_omni_sensor(
+            self.input_sight_buf[0], self.input_sight_buf[1] = trigono_omni_sensor(
                 bot.get_body().xpos[0:2], self._direction_buf[0:2, 0], self._positions.get_bot_pos(i),
                 lambda d: 1 / (d * HyperParameters.Robot.SENSOR_PRECISION + 1)
             )
-            self.input_buf[2], self.input_buf[3] = trigono_omni_sensor(
+            self.input_sight_buf[2], self.input_sight_buf[3] = trigono_omni_sensor(
                 bot.get_body().xpos[0:2], self._direction_buf[0:2, 0], self._positions.food_pos,
                 lambda d: 1 / (d * HyperParameters.Robot.SENSOR_PRECISION + 1)
             )
-            self.input_buf[4], self.input_buf[5] = direction_sensor(
+            self.input_sight_buf[4], self.input_sight_buf[5] = direction_sensor(
                 bot.get_body().xpos[0:2], self._direction_buf[0:2, 0],
                 self._positions.nest_pos, HyperParameters.Environment.NEST_SIZE
             )
 
-            pheromone = bot.exec(self._direction_buf, self.input_buf)
             s, (w, h) = HyperParameters.Simulator.TILE_SIZE, HyperParameters.Simulator.TILE_WH
             xi = bot.get_body().xpos[0] / s + (w - 1) * 0.5
             yi = bot.get_body().xpos[1] / s + (h - 1) * 0.5
+            self.input_pheromone_buf[0] = self._pheromone.get_gas(xi, yi)
+            pheromone = bot.exec(self._direction_buf, self.input_sight_buf, self.input_pheromone_buf)
             self._pheromone.add_liquid(xi, yi, pheromone)
 
-        for _ in range(10):
-            self._pheromone.update(HyperParameters.Simulator.TIMESTEP / 10)
+        pt = HyperParameters.Simulator.TIMESTEP / HyperParameters.Simulator.PHEROMONE_ITER
+        for _ in range(HyperParameters.Simulator.PHEROMONE_ITER):
+            self._pheromone.update(pt)
+
         for xi, yi, p in self.panels:
             pheromone = self._pheromone.get_gas(xi, yi)
             pheromone = np.clip(pheromone / 10, 0, 1)
