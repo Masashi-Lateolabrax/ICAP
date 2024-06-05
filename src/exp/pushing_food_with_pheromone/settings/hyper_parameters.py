@@ -3,14 +3,14 @@ cx, cy = (0, -8)
 
 class HyperParameters:
     class Optimization:
-        GENERATION = 1000
+        GENERATION = 300
         POPULATION = 20
         SIGMA = 0.3
 
     class Simulator:
         MAX_GEOM = 7800
-        EPISODE = 60
-        TIMESTEP = 0.03
+        EPISODE = 15
+        TIMESTEP = 0.01
         RESOLUTION = (900, 1350)
         TILE_SIZE = 0.2
         TILE_D = 1
