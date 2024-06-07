@@ -6,6 +6,7 @@ class HyperParameters:
         GENERATION = 300
         POPULATION = 20
         SIGMA = 0.3
+        EARLY_STOP = 0.05
 
     class Simulator:
         MAX_GEOM = 7800
