@@ -20,7 +20,6 @@ class _PositionManager:
         self.bot_pos = np.zeros((num_bot, 2))
         self.food_pos = np.zeros((num_food, 2))
         self.nest_pos = np.array(HyperParameters.Environment.NEST_POS)
-        self.score = 0
 
     def get_bot_pos(self, exception: int | None = None):
         if exception is None:
