@@ -1,10 +1,10 @@
-from exp.pushing_food_with_pheromone import main
+from exp.the_simplest_task import main
 
-# Date: 2024-06-05 11:42
-# Task: pushing-food-with-pheromone
-# Agent: 3
-# Food: 1
-# Objective: Test the timestep with a value of 0.01.
+# Date: 2024-06-07 19:02
+# Task: the-simplest-task
+# Agent: 1
+# Goal: 1
+# Objective: Ensure the task is done correctly.
 
 if __name__ == '__main__':
     main()
