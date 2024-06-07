@@ -134,7 +134,7 @@ class BaseCMAES:
 
     def optimize_current_generation(
             self, gen: int, generation: int, task_generator: TaskGenerator, proc=ProcInterface
-    ) -> array.array:
+    ) -> tuple[int, float, float, float, array.array]:
         import time
 
         start_time = datetime.datetime.now()
@@ -183,7 +183,7 @@ class BaseCMAES:
             avg, min_value, max_value, self._best_score
         )
 
-        return good_para
+        return num_error, avg, min_value, max_value, good_para
 
     def get_ind(self, index: int) -> array.array:
         if index >= self._strategy.lambda_:

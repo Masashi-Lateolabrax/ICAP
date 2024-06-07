@@ -1,29 +1,23 @@
 import torch
 from torch import nn
 
+from .hyper_parameters import StaticParameters
+
 
 class NeuralNetwork(nn.Module):
     def __init__(self):
         super(NeuralNetwork, self).__init__()
 
-        self.sequence1 = nn.Sequential(
+        self.sequence = nn.Sequential(
             nn.Flatten(0, -1),
-            nn.Linear(6, 4),
+            nn.Linear(StaticParameters.input_size(), 4),
             nn.Tanh(),
-            nn.Linear(4, 3),
-            nn.Tanh(),
-        )
-        self.sequence2 = nn.Sequential(
-            nn.Linear(1, 3),
-            nn.Tanh(),
-            nn.Linear(3, 3),
-            nn.Tanh(),
+            nn.Linear(4, 2),
+            nn.Sigmoid(),
         )
 
-    def forward(self, sight, pheromone) -> torch.Tensor:
-        x1 = self.sequence1.forward(sight)
-        x2 = self.sequence2.forward(pheromone)
-        return nn.functional.sigmoid((x1 + x2) * 0.85)
+    def forward(self, input_) -> torch.Tensor:
+        return self.sequence.forward(input_)
 
     def load_para(self, para):
         with torch.no_grad():
