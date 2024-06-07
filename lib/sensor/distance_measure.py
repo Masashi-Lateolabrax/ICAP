@@ -3,8 +3,11 @@ import numpy as np
 
 
 class DistanceMeasure:
-    def __init__(self, n):
+    def __init__(self, n, color_map: dict[str, tuple[float, float, float]], gain=lambda d: 1 / (d * 0.05 + 1)):
         self.n = n
+        self.color_map = color_map
+        self.gain = gain
+
         self._intersected_id = np.zeros((n,), dtype=np.int32)
         self._intersected_dist = np.zeros((n,), dtype=np.float64)
 
@@ -48,7 +51,9 @@ class DistanceMeasure:
         return self._intersected_id, self._intersected_dist
 
     def measure_with_img(
-            self, m: mujoco.MjModel, d: mujoco.MjData, bot_body_id: int, bot_body, bot_direction: np.ndarray
+            self,
+            m: mujoco.MjModel, d: mujoco.MjData,
+            bot_body_id: int, bot_body, bot_direction: np.ndarray,
     ):
         ids, dists = self.measure(m, d, bot_body_id, bot_body, bot_direction)
 
@@ -59,10 +64,11 @@ class DistanceMeasure:
                 continue
 
             name = mujoco.mj_id2name(m, mujoco.mjtObj.mjOBJ_GEOM, id_)
-            if "bot" in name:
-                color[:] = [255, 255, 0]
-            elif "goal" in name:
-                color[:] = [0, 255, 0]
+            color.fill(0.0)
+            for key, c in self.color_map.items():
+                if key in name:
+                    color[:] = c
+                    break
 
-            self._calc_sight_buf[0, j, :] = color / ((dist * 0.05 + 1) ** 2)
+            self._calc_sight_buf[0, j, :] = color * self.gain(dist)
         return self._calc_sight_buf
