@@ -2,7 +2,7 @@ import mujoco
 
 from lib.utils import load_parameter, get_head_hash
 from lib.analizer.recorder import recorder
-from src.exp.pushing_food_with_pheromone.settings import HyperParameters, TaskGenerator
+from src.exp.the_simplest_task.settings import HyperParameters, TaskGenerator
 
 
 def main():
