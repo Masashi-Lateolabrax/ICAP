@@ -51,11 +51,14 @@ class CMAES:
     def get_current_generation(self):
         return self._current_generation
 
-    def optimize_current_generation(self, env_creator: TaskGenerator, proc=MultiThreadProc):
+    def optimize_current_generation(
+            self, env_creator: TaskGenerator, proc=MultiThreadProc
+    ) -> tuple[int, float, float, float, array.array]:
         self._current_generation += 1
-        self._base.optimize_current_generation(
+        num_err, ave_score, min_score, max_score, good_para = self._base.optimize_current_generation(
             self._current_generation, self._generation, env_creator, proc
         )
+        return num_err, ave_score, min_score, max_score, good_para
 
     def optimize(self, env_creator: TaskGenerator, proc=MultiThreadProc):
         for gen in range(1, self._generation + 1):
