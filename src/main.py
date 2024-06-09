@@ -1,13 +1,17 @@
 from exp.pushing_food_with_pheromone import main
 
-# Date: 2024-06-07 21:57
 # Task: pushing-food-with-pheromone
-# Agent: 3
-# Food: 1
-# Objective: Train the robots to collect food using pheromone.
-# Contribution:
-#   - Limited Robots. They are allowed to turn their wheels only forward.
-#   - Long duration task. The duration of the episode is 60 seconds.
+#
+# Objective: Executing reproduction experiment.
+#
+# Features:
+#   - The number of agent: 9
+#   - The number of food: 2
+#   - Optimizing generation: 100
+#   - From the viewpoint of simulation environment, This task is exactly the same as a task of the old version.
+#   - The size of brain is smaller than old version.
+#
+# Date: 2024-06-10 06:57
 
 if __name__ == '__main__':
     main()
