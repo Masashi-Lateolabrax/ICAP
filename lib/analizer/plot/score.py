@@ -19,14 +19,11 @@ def plot_score_graph(history: Hist):
 
 
 def main():
-    import os.path
+    from lib.utils import get_history
 
     working_directory = "../../../src/"
 
-    # history = get_current_history(working_directory)
-    history = Hist.load(
-        os.path.join(working_directory, "history_8a1d803b.npz")
-    )
+    history = get_history(working_directory)
 
     plot_score_graph(history)
 

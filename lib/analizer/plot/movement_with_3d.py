@@ -50,14 +50,11 @@ def plot_parameter_movements_3d_graph(history: Hist, start: int, stop: int):
 
 
 def main():
-    import os
+    from lib.utils import get_history
 
     working_directory = "../../../src/"
 
-    # history = get_current_history(working_directory)
-    history = Hist.load(
-        os.path.join(working_directory, "history_8a1d803b.npz")
-    )
+    history = get_history(working_directory)
 
     plot_parameter_movements_3d_graph(history, 0, -1)
 

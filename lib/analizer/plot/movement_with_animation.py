@@ -46,17 +46,14 @@ def plot_parameter_movements_animation_graph(queues: list[Hist.Queue], y_max: fl
 
 
 def main():
-    import os
+    from lib.utils import get_history
 
     working_directory = "../../../src/"
 
-    # history = get_current_history(working_directory)
-    history = Hist.load(
-        os.path.join(working_directory, "history_8a1d803b.npz")
-    )
+    history = get_history(working_directory)
 
     queues = history.queues[0:-1]
-    plot_parameter_movements_animation_graph(queues, 1.8)
+    plot_parameter_movements_animation_graph(queues, 2.0)
 
 
 if __name__ == '__main__':
