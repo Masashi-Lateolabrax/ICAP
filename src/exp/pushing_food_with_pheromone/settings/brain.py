@@ -6,7 +6,6 @@ class NeuralNetwork(nn.Module):
     def __init__(self):
         super(NeuralNetwork, self).__init__()
 
-        # the number of node is 2.1179^(an index of layer)
         self.sequence1 = nn.Sequential(
             nn.Flatten(0, -1),
             nn.Linear(6, 4),
@@ -24,7 +23,7 @@ class NeuralNetwork(nn.Module):
     def forward(self, sight, pheromone) -> torch.Tensor:
         x1 = self.sequence1.forward(sight)
         x2 = self.sequence2.forward(pheromone)
-        return nn.functional.tanh((x1 + x2) * 0.7)
+        return nn.functional.sigmoid((x1 + x2) * 0.85)
 
     def load_para(self, para):
         with torch.no_grad():
