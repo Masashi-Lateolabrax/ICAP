@@ -1,13 +1,14 @@
 def get_current_history(directory_path):
     import os
     from ._git import get_head_hash
+    from lib.optimizer import Hist
 
     head_hash = get_head_hash()[0:8]
     result = os.path.join(directory_path, f'history_{head_hash}.npz')
     if not os.path.exists(result):
         print(os.path.abspath(result))
         raise f"Failed to find the history_XXXXXXXX.npz. Make sure to check out the correct commit."
-    return result
+    return Hist.load(result)
 
 
 def load_parameter(
