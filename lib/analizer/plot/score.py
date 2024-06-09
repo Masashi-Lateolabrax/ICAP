@@ -1,14 +1,9 @@
-import numpy as np
-import matplotlib.pyplot as plt
-
-from src.lib import Hist
-from lib.utils import get_current_history
+from lib.optimizer import Hist
 
 
-def main():
-    history = Hist.load(
-        get_current_history("../../../")
-    )
+def plot_score_graph(history: Hist):
+    import matplotlib.pyplot as plt
+    import numpy as np
 
     x = np.arange(0, len(history.queues), dtype=np.uint)
     data = np.zeros((len(history.queues), 2))
@@ -21,6 +16,19 @@ def main():
     ax.plot(x, data[:, 0], c="Blue")
     ax.plot(x, data[:, 1], c="Red")
     plt.show()
+
+
+def main():
+    import os.path
+
+    working_directory = "../../../src/"
+
+    # history = get_current_history(working_directory)
+    history = Hist.load(
+        os.path.join(working_directory, "history_8a1d803b.npz")
+    )
+
+    plot_score_graph(history)
 
 
 if __name__ == '__main__':
