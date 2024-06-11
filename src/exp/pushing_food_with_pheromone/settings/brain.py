@@ -8,15 +8,17 @@ class NeuralNetwork(nn.Module):
 
         self.sequence1 = nn.Sequential(
             nn.Flatten(0, -1),
-            nn.Linear(6, 4),
+            nn.Linear(6, 12),
             nn.Tanh(),
-            nn.Linear(4, 3),
+            nn.Linear(12, 6),
+            nn.Tanh(),
+            nn.Linear(6, 3),
             nn.Tanh(),
         )
         self.sequence2 = nn.Sequential(
-            nn.Linear(1, 3),
+            nn.Linear(1, 5),
             nn.Tanh(),
-            nn.Linear(3, 3),
+            nn.Linear(5, 3),
             nn.Tanh(),
         )
 
