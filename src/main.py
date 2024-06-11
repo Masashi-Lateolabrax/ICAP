@@ -8,10 +8,9 @@ from exp.pushing_food_with_pheromone import main
 #   - The number of agent: 9
 #   - The number of food: 2
 #   - Optimizing generation: 100
-#   - From the viewpoint of simulation environment, This task is exactly the same as a task of the old version.
-#   - The size of brain is smaller than old version.
+#   - This task is the same as a task of the old version, excepting robot sensing and evaluation.
 #
-# Date: 2024-06-10 06:57
+# Date: 2024-06-11 15:46
 
 if __name__ == '__main__':
     main()
