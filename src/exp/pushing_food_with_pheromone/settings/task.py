@@ -1,3 +1,5 @@
+import math
+
 import mujoco
 import numpy as np
 import torch
@@ -20,6 +22,11 @@ class _PositionManager:
         self.bot_pos = np.zeros((num_bot, 2))
         self.food_pos = np.zeros((num_food, 2))
         self.nest_pos = np.array(HyperParameters.Environment.NEST_POS)
+
+        self._initialized_food_distance = np.linalg.norm(
+            np.array(HyperParameters.Environment.FOOD_POS) - self.nest_pos,
+            axis=1
+        )
 
     def get_bot_pos(self, exception: int | None = None):
         if exception is None:
@@ -44,14 +51,14 @@ class _PositionManager:
 
     def evaluate(self):
         dif_food_nest_score = np.sum(
-            np.linalg.norm(self.food_pos - self.nest_pos, axis=1)
+            np.linalg.norm(self.food_pos - self.nest_pos, axis=1) / self._initialized_food_distance
         )
 
         dif_food_robot_score = 0
         for f in self.food_pos:
             d = np.sum((self.bot_pos - f) ** 2, axis=1)
             dif_food_robot_score -= np.sum(
-                np.exp(-d / HyperParameters.Evaluation.FOOD_RANGE)
+                np.exp(-d / math.pow(HyperParameters.Evaluation.FOOD_RANGE, 2))
             )
 
         dif_food_nest_score *= HyperParameters.Evaluation.FOOD_NEST_GAIN / len(self.food_pos)
@@ -113,11 +120,11 @@ class _MuJoCoProcess:
             bot.calc_direction(out=self._direction_buf)
             self.input_sight_buf[0], self.input_sight_buf[1] = trigono_omni_sensor(
                 bot.get_body().xpos[0:2], self._direction_buf[0:2, 0], self._positions.get_bot_pos(i),
-                lambda d: 1 / (d * HyperParameters.Robot.SENSOR_PRECISION + 1)
+                lambda d: 1 / (1 + max(d - 0.175, 0.0) * HyperParameters.Robot.SENSOR_PRECISION[0])
             )
             self.input_sight_buf[2], self.input_sight_buf[3] = trigono_omni_sensor(
                 bot.get_body().xpos[0:2], self._direction_buf[0:2, 0], self._positions.food_pos,
-                lambda d: 1 / (d * HyperParameters.Robot.SENSOR_PRECISION + 1)
+                lambda d: 1 / (1 + max(d - 0.175 - 0.5, 0.0) * HyperParameters.Robot.SENSOR_PRECISION[1])
             )
             self.input_sight_buf[4], self.input_sight_buf[5] = direction_sensor(
                 bot.get_body().xpos[0:2], self._direction_buf[0:2, 0],
@@ -128,6 +135,7 @@ class _MuJoCoProcess:
             xi = bot.get_body().xpos[0] / s + (w - 1) * 0.5
             yi = bot.get_body().xpos[1] / s + (h - 1) * 0.5
             self.input_pheromone_buf[0] = self._pheromone.get_gas(xi, yi)
+
             pheromone = bot.exec(self._direction_buf, self.input_sight_buf, self.input_pheromone_buf)
             self._pheromone.add_liquid(xi, yi, pheromone)
 

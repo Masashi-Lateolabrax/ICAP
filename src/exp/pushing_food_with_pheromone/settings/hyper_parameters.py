@@ -19,9 +19,9 @@ class HyperParameters:
         PHEROMONE_ITER = 5
 
     class Evaluation:
-        FOOD_RANGE = 5
+        FOOD_RANGE = 2.236067977
         FOOD_NEST_GAIN = 1
-        FOOD_ROBOT_GAIN = 1
+        FOOD_ROBOT_GAIN = 1e-3
 
     class Pheromone:
         Evaporation = 20.0
@@ -34,11 +34,9 @@ class HyperParameters:
         NEST_SIZE = 0.5
 
         BOT_POS = [
-            # (cx + 0, cy + 2.4, 0),
-            # (cx - 0.8, cy + 2.4, 120), (cx + 0, cy + 2.4, 180), (cx + 0.8, cy + 2.4, -120),
-            (cx - 0.8, cy + 2.4, 0), (cx + 0, cy + 2.4, 0), (cx + 0.8, cy + 2.4, 0),
-            (cx - 0.8, cy + 1.6, 0), (cx + 0, cy + 1.6, 0), (cx + 0.8, cy + 1.6, 0),
-            (cx - 0.8, cy + 0.8, 0), (cx + 0, cy + 0.8, 0), (cx + 0.8, cy + 0.8, 0),
+            (cx - 0.45, cy + 0.95, 0), (cx + 0, cy + 0.95, 0), (cx + 0.45, cy + 0.95, 0),
+            (cx - 0.45, cy + 0.50, 0), (cx + 0, cy + 0.50, 0), (cx + 0.45, cy + 0.50, 0),
+            (cx - 0.45, cy + 0.05, 0), (cx + 0, cy + 0.05, 0), (cx + 0.45, cy + 0.05, 0),
         ]
 
         FOOD_POS = [
@@ -47,6 +45,6 @@ class HyperParameters:
 
     class Robot:
         MAX_SECRETION = 30
-        SENSOR_PRECISION = 0.005
+        SENSOR_PRECISION = (2 / 0.7, 2 / 5)
         MOVE_SPEED = 1.2
         TURN_SPEED = 1.0
