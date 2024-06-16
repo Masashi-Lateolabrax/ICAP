@@ -25,7 +25,7 @@ class NeuralNetwork(nn.Module):
     def forward(self, sight, pheromone) -> torch.Tensor:
         x1 = self.sequence1.forward(sight)
         x2 = self.sequence2.forward(pheromone)
-        return nn.functional.sigmoid((x1 + x2) * 0.85)
+        return nn.functional.sigmoid(x1 + x2)
 
     def load_para(self, para):
         with torch.no_grad():
