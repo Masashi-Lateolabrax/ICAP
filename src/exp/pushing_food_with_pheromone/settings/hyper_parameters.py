@@ -3,8 +3,8 @@ cx, cy = (0, -8)
 
 class HyperParameters:
     class Optimization:
-        GENERATION = 100
-        POPULATION = 20
+        GENERATION = 300
+        POPULATION = 10
         SIGMA = 0.3
         EARLY_STOP = 0.05
 
