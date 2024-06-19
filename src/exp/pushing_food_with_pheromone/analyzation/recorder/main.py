@@ -1,12 +1,12 @@
 import mujoco
 
 from lib.utils import load_parameter, get_head_hash
-from lib.analizer.recorder import recorder
+from lib.analizer.recorder import Recorder
 from src.exp.pushing_food_with_pheromone.settings import HyperParameters, TaskGenerator
 
 
 def main():
-    working_directory = "../../../../"
+    project_directory = "../../../../"
 
     task_generator = TaskGenerator()
 
@@ -18,21 +18,21 @@ def main():
 
     para = load_parameter(
         dim=task_generator.get_dim(),
-        working_directory=working_directory,
-        git_hash=get_head_hash(),
+        working_directory=project_directory,
+        git_hash="def49b7a",  # get_head_hash(),
         queue_index=-1,
     )
 
     task = task_generator.generate(para)
-    recorder(
-        task=task,
-        width=int(6 * resolution), height=int(9 * resolution),
-        length=int(HyperParameters.Simulator.EPISODE / HyperParameters.Simulator.TIMESTEP + 0.5),
-        camera=camera,
+    recorder = Recorder(
         timestep=HyperParameters.Simulator.TIMESTEP,
-        working_directory=working_directory,
+        episode=int(HyperParameters.Simulator.EPISODE / HyperParameters.Simulator.TIMESTEP + 0.5),
+        width=int(6 * resolution), height=int(9 * resolution),
+        project_directory=project_directory,
+        camera=camera,
         max_geom=HyperParameters.Simulator.MAX_GEOM,
     )
+    recorder.run(task)
 
 
 if __name__ == '__main__':
