@@ -13,12 +13,12 @@ class TaskGenerator(opt.TaskGenerator):
         self.bot_pos = [
             (p[0], p[1], 360 * random.random()) for _ in range(HyperParameters.Simulator.TRY_COUNT)
         ]
-        self.brain = NeuralNetwork()
 
     @staticmethod
     def get_dim():
         return NeuralNetwork().num_dim()
 
-    def generate(self, para) -> Task:
-        self.brain.load_para(para)
-        return Task(self.bot_pos, self.brain)
+    def generate(self, para, debug=False) -> Task:
+        brain = NeuralNetwork(debug)
+        brain.load_para(para)
+        return Task(self.bot_pos, brain)
