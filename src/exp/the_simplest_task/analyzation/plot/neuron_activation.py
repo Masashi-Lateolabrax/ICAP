@@ -1,69 +1,92 @@
+import os
+from datetime import datetime
+
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+
+from lib.utils import BaseDataCollector, load_parameter, get_head_hash
+
+from src.exp.the_simplest_task.settings import HyperParameters, TaskGenerator, Task
 
 
-class ActivationInvestigator:
-    def __init__(self):
-        self.input_buffer = np.zeros(0)
-        self.output_buffer = np.zeros(0)
+class DataCollector(BaseDataCollector):
+    def __init__(self, investigator_name: str):
+        super().__init__()
+        self.investigator_name = investigator_name
+        self.episode = int(HyperParameters.Simulator.EPISODE / HyperParameters.Simulator.TIMESTEP + 0.5)
+        self.data = np.zeros((1, 1))
 
-    def update(self, i: np.ndarray, o: np.ndarray):
-        if self.input_buffer.shape != i.shape:
-            self.input_buffer = np.zeros(i.shape)
-        np.copyto(self.input_buffer, i)
+    def get_episode_length(self) -> int:
+        return self.episode
 
-        if self.output_buffer.shape != o.shape:
-            self.output_buffer = np.zeros(o.shape)
-        np.copyto(self.output_buffer, o)
+    def _record(self, task: Task, time: int, evaluation: float):
+        debug_data = task.get_bot().brain.debugger.get_buf()[self.investigator_name]
+        if self.data.shape[1] != debug_data.shape[0]:
+            self.data = np.zeros((self.episode, debug_data.shape[0]))
+        self.data[time, :] = debug_data
 
 
-def main():
-    from lib.utils import load_parameter, get_head_hash
-    from src.exp.the_simplest_task.settings import HyperParameters, TaskGenerator
-
-    import matplotlib.pyplot as plt
-    import matplotlib.animation as animation
-
-    working_directory = "../../../../"
-    episode = int(HyperParameters.Simulator.EPISODE / HyperParameters.Simulator.TIMESTEP)
+def collect_data(project_directory: str, git_hash: str, investigator_name: str) -> np.ndarray:
+    collector = DataCollector(investigator_name)
 
     task_generator = TaskGenerator()
     para = load_parameter(
         dim=task_generator.get_dim(),
-        working_directory=working_directory,
-        git_hash="904e8bb8",
-        queue_index=-1,
+        working_directory=project_directory,
+        git_hash=git_hash,
+        queue_index=-1
     )
+    task = task_generator.generate(para, True)
 
-    def frame():
-        task = task_generator.generate(para)
-        activation = ActivationInvestigator()
+    collector.run(task)
 
-        task.brain.sequence[1].register_forward_hook(
-            lambda _m, i, o: activation.update(i[0].detach().numpy(), o.detach().numpy())
-        )
+    return collector.data
 
-        for t in range(episode):
-            print(f"{t}/{episode}")
-            task.calc_step()
-            yield t, activation
 
+def plot_animation(project_directory: str, data: np.ndarray):
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
 
-    def update(x):
-        i: int = x[0]
-        activation: ActivationInvestigator = x[1]
+    def frame():
+        time = datetime.now()
+        length = data.shape[0]
+
+        for i in range(length):
+            if (datetime.now() - time).seconds > 1:
+                time = datetime.now()
+                print(f"{i}/{length}")
+
+            yield i, data[i]
+
+    def update(f):
+        i, activation = f
 
         ax.clear()
-        ax.set_title(f"Frame {i}/{episode}")
+        ax.set_title(f"Frame {i}")
 
-        data = np.expand_dims(activation.input_buffer, 0)
-        ax.matshow(data)
+        activation = np.expand_dims(activation, 0)
+        ax.matshow(activation)
 
         return fig.artists
 
     ani = animation.FuncAnimation(fig, update, frames=frame, blit=False, cache_frame_data=False)
-    ani.save('animation.mp4')
+    ani.save(os.path.join(project_directory, 'animation.mp4'))
+
+
+def main():
+    project_directory = "../../../../"
+    investigator_name = "l0"
+    git_hash = get_head_hash()
+
+    save_file_name = "data(activation)"
+    if os.path.exists(save_file_name + ".npz"):
+        data = np.load(save_file_name + ".npz")
+    else:
+        data = collect_data(project_directory, git_hash, investigator_name)
+        np.save(os.path.basename(save_file_name), data)
+
+    plot_animation(project_directory, data)
 
 
 if __name__ == '__main__':
