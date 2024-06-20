@@ -8,6 +8,7 @@
 *.npy
 *.npz
 *.png
+*.svg
 *.tmp.*
 *.log.*
 dump_data

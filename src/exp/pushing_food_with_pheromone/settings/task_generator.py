@@ -8,7 +8,7 @@ class TaskGenerator(opt.TaskGenerator):
     def get_dim():
         return NeuralNetwork().num_dim()
 
-    def generate(self, para) -> Task:
-        brain = NeuralNetwork()
+    def generate(self, para, debug=False) -> Task:
+        brain = NeuralNetwork(debug)
         brain.load_para(para)
         return Task(brain)

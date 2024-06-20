@@ -3,10 +3,10 @@ import scipy
 
 
 def _calc_dico(xi: float, yi: float):
-    x2 = int(xi + 0.5)
-    y2 = int(yi + 0.5)
-    x1 = x2 - 1
-    y1 = y2 - 1
+    xc = int(xi + 0.5)
+    yc = int(yi + 0.5)
+    x1 = xc - 0.5
+    y1 = yc - 0.5
 
     x = xi - x1
     y = yi - y1
@@ -16,7 +16,7 @@ def _calc_dico(xi: float, yi: float):
     e3 = (1 - x) * y
     e4 = x * y
 
-    return (x1, y1, e1), (x2, y1, e2), (x1, y2, e3), (x2, y2, e4)
+    return (x1, y1, e1), (xc, y1, e2), (x1, yc, e3), (xc, yc, e4)
 
 
 class PheromoneField:
@@ -47,14 +47,14 @@ class PheromoneField:
         for x, y, e in _calc_dico(xi, yi):
             if x < 0 or y < 0 or self._nx <= x or self._ny <= y:
                 continue
-            self._liquid[x, y] += e * value
+            self._liquid[int(x), int(y)] += e * value
 
     def get_gas(self, xi: float, yi: float) -> float:
         res = 0.0
         for x, y, e in _calc_dico(xi, yi):
             if x < 0 or y < 0 or self._nx <= x or self._ny <= y:
                 continue
-            res += e * self._gas[x, y]
+            res += e * self._gas[int(x), int(y)]
         return res
 
     def update(self, dt: float):

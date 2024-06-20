@@ -1,5 +1,8 @@
+import abc
 import random
 import math
+
+from lib.optimizer import MjcTaskInterface
 
 
 def is_overlap(new_circle, circles, r):
@@ -31,3 +34,26 @@ def generate_circles(n, r, area):
         print(f"Warning: Maximum attempts reached with {len(circles)} circles placed.")
 
     return circles
+
+
+class BaseDataCollector(metaclass=abc.ABCMeta):
+    @abc.abstractmethod
+    def get_episode_length(self) -> int:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def _record(self, task, time: int, evaluation: float):
+        raise NotImplementedError()
+
+    def run(self, task: MjcTaskInterface):
+        from datetime import datetime
+
+        episode = self.get_episode_length()
+        time = datetime.now()
+        for t in range(episode):
+            if (datetime.now() - time).seconds > 1:
+                time = datetime.now()
+                print(f"{t}/{episode} ({t / episode * 100}%)")
+
+            evaluation = task.calc_step()
+            self._record(task, t, evaluation)
