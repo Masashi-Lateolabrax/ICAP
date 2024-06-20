@@ -51,6 +51,8 @@ class Robot(BodyObject):
         self.brain = brain
         self._pheromone = 30
 
+        self.debug_data: dict[str, np.ndarray] | None = None
+
     def calc_direction(self, out: np.ndarray) -> None:
         mujoco.mju_rotVecQuat(out, [0, 1, 0], self.get_body().xquat)
 
@@ -61,6 +63,9 @@ class Robot(BodyObject):
             y = self.brain.forward(input_, pheromone).detach().numpy()
             self._pheromone = y[2] * HyperParameters.Robot.MAX_SECRETION
             self._actuator.update(y)
+
+            if self.brain.debugger.is_debug_mode():
+                self.debug_data = self.brain.debugger.get_buf()
 
         if act:
             self._actuator.act(bot_direction)

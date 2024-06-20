@@ -50,5 +50,5 @@ class TaskGenerator(metaclass=abc.ABCMeta):
         return len(byte_data)
 
     @abc.abstractmethod
-    def generate(self, para) -> TaskInterface:
+    def generate(self, para, debug=False) -> TaskInterface:
         raise NotImplementedError()

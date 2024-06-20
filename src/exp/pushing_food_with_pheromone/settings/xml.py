@@ -55,7 +55,7 @@ def gen_xml() -> str:
         worldbody.add_children([
             Body().add_children([
                 body.Geom(
-                    name=f"food{i}", type_=mjc_cmn.GeomType.CYLINDER, pos=(p[0], p[1], 0.071), size=(0.8, 0.07),
+                    name=f"food{i}", type_=mjc_cmn.GeomType.CYLINDER, pos=(p[0], p[1], 0.071), size=(0.5, 0.07),
                     rgba=(0, 1, 1, 1), density=300000, condim=3
                 ),
                 body.Joint(
@@ -83,7 +83,7 @@ def gen_xml() -> str:
             ).add_children([
                 body.Geom(
                     name=f"bot{i}.geom", type_=mjc_cmn.GeomType.CYLINDER,
-                    size=(0.3, 0.05), rgba=(1, 1, 0, 0.5), mass=30e3, condim=1
+                    size=(0.175, 0.05), rgba=(1, 1, 0, 0.5), mass=30e3, condim=1
                 ),
 
                 body.Joint(
@@ -95,12 +95,12 @@ def gen_xml() -> str:
                 body.Joint(name=f"bot{i}.joint.hinge", type_=mjc_cmn.JointType.HINGE, axis=(0, 0, 1)),
 
                 body.Site(
-                    type_=mjc_cmn.GeomType.SPHERE, size=(0.05,), rgba=(1, 0, 0, 1), pos=(0, 0.2, 0.051),
+                    type_=mjc_cmn.GeomType.SPHERE, size=(0.04,), rgba=(1, 0, 0, 1), pos=(0, 0.13, 0.051),
                 ),
-                body.Site(name=f"bot{i}.site.center", type_=mjc_cmn.GeomType.SPHERE, size=(0.05,)),
+                body.Site(name=f"bot{i}.site.center", type_=mjc_cmn.GeomType.SPHERE, size=(0.04,)),
 
                 body.Camera(
-                    f"bot{i}.camera", pos=(0, 0.31, 0),
+                    f"bot{i}.camera", pos=(0, 0.176, 0),
                     orientation=mjc_cmn.Orientation.AxisAngle(1, 0, 0, 90)
                 ),
                 body.Camera(

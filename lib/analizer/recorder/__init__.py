@@ -1,1 +1,1 @@
-from .recorder import recorder
+from .recorder import recorder, Recorder
