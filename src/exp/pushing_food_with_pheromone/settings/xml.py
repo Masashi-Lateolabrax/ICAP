@@ -43,6 +43,22 @@ def gen_xml() -> str:
     ])
     act = Actuator()
 
+    env_width = HyperParameters.Simulator.TILE_WH[0] * HyperParameters.Simulator.TILE_SIZE
+    env_height = HyperParameters.Simulator.TILE_WH[1] * HyperParameters.Simulator.TILE_SIZE
+    for name, x, y, w, h in [
+        ("wallN", 0, env_height * 0.5, env_width * 0.5, HyperParameters.Simulator.TILE_SIZE * 0.5),
+        ("wallS", 0, env_height * -0.5, env_width * 0.5, HyperParameters.Simulator.TILE_SIZE * 0.5),
+        ("wallW", env_width * 0.5, 0, HyperParameters.Simulator.TILE_SIZE * 0.5, env_height * 0.5),
+        ("wallE", env_width * -0.5, 0, HyperParameters.Simulator.TILE_SIZE * 0.5, env_height * 0.5),
+    ]:
+        worldbody.add_children([
+            body.Geom(
+                name=name, type_=mjc_cmn.GeomType.BOX,
+                pos=(x, y, 0.1), size=(w, h, 0.1),
+                condim=1
+            )
+        ])
+
     worldbody.add_children([
         body.Geom(
             name="nest", type_=mjc_cmn.GeomType.CYLINDER,
