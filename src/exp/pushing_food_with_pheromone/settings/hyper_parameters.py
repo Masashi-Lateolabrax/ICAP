@@ -44,7 +44,7 @@ class HyperParameters:
         ]
 
     class Robot:
-        MAX_SECRETION = 30
+        MAX_SECRETION = 20
         SENSOR_PRECISION = (2 / 0.7, 2 / 5)
         MOVE_SPEED = 1.2
         TURN_SPEED = 1.0
