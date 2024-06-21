@@ -8,9 +8,10 @@ from exp.pushing_food_with_pheromone import main
 #   - The number of agent: 9
 #   - The number of food: 2
 #   - Optimizing generation: 300
-#   - This task is **exactly** the same as a task of the old version.
+#   - set the walls.
+#   - The amount of sensed pheromone are normalized.
 #
-# Date: 2024-06-17 02:03
+# Date: 2024-06-21 02:14
 
 if __name__ == '__main__':
     main()
