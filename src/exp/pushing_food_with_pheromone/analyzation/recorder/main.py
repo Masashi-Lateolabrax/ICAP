@@ -8,6 +8,7 @@ from src.exp.pushing_food_with_pheromone.settings import HyperParameters, TaskGe
 def main():
     project_directory = "../../../../"
     git_hash = get_head_hash()
+    generation = -1
 
     task_generator = TaskGenerator()
 
@@ -21,7 +22,7 @@ def main():
         dim=task_generator.get_dim(),
         working_directory=project_directory,
         git_hash=git_hash,
-        queue_index=-1,
+        queue_index=generation,
     )
 
     task = task_generator.generate(para)
