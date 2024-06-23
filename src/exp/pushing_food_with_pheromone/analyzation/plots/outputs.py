@@ -43,6 +43,8 @@ class DataCollector(BaseDataCollector):
 
 def collect_data(
         project_directory: str,
+        git_hash: str,
+        generation: int,
 ):
     collector = DataCollector()
 
@@ -50,8 +52,8 @@ def collect_data(
     para = load_parameter(
         dim=task_generator.get_dim(),
         working_directory=project_directory,
-        git_hash=get_head_hash(),
-        queue_index=-1
+        git_hash=git_hash,
+        queue_index=generation
     )
     task = task_generator.generate(para, True)
 
@@ -68,6 +70,8 @@ def generate_color_list(n, alpha):
 
 def main():
     project_directory = "../../../../"
+    git_hash = get_head_hash()
+    generation = -1
 
     save_file_name = "data(output)"
     if os.path.exists(save_file_name + ".npz"):
@@ -76,7 +80,9 @@ def main():
         olfactory_output = data["olfactory_output"]
         output = data["output"]
     else:
-        sight_output, olfactory_output, output = collect_data(project_directory)
+        sight_output, olfactory_output, output = collect_data(
+            project_directory, git_hash, generation
+        )
         np.savez(
             os.path.basename(save_file_name),
             sight_output=sight_output,
@@ -88,14 +94,23 @@ def main():
     x = np.arange(0, n, dtype=np.float32) / n * HyperParameters.Simulator.EPISODE
 
     for bi in range(len(HyperParameters.Environment.BOT_POS)):
-        fig = plt.figure(figsize=(16, 4), dpi=30)
+        fig = plt.figure(figsize=(16, 8), dpi=30)
 
         for i in range(3):
-            ax1 = fig.add_subplot(1, 3, i + 1)
-            ax2 = ax1.twinx()
-            ax1.plot(x, sight_output[:, bi, i], color="Red", label="sight")
-            ax1.plot(x, olfactory_output[:, bi, i], color="Green", label="olfactory")
-            ax2.plot(x, output[:, bi, i], color="Blue", label="output")
+            ax1 = fig.add_subplot(2, 3, i + 1)
+            ax2 = fig.add_subplot(2, 3, 3 + i + 1)
+
+            ax1.set_ylim(-1, 1)
+            ax2.set_ylim(0, 1)
+
+            if i == 0:
+                ax1.plot(x, sight_output[:, bi, i], color="Red", label="sight")
+                ax1.plot(x, olfactory_output[:, bi, i], color="Green", label="olfactory")
+                ax2.plot(x, output[:, bi, i], color="Blue", label="output")
+            else:
+                ax1.plot(x, sight_output[:, bi, i], color="Red")
+                ax1.plot(x, olfactory_output[:, bi, i], color="Green")
+                ax2.plot(x, output[:, bi, i], color="Blue")
 
         fig.legend()
 
