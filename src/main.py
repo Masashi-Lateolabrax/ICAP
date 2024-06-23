@@ -1,6 +1,6 @@
 from exp.pushing_food_with_pheromone import main
 
-# Task: CHECK THE PROGRAM
+# Task: pushing-food-with-pheromone
 #
 # Objective: Executing reproduction experiment.
 #
@@ -9,7 +9,7 @@ from exp.pushing_food_with_pheromone import main
 #   - The number of food: 2
 #   - Optimizing generation: 500
 #   - Optimizing population: 20
-#   - Increase Disabled the updating dummy objects for speed up.
+#   - Increase the generation and population of optimization.
 #
 # Date: 2024-06-23 12:41
 
