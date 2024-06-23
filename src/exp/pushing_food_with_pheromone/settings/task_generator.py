@@ -4,7 +4,7 @@ from .task import Task
 
 
 class TaskGenerator(opt.TaskGenerator):
-    def __init__(self, display: bool):
+    def __init__(self, display: bool = True):
         self.display = display
 
     @staticmethod
