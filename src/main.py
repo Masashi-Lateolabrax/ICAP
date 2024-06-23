@@ -1,6 +1,6 @@
 from exp.pushing_food_with_pheromone import main
 
-# Task: CHECK THE PROGRAM
+# Task: pushing-food-with-pheromone
 #
 # Objective: Executing reproduction experiment.
 #
@@ -11,7 +11,7 @@ from exp.pushing_food_with_pheromone import main
 #   - Optimizing population: 20
 #   - Increase the generation and population of optimization.
 #
-# Date: 2024-06-23 12:41
+# Date: 2024-06-24 3:15
 
 if __name__ == '__main__':
     main()
