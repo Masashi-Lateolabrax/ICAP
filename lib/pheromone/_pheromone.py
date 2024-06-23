@@ -40,10 +40,14 @@ class PheromoneField:
             self,
             nx: int, ny: int, d: float,
             sv: float, evaporate: float, diffusion: float, decrease: float,
+            dt: float, iteration: int = 1
     ):
         # セルの数
         self._nx = nx
         self._ny = ny
+
+        self.dt = dt
+        self.iteration = iteration
 
         self._liquid = numpy.zeros((nx, ny))
         self._gas = numpy.zeros((nx, ny))
@@ -69,8 +73,10 @@ class PheromoneField:
             res += e * self._gas[int(x), int(y)]
         return res
 
-    def update(self, dt: float):
-        dif_liquid = numpy.minimum(self._liquid, (self._sv - self._gas) * self._eva) * dt
-        dif_gas = dif_liquid + (scipy.signal.convolve2d(self._gas, self._c, "same") - self._gas * self._dec) * dt
-        self._liquid -= dif_liquid
-        self._gas += dif_gas
+    def update(self):
+        dt = self.dt / self.iteration
+        for _ in range(self.iteration):
+            dif_liquid = numpy.minimum(self._liquid, (self._sv - self._gas) * self._eva) * dt
+            dif_gas = dif_liquid + (scipy.signal.convolve2d(self._gas, self._c, "same") - self._gas * self._dec) * dt
+            self._liquid -= dif_liquid
+            self._gas += dif_gas

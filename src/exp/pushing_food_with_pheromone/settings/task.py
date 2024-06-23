@@ -86,7 +86,9 @@ class _MuJoCoProcess:
             HyperParameters.Pheromone.SaturatedVapor,
             HyperParameters.Pheromone.Evaporation,
             HyperParameters.Pheromone.Diffusion,
-            HyperParameters.Pheromone.Decrease
+            HyperParameters.Pheromone.Decrease,
+            HyperParameters.Simulator.TIMESTEP,
+            HyperParameters.Simulator.PHEROMONE_ITER
         )
         self.panels = []
         for xi in range(HyperParameters.Simulator.TILE_WH[0]):
@@ -139,9 +141,7 @@ class _MuJoCoProcess:
             pheromone = bot.exec(self._direction_buf, self.input_sight_buf, self.input_pheromone_buf)
             self._pheromone.add_liquid(xi, yi, pheromone)
 
-        pt = HyperParameters.Simulator.TIMESTEP / HyperParameters.Simulator.PHEROMONE_ITER
-        for _ in range(HyperParameters.Simulator.PHEROMONE_ITER):
-            self._pheromone.update(pt)
+        self._pheromone.update()
 
         for xi, yi, p in self.panels:
             pheromone = self._pheromone.get_gas(xi, yi)
