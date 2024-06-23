@@ -20,13 +20,13 @@ class Debugger:
 
     def __init__(self, debug=False):
         self._debug = debug
-        self._investigator: dict[str, Debugger.Investigator] = {}
+        self.investigators: dict[str, Debugger.Investigator] = {}
 
     def create_investigator(self, name: str) -> Investigator:
         i = Debugger.Investigator(self._debug)
-        if name in self._investigator.keys():
+        if name in self.investigators.keys():
             raise "[Debugger Error] 'name' is used already."
-        self._investigator[name] = i
+        self.investigators[name] = i
         return i
 
     def is_debug_mode(self) -> bool:
@@ -34,6 +34,6 @@ class Debugger:
 
     def get_buf(self) -> dict[str, np.ndarray]:
         res = {}
-        for key, value in self._investigator.items():
+        for key, value in self.investigators.items():
             res[key] = np.copy(value.buf)
         return res
