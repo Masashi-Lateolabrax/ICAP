@@ -14,7 +14,7 @@ def main():
 
     camera = mujoco.MjvCamera()
     camera.elevation = -90
-    camera.distance = 25
+    camera.distance = 29
 
     resolution = 150
 
