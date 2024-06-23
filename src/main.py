@@ -1,6 +1,6 @@
 from exp.pushing_food_with_pheromone import main
 
-# Task: pushing-food-with-pheromone
+# Task: CHECK THE PROGRAM
 #
 # Objective: Executing reproduction experiment.
 #
