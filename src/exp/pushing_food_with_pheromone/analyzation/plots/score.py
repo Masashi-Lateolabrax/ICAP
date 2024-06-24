@@ -11,7 +11,7 @@ def main():
     history = get_history(project_directory)
     fig = plot_score_graph(history)
     fig.savefig(
-        os.path.join(project_directory, "movement.svg")
+        os.path.join(project_directory, "score.svg")
     )
     plt.show()
 
