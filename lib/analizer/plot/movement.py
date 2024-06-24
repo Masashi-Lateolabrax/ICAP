@@ -1,10 +1,10 @@
+import matplotlib.pyplot as plt
+import numpy as np
+
 from lib.optimizer import Hist
 
 
-def plot_parameter_movements_graph(history: Hist, start: int, end: int):
-    import matplotlib.pyplot as plt
-    import numpy as np
-
+def plot_parameter_movements_graph(history: Hist, start: int, end: int) -> plt.Figure:
     end = end if start < end <= len(history.queues) else len(history.queues)
     queues = history.queues[start:end]
     n = len(queues) - 1
@@ -22,18 +22,4 @@ def plot_parameter_movements_graph(history: Hist, start: int, end: int):
     ax.set_xlabel("generations")
     ax.set_ylabel("movements")
 
-    plt.show()
-
-
-def main():
-    from lib.utils import get_history
-
-    working_directory = "../../../src/"
-
-    history = get_history(working_directory)
-
-    plot_parameter_movements_graph(history, 0, -1)
-
-
-if __name__ == '__main__':
-    main()
+    return fig
