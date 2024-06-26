@@ -35,11 +35,15 @@ class NeuralNetwork(nn.Module):
             self.debugger.create_investigator("s2l1"),
             nn.Tanh(),
 
-            nn.Linear(5, 3),
+            nn.Linear(5, 5),
             self.debugger.create_investigator("s2l2"),
             nn.Tanh(),
 
+            nn.Linear(5, 3),
             self.debugger.create_investigator("s2l3"),
+            nn.Tanh(),
+
+            self.debugger.create_investigator("s2l4"),
         )
         self.sequence3 = nn.Sequential(
             self.debugger.create_investigator("s3l0"),

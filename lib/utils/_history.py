@@ -27,6 +27,9 @@ def load_parameter(
             os.path.join(working_directory, f"history_{git_hash[0:8]}.npz")
         )
         history = Hist.load(path)
-        para = history.queues[queue_index].min_para
+        if queue_index is None:
+            para = history.get_min().min_para
+        else:
+            para = history.queues[queue_index].min_para
 
     return para
