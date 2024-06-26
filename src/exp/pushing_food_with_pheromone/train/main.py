@@ -9,7 +9,8 @@ def main():
         dim=dim,
         generation=HyperParameters.Optimization.GENERATION,
         population=HyperParameters.Optimization.POPULATION,
-        sigma=HyperParameters.Optimization.SIGMA
+        sigma=HyperParameters.Optimization.SIGMA,
+        mu=HyperParameters.Optimization.MU
     )
     for gen in range(1, 1 + cmaes.get_generation()):
         task_generator = TaskGenerator(False)
