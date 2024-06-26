@@ -5,7 +5,7 @@ cx, cy = (0, -8)
 
 class HyperParameters:
     class Optimization:
-        GENERATION = 500
+        GENERATION = 700
         POPULATION = int(4 + 3 * math.log(211))
         SIGMA = 0.3
         EARLY_STOP = 0.05
