@@ -1,6 +1,10 @@
-import numpy
-from environments import utils
+import numpy as np
+
 from environments.collect_feed_without_obstacle import EnvCreator
+
+from lib.optimizer import CMAES, MultiThreadProc
+from lib.utils import get_head_hash
+
 from studyLib import wrap_mjc, miscellaneous
 
 
@@ -33,9 +37,9 @@ if __name__ == "__main__":
         env_creator = EnvCreator()
         set_env_creator(env_creator)
 
-        generation = 500
-        population = 100
-        mu = 10
+        generation = 2
+        population = 3
+        mu = 1
         sigma = 0.3
         centroid = None
 
@@ -53,20 +57,30 @@ if __name__ == "__main__":
         # Resume
         # centroid = numpy.load("best_para.npy")
 
-        # para, hist = utils.cmaes_optimize(generation, population, mu, sigma, centroid, env_creator, 1, True)
-        para, hist = utils.cmaes_optimize_server(generation, population, mu, sigma, centroid, env_creator, 52325, True)
-        numpy.save("best_para.npy", para)
-        hist.save("history.log")
+        cmaes = CMAES(
+            dim=env_creator.dim(),
+            generation=generation,
+            population=population,
+            sigma=sigma,
+            mu=mu
+        )
+        for gen in range(1, 1 + cmaes.get_generation()):
+            env_creator = EnvCreator()
+            set_env_creator(env_creator)
+            cmaes.optimize_current_generation(env_creator, MultiThreadProc)
+
+        history = cmaes.get_history()
+        head_hash = get_head_hash()[0:8]
+        history.save(f"history_{head_hash}.npz")
 
         width: int = 500
         height: int = 700
         scale: int = 1
         window = miscellaneous.Window(width * scale, height * scale)
         camera = wrap_mjc.Camera((0, 600, 0), 2500, 90, 90)
-        # camera = wrap_mjc.Camera((0, 0, 0), 500, 90, 90)
         window.set_recorder(miscellaneous.Recorder("result.mp4", 30, width, height))
 
-        para = numpy.load("best_para.npy")
+        para = history.get_min().min_para
         env = env_creator.create_mujoco_env(para, window, camera)
         score = env.calc_and_show()
         print(f"Result : {score}")
