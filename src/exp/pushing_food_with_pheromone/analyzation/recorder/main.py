@@ -7,20 +7,22 @@ from src.exp.pushing_food_with_pheromone.settings import HyperParameters, TaskGe
 
 def main():
     project_directory = "../../../../"
+    git_hash = get_head_hash()
+    generation = -1
 
     task_generator = TaskGenerator()
 
     camera = mujoco.MjvCamera()
     camera.elevation = -90
-    camera.distance = 25
+    camera.distance = 29
 
     resolution = 150
 
     para = load_parameter(
         dim=task_generator.get_dim(),
         working_directory=project_directory,
-        git_hash="def49b7a",  # get_head_hash(),
-        queue_index=-1,
+        git_hash=git_hash,
+        queue_index=generation,
     )
 
     task = task_generator.generate(para)

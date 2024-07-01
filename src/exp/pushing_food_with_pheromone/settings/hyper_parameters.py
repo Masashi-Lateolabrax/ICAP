@@ -1,12 +1,14 @@
+import math
+
 cx, cy = (0, -8)
 
 
 class HyperParameters:
     class Optimization:
-        GENERATION = 300
-        POPULATION = 10
+        GENERATION = 500
+        POPULATION = 100  # int(4 + 3 * math.log(211))
+        MU = 10
         SIGMA = 0.3
-        EARLY_STOP = 0.05
 
     class Simulator:
         MAX_GEOM = 7800
@@ -48,3 +50,5 @@ class HyperParameters:
         SENSOR_PRECISION = (2 / 0.7, 2 / 5)
         MOVE_SPEED = 1.2
         TURN_SPEED = 1.0
+
+# print(f"population: {HyperParameters.Optimization.POPULATION}")

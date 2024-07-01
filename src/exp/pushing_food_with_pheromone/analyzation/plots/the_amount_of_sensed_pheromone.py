@@ -26,15 +26,19 @@ class DataCollector(BaseDataCollector):
             self.data[time, bi, :] = b.debug_data["s2l0"]
 
 
-def collect_data(project_directory: str) -> np.ndarray:
+def collect_data(
+        project_directory: str,
+        git_hash: str,
+        generation: int,
+) -> np.ndarray:
     collector = DataCollector()
 
     task_generator = TaskGenerator()
     para = load_parameter(
         dim=task_generator.get_dim(),
         working_directory=project_directory,
-        git_hash=get_head_hash(),
-        queue_index=-1
+        git_hash=git_hash,
+        queue_index=generation
     )
     task = task_generator.generate(para, True)
 
@@ -51,12 +55,14 @@ def generate_color_list(n, alpha):
 
 def main():
     project_directory = "../../../../"
+    git_hash = get_head_hash()
+    generation = -1
 
     save_file_name = "data(secreted)"
     if os.path.exists(save_file_name + ".npz"):
         data = np.load(save_file_name + ".npz")
     else:
-        data = collect_data(project_directory)
+        data = collect_data(project_directory, git_hash, generation)
         np.save(os.path.basename(save_file_name), data)
 
     x = np.arange(0, data.shape[0], dtype=np.float32) / data.shape[0] * HyperParameters.Simulator.EPISODE

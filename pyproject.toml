@@ -8,7 +8,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.11"
 numpy = "1.26.4"
-mujoco-xml-generator = {git = "https://github.com/Masashi-Lateolabrax/mujoco-xml-generator.git", rev = "dev"}
+mujoco-xml-generator = { git = "https://github.com/Masashi-Lateolabrax/mujoco-xml-generator.git", rev = "dev" }
 torch = { version = "2.2.2+cpu", source = "torch" }
 torchvision = { version = "0.17.2+cpu", source = "torch" }
 torchaudio = { version = "2.2.2+cpu", source = "torch" }

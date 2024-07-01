@@ -68,7 +68,7 @@ class _PositionManager:
 
 
 class _MuJoCoProcess:
-    def __init__(self, brain: NeuralNetwork):
+    def __init__(self, brain: NeuralNetwork, display: bool):
         xml = gen_xml()
         self.m = mujoco.MjModel.from_xml_string(xml)
         self.d = mujoco.MjData(self.m)
@@ -86,8 +86,12 @@ class _MuJoCoProcess:
             HyperParameters.Pheromone.SaturatedVapor,
             HyperParameters.Pheromone.Evaporation,
             HyperParameters.Pheromone.Diffusion,
-            HyperParameters.Pheromone.Decrease
+            HyperParameters.Pheromone.Decrease,
+            HyperParameters.Simulator.TIMESTEP,
+            HyperParameters.Simulator.PHEROMONE_ITER
         )
+        self.display = display
+
         self.panels = []
         for xi in range(HyperParameters.Simulator.TILE_WH[0]):
             x = (xi - (HyperParameters.Simulator.TILE_WH[0] - 1) * 0.5) * HyperParameters.Simulator.TILE_SIZE
@@ -134,27 +138,26 @@ class _MuJoCoProcess:
             s, (w, h) = HyperParameters.Simulator.TILE_SIZE, HyperParameters.Simulator.TILE_WH
             xi = bot.get_body().xpos[0] / s + (w - 1) * 0.5
             yi = bot.get_body().xpos[1] / s + (h - 1) * 0.5
-            self.input_pheromone_buf[0] = self._pheromone.get_gas(xi, yi)
+            self.input_pheromone_buf[0] = self._pheromone.get_gas(xi, yi) / HyperParameters.Pheromone.SaturatedVapor
 
             pheromone = bot.exec(self._direction_buf, self.input_sight_buf, self.input_pheromone_buf)
             self._pheromone.add_liquid(xi, yi, pheromone)
 
-        pt = HyperParameters.Simulator.TIMESTEP / HyperParameters.Simulator.PHEROMONE_ITER
-        for _ in range(HyperParameters.Simulator.PHEROMONE_ITER):
-            self._pheromone.update(pt)
+        self._pheromone.update()
 
-        for xi, yi, p in self.panels:
-            pheromone = self._pheromone.get_gas(xi, yi)
-            pheromone = np.clip(pheromone / 10, 0, 1)
-            c = colorsys.hsv_to_rgb(0.66 * (1.0 - pheromone), 1.0, 1.0)
-            p.set_rgba((c[0], c[1], c[2], 0.7))
+        if self.display:
+            for xi, yi, p in self.panels:
+                pheromone = self._pheromone.get_gas(xi, yi)
+                pheromone = np.clip(pheromone / HyperParameters.Pheromone.SaturatedVapor, 0, 1)
+                c = colorsys.hsv_to_rgb(0.66 * (1.0 - pheromone), 1.0, 1.0)
+                p.set_rgba((c[0], c[1], c[2], 0.7))
 
         return self._positions.evaluate()
 
 
 class Task(MjcTaskInterface):
-    def __init__(self, brain: NeuralNetwork):
-        self.mujoco = _MuJoCoProcess(brain)
+    def __init__(self, brain: NeuralNetwork, display):
+        self.mujoco = _MuJoCoProcess(brain, display)
 
     def get_model(self) -> mujoco.MjModel:
         return self.mujoco.m

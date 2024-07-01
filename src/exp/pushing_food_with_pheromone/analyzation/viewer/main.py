@@ -163,6 +163,7 @@ class App(tk.Tk):
 
 def main():
     working_directory = "../../../../"
+    git_hash = get_head_hash()
 
     task_generator = TaskGenerator()
     dim = task_generator.get_dim()
@@ -171,7 +172,7 @@ def main():
     para = load_parameter(
         dim=task_generator.get_dim(),
         working_directory=working_directory,
-        git_hash=get_head_hash(),
+        git_hash=git_hash,
         queue_index=-1,
     )
 

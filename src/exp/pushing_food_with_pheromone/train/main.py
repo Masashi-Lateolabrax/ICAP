@@ -9,10 +9,11 @@ def main():
         dim=dim,
         generation=HyperParameters.Optimization.GENERATION,
         population=HyperParameters.Optimization.POPULATION,
-        sigma=HyperParameters.Optimization.SIGMA
+        sigma=HyperParameters.Optimization.SIGMA,
+        mu=HyperParameters.Optimization.MU
     )
     for gen in range(1, 1 + cmaes.get_generation()):
-        task_generator = TaskGenerator()
+        task_generator = TaskGenerator(False)
         cmaes.optimize_current_generation(task_generator, MultiThreadProc)
 
     head_hash = get_head_hash()[0:8]
