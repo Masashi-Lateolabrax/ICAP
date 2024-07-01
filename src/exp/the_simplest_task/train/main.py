@@ -12,6 +12,7 @@ def main():
         dim=dim,
         generation=HyperParameters.Optimization.GENERATION,
         population=HyperParameters.Optimization.POPULATION,
+        mu=HyperParameters.Optimization.MU,
         sigma=HyperParameters.Optimization.SIGMA
     )
     for _ in range(1, 1 + cmaes.get_generation()):
