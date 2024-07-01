@@ -1,9 +1,12 @@
+import math
+
+
 class HyperParameters:
     class Optimization:
-        GENERATION = 1000
-        POPULATION = 15
+        GENERATION = 300
+        POPULATION = int(4 + 3 * math.log(78))
+        MU = int(int(4 + 3 * math.log(78)) * 0.5 + 0.5)
         SIGMA = 0.3
-        EARLY_STOP = 0.01
 
     class Evaluation:
         ANGLE_WEIGHT = 15
@@ -21,7 +24,7 @@ class HyperParameters:
 
     class Environment:
         GOAL_POS = (0, 5)
-        BOT_POS = (0, -5)
+        BOT_POS = [(0, -5, -45), (0, -5, 45), (0, -5, 135), (0, -5, -135)]
 
     class Robot:
         NUM_LIDAR = 314

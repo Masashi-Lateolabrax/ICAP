@@ -7,12 +7,7 @@ from .hyper_parameters import HyperParameters
 
 class TaskGenerator(opt.TaskGenerator):
     def __init__(self):
-        import random
-
-        p = HyperParameters.Environment.BOT_POS
-        self.bot_pos = [
-            (p[0], p[1], 360 * random.random()) for _ in range(HyperParameters.Simulator.TRY_COUNT)
-        ]
+        pass
 
     @staticmethod
     def get_dim():
@@ -21,4 +16,4 @@ class TaskGenerator(opt.TaskGenerator):
     def generate(self, para, debug=False) -> Task:
         brain = NeuralNetwork(debug)
         brain.load_para(para)
-        return Task(self.bot_pos, brain)
+        return Task(HyperParameters.Environment.BOT_POS, brain)
