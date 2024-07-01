@@ -24,7 +24,7 @@ class HyperParameters:
 
     class Environment:
         GOAL_POS = (0, 5)
-        BOT_POS = (0, -5)
+        BOT_POS = [(0, -5, -45), (0, -5, 45), (0, -5, 135), (0, -5, -135)]
 
     class Robot:
         NUM_LIDAR = 314
