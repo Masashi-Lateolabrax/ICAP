@@ -138,7 +138,7 @@ class _MuJoCoProcess:
             s, (w, h) = HyperParameters.Simulator.TILE_SIZE, HyperParameters.Simulator.TILE_WH
             xi = bot.get_body().xpos[0] / s + (w - 1) * 0.5
             yi = bot.get_body().xpos[1] / s + (h - 1) * 0.5
-            self.input_pheromone_buf[0] = self._pheromone.get_gas(xi, yi)  # / HyperParameters.Pheromone.SaturatedVapor
+            self.input_pheromone_buf[0] = self._pheromone.get_gas(xi, yi) / HyperParameters.Pheromone.SaturatedVapor
 
             pheromone = bot.exec(self._direction_buf, self.input_sight_buf, self.input_pheromone_buf)
             self._pheromone.add_liquid(xi, yi, pheromone)
