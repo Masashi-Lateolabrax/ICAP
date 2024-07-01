@@ -4,7 +4,8 @@ from lib.utils import get_head_hash
 
 
 def main():
-    dim = sum([p.numel() for p in NeuralNetwork().parameters() if p.requires_grad])
+    dim = NeuralNetwork().num_dim()
+
     cmaes = CMAES(
         dim=dim,
         generation=HyperParameters.Optimization.GENERATION,
