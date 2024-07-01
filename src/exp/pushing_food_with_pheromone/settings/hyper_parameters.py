@@ -9,7 +9,6 @@ class HyperParameters:
         POPULATION = 100  # int(4 + 3 * math.log(211))
         MU = 10
         SIGMA = 0.3
-        EARLY_STOP = 0.05
 
     class Simulator:
         MAX_GEOM = 7800
