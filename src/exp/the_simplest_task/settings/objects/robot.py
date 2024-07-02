@@ -43,7 +43,7 @@ class _RobotState:
 
         def normal_distribution(x) -> float:
             mean = kernel_size * 0.5
-            sigma = kernel_size * 0.5 / 4
+            sigma = kernel_size * 0.5 / 2
             variance_2 = 2 * math.pow(sigma, 2)
             return math.exp(-math.pow(x - mean, 2) / variance_2) / math.sqrt(math.pi * variance_2)
 
