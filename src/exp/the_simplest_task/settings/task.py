@@ -46,9 +46,7 @@ class _MuJoCoProcess:
         self._bot.exec(self._direction_buf, sight, self._brightness_img_torch_buf)
 
         sub = self._bot.get_body().xpos[0:2] - self._goal_pos
-        d = np.linalg.norm(sub)
-        theta = np.dot(sub / d, self._direction_buf[0:2])[0]
-        evaluation = d + HyperParameters.Evaluation.ANGLE_WEIGHT * 0.5 * abs(theta - 1)
+        evaluation = -np.exp(-np.sum(sub ** 2) / HyperParameters.Evaluation.GOAL_SIGMA)
 
         return evaluation
 
