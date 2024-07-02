@@ -10,10 +10,10 @@ from exp.the_simplest_task import main
 #   - Optimizing generation: 300
 #   - Optimizing population: 17
 #   - Optimizing elite: 9
-#   - Increase the detection range of LiDER
-#   - Save the number of the initial robot directions
+#   - Change the loss function
+#   - Increase the range of photoreceptor cell perception
 #
-# Date: 2024-07-02 16:58
+# Date: 2024-07-02 18:42
 
 if __name__ == '__main__':
     main()
