@@ -9,7 +9,7 @@ class HyperParameters:
         SIGMA = 0.3
 
     class Evaluation:
-        ANGLE_WEIGHT = 15
+        GOAL_SIGMA = 11.0
 
     class Simulator:
         MAX_GEOM = 1000
@@ -28,7 +28,7 @@ class HyperParameters:
 
     class Robot:
         NUM_LIDAR = 314
-        SENSOR_PRECISION = 0.0001
+        SENSOR_PRECISION = 0.1
         SIGHT_KERNEL_SIZE = 40
 
         MOVE_SPEED = 1.2
