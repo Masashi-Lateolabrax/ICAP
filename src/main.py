@@ -1,19 +1,19 @@
-from exp.pushing_food_with_pheromone import main
+from exp.the_simplest_task import main
 
-# Task: pushing-food-with-pheromone
+# Task: the simplest task
 #
-# Objective: Detecting the elements contributing to the emergence of pheromone roles.
+# Objective: Detecting the factors that disrupt robot learning.
 #
 # Features:
-#   - The number of agent: 9
-#   - The number of food: 2
-#   - Optimizing generation: 500
-#   - Optimizing population: 100
-#   - Optimizing elite: 10
-#   - Normalized the input of pheromone
-#   - Remove the activation functions from the output layers in the NN modules
+#   - Agent: 1
+#   - Goal: 1
+#   - Optimizing generation: 300
+#   - Optimizing population: 17
+#   - Optimizing elite: 9
+#   - Increase the detection range of LiDER
+#   - Save the number of the initial robot directions
 #
-# Date: 2024-07-01 14:20
+# Date: 2024-07-02 16:58
 
 if __name__ == '__main__':
     main()
