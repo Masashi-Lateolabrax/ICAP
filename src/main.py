@@ -1,17 +1,26 @@
-from exp.pushing_food_with_pheromone import main
+from exp.the_simplest_task import main
 
-# Task: CHECK THE PROGRAM
+# # Task
+# the simplest task
 #
-# Objective: Executing reproduction experiment.
+# # Objective
+# Detecting the factors that disrupt robot learning.
 #
-# Features:
-#   - The number of agent: 9
-#   - The number of food: 2
-#   - Optimizing generation: 500
-#   - Optimizing population: 20
-#   - Increase the generation and population of optimization.
+# # Features
+#   - Agent: 1
+#   - Goal: 1
+#   - Optimizing generation: 300
+#   - Optimizing population: 17
+#   - Optimizing elite: 9
+#   - Episode: 120
+#   - LiDER perception: 0.0001
+#   - Loss function: gaussian distribution
 #
-# Date: 2024-06-23 12:41
+# # Difference
+#   - Increase the range of sensor perception
+#
+# # Date
+# 2024-07-03 13:12
 
 if __name__ == '__main__':
     main()
