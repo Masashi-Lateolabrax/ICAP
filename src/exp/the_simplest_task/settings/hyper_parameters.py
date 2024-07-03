@@ -27,7 +27,7 @@ class HyperParameters:
 
     class Robot:
         NUM_LIDAR = 314
-        SENSOR_PRECISION = 0.1
+        SENSOR_PRECISION = 0.0001
         SIGHT_KERNEL_SIZE = 40
 
         MOVE_SPEED = 1.8
