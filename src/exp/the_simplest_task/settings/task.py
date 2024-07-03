@@ -73,7 +73,7 @@ class Task(MjcTaskInterface):
         return self.mujoco.calc_step()
 
     def run(self) -> float:
-        evaluations = np.zeros(HyperParameters.Simulator.TRY_COUNT)
+        evaluations = np.zeros(len(self.bot_pos))
 
         for _ in range(int(HyperParameters.Simulator.EPISODE / HyperParameters.Simulator.TIMESTEP + 0.5)):
             evaluations[0] += self.mujoco.calc_step()
