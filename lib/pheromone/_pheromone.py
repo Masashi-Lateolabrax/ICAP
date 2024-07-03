@@ -21,18 +21,19 @@ def _calc_dico(w: int, h: int, xi: float, yi: float):
     in_y1 = 0 <= yc - 1 < h
     in_y2 = 0 <= yc < h
 
-    res = []
+    hit = []
     if in_x1:
         if in_y1:
-            res.append((xc - 1, yc - 1, e1))
+            hit.append((xc - 1, yc - 1, e1))
         if in_y2:
-            res.append((xc - 1, yc, e3))
+            hit.append((xc - 1, yc, e3))
     if in_x2:
         if in_y1:
-            res.append((xc, yc - 1, e2))
+            hit.append((xc, yc - 1, e2))
         if in_y2:
-            res.append((xc, yc, e4))
-    return res
+            hit.append((xc, yc, e4))
+
+    return hit
 
 
 class PheromoneField:
@@ -50,7 +51,8 @@ class PheromoneField:
         self.iteration = iteration
 
         self._liquid = numpy.zeros((nx, ny))
-        self._gas = numpy.zeros((nx, ny))
+        self._gas_master = numpy.zeros((nx + 2, ny + 2))
+        self._gas = self._gas_master[1:-1, 1:-1]
 
         self._eva = evaporate  # 蒸発速度
         self._sv = sv  # 飽和蒸気量
@@ -69,14 +71,24 @@ class PheromoneField:
 
     def get_gas(self, xi: float, yi: float) -> float:
         res = 0.0
-        for x, y, e in _calc_dico(self._nx, self._ny, xi, yi):
-            res += e * self._gas[int(x), int(y)]
+        for x, y, e in _calc_dico(self._nx + 2, self._ny + 2, xi + 1, yi + 1):
+            res += e * self._gas_master[int(x), int(y)]
         return res
 
     def update(self):
         dt = self.dt / self.iteration
         for _ in range(self.iteration):
             dif_liquid = numpy.minimum(self._liquid, (self._sv - self._gas) * self._eva) * dt
-            dif_gas = dif_liquid + (scipy.signal.convolve2d(self._gas, self._c, "same") - self._gas * self._dec) * dt
+
+            # padding
+            self._gas_master[0, :] = self._gas_master[1, :]
+            self._gas_master[-1, :] = self._gas_master[-2, :]
+            self._gas_master[:, 0] = self._gas_master[:, 1]
+            self._gas_master[:, -1] = self._gas_master[:, -2]
+
+            convolved = scipy.signal.convolve2d(self._gas_master, self._c, mode="valid")
+
+            dif_gas = dif_liquid + (convolved - self._gas * self._dec) * dt
+
             self._liquid -= dif_liquid
             self._gas += dif_gas
