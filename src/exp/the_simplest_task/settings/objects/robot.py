@@ -38,12 +38,12 @@ class _RobotState:
         self.current_thinking_time = self.skip_thinking - 1
 
         self.sight: np.ndarray = np.zeros((1, HyperParameters.Robot.NUM_LIDAR, 3), dtype=np.uint8)
-        self.brightness_img: torch.Tensor = torch.zeros((1, self.sight.shape[1]))
+        self.brightness_img: np.ndarray = np.zeros((1, self.sight.shape[1]))
         self.input_buf: torch.Tensor = torch.zeros((1, StaticParameters.input_size()))
 
         def normal_distribution(x) -> float:
             mean = kernel_size * 0.5
-            sigma = kernel_size * 0.5 / 4
+            sigma = kernel_size * 0.5 / 2
             variance_2 = 2 * math.pow(sigma, 2)
             return math.exp(-math.pow(x - mean, 2) / variance_2) / math.sqrt(math.pi * variance_2)
 
@@ -59,14 +59,14 @@ class _RobotState:
 
         self.debug = False
 
-    def update(self, sight: np.ndarray, brightness_img: np.ndarray):
+    def update(self, sight: np.ndarray, brightness_img: torch.Tensor):
         self.current_thinking_time = (self.current_thinking_time + 1) % self.skip_thinking
         if self.debug:
             np.copyto(self.sight, sight)
-            self.brightness_img.copy_(torch.from_numpy(brightness_img))
+            np.copyto(self.brightness_img, brightness_img.numpy())
 
-    def calc_input(self):
-        self.input_buf = self._preparation.forward(self.brightness_img)
+    def calc_input(self, brightness_img: torch.Tensor):
+        self.input_buf = self._preparation.forward(brightness_img)
         self.input_buf /= 255.0
 
     def do_think(self) -> bool:
@@ -86,7 +86,7 @@ class Robot(BodyObject):
         mujoco.mju_rotVecQuat(out, [0, 1, 0], self.get_body().xquat)
 
     def get_brightness_buf(self):
-        return self._state.brightness_img.detach().numpy().astype(np.uint8)
+        return self._state.brightness_img.astype(np.uint8)
 
     def get_input_buf(self):
         buf = (self._state.input_buf.detach().numpy() * 255.0).astype(np.uint8)
@@ -98,11 +98,11 @@ class Robot(BodyObject):
     def get_debug(self) -> bool:
         return self._state.debug
 
-    def exec(self, bot_direction, sight: np.ndarray, brightness_img: np.ndarray, act=True):
+    def exec(self, bot_direction, sight: np.ndarray, brightness_img: torch.Tensor, act=True):
         self._state.update(sight, brightness_img)
 
         if self._state.do_think():
-            self._state.calc_input()
+            self._state.calc_input(brightness_img)
             y = self.brain.forward(self._state.input_buf).detach().numpy()
             self._actuator.update(y)
 

@@ -4,12 +4,16 @@ from lib.utils import get_head_hash
 
 
 def main():
-    dim = sum([p.numel() for p in NeuralNetwork().parameters() if p.requires_grad])
+    print("PUSHING FOOD WITH PHEROMONE")
+
+    dim = NeuralNetwork().num_dim()
+
     cmaes = CMAES(
         dim=dim,
         generation=HyperParameters.Optimization.GENERATION,
         population=HyperParameters.Optimization.POPULATION,
-        sigma=HyperParameters.Optimization.SIGMA
+        sigma=HyperParameters.Optimization.SIGMA,
+        mu=HyperParameters.Optimization.MU
     )
     for gen in range(1, 1 + cmaes.get_generation()):
         task_generator = TaskGenerator(False)

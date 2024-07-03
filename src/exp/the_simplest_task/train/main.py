@@ -4,11 +4,15 @@ from lib.utils import get_head_hash
 
 
 def main():
-    dim = sum([p.numel() for p in NeuralNetwork().parameters() if p.requires_grad])
+    print("THE SIMPLEST TASK")
+
+    dim = NeuralNetwork().num_dim()
+
     cmaes = CMAES(
         dim=dim,
         generation=HyperParameters.Optimization.GENERATION,
         population=HyperParameters.Optimization.POPULATION,
+        mu=HyperParameters.Optimization.MU,
         sigma=HyperParameters.Optimization.SIGMA
     )
     for _ in range(1, 1 + cmaes.get_generation()):

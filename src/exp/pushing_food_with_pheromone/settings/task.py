@@ -148,7 +148,7 @@ class _MuJoCoProcess:
         if self.display:
             for xi, yi, p in self.panels:
                 pheromone = self._pheromone.get_gas(xi, yi)
-                pheromone = np.clip(pheromone / 10, 0, 1)
+                pheromone = np.clip(pheromone / HyperParameters.Pheromone.SaturatedVapor, 0, 1)
                 c = colorsys.hsv_to_rgb(0.66 * (1.0 - pheromone), 1.0, 1.0)
                 p.set_rgba((c[0], c[1], c[2], 0.7))
 
