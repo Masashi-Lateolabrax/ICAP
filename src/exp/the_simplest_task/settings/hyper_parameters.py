@@ -16,7 +16,6 @@ class HyperParameters:
         EPISODE = 120
         TIMESTEP = 0.01
         RESOLUTION = (900, 1350)
-        TRY_COUNT = 20
         COLOR_MAP = {
             "bot": (255, 255, 0),
             "goal": (0, 255, 0),
