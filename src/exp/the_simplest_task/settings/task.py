@@ -1,5 +1,6 @@
 import mujoco
 import numpy as np
+import torch
 
 from lib.optimizer import MjcTaskInterface
 from lib.sensor import DistanceMeasure
@@ -24,6 +25,8 @@ class _MuJoCoProcess:
         self._goal_pos = np.array(HyperParameters.Environment.GOAL_POS)
 
         self._direction_buf = np.zeros((3, 1), dtype=np.float64)
+        self._brightness_img_np_buf = np.zeros((1, 314), dtype=np.float32)
+        self._brightness_img_torch_buf = torch.from_numpy(self._brightness_img_np_buf)
 
     def get_bot(self):
         return self._bot
@@ -36,26 +39,22 @@ class _MuJoCoProcess:
         sight = self._measure.measure_with_img(
             self.m, self.d, self._bot.object_id, self._bot.body, self._direction_buf
         )
-        brightness_img = np.dot(
-            sight[0, :, :], np.array([[0.299], [0.587], [0.114]])
-        ).reshape(
-            (1, sight.shape[1])
+        np.dot(
+            sight, np.array([0.299, 0.587, 0.114], dtype=np.float32), out=self._brightness_img_np_buf,
         )
 
-        self._bot.exec(self._direction_buf, sight, brightness_img)
+        self._bot.exec(self._direction_buf, sight, self._brightness_img_torch_buf)
 
         sub = self._bot.get_body().xpos[0:2] - self._goal_pos
-        d = np.linalg.norm(sub)
-        theta = np.dot(sub / d, self._direction_buf[0:2])[0]
-        evaluation = d + HyperParameters.Evaluation.ANGLE_WEIGHT * 0.5 * abs(theta - 1)
+        evaluation = -np.exp(-np.sum(sub ** 2) / HyperParameters.Evaluation.GOAL_SIGMA)
 
         return evaluation
 
 
 class Task(MjcTaskInterface):
     def __init__(self, bot_pos: list[tuple[float, float, float]], brain: NeuralNetwork):
-        if len(bot_pos) <= 1:
-            raise "Task needs a batch with a size lager than 2."
+        if len(bot_pos) == 0:
+            raise "Task needs a batch with a size lager than 0."
 
         self.bot_pos = bot_pos
         self.brain = brain
@@ -74,7 +73,7 @@ class Task(MjcTaskInterface):
         return self.mujoco.calc_step()
 
     def run(self) -> float:
-        evaluations = np.zeros(HyperParameters.Simulator.TRY_COUNT)
+        evaluations = np.zeros(len(self.bot_pos))
 
         for _ in range(int(HyperParameters.Simulator.EPISODE / HyperParameters.Simulator.TIMESTEP + 0.5)):
             evaluations[0] += self.mujoco.calc_step()
