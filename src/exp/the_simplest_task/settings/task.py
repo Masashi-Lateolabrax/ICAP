@@ -53,8 +53,8 @@ class _MuJoCoProcess:
 
 class Task(MjcTaskInterface):
     def __init__(self, bot_pos: list[tuple[float, float, float]], brain: NeuralNetwork):
-        if len(bot_pos) <= 1:
-            raise "Task needs a batch with a size lager than 2."
+        if len(bot_pos) == 0:
+            raise "Task needs a batch with a size lager than 0."
 
         self.bot_pos = bot_pos
         self.brain = brain
