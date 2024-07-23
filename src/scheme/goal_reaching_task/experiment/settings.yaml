@@ -1,0 +1,171 @@
+Import:
+  numpy: "numpy"
+  random: "random"
+
+Constant:
+  WHITE: "raw: numpy.array([1.0, 1.0, 1.0], dtype=numpy.float32)"
+  RED: "raw: numpy.array([1.0, 0, 0], dtype=numpy.float32)"
+  BLUE: "raw: numpy.array([0, 0, 1.0], dtype=numpy.float32)"
+  TRANSITION: "raw: $Constant.RED - $Constant.BLUE"
+
+Display:
+  MAX_GEOM: 7800
+  RESOLUTION: [ 900, 1350 ]
+
+Optimization:
+  GENERATION: 300
+  POPULATION: 100 # if it <= 0, use "int(4 + 3 * math.log(dim))".
+  MU: 0 # if it <= 0, use "int(POPULATION * 0.5)".
+  SIGMA: 0.3
+
+  Evaluation:
+    SAFE_ZONE_POTENTIAL: 10.0
+
+    LOSS_FUNC: |
+      method:(bot_pos, safezone_pos):
+        evaluation = 0
+        for sp in safezone_pos:
+          distance = numpy.sum((bot_pos - sp) ** 2, axis=1)
+          evaluation += numpy.sum(numpy.exp(-distance / $Optimization.Evaluation.SAFE_ZONE_POTENTIAL))
+        return -evaluation
+
+
+Simulation:
+  TIMESTEP: 0.01
+  PHEROMONE_ITER: 5
+  INITIAL_ROBOT_MARGIN: 2.01
+
+Characteristics:
+  Pheromone:
+    EVAPORATION: 20.0
+    DECREASE: 0.1
+    DIFFUSION: 35.0
+    SATURATION_VAPOR: 10.0
+
+    CELL_SIZE_FOR_CALCULATION: 1
+    CELL_SIZE_FOR_MUJOCO: 0.2
+
+  Sensor:
+    Lidar:
+      NUM_LASER: 314
+      SENSOR_PRECISION: 0.1
+      CUTOFF: 100
+      DIM_OUTPUT: 314
+
+      GAIN: |
+        method:(dist):
+          return 1 / (dist * $Characteristics.Sensor.Lidar.SENSOR_PRECISION + 1)
+
+    Trigonometric:
+      SENSOR_PRECISION_FOR_BOT: 0.1
+      SENSOR_PRECISION_FOR_SAFEZONE: 0.9
+      DIM_OUTPUT: 2
+
+      GAIN_FOR_BOT: |
+        method:(dist:numpy.ndarray):
+          return numpy.reciprocal($Characteristics.Sensor.Trigonometric.SENSOR_PRECISION_FOR_BOT * dist + 1)
+
+      GAIN_FOR_SAFEZONE: |
+        method:(dist:numpy.ndarray):
+          return numpy.reciprocal($Characteristics.Sensor.Trigonometric.SENSOR_PRECISION_FOR_SAFEZONE * dist + 1)
+
+Environment:
+  World:
+    SIMULATION_FIELD_SIZE: [ 10, 10 ]  # The unit for this is meters.
+
+    COLOR_MAP: |
+      method:(name:str):
+        color = (0,0,0)
+        if "bot" in name:
+          color = (255, 255, 0)
+        elif "safezone" in name:
+          color = (0, 255, 0)
+        elif "wall" in name:
+          color = (255, 0, 255)
+        return numpy.array(color)
+
+  Pheromone:
+    ENABLE_PHEROMONE: true
+    PHEROMONE_FIELD_SIZE: [
+      "eval: int($Environment.World.SIMULATION_FIELD_SIZE[0] / $Characteristics.Pheromone.CELL_SIZE_FOR_MUJOCO + 0.5)",
+      "eval: int($Environment.World.SIMULATION_FIELD_SIZE[1] / $Characteristics.Pheromone.CELL_SIZE_FOR_MUJOCO + 0.5)"
+    ]
+
+  Robot:
+    MAX_SECRETION: 30
+    THINK_INTERVAL: 0.1
+    SIZE: 0.175
+    MOVE_SPEED: 1.2
+    TURN_SPEED: 1.0
+
+    NAMES: |
+      method:(i:int):
+        return {
+          "body": f"bot{i}.body",
+          "geom": f"bot{i}.geom",
+          "x_joint": f"bot{i}.joint.slide_x",
+          "y_joint": f"bot{i}.joint.slide_y",
+          "r_joint": f"bot{i}.joint.hinge",
+          "camera": f"bot{i}.camera",
+          "x_act": f"bot{i}.act.pos_x",
+          "y_act": f"bot{i}.act.pos_y",
+          "r_act": f"bot{i}.joint.hinge"
+        }
+
+    Actuator:
+      ACTUATOR_KV: 10000000
+      ACTUATOR_FORCE_RANGE: 3000000
+
+    Sensor:
+      Lidar:
+        KERNEL_SIZE: 40
+
+        DownScale:
+          MEAN: "eval: $Environment.Robot.Sensor.Lidar.KERNEL_SIZE * 0.5"
+          SIGMA: "eval: $Environment.Robot.Sensor.Lidar.KERNEL_SIZE * 0.5 / 2"
+          DIM_OUTPUT: |
+            exec:
+              k = $Environment.Robot.Sensor.Lidar.KERNEL_SIZE
+              i = $Characteristics.Sensor.Lidar.NUM_LASER
+              return int((i + 2 * int(k * 0.5 + 0.5) - k) / int(k * 0.5) + 1)
+
+  SafeZone:
+    SIZE: [ 0.4, 0.025 ]
+
+
+Task:
+  NUM_SAFEZONE: 1
+
+  NUM_ROBOT_LI: 0
+  NUM_ROBOT_TR: 1
+  NUM_ROBOT: "eval: $Task.NUM_ROBOT_LI + $Task.NUM_ROBOT_TR"
+
+  EPISODE_LENGTH: 60
+
+  Robot:
+    POSITIONS: |
+      method:():
+        from lib.utils import random_pos_list
+        margin_between_robots = $Environment.Robot.SIZE * 2.01
+        bot_pos = random_pos_list(
+          $Task.NUM_ROBOT,
+          $Environment.World.SIMULATION_FIELD_SIZE[0],
+          $Environment.World.SIMULATION_FIELD_SIZE[1],
+          $Environment.Robot.SIZE,
+          margin_between_robots
+        )
+        return list(map(lambda x: (x[0], x[1], 360 * random.random()), bot_pos))
+
+  SafeZone:
+    POSITION: |
+      method:():
+        from lib.utils import random_pos_list
+        margin_between_safezone = $Environment.SafeZone.SIZE[0] * 2.01
+        safezone_pos = random_pos_list(
+          $Task.NUM_SAFEZONE,
+          $Environment.World.SIMULATION_FIELD_SIZE[0],
+          $Environment.World.SIMULATION_FIELD_SIZE[1],
+          $Environment.SafeZone.SIZE[0],
+          margin_between_safezone
+        )
+        return safezone_pos
