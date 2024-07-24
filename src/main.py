@@ -14,13 +14,15 @@ from scheme.pheromone_property_analysis.evaporation_vs_liquid import main
 #   - DECREASE: 0.1
 #   - DIFFUSION: 35.0
 #   - SATURATION_VAPOR: 10.0
-#   - LIQUID: [ 10,50,150,200,250,300,350,400,450,500,550,600,650,700,750,800,850,900,950,1000 ]
+#   - LIQUID: [ 10,100,1000,10000,100000 ]
+#   - TIMESTEP: 0.03
 #
 # # Difference
-#   - NONE
+#   - LIQUID
+#   - TIMESTEP
 #
 # # Date
-# 2024-07-24 10:27
+# 2024-07-24 12:21
 
 if __name__ == '__main__':
     main(os.path.dirname(__file__))
