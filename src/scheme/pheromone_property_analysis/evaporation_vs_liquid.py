@@ -24,9 +24,9 @@ def main(project_directory):
             os.mkdir(working_directory)
         data = collect(working_directory, liquid)
 
-        x = np.arange(0, data.liquid.shape[0], 1) * Settings.Simulation.PHEROMONE_TIMESTEP
         dif_liquid = data.liquid[1:] - data.liquid[0:-1]
         dif_gas = data.gas[1:] - data.gas[0:-1]
+        x = np.arange(0, dif_liquid.shape[0], 1) * Settings.Simulation.PHEROMONE_TIMESTEP
 
         total_evaporation = np.sum(dif_liquid, axis=(1, 2))
         gas_stability = np.linalg.norm(dif_gas, axis=(1, 2))
