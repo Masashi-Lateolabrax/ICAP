@@ -4,7 +4,7 @@ Display:
   ZOOM: 13
 
 Simulation:
-  TIMESTEP: 0.01
+  TIMESTEP: 0.03
   PHEROMONE_ITER: 5
   PHEROMONE_TIMESTEP: "eval: $Simulation.TIMESTEP / $Simulation.PHEROMONE_ITER"
 
