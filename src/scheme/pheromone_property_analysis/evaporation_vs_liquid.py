@@ -3,7 +3,7 @@ import os
 import time
 import numpy as np
 
-from experiment.evaporation_vs_liquid import Settings, AnalysisEnvironment, DataCollector
+from .experiment.evaporation_vs_liquid import Settings, AnalysisEnvironment, DataCollector
 
 
 def collect(working_directory, liquid):
