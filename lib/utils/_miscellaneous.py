@@ -97,7 +97,11 @@ class BaseDataCollector(metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def _record(self, task, time: int, evaluation: float):
+    def pre_record(self, task, time: int):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def record(self, task, time: int, evaluation: float):
         raise NotImplementedError()
 
     def run(self, task: MjcTaskInterface):
@@ -110,5 +114,6 @@ class BaseDataCollector(metaclass=abc.ABCMeta):
                 time = datetime.now()
                 print(f"{t}/{episode} ({t / episode * 100}%)")
 
+            self.pre_record(task, t)
             evaluation = task.calc_step()
-            self._record(task, t, evaluation)
+            self.record(task, t, evaluation)
