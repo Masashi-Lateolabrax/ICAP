@@ -49,6 +49,11 @@ class AnalysisEnvironment(MjcTaskInterface):
         self.dif_liquid = 0
 
         for t in range(Settings.Simulation.PHEROMONE_ITER):
+            if t < Settings.Task.SECRETION_PERIOD:
+                self.center_cell[0, 0] = self.center_liquid
+            else:
+                self.center_cell[0, 0] = 0
+
             prev_liquid = self.pheromone.get_all_liquid()
             self.pheromone.update(Settings.Simulation.PHEROMONE_TIMESTEP, 1, dummies=True)
             current_liquid = self.pheromone.get_all_liquid()
