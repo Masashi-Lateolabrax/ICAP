@@ -51,7 +51,7 @@ class AnalysisEnvironment(MjcTaskInterface):
         self.time += Settings.Simulation.TIMESTEP
         self.dif_liquid = 0
 
-        for self.time in range(Settings.Simulation.PHEROMONE_ITER):
+        for _ in range(Settings.Simulation.PHEROMONE_ITER):
             if self.time < Settings.Task.SECRETION_PERIOD:
                 self.center_cell[0, 0] = self.center_liquid
             else:
