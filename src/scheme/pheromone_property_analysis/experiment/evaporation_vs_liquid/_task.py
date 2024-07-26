@@ -14,7 +14,7 @@ from ._xml_setting import gen_xml
 
 class AnalysisEnvironment(MjcTaskInterface):
     def __init__(self, liquid):
-        self.time = 0
+        self.time = -Settings.Simulation.TIMESTEP
 
         self.center_liquid = liquid
         self.dif_liquid = 0
@@ -48,7 +48,6 @@ class AnalysisEnvironment(MjcTaskInterface):
         return self.d
 
     def calc_step(self) -> float:
-        self.time += Settings.Simulation.TIMESTEP
         self.dif_liquid = 0
 
         for _ in range(Settings.Simulation.PHEROMONE_ITER):
@@ -62,6 +61,8 @@ class AnalysisEnvironment(MjcTaskInterface):
             current_liquid = self.pheromone.get_all_liquid()
 
             self.dif_liquid += np.sum(current_liquid - prev_liquid)
+
+            self.time += Settings.Simulation.PHEROMONE_TIMESTEP
 
         return 0.0
 
