@@ -1,4 +1,5 @@
 import mujoco
+import numpy as np
 
 from mujoco_xml_generator.utils import DummyGeom
 
@@ -13,7 +14,10 @@ from ._xml_setting import gen_xml
 
 class AnalysisEnvironment(MjcTaskInterface):
     def __init__(self, liquid):
-        self.liquid = liquid
+        self.time = 0
+
+        self.center_liquid = liquid
+        self.dif_liquid = 0
 
         xml = gen_xml()
         self.m = mujoco.MjModel.from_xml_string(xml)
@@ -33,6 +37,10 @@ class AnalysisEnvironment(MjcTaskInterface):
             True
         )
 
+        self.center_cell, _ = self.pheromone.get_cell(
+            Settings.World.CENTER_INDEX[0], Settings.World.CENTER_INDEX[1]
+        )
+
     def get_model(self) -> mujoco.MjModel:
         return self.m
 
@@ -40,13 +48,20 @@ class AnalysisEnvironment(MjcTaskInterface):
         return self.d
 
     def calc_step(self) -> float:
-        liquid_cell, _ = self.pheromone.get_cell(
-            int(Settings.World.NUM_CELL[0] * 0.5), int(Settings.World.NUM_CELL[1] * 0.5)
-        )
-        liquid_cell[0, 0] = self.liquid
+        self.time += Settings.Simulation.TIMESTEP
+        self.dif_liquid = 0
 
         for _ in range(Settings.Simulation.PHEROMONE_ITER):
+            if self.time < Settings.Task.SECRETION_PERIOD:
+                self.center_cell[0, 0] = self.center_liquid
+            else:
+                self.center_cell[0, 0] = 0
+
+            prev_liquid = self.pheromone.get_all_liquid()
             self.pheromone.update(Settings.Simulation.PHEROMONE_TIMESTEP, 1, dummies=True)
+            current_liquid = self.pheromone.get_all_liquid()
+
+            self.dif_liquid += np.sum(current_liquid - prev_liquid)
 
         return 0.0
 

@@ -20,7 +20,10 @@ class DataCollector(BaseDataCollector):
     def get_episode_length(self) -> int:
         return self.episode
 
-    def _record(self, task: Task, time: int, evaluation: float):
+    def pre_record(self, task, time: int):
+        pass
+
+    def record(self, task: Task, time: int, evaluation: float):
         debug_data = task.get_bot().brain.debugger.get_buf()[self.investigator_name]
         if self.data.shape[1] != debug_data.shape[0]:
             self.data = np.zeros((self.episode, debug_data.shape[0]))
