@@ -14,6 +14,8 @@ from ._xml_setting import gen_xml
 
 class AnalysisEnvironment(MjcTaskInterface):
     def __init__(self, liquid):
+        self.time = 0
+
         self.center_liquid = liquid
         self.dif_liquid = 0
 
@@ -46,10 +48,11 @@ class AnalysisEnvironment(MjcTaskInterface):
         return self.d
 
     def calc_step(self) -> float:
+        self.time += Settings.Simulation.TIMESTEP
         self.dif_liquid = 0
 
-        for t in range(Settings.Simulation.PHEROMONE_ITER):
-            if t < Settings.Task.SECRETION_PERIOD:
+        for self.time in range(Settings.Simulation.PHEROMONE_ITER):
+            if self.time < Settings.Task.SECRETION_PERIOD:
                 self.center_cell[0, 0] = self.center_liquid
             else:
                 self.center_cell[0, 0] = 0
