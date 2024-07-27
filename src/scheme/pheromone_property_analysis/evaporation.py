@@ -87,10 +87,12 @@ def create_and_save_graph(working_directory, dif_liquid, gas):
 
     plt.close('all')
 
+    return emg_max, emg_min
+
 
 def main(project_directory):
-    timestamp = time.strftime("%Y%m%d_%H%M%S")
-    # timestamp = "20240727_082609"
+    # timestamp = time.strftime("%Y%m%d_%H%M%S")
+    timestamp = "20240727_095058"
 
     working_directory = os.path.join(project_directory, timestamp)
     if not os.path.exists(working_directory):
@@ -103,11 +105,22 @@ def main(project_directory):
             np.save(os.path.join(task_directory, "dif_liquid"), data.dif_liquid)
             np.save(os.path.join(task_directory, "gas"), data.gas)
 
+    emg_max_list = []
+    emg_min_list = []
+
     for i in range(len(Settings.Task.EVAPORATION)):
         task_directory = os.path.join(working_directory, str(i))
         dif_liquid = np.load(os.path.join(task_directory, "dif_liquid.npy"))
         gas = np.load(os.path.join(task_directory, "gas.npy"))
-        create_and_save_graph(task_directory, dif_liquid, gas)
+        emg_max, emg_min = create_and_save_graph(task_directory, dif_liquid, gas)
+        emg_max_list.append(emg_max)
+        emg_min_list.append(emg_min)
+
+    fig = plt.figure()
+    axis = fig.add_subplot(1, 1, 1)
+    axis.plot(Settings.Task.EVAPORATION, emg_max_list)
+    axis.plot(Settings.Task.EVAPORATION, emg_min_list)
+    fig.savefig(os.path.join(working_directory, "speed_vs_coefficient.svg"))
 
 
 if __name__ == '__main__':
