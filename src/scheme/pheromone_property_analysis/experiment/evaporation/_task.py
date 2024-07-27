@@ -13,10 +13,9 @@ from ._xml_setting import gen_xml
 
 
 class AnalysisEnvironment(MjcTaskInterface):
-    def __init__(self, liquid):
+    def __init__(self, evaporation):
         self.time = -Settings.Simulation.TIMESTEP
 
-        self.center_liquid = liquid
         self.dif_liquid = 0
 
         xml = gen_xml()
@@ -29,7 +28,7 @@ class AnalysisEnvironment(MjcTaskInterface):
                 ny=Settings.World.NUM_CELL[1],
                 d=Settings.Pheromone.CELL_SIZE_FOR_CALCULATION,
                 sv=Settings.Pheromone.SATURATION_VAPOR,
-                evaporate=Settings.Pheromone.EVAPORATION,
+                evaporate=evaporation,
                 diffusion=Settings.Pheromone.DIFFUSION,
                 decrease=Settings.Pheromone.DECREASE
             ),
@@ -51,10 +50,7 @@ class AnalysisEnvironment(MjcTaskInterface):
         self.dif_liquid = 0
 
         for _ in range(Settings.Simulation.PHEROMONE_ITER):
-            if self.time < Settings.Task.SECRETION_PERIOD:
-                self.center_cell[0, 0] = self.center_liquid
-            else:
-                self.center_cell[0, 0] = 0
+            self.center_cell[0, 0] = Settings.Pheromone.LIQUID
 
             prev_liquid = self.pheromone.get_all_liquid()
             self.pheromone.update(Settings.Simulation.PHEROMONE_TIMESTEP, 1, dummies=True)
