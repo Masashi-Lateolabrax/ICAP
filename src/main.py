@@ -1,26 +1,19 @@
 from exp.the_simplest_task import main
 
 # # Task
-# the simplest task
+# Something
 #
 # # Objective
-# Detecting the factors that disrupt robot learning.
+# Something
 #
 # # Features
-#   - Agent: 1
-#   - Goal: 1
-#   - Optimizing generation: 300
-#   - Optimizing population: 17
-#   - Optimizing elite: 9
-#   - Episode: 120
-#   - LiDER perception: 0.0001
-#   - Loss function: gaussian distribution
+#   - Something
 #
 # # Difference
-#   - Increase the range of sensor perception
+#   - Nothing
 #
 # # Date
-# 2024-07-03 13:12
+# 2024-00-00 00:00
 
 if __name__ == '__main__':
     main()
