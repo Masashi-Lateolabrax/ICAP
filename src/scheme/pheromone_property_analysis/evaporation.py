@@ -4,14 +4,14 @@ import time
 import numpy as np
 
 if __name__ == "__main__":
-    from experiment.evaporation_vs_liquid import Settings, AnalysisEnvironment, DataCollector
+    from experiment.evaporation import Settings, AnalysisEnvironment, DataCollector
 else:
-    from .experiment.evaporation_vs_liquid import Settings, AnalysisEnvironment, DataCollector
+    from .experiment.evaporation import Settings, AnalysisEnvironment, DataCollector
 
 
-def collect(working_directory, liquid):
+def collect(working_directory, evaporation):
     collector = DataCollector(working_directory)
-    task = AnalysisEnvironment(liquid)
+    task = AnalysisEnvironment(evaporation)
     collector.run(task)
     collector.release()
     return collector
@@ -25,9 +25,7 @@ def create_and_save_graph(working_directory, dif_liquid, gas):
     max_gas = np.max(gas, axis=(1, 2))
     pheromone_size = np.zeros(gas.shape[0])
 
-    secretion_stop_index = np.max(
-        np.where(gas_stability[:int(Settings.Task.SECRETION_PERIOD / Settings.Simulation.TIMESTEP)] > 0.999)
-    )
+    secretion_stop_index = np.max(np.where(gas_stability > 0.999))
 
     effective_max_gas = max_gas[:gas_stability.shape[0]] * np.where(gas_stability > 0.999, 1.0, np.NAN)
     emg_max = np.average(
@@ -36,8 +34,6 @@ def create_and_save_graph(working_directory, dif_liquid, gas):
     emg_min = np.average(
         effective_max_gas[secretion_stop_index:][np.logical_not(np.isnan(effective_max_gas[secretion_stop_index:]))]
     )
-
-    decreasing = max_gas[secretion_stop_index:][max_gas[secretion_stop_index:] > emg_max * 0.5]
 
     for t in range(gas.shape[0]):
         uppers = np.where(gas[t, :, :] >= max_gas[t] * 0.5)
@@ -82,14 +78,6 @@ def create_and_save_graph(working_directory, dif_liquid, gas):
     fig.savefig(os.path.join(working_directory, "effective_max_gas.svg"))
 
     fig = plt.figure()
-    xs = [(i + secretion_stop_index) * Settings.Simulation.TIMESTEP for i in range(0, decreasing.shape[0])]
-    axis = fig.add_subplot(1, 1, 1)
-    axis.plot(xs, [emg_max for _ in range(len(xs))])
-    axis.plot(xs, decreasing)
-    axis.set_title(f"Half-life = {len(xs) * Settings.Simulation.TIMESTEP}")
-    fig.savefig(os.path.join(working_directory, "max_gas_decreasing.svg"))
-
-    fig = plt.figure()
     axis = fig.add_subplot(1, 1, 1)
     axis.plot(
         [i * Settings.Simulation.TIMESTEP for i in range(pheromone_size.shape[0])],
@@ -102,20 +90,20 @@ def create_and_save_graph(working_directory, dif_liquid, gas):
 
 def main(project_directory):
     timestamp = time.strftime("%Y%m%d_%H%M%S")
-    # timestamp = "20240726_183852"
+    # timestamp = "20240727_082609"
 
     working_directory = os.path.join(project_directory, timestamp)
     if not os.path.exists(working_directory):
         os.mkdir(working_directory)
 
-        for i, liquid in enumerate(Settings.Task.LIQUID):
+        for i, evaporation in enumerate(Settings.Task.EVAPORATION):
             task_directory = os.path.join(working_directory, str(i))
             os.mkdir(task_directory)
-            data = collect(task_directory, liquid)
+            data = collect(task_directory, evaporation)
             np.save(os.path.join(task_directory, "dif_liquid"), data.dif_liquid)
             np.save(os.path.join(task_directory, "gas"), data.gas)
 
-    for i in range(len(Settings.Task.LIQUID)):
+    for i in range(len(Settings.Task.EVAPORATION)):
         task_directory = os.path.join(working_directory, str(i))
         dif_liquid = np.load(os.path.join(task_directory, "dif_liquid.npy"))
         gas = np.load(os.path.join(task_directory, "gas.npy"))

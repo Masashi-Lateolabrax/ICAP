@@ -1,0 +1,32 @@
+Display:
+  MAX_GEOM: 7800
+  RESOLUTION: [ 500, 500 ]
+  ZOOM: 13
+
+Simulation:
+  TIMESTEP: 0.03
+  PHEROMONE_ITER: 5
+  PHEROMONE_TIMESTEP: "eval: $Simulation.TIMESTEP / $Simulation.PHEROMONE_ITER"
+
+World:
+  NUM_CELL: [ 51, 51 ]
+  CENTER_INDEX: [
+    "eval: int($World.NUM_CELL[0] * 0.5)",
+    "eval: int($World.NUM_CELL[1] * 0.5)"
+  ]
+
+Pheromone:
+  DECREASE: 0.1
+  DIFFUSION: 35.0
+  SATURATION_VAPOR: 10.0
+
+  CELL_SIZE_FOR_CALCULATION: 1
+  CELL_SIZE_FOR_MUJOCO: 0.2
+
+  LIQUID: 100000
+
+
+Task:
+  EPISODE_LENGTH: 120
+  EVAPORATION: [ 1.0 ]
+
