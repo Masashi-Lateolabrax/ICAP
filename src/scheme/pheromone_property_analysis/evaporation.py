@@ -22,18 +22,9 @@ def create_and_save_graph(working_directory, dif_liquid, gas):
 
     dif_gas = gas[1:, :, :] - gas[:-1, :, :]
     gas_stability = np.exp(-np.linalg.norm(dif_gas, axis=(1, 2)))
+    stable_index = np.argmax(gas_stability)
     max_gas = np.max(gas, axis=(1, 2))
     pheromone_size = np.zeros(gas.shape[0])
-
-    secretion_stop_index = np.max(np.where(gas_stability > 0.999))
-
-    effective_max_gas = max_gas[:gas_stability.shape[0]] * np.where(gas_stability > 0.999, 1.0, np.NAN)
-    emg_max = np.average(
-        effective_max_gas[:secretion_stop_index][np.logical_not(np.isnan(effective_max_gas[:secretion_stop_index]))]
-    )
-    emg_min = np.average(
-        effective_max_gas[secretion_stop_index:][np.logical_not(np.isnan(effective_max_gas[secretion_stop_index:]))]
-    )
 
     for t in range(gas.shape[0]):
         uppers = np.where(gas[t, :, :] >= max_gas[t] * 0.5)
@@ -47,7 +38,7 @@ def create_and_save_graph(working_directory, dif_liquid, gas):
         [i * Settings.Simulation.TIMESTEP for i in range(dif_liquid.shape[0])],
         dif_liquid
     )
-    axis.set_title(f"speed={dif_liquid[secretion_stop_index]}")
+    axis.set_title(f"stability={gas_stability[stable_index]}, speed={dif_liquid[stable_index]}")
     fig.savefig(os.path.join(working_directory, "dif_liquid.svg"))
 
     fig = plt.figure()
@@ -68,16 +59,6 @@ def create_and_save_graph(working_directory, dif_liquid, gas):
     fig.savefig(os.path.join(working_directory, "max_gas.svg"))
 
     fig = plt.figure()
-    axis1 = fig.add_subplot(1, 1, 1)
-    axis1.set_title(f"max={np.average(emg_max)}, min={np.average(emg_min)}")
-    axis1.set_ylabel("effective max gas")
-    axis1.plot(
-        [i * Settings.Simulation.TIMESTEP for i in range(effective_max_gas.shape[0])],
-        effective_max_gas,
-    )
-    fig.savefig(os.path.join(working_directory, "effective_max_gas.svg"))
-
-    fig = plt.figure()
     axis = fig.add_subplot(1, 1, 1)
     axis.plot(
         [i * Settings.Simulation.TIMESTEP for i in range(pheromone_size.shape[0])],
@@ -87,12 +68,12 @@ def create_and_save_graph(working_directory, dif_liquid, gas):
 
     plt.close('all')
 
-    return emg_max, emg_min
+    return dif_liquid[stable_index]
 
 
 def main(project_directory):
-    # timestamp = time.strftime("%Y%m%d_%H%M%S")
-    timestamp = "20240727_095058"
+    timestamp = time.strftime("%Y%m%d_%H%M%S")
+    # timestamp = "20240727_095058"
 
     working_directory = os.path.join(project_directory, timestamp)
     if not os.path.exists(working_directory):
@@ -105,21 +86,18 @@ def main(project_directory):
             np.save(os.path.join(task_directory, "dif_liquid"), data.dif_liquid)
             np.save(os.path.join(task_directory, "gas"), data.gas)
 
-    emg_max_list = []
-    emg_min_list = []
+    evaporation_speeds = []
 
     for i in range(len(Settings.Task.EVAPORATION)):
         task_directory = os.path.join(working_directory, str(i))
         dif_liquid = np.load(os.path.join(task_directory, "dif_liquid.npy"))
         gas = np.load(os.path.join(task_directory, "gas.npy"))
-        emg_max, emg_min = create_and_save_graph(task_directory, dif_liquid, gas)
-        emg_max_list.append(emg_max)
-        emg_min_list.append(emg_min)
+        evaporation_speed = create_and_save_graph(task_directory, dif_liquid, gas)
+        evaporation_speeds.append(evaporation_speed)
 
     fig = plt.figure()
     axis = fig.add_subplot(1, 1, 1)
-    axis.plot(Settings.Task.EVAPORATION, emg_max_list)
-    axis.plot(Settings.Task.EVAPORATION, emg_min_list)
+    axis.plot(Settings.Task.EVAPORATION, evaporation_speeds)
     fig.savefig(os.path.join(working_directory, "speed_vs_coefficient.svg"))
 
 
