@@ -28,5 +28,5 @@ Pheromone:
 
 Task:
   EPISODE_LENGTH: 120
-  EVAPORATION: "eval: [i for i in range(5,501,5)]"
+  EVAPORATION: "eval: [i for i in range(5,151,5)]"
 
