@@ -71,11 +71,9 @@ def create_and_save_graph(working_directory, dif_liquid, gas):
     return dif_liquid[stable_index]
 
 
-def main(project_directory):
-    timestamp = time.strftime("%Y%m%d_%H%M%S")
-    # timestamp = "20240727_095058"
+def main(timestamp: str, project_directory: str):
+    working_directory: str = os.path.join(project_directory, timestamp)
 
-    working_directory = os.path.join(project_directory, timestamp)
     if not os.path.exists(working_directory):
         os.mkdir(working_directory)
 
@@ -101,5 +99,27 @@ def main(project_directory):
     fig.savefig(os.path.join(working_directory, "speed_vs_coefficient.svg"))
 
 
+def curve_fitting(timestamp: str, project_directory: str):
+    working_directory = os.path.join(project_directory, timestamp)
+
+    def func(x, a, b, c):
+        return a * np.log(x) + b * x + c
+
+    from scipy.optimize import curve_fit
+
+    data: np.ndarray = np.load(os.path.join(working_directory, "speed_vs_coefficient.npy"))
+    popt, _ = curve_fit(func, data[0], data[1])
+    xs = np.arange(300, 20000, dtype=np.float64) / 100
+
+    fig = plt.figure()
+    axis = fig.add_subplot(1, 1, 1)
+    axis.set_title(f"{popt[0]:6g}Ln(x)+{popt[1]:6g}x+{popt[2]:6g}")
+    axis.scatter(data[0], data[1], label='Data')
+    axis.plot(xs, func(xs, *popt), label='func')
+    fig.savefig(os.path.join(working_directory, "speed_vs_coefficient(curve_fit).svg"))
+
+
 if __name__ == '__main__':
-    main(os.path.dirname(__file__))
+    main(time.strftime("%Y%m%d_%H%M%S"), os.path.dirname(__file__))
+    # main("20240727_095058", os.path.dirname(__file__))
+    # curve_fitting("20240729_003124", os.path.dirname(__file__))
