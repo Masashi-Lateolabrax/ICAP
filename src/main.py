@@ -20,10 +20,10 @@ from scheme.pheromone_property_analysis.evaporation import main
 #   - EPISODE: 120
 #
 # # Changes
-#   - Change SATURATION_VAPOR to 15.0.
+#   - Change SATURATION_VAPOR to 5.0.
 #
 # # Date
-# 2024-07-30 05:14
+# 2024-07-30 05:17
 
 if __name__ == '__main__':
     main(time.strftime("%Y%m%d_%H%M%S"), os.path.dirname(__file__))
