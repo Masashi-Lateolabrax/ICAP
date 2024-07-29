@@ -1,4 +1,5 @@
 import os.path
+import time
 
 from scheme.pheromone_property_analysis.evaporation import main
 
@@ -19,10 +20,10 @@ from scheme.pheromone_property_analysis.evaporation import main
 #   - EPISODE: 120
 #
 # # Changes
-#   - EVAPORATION has values from 5 to 150 in steps of 5
+#   - Units of Evaporation Speed [/step -> /seconds]
 #
 # # Date
-# 2024-07-29 17:39
+# 2024-07-30 04:28
 
 if __name__ == '__main__':
-    main(os.path.dirname(__file__))
+    main(time.strftime("%Y%m%d_%H%M%S"), os.path.dirname(__file__))
