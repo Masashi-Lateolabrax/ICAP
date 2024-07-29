@@ -60,6 +60,8 @@ class AnalysisEnvironment(MjcTaskInterface):
 
             self.time += Settings.Simulation.PHEROMONE_TIMESTEP
 
+        self.dif_liquid /= Settings.Simulation.TIMESTEP
+
         return 0.0
 
     def run(self) -> float:
