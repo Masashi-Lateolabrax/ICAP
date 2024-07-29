@@ -10,7 +10,7 @@ from scheme.pheromone_property_analysis.evaporation import main
 # Analysing the effect of the evaporation coefficient effect on evaporation speed.
 #
 # # Features
-#   - EVAPORATION: [i for i in range(5,501,5)]
+#   - EVAPORATION: [i for i in range(5,151,5)]
 #   - DECREASE: 0.1
 #   - DIFFUSION: 35.0
 #   - SATURATION_VAPOR: 10.0
@@ -19,10 +19,10 @@ from scheme.pheromone_property_analysis.evaporation import main
 #   - EPISODE: 120
 #
 # # Changes
-#   - EVAPORATION has values from 5 to 500 in steps of 5
+#   - EVAPORATION has values from 5 to 150 in steps of 5
 #
 # # Date
-# 2024-07-29 00:30
+# 2024-07-29 17:39
 
 if __name__ == '__main__':
     main(os.path.dirname(__file__))
