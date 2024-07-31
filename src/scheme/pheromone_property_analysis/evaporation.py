@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import os
-import time
 import numpy as np
 
 if __name__ == "__main__":
@@ -94,8 +93,10 @@ def main(timestamp: str, project_directory: str):
         evaporation_speeds.append(evaporation_speed)
 
     fig = plt.figure()
+    data = np.array([Settings.Task.EVAPORATION, evaporation_speeds])
+    np.save(os.path.join(working_directory, "speed_vs_coefficient.npy"), data)
     axis = fig.add_subplot(1, 1, 1)
-    axis.plot(Settings.Task.EVAPORATION, evaporation_speeds)
+    axis.plot(data[0], data[1])
     fig.savefig(os.path.join(working_directory, "speed_vs_coefficient.svg"))
 
 
@@ -120,6 +121,7 @@ def curve_fitting(timestamp: str, project_directory: str):
 
 
 if __name__ == '__main__':
+    import time
     main(time.strftime("%Y%m%d_%H%M%S"), os.path.dirname(__file__))
     # main("20240727_095058", os.path.dirname(__file__))
     # curve_fitting("20240729_003124", os.path.dirname(__file__))

@@ -18,7 +18,6 @@ World:
 Pheromone:
   DECREASE: 0.1
   DIFFUSION: 35.0
-  SATURATION_VAPOR: 5.0
 
   CELL_SIZE_FOR_CALCULATION: 1
   CELL_SIZE_FOR_MUJOCO: 0.2
@@ -29,4 +28,5 @@ Pheromone:
 Task:
   EPISODE_LENGTH: 120
   EVAPORATION: "eval: [i for i in range(5,151,5)]"
+  SATURATION_VAPOR: "eval: [i for i in range(1,10)]"
 
