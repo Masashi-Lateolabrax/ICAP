@@ -1,29 +1,19 @@
-import os.path
-import time
-
-from scheme.pheromone_property_analysis.sv_vs_ev_speed_curve import main
+from exp.the_simplest_task import main
 
 # # Task
-# Pheromone Property Analysis
-#   Evaporation Speed Curve
+# Something
 #
 # # Objective
-# Analysing the effect of the evaporation coefficient effect on evaporation speed.
+# Something
 #
 # # Features
-#   - EVAPORATION: [i for i in range(5,151,5)]
-#   - DECREASE: 0.1
-#   - DIFFUSION: 35.0
-#   - SATURATION_VAPOR: [i for i in range(1,10)]
-#   - LIQUID: 1000000000
-#   - TIMESTEP: 0.03
-#   - EPISODE: 120
+#   - Something
 #
 # # Changes
 #   - Nothing
 #
 # # Date
-# 2024-07-31 21:49
+# 2024-00-00 00:00
 
 if __name__ == '__main__':
-    main(time.strftime("%Y%m%d_%H%M%S"), os.path.dirname(__file__))
+    main()
