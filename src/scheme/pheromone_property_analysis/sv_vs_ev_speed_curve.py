@@ -1,8 +1,9 @@
 import warnings
+import os
 
 import matplotlib.pyplot as plt
-import os
 import numpy as np
+from scipy.optimize import curve_fit
 
 if __name__ == "__main__":
     from experiment.SV_vs_EV_speed_curve import Settings, AnalysisEnvironment, DataCollector
@@ -11,8 +12,6 @@ else:
 
 
 def collect_data(parent_working_directory):
-    from scipy.optimize import curve_fit
-
     properties = np.zeros((len(Settings.Task.SATURATION_VAPOR), 3))
     for i, sv in enumerate(Settings.Task.SATURATION_VAPOR):
         working_directory = os.path.join(parent_working_directory, f"sv_{sv:03.0f}")
@@ -46,22 +45,28 @@ def collect_data(parent_working_directory):
         def func(x, a, b, c):
             return a * np.log(x) + b * x + c
 
-        popt, _ = curve_fit(func, evaporation_speeds[0], evaporation_speeds[1])
-        properties[i] = popt
+        optimized_parameter, _ = curve_fit(func, evaporation_speeds[0], evaporation_speeds[1])
+        properties[i] = optimized_parameter
 
     np.save(os.path.join(parent_working_directory, "func_properties"), properties)
 
 
 def create_and_save_graph(working_directory):
-    prop = np.load(os.path.join(working_directory, "func_properties.npy"))
+    optimized_parameter = np.load(os.path.join(working_directory, "func_properties.npy"))
     xs = np.array(Settings.Task.SATURATION_VAPOR)
 
     fig = plt.figure()
     axis = fig.add_subplot(1, 1, 1)
-    axis.plot(xs, prop[:, 0])
-    axis.plot(xs, prop[:, 1])
-    axis.plot(xs, prop[:, 2])
+    axis.plot(xs, optimized_parameter[:, 0])
+    axis.plot(xs, optimized_parameter[:, 1])
+    axis.plot(xs, optimized_parameter[:, 2])
     fig.savefig(os.path.join(working_directory, "sv_vs_speed_curve_property.svg"))
+
+    def func(x, a, b):
+        return a * x + b
+
+    for p in [optimized_parameter[:, i] for i in range(optimized_parameter.shape[1])]:
+        print(curve_fit(func, xs, p)[0])
 
 
 def main(timestamp: str, project_directory: str):
