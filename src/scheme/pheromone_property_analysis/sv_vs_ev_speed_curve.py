@@ -15,7 +15,7 @@ else:
 def collect_data(parent_working_directory):
     properties = np.zeros((len(Settings.Task.SATURATION_VAPOR), 3))
     for i, sv in enumerate(Settings.Task.SATURATION_VAPOR):
-        working_directory = os.path.join(parent_working_directory, f"sv_{sv:03.0f}")
+        working_directory = os.path.join(parent_working_directory, f"sv_{sv:03.3f}")
         if os.path.exists(working_directory):
             warnings.warn(f"The task where SV is {sv}, has already been calculated.")
             continue
@@ -23,7 +23,7 @@ def collect_data(parent_working_directory):
 
         evaporation_speeds = np.zeros((2, len(Settings.Task.EVAPORATION)))
         for j, e in enumerate(Settings.Task.EVAPORATION):
-            task_directory = os.path.join(working_directory, f"ev_{e:03.0f}")
+            task_directory = os.path.join(working_directory, f"ev_{e:03.3f}")
             if os.path.exists(task_directory):
                 warnings.warn(f"The task where SV and EV are {sv} and {e} respectively, has already been calculated.")
                 continue
