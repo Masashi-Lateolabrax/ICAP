@@ -49,17 +49,16 @@ def collect_data(parent_working_directory):
         optimized_parameter, _ = curve_fit(func, evaporation_speeds[0], evaporation_speeds[1])
         properties[i] = optimized_parameter
 
-        data = np.array([Settings.Task.EVAPORATION, evaporation_speeds])
-        popt, _ = curve_fit(func, data[0], data[1])
+        popt, _ = curve_fit(func, evaporation_speeds[0], evaporation_speeds[1])
 
-        new_indices = np.linspace(0, data.shape[1] - 1, data.shape[1] * 10)
-        linear_interp = interp1d(new_indices, data[0], kind='linear')
+        new_indices = np.linspace(0, evaporation_speeds.shape[1] - 1, evaporation_speeds.shape[1] * 10)
+        linear_interp = interp1d(new_indices, evaporation_speeds[0], kind='linear')
         new_array = linear_interp(new_indices)
 
         fig = plt.figure()
         axis = fig.add_subplot(1, 1, 1)
         axis.set_title(f"{popt[0]:6g}Ln(x)+{popt[1]:6g}x+{popt[2]:6g}")
-        axis.scatter(data[0], data[1], label='Data')
+        axis.scatter(evaporation_speeds[0], evaporation_speeds[1], label='Data')
         axis.plot(new_array, func(new_array, *popt), label='func')
         fig.savefig(os.path.join(working_directory, "speed_vs_coefficient(curve_fit).svg"))
 
