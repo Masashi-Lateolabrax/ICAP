@@ -16,4 +16,4 @@ from exp.the_simplest_task import main
 # 2024-00-00 00:00
 
 if __name__ == '__main__':
-    main()
+    print("Hello")
