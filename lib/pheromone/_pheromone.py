@@ -36,6 +36,24 @@ def _calc_dico(w: int, h: int, xi: float, yi: float):
     return hit
 
 
+class PheromoneCell:
+    def __init__(self, liquid_cell: numpy.ndarray, gas_cell: numpy.ndarray):
+        self._liquid = liquid_cell
+        self._gas = gas_cell
+
+    def set_gas(self, value):
+        self._gas[0, 0] = value
+
+    def set_liquid(self, value):
+        self._liquid = value
+
+    def get_gas(self):
+        return self._gas[0, 0]
+
+    def get_liquid(self):
+        return self._liquid[0, 0]
+
+
 class PheromoneField2:
     def __init__(
             self,
@@ -69,6 +87,10 @@ class PheromoneField2:
 
     def get_cell(self, xi: int, yi: int):
         return self._liquid[xi:xi + 1, yi:yi + 1], self._gas[xi:xi + 1, yi:yi + 1]
+
+    def get_cell_v2(self, xi: int, yi: int) -> PheromoneCell:
+        cell = PheromoneCell(self._liquid[xi:xi + 1, yi:yi + 1], self._gas[xi:xi + 1, yi:yi + 1])
+        return cell
 
     def get_all_liquid(self):
         return numpy.copy(self._liquid)
