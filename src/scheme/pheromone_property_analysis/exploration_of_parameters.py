@@ -3,10 +3,12 @@ import os.path
 import mujoco
 
 from lib.optimizer import CMAES
-from lib.utils import BaseDataCollector
 from lib.analizer.recorder import Recorder
 
-from experiment.exploration_of_parameters import *
+if __name__ == "__main__":
+    from experiment.exploration_of_parameters import *
+else:
+    from .experiment.exploration_of_parameters import *
 
 
 def main(working_directory):

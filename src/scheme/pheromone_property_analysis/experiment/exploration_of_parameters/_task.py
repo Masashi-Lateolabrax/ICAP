@@ -65,8 +65,8 @@ class Task(TaskInterface):
             warnings.warn("The pheromone field calculation fell into an unstable state.")
             return 100000000.0
 
-        a = np.where(np.exp(-stability) > Settings.Evaluation.STABILITY_THRESHOLD)
-        if len(a) == 0:
+        a = np.where(np.exp(-stability) > Settings.Evaluation.STABILITY_THRESHOLD)[0]
+        if a.size == 0:
             warnings.warn("The pheromone field calculation is very slow. [STABLE]")
             return 100000000.0
 
@@ -85,8 +85,8 @@ class Task(TaskInterface):
         )
         field_size = np.max(distances) * Settings.Pheromone.CELL_SIZE_FOR_CALCULATION
 
-        a = np.where(np.max(gas_buf2, axis=(1, 2)) <= stable_gas_volume * 0.5)
-        if len(a) == 0:
+        a = np.where(np.max(gas_buf2, axis=(1, 2)) <= stable_gas_volume * 0.5)[0]
+        if a.size == 0:
             warnings.warn("The pheromone field calculation is very slow. [DECREASE]")
             return 100000000.0
         decreased_state_index = np.min(a)
