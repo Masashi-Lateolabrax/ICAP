@@ -1,1 +1,1 @@
-from ._pheromone import PheromoneField, PheromoneField2
+from ._pheromone import PheromoneField, PheromoneField2, PheromoneCell

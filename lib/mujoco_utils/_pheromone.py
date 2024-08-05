@@ -5,7 +5,7 @@ import numpy as np
 
 from mujoco_xml_generator.utils import DummyGeom
 
-from lib.pheromone import PheromoneField2
+from lib.pheromone import PheromoneField2, PheromoneCell
 from .mujoco_obj import BodyObject
 
 
@@ -46,6 +46,9 @@ class PheromoneFieldWithDummies:
 
     def get_cell(self, xi: int, yi: int) -> np.ndarray:
         return self._pheromone.get_cell(xi, yi)
+
+    def get_cell_v2(self, xi: int, yi: int) -> PheromoneCell:
+        return self._pheromone.get_cell_v2(xi, yi)
 
     def get_all_liquid(self):
         return self._pheromone.get_all_liquid()

@@ -1,0 +1,36 @@
+Display:
+  MAX_GEOM: 7800
+  RESOLUTION: [ 500, 500 ]
+  ZOOM: 13
+
+Simulation:
+  EPISODE_LENGTH: 15
+  TIMESTEP: 0.001
+
+Pheromone:
+  NUM_CELL: [ 51, 51 ]
+  CENTER_INDEX: [
+    "eval: int($Pheromone.NUM_CELL[0] * 0.5)",
+    "eval: int($Pheromone.NUM_CELL[1] * 0.5)"
+  ]
+
+  CELL_SIZE_FOR_CALCULATION: 1
+  CELL_SIZE_FOR_MUJOCO: 0.2
+  LIQUID: 1000000000
+
+Optimization:
+  GENERATION: 1000
+  POPULATION: 10
+  NUM_ELITE: "eval: int($Optimization.POPULATION * 0.5)"
+  SIGMA: 0.3
+
+  Loss:
+    STABLE_STATE_TIME: 5
+    EVAPORATION_SPEED: 0.01
+    RELATIVE_STABLE_GAS_VOLUME: 0.4
+    DECREASED_STATE_TIME: 10
+    FIELD_SIZE: "eval: 0.350 * $Pheromone.CELL_SIZE_FOR_CALCULATION / $Pheromone.CELL_SIZE_FOR_MUJOCO"
+
+Evaluation:
+  EPS: 0.001
+  STABILITY_THRESHOLD: 0.9999999

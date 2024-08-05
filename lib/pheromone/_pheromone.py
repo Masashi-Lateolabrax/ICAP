@@ -45,7 +45,7 @@ class PheromoneCell:
         self._gas[0, 0] = value
 
     def set_liquid(self, value):
-        self._liquid = value
+        self._liquid[0, 0] = value
 
     def get_gas(self):
         return self._gas[0, 0]
