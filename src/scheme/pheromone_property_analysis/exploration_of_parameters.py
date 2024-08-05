@@ -5,10 +5,7 @@ import mujoco
 from lib.optimizer import CMAES
 from lib.analizer.recorder import Recorder
 
-if __name__ == "__main__":
-    from experiment.exploration_of_parameters import *
-else:
-    from .experiment.exploration_of_parameters import *
+from src.scheme.pheromone_property_analysis.experiment.exploration_of_parameters import *
 
 
 def main(working_directory):
@@ -18,7 +15,8 @@ def main(working_directory):
         generation=Settings.Optimization.GENERATION,
         population=Settings.Optimization.POPULATION,
         mu=Settings.Optimization.NUM_ELITE,
-        sigma=Settings.Optimization.SIGMA
+        sigma=Settings.Optimization.SIGMA,
+        split_tasks=1
     )
     cmaes.optimize(generator)
     hist = cmaes.get_history()
