@@ -142,7 +142,7 @@ class TaskForRec(MjcTaskInterface):
 
         fig = plt.figure()
         axis = fig.add_subplot(1, 1, 1)
-        axis.set_title(f"The time of stable state: {stable_state_time}")
+        axis.set_title(f"The stable time: {stable_state_time:.6f}, stability: {stability[stable_state_index]:.6f}")
         axis.plot((1.5 + np.arange(0, stability.shape[0])) * Settings.Simulation.TIMESTEP, stability)
         fig.savefig(os.path.join(working_directory, "stability.svg"))
 
@@ -154,7 +154,7 @@ class TaskForRec(MjcTaskInterface):
 
         fig = plt.figure()
         axis = fig.add_subplot(1, 1, 1)
-        axis.set_title(f"absolute: {stable_gas_volume}, relative: {relative_stable_gas_volume}")
+        axis.set_title(f"absolute: {stable_gas_volume:.6f}, relative: {relative_stable_gas_volume:.6f}")
         axis.plot((1 + np.arange(0, gas_volume.shape[0])) * Settings.Simulation.TIMESTEP, gas_volume)
         fig.savefig(os.path.join(working_directory, "gas_volume.svg"))
 
