@@ -30,8 +30,6 @@ class Task(TaskInterface):
             Settings.Optimization.Loss.FIELD_SIZE,
         ])
 
-        self.gas_buf = np.zeros(0)
-
     def run(self) -> float:
         total_step = int(Settings.Simulation.EPISODE_LENGTH / Settings.Simulation.TIMESTEP + 0.5)
 
@@ -60,13 +58,13 @@ class Task(TaskInterface):
             self.pheromone.update(Settings.Simulation.TIMESTEP)
             gas_buf2[t] = self.pheromone.get_all_gas()
 
-        stability = np.max(np.abs(self.gas_buf[1:] - self.gas_buf[:-1]), axis=(1, 2))
+        stability = np.max(np.abs(gas_buf1[1:] - gas_buf1[:-1]), axis=(1, 2))
 
-        if np.max(np.abs(stability[1:] - stability[:-1])) > Settings.Evaluation.EPS:
+        if np.max(stability) > Settings.Evaluation.EPS:
             warnings.warn("The pheromone field calculation fell into an unstable state.")
             return 100000000.0
 
-        a = np.where(np.exp(-stability) > Settings.Evaluation.STABILITY_THRESHOLD)[0]
+        a = np.where(stability < Settings.Evaluation.STABILITY_THRESHOLD)[0]
         if a.size == 0:
             warnings.warn("The pheromone field calculation is very slow. [STABLE]")
             return 100000000.0

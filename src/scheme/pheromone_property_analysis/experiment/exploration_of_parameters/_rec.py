@@ -1,4 +1,5 @@
 import os
+import warnings
 
 import mujoco
 import numpy as np
@@ -112,9 +113,11 @@ class TaskForRec(MjcTaskInterface):
 
     def save_log(self, working_directory):
         stability = np.max(np.abs(self.gas_buf[1:] - self.gas_buf[:-1]), axis=(1, 2))
-        dif_stability = np.abs(stability[1:] - stability[:-1])
 
-        a = np.where(np.exp(-stability) > Settings.Evaluation.STABILITY_THRESHOLD)[0]
+        a = np.where(stability < Settings.Evaluation.STABILITY_THRESHOLD)[0]
+        if a.size == 0:
+            a = np.array([0])
+            warnings.warn("Pheromone viscosity is very high.")
         stable_state_index = np.min(a)
         stable_state_time = stable_state_index * Settings.Simulation.TIMESTEP
 
@@ -137,12 +140,6 @@ class TaskForRec(MjcTaskInterface):
         axis.set_title(f"The time of stable state: {stable_state_time}")
         axis.plot((1.5 + np.arange(0, stability.shape[0])) * Settings.Simulation.TIMESTEP, stability)
         fig.savefig(os.path.join(working_directory, "stability.svg"))
-
-        fig = plt.figure()
-        axis = fig.add_subplot(1, 1, 1)
-        axis.set_title(f"Maximum of dif_stability: {np.max(dif_stability)}")
-        axis.plot((1 + np.arange(0, dif_stability.shape[0])) * Settings.Simulation.TIMESTEP, dif_stability)
-        fig.savefig(os.path.join(working_directory, "dif_stability.svg"))
 
         fig = plt.figure()
         axis = fig.add_subplot(1, 1, 1)
