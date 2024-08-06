@@ -112,9 +112,16 @@ class TaskForRec(MjcTaskInterface):
         return 0.0
 
     def save_log(self, working_directory):
-        stability = np.max(np.abs(self.gas_buf[1:] - self.gas_buf[:-1]), axis=(1, 2))
+        stability = np.zeros(self.gas_buf.shape[0])
+        stability[0:2] = np.NAN
+        for t in range(2, self.gas_buf.shape[0]):
+            current_gas = (self.gas_buf[t - 2] - self.gas_buf[t - 1]).ravel()
+            next_gas = (self.gas_buf[t - 1] - self.gas_buf[t]).ravel()
+            d = np.linalg.norm(next_gas) * np.linalg.norm(current_gas)
+            stability[t] = np.dot(current_gas, next_gas)
+            stability[t] = stability[t - 2] / d if d > 0.00000001 else 0.0
 
-        a = np.where(stability < Settings.Evaluation.STABILITY_THRESHOLD)[0]
+        a = np.where(stability > Settings.Evaluation.STABILITY_THRESHOLD)[0]
         if a.size == 0:
             a = np.array([0])
             warnings.warn("Pheromone viscosity is very high.")

@@ -58,13 +58,15 @@ class Task(TaskInterface):
             self.pheromone.update(Settings.Simulation.TIMESTEP)
             gas_buf2[t] = self.pheromone.get_all_gas()
 
-        stability = np.max(np.abs(gas_buf1[1:] - gas_buf1[:-1]), axis=(1, 2))
+        stability = np.zeros(gas_buf1.shape[0] - 2)
+        for t in range(2, gas_buf1.shape[0]):
+            current_gas = (gas_buf1[t - 2] - gas_buf1[t - 1]).ravel()
+            next_gas = (gas_buf1[t - 1] - gas_buf1[t]).ravel()
+            d = np.linalg.norm(next_gas) * np.linalg.norm(current_gas)
+            stability[t - 2] = np.dot(current_gas, next_gas)
+            stability[t - 2] = stability[t - 2] / d if d > 0.00000001 else 0.0
 
-        if np.max(stability) > Settings.Evaluation.EPS:
-            warnings.warn("The pheromone field calculation fell into an unstable state.")
-            return 100000000.0
-
-        a = np.where(stability < Settings.Evaluation.STABILITY_THRESHOLD)[0]
+        a = np.where(stability > Settings.Evaluation.STABILITY_THRESHOLD)[0]
         if a.size == 0:
             warnings.warn("The pheromone field calculation is very slow. [STABLE]")
             return 100000000.0
@@ -103,8 +105,10 @@ class Task(TaskInterface):
             relative_stable_gas_volume,
             field_size
         ])
+        loss = float(np.sum(((result - self._target) ** 2) * np.array(Settings.Optimization.Loss.WEIGHT)))
+        loss += (1 - float(np.min(stability))) * 0.5 * Settings.Optimization.Loss.UNSTABLE_WEIGHT
 
-        return float(np.sum(((result - self._target) ** 2) * np.array(Settings.Optimization.Loss.WEIGHT)))
+        return loss
 
 
 class Generator(TaskGenerator):
