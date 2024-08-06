@@ -111,7 +111,7 @@ class TaskForRec(MjcTaskInterface):
         return 0.0
 
     def save_log(self, working_directory):
-        stability = np.linalg.norm(self.gas_buf[1:] - self.gas_buf[:-1], axis=(1, 2))
+        stability = np.max(np.abs(self.gas_buf[1:] - self.gas_buf[:-1]), axis=(1, 2))
         dif_stability = np.abs(stability[1:] - stability[:-1])
 
         a = np.where(np.exp(-stability) > Settings.Evaluation.STABILITY_THRESHOLD)[0]
@@ -130,6 +130,7 @@ class TaskForRec(MjcTaskInterface):
             indexes = np.array(uppers).T
             d = np.linalg.norm(indexes - center_index, axis=1)
             distances[t] = np.max(d)
+        distances *= Settings.Pheromone.CELL_SIZE_FOR_CALCULATION
 
         fig = plt.figure()
         axis = fig.add_subplot(1, 1, 1)
@@ -157,5 +158,6 @@ class TaskForRec(MjcTaskInterface):
 
         fig = plt.figure()
         axis = fig.add_subplot(1, 1, 1)
+        axis.set_title(f"target: {Settings.Optimization.Loss.FIELD_SIZE}")
         axis.plot((1 + np.arange(0, distances.shape[0])) * Settings.Simulation.TIMESTEP, distances)
         fig.savefig(os.path.join(working_directory, "size.svg"))

@@ -60,7 +60,7 @@ class Task(TaskInterface):
             self.pheromone.update(Settings.Simulation.TIMESTEP)
             gas_buf2[t] = self.pheromone.get_all_gas()
 
-        stability = np.linalg.norm(gas_buf1[1:] - gas_buf1[:-1], axis=(1, 2))
+        stability = np.max(np.abs(self.gas_buf[1:] - self.gas_buf[:-1]), axis=(1, 2))
 
         if np.max(np.abs(stability[1:] - stability[:-1])) > Settings.Evaluation.EPS:
             warnings.warn("The pheromone field calculation fell into an unstable state.")
