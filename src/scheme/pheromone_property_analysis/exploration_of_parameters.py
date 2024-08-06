@@ -1,5 +1,6 @@
 import os.path
 
+import numpy as np
 import mujoco
 
 from lib.optimizer import CMAES
@@ -22,6 +23,8 @@ def main(working_directory):
     hist = cmaes.get_history()
     hist.save(os.path.join(working_directory, "history.npy"))
 
+    best = hist.get_min()
+
     camera = mujoco.MjvCamera()
     camera.elevation = -90
     camera.distance = Settings.Display.ZOOM
@@ -34,8 +37,15 @@ def main(working_directory):
         camera=camera,
         max_geom=Settings.Display.MAX_GEOM
     )
-    task = TaskForRec(hist.get_min().min_para)
+    task = TaskForRec(best.min_para)
     recorder.run(task)
+    task.save_log(working_directory)
+
+    para = np.log(1 + np.exp(best.min_para))
+    print(f"sv = {para[0]}")
+    print(f"evaporate = {para[1]}")
+    print(f"diffusion = {para[2]}")
+    print(f"decrease = {para[3]}")
 
 
 if __name__ == '__main__':
