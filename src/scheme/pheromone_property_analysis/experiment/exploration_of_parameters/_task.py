@@ -76,13 +76,18 @@ class Task(TaskInterface):
         stable_gas_volume = np.max(gas_buf1[stable_state_index])
         relative_stable_gas_volume = stable_gas_volume / self.pheromone.get_sv()
 
-        distances = np.linalg.norm(
-            np.array(
-                np.where(gas_buf1[stable_state_index] >= stable_gas_volume * 0.5)
-            ).T - np.array(Settings.Pheromone.CENTER_INDEX),
-            axis=1
-        )
-        field_size = np.max(distances) * Settings.Pheromone.CELL_SIZE_FOR_CALCULATION
+        distances = np.ones(total_step) * Settings.Pheromone.CENTER_INDEX[1]
+        for t in range(total_step):
+            max_gas = gas_buf1[t, Settings.Pheromone.CENTER_INDEX[0], Settings.Pheromone.CENTER_INDEX[1]]
+            sub_gas = gas_buf1[t, Settings.Pheromone.CENTER_INDEX[0], Settings.Pheromone.CENTER_INDEX[1]:]
+            s1 = np.max(np.where(sub_gas >= max_gas * 0.5)[0])
+            if s1 == sub_gas.shape[0] - 1:
+                break
+            g1 = sub_gas[s1]
+            g2 = sub_gas[s1 + 1]
+            distances[t] = (max_gas * 0.5 - g1) / (g2 - g1) + s1
+        distances *= Settings.Pheromone.CELL_SIZE_FOR_CALCULATION
+        field_size = np.max(distances)
 
         a = np.where(np.max(gas_buf2, axis=(1, 2)) <= stable_gas_volume * 0.5)[0]
         if a.size == 0:

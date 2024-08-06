@@ -126,14 +126,19 @@ class TaskForRec(MjcTaskInterface):
         stable_gas_volume = gas_volume[stable_state_index]
         relative_stable_gas_volume = stable_gas_volume / self.pheromone.get_sv()
 
-        center_index = np.array(Settings.Pheromone.CENTER_INDEX)
-        distances = np.zeros(self.gas_buf.shape[0])
-        for t in range(self.gas_buf.shape[0]):
-            uppers = np.where(self.gas_buf[t, :, :] >= gas_volume[t] * 0.5)
-            indexes = np.array(uppers).T
-            d = np.linalg.norm(indexes - center_index, axis=1)
-            distances[t] = np.max(d)
+        total_step = int(Settings.Simulation.EPISODE_LENGTH / Settings.Simulation.TIMESTEP + 0.5)
+        distances = np.ones(total_step) * Settings.Pheromone.CENTER_INDEX[1]
+        for t in range(total_step):
+            max_gas = self.gas_buf[t, Settings.Pheromone.CENTER_INDEX[0], Settings.Pheromone.CENTER_INDEX[1]]
+            sub_gas = self.gas_buf[t, Settings.Pheromone.CENTER_INDEX[0], Settings.Pheromone.CENTER_INDEX[1]:]
+            s1 = np.max(np.where(sub_gas >= max_gas * 0.5)[0])
+            if s1 == sub_gas.shape[0] - 1:
+                break
+            g1 = sub_gas[s1]
+            g2 = sub_gas[s1 + 1]
+            distances[t] = (max_gas * 0.5 - g1) / (g2 - g1) + s1
         distances *= Settings.Pheromone.CELL_SIZE_FOR_CALCULATION
+        field_size = np.max(distances)
 
         fig = plt.figure()
         axis = fig.add_subplot(1, 1, 1)
@@ -155,6 +160,6 @@ class TaskForRec(MjcTaskInterface):
 
         fig = plt.figure()
         axis = fig.add_subplot(1, 1, 1)
-        axis.set_title(f"target: {Settings.Optimization.Loss.FIELD_SIZE}")
+        axis.set_title(f"target: {Settings.Optimization.Loss.FIELD_SIZE:.6f}, size: {field_size:.6f}")
         axis.plot((1 + np.arange(0, distances.shape[0])) * Settings.Simulation.TIMESTEP, distances)
         fig.savefig(os.path.join(working_directory, "size.svg"))
