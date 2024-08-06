@@ -30,6 +30,7 @@ Optimization:
     RELATIVE_STABLE_GAS_VOLUME: 0.4
     DECREASED_STATE_TIME: 10
     FIELD_SIZE: "eval: 0.350 * $Pheromone.CELL_SIZE_FOR_CALCULATION / $Pheromone.CELL_SIZE_FOR_MUJOCO"
+    WEIGHT: "eval: [ 2/10, 2/10, 2/10, 2/10, 2/10 ]"
 
 Evaluation:
   EPS: 0.001

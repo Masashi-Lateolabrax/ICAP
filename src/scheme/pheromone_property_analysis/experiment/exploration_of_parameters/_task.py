@@ -99,7 +99,7 @@ class Task(TaskInterface):
             field_size
         ])
 
-        return float(np.sum((result - self._target) ** 2))
+        return float(np.sum(((result - self._target) ** 2) * np.array(Settings.Optimization.Loss.WEIGHT)))
 
 
 class Generator(TaskGenerator):
