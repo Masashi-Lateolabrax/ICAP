@@ -8,4 +8,4 @@ generate(
 
 from .settings import Settings
 from ._task import Task, Generator
-from ._rec import TaskForRec
+from ._rec import TaskForRec, DecTaskForRec

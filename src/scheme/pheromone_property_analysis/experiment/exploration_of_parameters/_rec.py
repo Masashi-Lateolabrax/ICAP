@@ -162,3 +162,120 @@ class TaskForRec(MjcTaskInterface):
         axis.set_title(f"target: {Settings.Optimization.Loss.FIELD_SIZE:.6f}, size: {field_size:.6f}")
         axis.plot((1 + np.arange(0, distances.shape[0])) * Settings.Simulation.TIMESTEP, distances)
         fig.savefig(os.path.join(working_directory, "size.svg"))
+
+
+class DecTaskForRec(MjcTaskInterface):
+    def __init__(self, para):
+        para = np.tanh(para) + 1
+
+        self.pheromone = PheromoneFieldWithDummies(
+            PheromoneField2(
+                nx=Settings.Pheromone.NUM_CELL[0],
+                ny=Settings.Pheromone.NUM_CELL[1],
+                d=Settings.Pheromone.CELL_SIZE_FOR_CALCULATION,
+                sv=para[0],
+                evaporate=para[1],
+                diffusion=para[2],
+                decrease=para[4]
+            ),
+            Settings.Pheromone.CELL_SIZE_FOR_MUJOCO,
+            True
+        )
+
+        xml = gen_xml()
+        self.m = mujoco.MjModel.from_xml_string(xml)
+        self.d = mujoco.MjData(self.m)
+
+        self.total_step = int(Settings.Simulation.EPISODE_LENGTH / Settings.Simulation.TIMESTEP + 0.5)
+        self.t = 0
+        self.gas_buf = np.zeros((self.total_step, *self.pheromone.get_all_gas().shape))
+
+        self.saturated()
+
+    def saturated(self):
+        for xi in range(Settings.Pheromone.NUM_CELL[0]):
+            for yi in range(Settings.Pheromone.NUM_CELL[1]):
+                cell = self.pheromone.get_cell_v2(xi, yi)
+                cell.set_liquid(0.0)
+                cell.set_gas(0.0)
+
+        for _ in range(self.total_step):
+            center_cell = self.pheromone.get_cell_v2(
+                xi=Settings.Pheromone.CENTER_INDEX[0],
+                yi=Settings.Pheromone.CENTER_INDEX[1],
+            )
+            center_cell.set_liquid(Settings.Pheromone.LIQUID)
+            self.pheromone.update(Settings.Simulation.TIMESTEP, 1, False)
+
+        self.pheromone.get_cell_v2(
+            xi=Settings.Pheromone.CENTER_INDEX[0],
+            yi=Settings.Pheromone.CENTER_INDEX[1],
+        ).set_liquid(0)
+
+    def get_model(self) -> mujoco.MjModel:
+        return self.m
+
+    def get_data(self) -> mujoco.MjData:
+        return self.d
+
+    def get_dummies(self) -> list[DummyGeom]:
+        return self.pheromone.get_dummy_panels()
+
+    def calc_step(self) -> float:
+        self.pheromone.update(Settings.Simulation.TIMESTEP, 1, True)
+        self.gas_buf[self.t] = self.pheromone.get_all_gas()
+        self.t += 1
+        return 0
+
+    def run(self) -> float:
+        for _ in range(self.total_step):
+            self.calc_step()
+        return 0.0
+
+    def save_log(self, working_directory):
+        # stability = calc_stability(self.gas_buf, self.pheromone.get_sv())
+        # consistency = calc_consistency(self.gas_buf)
+
+        # a = np.where(stability < Settings.Evaluation.STABILITY_THRESHOLD)[0]
+        # if a.size == 0:
+        #     a = np.array([0])
+        #     warnings.warn("Pheromone viscosity is very high.")
+        # stable_state_idx = np.min(a)
+        # stable_state_time = stable_state_idx * Settings.Simulation.TIMESTEP
+
+        gas_volume = np.max(self.gas_buf, axis=(1, 2))
+        max_gas = np.max(gas_volume)
+
+        # distances = calc_size(self.gas_buf, self.total_step, Settings.Pheromone.CELL_SIZE_FOR_CALCULATION)
+        # field_size = np.max(distances)
+
+        # fig = plt.figure()
+        # axis = fig.add_subplot(1, 1, 1)
+        # axis.set_title(f"The stable time: {stable_state_time:.6f}, stability: {stability[stable_state_idx]:.6f}")
+        # axis.plot((1 + np.arange(0, stability.shape[0])) * Settings.Simulation.TIMESTEP, stability)
+        # fig.savefig(os.path.join(working_directory, "stability_dec.svg"))
+
+        # fig = plt.figure()
+        # axis = fig.add_subplot(1, 1, 1)
+        # axis.set_title(f"Consistency: {consistency[stable_state_idx]}")
+        # axis.plot((1 + np.arange(0, consistency.shape[0])) * Settings.Simulation.TIMESTEP, consistency)
+        # fig.savefig(os.path.join(working_directory, "consistency_dec.svg"))
+
+        a = np.where(gas_volume <= max_gas * 0.5)[0]
+        if a.size == 0:
+            warnings.warn("The pheromone field calculation is very slow. [DECREASE]")
+            return 100000000.0
+        decreased_state_index = np.min(a)
+        decreased_state_time = decreased_state_index * Settings.Simulation.TIMESTEP
+
+        fig = plt.figure()
+        axis = fig.add_subplot(1, 1, 1)
+        axis.set_title(f"The decreased state time: {decreased_state_time}")
+        axis.plot((1 + np.arange(0, gas_volume.shape[0])) * Settings.Simulation.TIMESTEP, gas_volume)
+        fig.savefig(os.path.join(working_directory, "gas_volume_dec.svg"))
+
+        # fig = plt.figure()
+        # axis = fig.add_subplot(1, 1, 1)
+        # axis.set_title(f"target: {Settings.Optimization.Loss.FIELD_SIZE:.6f}, size: {field_size:.6f}")
+        # axis.plot((1 + np.arange(0, distances.shape[0])) * Settings.Simulation.TIMESTEP, distances)
+        # fig.savefig(os.path.join(working_directory, "size_dec.svg"))
