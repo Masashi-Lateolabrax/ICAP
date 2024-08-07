@@ -51,7 +51,7 @@ def gen_xml():
 
 class TaskForRec(MjcTaskInterface):
     def __init__(self, para):
-        para = np.log(1 + np.exp(para))
+        para = np.tanh(para) + 1
 
         self.pheromone = PheromoneFieldWithDummies(
             PheromoneField2(

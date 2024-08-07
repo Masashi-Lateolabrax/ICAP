@@ -10,7 +10,7 @@ from .settings import Settings
 
 class Task(TaskInterface):
     def __init__(self, para):
-        para = np.log(1 + np.exp(para))
+        para = np.tanh(para) + 1
 
         self.pheromone = PheromoneField2(
             nx=Settings.Pheromone.NUM_CELL[0],
