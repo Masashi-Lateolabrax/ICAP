@@ -21,7 +21,10 @@ class DataCollector(BaseDataCollector):
     def get_episode_length(self) -> int:
         return self.episode
 
-    def _record(self, task: Task, time: int, evaluation: float):
+    def pre_record(self, task, time: int):
+        pass
+
+    def record(self, task: Task, time: int, evaluation: float):
         for bi, b in enumerate(task.get_bots()):
             self.data[time, bi, :] = b.debug_data["s2l0"]
 

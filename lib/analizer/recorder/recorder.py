@@ -82,7 +82,10 @@ class Recorder(BaseDataCollector):
     def get_episode_length(self) -> int:
         return self.episode
 
-    def _record(self, task: MjcTaskInterface, time: int, evaluation: float):
+    def pre_record(self, task, time: int):
+        pass
+
+    def record(self, task: MjcTaskInterface, time: int, evaluation: float):
         if isinstance(self.renderer, mujoco.Renderer):
             renderer = self.renderer
         else:

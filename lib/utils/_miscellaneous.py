@@ -5,6 +5,61 @@ import math
 from lib.optimizer import MjcTaskInterface
 
 
+class IntervalTimer:
+    def __init__(self, interval):
+        self._max_energy = interval
+        self._energy = 0
+
+    def count(self, x=1):
+        self._energy += x
+        res = self._energy >= self._max_energy
+        if res:
+            self._energy -= self._max_energy
+        return res
+
+
+def random_pos(
+        width: float,
+        height: float,
+        margin: float,
+        exception_area: list[tuple[float, float, float]]
+) -> tuple[float, float] | None:
+    cnt_regeneration = 100
+
+    w1 = width * -0.5 + margin
+    w2 = width * 0.5 - margin
+    h1 = height * -0.5 + margin
+    h2 = height * 0.5 - margin
+
+    res = None
+    for i in range(cnt_regeneration):
+        x = (w2 - w1) * random.random() + w1
+        y = (h2 - h1) * random.random() + h1
+        contain = any([math.sqrt((x - a[0]) ** 2 + (y - a[1]) ** 2) <= a[2] for a in exception_area])
+        if contain:
+            continue
+        res = x, y
+        break
+    if res is None:
+        raise "Failed to generate a robot position."
+
+    return res
+
+
+def random_pos_list(
+        num: int,
+        width: float, height: float,
+        margin1: float, margin2: float
+) -> list[tuple[float, float]]:
+    exception = []
+    res = []
+    for _ in range(num):
+        pos = random_pos(width, height, margin1, exception)
+        exception.append((pos[0], pos[1], margin2))
+        res.append(pos)
+    return res
+
+
 def is_overlap(new_circle, circles, r):
     for circle in circles:
         dist = math.sqrt((new_circle[0] - circle[0]) ** 2 + (new_circle[1] - circle[1]) ** 2)
@@ -42,7 +97,11 @@ class BaseDataCollector(metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def _record(self, task, time: int, evaluation: float):
+    def pre_record(self, task, time: int):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def record(self, task, time: int, evaluation: float):
         raise NotImplementedError()
 
     def run(self, task: MjcTaskInterface):
@@ -55,5 +114,6 @@ class BaseDataCollector(metaclass=abc.ABCMeta):
                 time = datetime.now()
                 print(f"{t}/{episode} ({t / episode * 100}%)")
 
+            self.pre_record(task, t)
             evaluation = task.calc_step()
-            self._record(task, t, evaluation)
+            self.record(task, t, evaluation)

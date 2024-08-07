@@ -1,17 +1,19 @@
-from exp.pushing_food_with_pheromone import main
+from exp.the_simplest_task import main
 
-# Task: CHECK THE PROGRAM
+# # Task
+# Something
 #
-# Objective: Executing reproduction experiment.
+# # Objective
+# Something
 #
-# Features:
-#   - The number of agent: 9
-#   - The number of food: 2
-#   - Optimizing generation: 500
-#   - Optimizing population: 20
-#   - Increase the generation and population of optimization.
+# # Features
+#   - Something
 #
-# Date: 2024-06-23 12:41
+# # Changes
+#   - Nothing
+#
+# # Date
+# 2024-00-00 00:00
 
 if __name__ == '__main__':
-    main()
+    print("Hello")

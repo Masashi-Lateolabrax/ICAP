@@ -36,19 +36,33 @@ def _calc_dico(w: int, h: int, xi: float, yi: float):
     return hit
 
 
-class PheromoneField:
+class PheromoneCell:
+    def __init__(self, liquid_cell: numpy.ndarray, gas_cell: numpy.ndarray):
+        self._liquid = liquid_cell
+        self._gas = gas_cell
+
+    def set_gas(self, value):
+        self._gas[0, 0] = value
+
+    def set_liquid(self, value):
+        self._liquid[0, 0] = value
+
+    def get_gas(self):
+        return self._gas[0, 0]
+
+    def get_liquid(self):
+        return self._liquid[0, 0]
+
+
+class PheromoneField2:
     def __init__(
             self,
             nx: int, ny: int, d: float,
             sv: float, evaporate: float, diffusion: float, decrease: float,
-            dt: float, iteration: int = 1
     ):
         # セルの数
         self._nx = nx
         self._ny = ny
-
-        self.dt = dt
-        self.iteration = iteration
 
         self._liquid = numpy.zeros((nx, ny))
         self._gas_master = numpy.zeros((nx + 2, ny + 2))
@@ -65,9 +79,32 @@ class PheromoneField:
             [0.0, 1.0, 0.0],
         ]) * self._diffusion / (d * d)
 
+    def get_field_size(self) -> tuple[int, int]:
+        return self._nx, self._ny
+
+    def get_sv(self):
+        return self._sv
+
+    def get_cell(self, xi: int, yi: int):
+        return self._liquid[xi:xi + 1, yi:yi + 1], self._gas[xi:xi + 1, yi:yi + 1]
+
+    def get_cell_v2(self, xi: int, yi: int) -> PheromoneCell:
+        cell = PheromoneCell(self._liquid[xi:xi + 1, yi:yi + 1], self._gas[xi:xi + 1, yi:yi + 1])
+        return cell
+
+    def get_all_liquid(self):
+        return numpy.copy(self._liquid)
+
+    def set_liquid(self, xi: int, yi: int, value: float):
+        for x, y, e in _calc_dico(self._nx, self._ny, xi, yi):
+            self._liquid[int(x), int(y)] = e * value
+
     def add_liquid(self, xi: float, yi: float, value: float):
         for x, y, e in _calc_dico(self._nx, self._ny, xi, yi):
             self._liquid[int(x), int(y)] += e * value
+
+    def get_all_gas(self):
+        return numpy.copy(self._gas)
 
     def get_gas(self, xi: float, yi: float) -> float:
         res = 0.0
@@ -75,9 +112,9 @@ class PheromoneField:
             res += e * self._gas_master[int(x), int(y)]
         return res
 
-    def update(self):
-        dt = self.dt / self.iteration
-        for _ in range(self.iteration):
+    def update(self, dt: float, iteration: int = 1):
+        dt = dt / iteration
+        for _ in range(iteration):
             dif_liquid = numpy.minimum(self._liquid, (self._sv - self._gas) * self._eva) * dt
 
             # padding
@@ -92,3 +129,43 @@ class PheromoneField:
 
             self._liquid -= dif_liquid
             self._gas += dif_gas
+
+
+class PheromoneField:
+    def __init__(
+            self,
+            nx: int, ny: int, d: float,
+            sv: float, evaporate: float, diffusion: float, decrease: float,
+            dt: float, iteration: int = 1
+    ):
+        self._pheromone_field = PheromoneField2(nx, ny, d, sv, evaporate, diffusion, decrease)
+
+        self.dt = dt
+        self.iteration = iteration
+
+    def get_field_size(self) -> tuple[int, int]:
+        return self._pheromone_field.get_field_size()
+
+    def get_sv(self):
+        return self._pheromone_field.get_sv()
+
+    def get_cell(self, xi: int, yi: int):
+        return self._pheromone_field.get_cell(xi, yi)
+
+    def get_all_liquid(self):
+        return self._pheromone_field.get_all_gas()
+
+    def set_liquid(self, xi: int, yi: int, value: float):
+        self._pheromone_field.set_liquid(xi, yi, value)
+
+    def add_liquid(self, xi: float, yi: float, value: float):
+        self._pheromone_field.add_liquid(xi, yi, value)
+
+    def get_all_gas(self):
+        return self._pheromone_field.get_all_gas()
+
+    def get_gas(self, xi: float, yi: float) -> float:
+        return self._pheromone_field.get_gas(xi, yi)
+
+    def update(self):
+        self._pheromone_field.update(self.dt, self.iteration)
