@@ -17,6 +17,8 @@ from lib.pheromone import PheromoneField2
 from lib.mujoco_utils import PheromoneFieldWithDummies
 from lib.optimizer import MjcTaskInterface
 
+from ._utils import calc_size, calc_consistency, calc_stability
+
 from .settings import Settings
 
 
@@ -112,16 +114,10 @@ class TaskForRec(MjcTaskInterface):
         return 0.0
 
     def save_log(self, working_directory):
-        stability = np.zeros(self.gas_buf.shape[0])
-        stability[0:2] = np.NAN
-        for t in range(2, self.gas_buf.shape[0]):
-            current_gas = (self.gas_buf[t - 2] - self.gas_buf[t - 1]).ravel()
-            next_gas = (self.gas_buf[t - 1] - self.gas_buf[t]).ravel()
-            d = np.linalg.norm(next_gas) * np.linalg.norm(current_gas)
-            stability[t] = np.dot(current_gas, next_gas)
-            stability[t] = stability[t - 2] / d if d > 0.00000001 else 0.0
+        stability = calc_stability(self.gas_buf, self.pheromone.get_sv())
+        consistency = calc_consistency(self.gas_buf)
 
-        a = np.where(stability > Settings.Evaluation.STABILITY_THRESHOLD)[0]
+        a = np.where(stability < Settings.Evaluation.STABILITY_THRESHOLD)[0]
         if a.size == 0:
             a = np.array([0])
             warnings.warn("Pheromone viscosity is very high.")
@@ -134,17 +130,7 @@ class TaskForRec(MjcTaskInterface):
         relative_stable_gas_volume = stable_gas_volume / self.pheromone.get_sv()
 
         total_step = int(Settings.Simulation.EPISODE_LENGTH / Settings.Simulation.TIMESTEP + 0.5)
-        distances = np.ones(total_step) * Settings.Pheromone.CENTER_INDEX[1]
-        for t in range(total_step):
-            max_gas = self.gas_buf[t, Settings.Pheromone.CENTER_INDEX[0], Settings.Pheromone.CENTER_INDEX[1]]
-            sub_gas = self.gas_buf[t, Settings.Pheromone.CENTER_INDEX[0], Settings.Pheromone.CENTER_INDEX[1]:]
-            s1 = np.max(np.where(sub_gas >= max_gas * 0.5)[0])
-            if s1 == sub_gas.shape[0] - 1:
-                break
-            g1 = sub_gas[s1]
-            g2 = sub_gas[s1 + 1]
-            distances[t] = (max_gas * 0.5 - g1) / (g2 - g1) + s1
-        distances *= Settings.Pheromone.CELL_SIZE_FOR_CALCULATION
+        distances = calc_size(self.gas_buf, total_step, Settings.Pheromone.CELL_SIZE_FOR_CALCULATION)
         field_size = np.max(distances)
 
         fig = plt.figure()
@@ -152,6 +138,12 @@ class TaskForRec(MjcTaskInterface):
         axis.set_title(f"The stable time: {stable_state_time:.6f}, stability: {stability[stable_state_index]:.6f}")
         axis.plot((1.5 + np.arange(0, stability.shape[0])) * Settings.Simulation.TIMESTEP, stability)
         fig.savefig(os.path.join(working_directory, "stability.svg"))
+
+        fig = plt.figure()
+        axis = fig.add_subplot(1, 1, 1)
+        axis.set_title(f"Consistency: {consistency[stable_state_index]}")
+        axis.plot((1 + np.arange(0, consistency.shape[0])) * Settings.Simulation.TIMESTEP, consistency)
+        fig.savefig(os.path.join(working_directory, "consistency.svg"))
 
         fig = plt.figure()
         axis = fig.add_subplot(1, 1, 1)

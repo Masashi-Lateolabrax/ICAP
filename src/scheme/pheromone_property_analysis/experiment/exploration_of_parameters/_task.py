@@ -5,6 +5,8 @@ import numpy as np
 from lib.optimizer import TaskInterface, TaskGenerator
 from lib.pheromone import PheromoneField2
 
+from ._utils import calc_consistency, calc_size, calc_stability
+
 from .settings import Settings
 
 
@@ -58,15 +60,10 @@ class Task(TaskInterface):
             self.pheromone.update(Settings.Simulation.TIMESTEP)
             gas_buf2[t] = self.pheromone.get_all_gas()
 
-        stability = np.zeros(gas_buf1.shape[0] - 2)
-        for t in range(2, gas_buf1.shape[0]):
-            current_gas = (gas_buf1[t - 2] - gas_buf1[t - 1]).ravel()
-            next_gas = (gas_buf1[t - 1] - gas_buf1[t]).ravel()
-            d = np.linalg.norm(next_gas) * np.linalg.norm(current_gas)
-            stability[t - 2] = np.dot(current_gas, next_gas)
-            stability[t - 2] = stability[t - 2] / d if d > 0.00000001 else 0.0
+        consistency = calc_consistency(gas_buf1)
+        stability = calc_stability(gas_buf1, self.pheromone.get_sv())
 
-        a = np.where(stability > Settings.Evaluation.STABILITY_THRESHOLD)[0]
+        a = np.where(stability < Settings.Evaluation.STABILITY_THRESHOLD)[0]
         if a.size == 0:
             warnings.warn("The pheromone field calculation is very slow. [STABLE]")
             return 100000000.0
@@ -78,17 +75,7 @@ class Task(TaskInterface):
         stable_gas_volume = np.max(gas_buf1[stable_state_index])
         relative_stable_gas_volume = stable_gas_volume / self.pheromone.get_sv()
 
-        distances = np.ones(total_step) * Settings.Pheromone.CENTER_INDEX[1]
-        for t in range(total_step):
-            max_gas = gas_buf1[t, Settings.Pheromone.CENTER_INDEX[0], Settings.Pheromone.CENTER_INDEX[1]]
-            sub_gas = gas_buf1[t, Settings.Pheromone.CENTER_INDEX[0], Settings.Pheromone.CENTER_INDEX[1]:]
-            s1 = np.max(np.where(sub_gas >= max_gas * 0.5)[0])
-            if s1 == sub_gas.shape[0] - 1:
-                break
-            g1 = sub_gas[s1]
-            g2 = sub_gas[s1 + 1]
-            distances[t] = (max_gas * 0.5 - g1) / (g2 - g1) + s1
-        distances *= Settings.Pheromone.CELL_SIZE_FOR_CALCULATION
+        distances = calc_size(gas_buf1, total_step, Settings.Pheromone.CELL_SIZE_FOR_CALCULATION)
         field_size = np.max(distances)
 
         a = np.where(np.max(gas_buf2, axis=(1, 2)) <= stable_gas_volume * 0.5)[0]
@@ -106,7 +93,7 @@ class Task(TaskInterface):
             field_size
         ])
         loss = float(np.sum(((result - self._target) ** 2) * np.array(Settings.Optimization.Loss.WEIGHT)))
-        loss += (1 - float(np.min(stability))) * 0.5 * Settings.Optimization.Loss.UNSTABLE_WEIGHT
+        loss += (float(np.min(consistency)) - 1) * 0.5 * Settings.Optimization.Loss.CONSISTENCY_WEIGHT
 
         return loss
 
