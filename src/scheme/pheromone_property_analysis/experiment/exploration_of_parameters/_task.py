@@ -24,9 +24,9 @@ class Task(TaskInterface):
 
         self._target = np.array([
             Settings.Optimization.Loss.STABLE_STATE_TIME,
-            Settings.Optimization.Loss.DECREASED_STATE_TIME,
             Settings.Optimization.Loss.EVAPORATION_SPEED,
             Settings.Optimization.Loss.RELATIVE_STABLE_GAS_VOLUME,
+            Settings.Optimization.Loss.DECREASED_STATE_TIME,
             Settings.Optimization.Loss.FIELD_SIZE,
         ])
 
@@ -100,9 +100,9 @@ class Task(TaskInterface):
 
         result = np.array([
             stable_state_time,
-            decreased_state_time,
             evaporation_speed,
             relative_stable_gas_volume,
+            decreased_state_time,
             field_size
         ])
         loss = float(np.sum(((result - self._target) ** 2) * np.array(Settings.Optimization.Loss.WEIGHT)))
