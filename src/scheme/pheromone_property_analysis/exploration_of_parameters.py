@@ -37,11 +37,15 @@ def main(working_directory):
         camera=camera,
         max_geom=Settings.Display.MAX_GEOM
     )
-    task = TaskForRec(best.min_para)
-    recorder.run(task)
-    task.save_log(working_directory)
+    task1 = TaskForRec(best.min_para)
+    task2 = DecTaskForRec(best.min_para)
+    recorder.run(task1)
+    recorder.run(task2)
+    recorder.release()
+    task1.save_log(working_directory)
+    task2.save_log(working_directory)
 
-    para = np.log(1 + np.exp(best.min_para))
+    para = np.tanh(best.min_para) + 1
     print(f"sv = {para[0]}")
     print(f"evaporate = {para[1]}")
     print(f"diffusion = {para[2]}")
