@@ -39,7 +39,7 @@ class DataCollector(BaseDataCollector):
 
     def record(self, task: Task, time: int, evaluation: float):
         for bi, b in enumerate(task.get_bots()):
-            self.sight_output[time, bi, :] = b.debug_data["s1l4"]
+            self.sight_output[time, bi, :] = b.debug_data["s1l3"]
             self.olfactory_output[time, bi, :] = b.debug_data["s2l3"]
             self.output[time, bi, :] = b.debug_data["s3l1"]
 
