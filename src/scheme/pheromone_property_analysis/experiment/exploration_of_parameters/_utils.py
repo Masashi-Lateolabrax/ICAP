@@ -28,8 +28,7 @@ def calc_consistency(gas):
 
 
 def calc_stability(gas, sv):
-    max_relative_gas = np.max(gas, axis=(1, 2)) / sv
-    return np.abs(max_relative_gas[1:] - max_relative_gas[:-1])
+    return np.max(np.abs(gas[1:] - gas[:-1]), axis=(1, 2)) / sv
 
 
 def calc_size(gas, total_step, pheromone_cell_size):
