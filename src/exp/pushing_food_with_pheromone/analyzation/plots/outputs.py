@@ -103,9 +103,6 @@ def main():
             ax1 = fig.add_subplot(2, 3, i + 1)
             ax2 = fig.add_subplot(2, 3, 3 + i + 1)
 
-            ax1.set_ylim(-1, 1)
-            ax2.set_ylim(0, 1)
-
             if i == 0:
                 ax1.plot(x, sight_output[:, bi, i], color="Red", label="sight")
                 ax1.plot(x, olfactory_output[:, bi, i], color="Green", label="olfactory")
