@@ -2,15 +2,30 @@ import warnings
 
 import numpy as np
 
+from lib.pheromone import PheromoneField2
 from .settings import Settings
+
+
+def init_pheromone_field(para) -> PheromoneField2:
+    para = (np.tanh(para) + 1) * 0.5
+    pheromone = PheromoneField2(
+        nx=Settings.Pheromone.NUM_CELL[0],
+        ny=Settings.Pheromone.NUM_CELL[1],
+        d=Settings.Pheromone.CELL_SIZE_FOR_CALCULATION,
+        sv=para[0],
+        evaporate=5 * para[1],
+        diffusion=5 * para[2],
+        decrease=5 * para[3]
+    )
+    return pheromone
 
 
 def calc_consistency(gas):
     consistency = np.zeros(gas.shape[0] - 2)
     for t in range(2, gas.shape[0]):
-        current_gas = (gas[t - 1] - gas[t - 2]).ravel()
+        current_gas = (gas[t - 1] - gas[t - 2]).ravel() / Settings.Simulation.TIMESTEP
         cd = np.linalg.norm(current_gas)
-        next_gas = (gas[t] - gas[t - 1]).ravel()
+        next_gas = (gas[t] - gas[t - 1]).ravel() / Settings.Simulation.TIMESTEP
         nd = np.linalg.norm(next_gas)
         if np.isinf(cd) or np.isinf(nd):
             warnings.warn("The pheromone field calculation fell into an unstable state.")

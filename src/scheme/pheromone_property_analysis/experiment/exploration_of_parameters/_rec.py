@@ -1,5 +1,4 @@
 import os
-import warnings
 
 import mujoco
 import numpy as np
@@ -13,11 +12,10 @@ from mujoco_xml_generator import Visual, visual
 from mujoco_xml_generator import Asset, asset
 from mujoco_xml_generator import WorldBody, body
 
-from lib.pheromone import PheromoneField2
 from lib.mujoco_utils import PheromoneFieldWithDummies
 from lib.optimizer import MjcTaskInterface
 
-from ._utils import calc_size, calc_consistency, calc_stability
+from ._utils import calc_consistency, init_pheromone_field
 
 from .settings import Settings
 
@@ -53,18 +51,8 @@ def gen_xml():
 
 class TaskForRec(MjcTaskInterface):
     def __init__(self, para):
-        para = np.tanh(para) + 1
-
         self.pheromone = PheromoneFieldWithDummies(
-            PheromoneField2(
-                nx=Settings.Pheromone.NUM_CELL[0],
-                ny=Settings.Pheromone.NUM_CELL[1],
-                d=Settings.Pheromone.CELL_SIZE_FOR_CALCULATION,
-                sv=para[0],
-                evaporate=para[1],
-                diffusion=para[2],
-                decrease=para[4]
-            ),
+            init_pheromone_field(para),
             Settings.Pheromone.CELL_SIZE_FOR_MUJOCO,
             True
         )
@@ -114,70 +102,48 @@ class TaskForRec(MjcTaskInterface):
         return 0.0
 
     def save_log(self, working_directory):
-        stability = calc_stability(self.gas_buf, self.pheromone.get_sv())
+        sv = self.pheromone.get_sv()
+
+        increase_idx = int(Settings.Optimization.Loss.INCREASE_TIME / Settings.Simulation.TIMESTEP + 0.5)
+        increase_time = increase_idx * Settings.Simulation.TIMESTEP
+
+        relative_gas = np.max(self.gas_buf, axis=(1, 2)) / sv
+
         consistency = calc_consistency(self.gas_buf)
 
-        a = np.where(stability < Settings.Evaluation.STABILITY_THRESHOLD)[0]
-        if a.size == 0:
-            a = np.array([0])
-            warnings.warn("Pheromone viscosity is very high.")
-        stable_state_index = np.min(a)
-        stable_state_time = stable_state_index * Settings.Simulation.TIMESTEP
-
-        evaporation_speed = self.dif_liquid[stable_state_index]
-        gas_volume = np.max(self.gas_buf, axis=(1, 2))
-        stable_gas_volume = gas_volume[stable_state_index]
-        relative_stable_gas_volume = stable_gas_volume / self.pheromone.get_sv()
-
-        total_step = int(Settings.Simulation.EPISODE_LENGTH / Settings.Simulation.TIMESTEP + 0.5)
-        distances = calc_size(self.gas_buf, total_step, Settings.Pheromone.CELL_SIZE_FOR_CALCULATION)
-        field_size = np.max(distances)
+        size_idx = int(Settings.Optimization.Loss.SIZE_TIME / Settings.Simulation.TIMESTEP + 0.5)
+        center_idx = Settings.Pheromone.CENTER_INDEX
+        size_gas = self.gas_buf[:, center_idx[0], center_idx[1] + Settings.Optimization.Loss.FIELD_SIZE] / sv
 
         fig = plt.figure()
         axis = fig.add_subplot(1, 1, 1)
-        axis.set_title(f"The stable time: {stable_state_time:.6f}, stability: {stability[stable_state_index]:.6f}")
-        axis.plot((1.5 + np.arange(0, stability.shape[0])) * Settings.Simulation.TIMESTEP, stability)
-        fig.savefig(os.path.join(working_directory, "stability.svg"))
-
-        fig = plt.figure()
-        axis = fig.add_subplot(1, 1, 1)
-        axis.set_title(f"Consistency: {consistency[stable_state_index]}")
+        axis.set_title(f"Consistency: {(float(np.min(consistency)) - 1) * 0.5}")
         axis.plot((1 + np.arange(0, consistency.shape[0])) * Settings.Simulation.TIMESTEP, consistency)
         fig.savefig(os.path.join(working_directory, "consistency.svg"))
 
         fig = plt.figure()
         axis = fig.add_subplot(1, 1, 1)
-        axis.set_title(f"The evaporation speed of the stable state: {evaporation_speed}")
+        axis.set_title(f"The evaporation speed: {self.dif_liquid[-1]}")
         axis.plot((0.5 + np.arange(0, self.dif_liquid.shape[0])) * Settings.Simulation.TIMESTEP, self.dif_liquid)
         fig.savefig(os.path.join(working_directory, "evaporation_speed.svg"))
 
         fig = plt.figure()
         axis = fig.add_subplot(1, 1, 1)
-        axis.set_title(f"absolute: {stable_gas_volume:.6f}, relative: {relative_stable_gas_volume:.6f}")
-        axis.plot((1 + np.arange(0, gas_volume.shape[0])) * Settings.Simulation.TIMESTEP, gas_volume)
+        axis.set_title(f"time: {increase_time:.6f}, relative: {relative_gas[increase_idx]:.6f}")
+        axis.plot((1 + np.arange(0, relative_gas.shape[0])) * Settings.Simulation.TIMESTEP, relative_gas)
         fig.savefig(os.path.join(working_directory, "gas_volume.svg"))
 
         fig = plt.figure()
         axis = fig.add_subplot(1, 1, 1)
-        axis.set_title(f"target: {Settings.Optimization.Loss.FIELD_SIZE:.6f}, size: {field_size:.6f}")
-        axis.plot((1 + np.arange(0, distances.shape[0])) * Settings.Simulation.TIMESTEP, distances)
+        axis.set_title(f"gas: {size_gas[size_idx]:.6f}")
+        axis.plot(np.arange(0, size_gas.shape[0]) * Settings.Simulation.TIMESTEP, size_gas)
         fig.savefig(os.path.join(working_directory, "size.svg"))
 
 
 class DecTaskForRec(MjcTaskInterface):
     def __init__(self, para):
-        para = np.tanh(para) + 1
-
         self.pheromone = PheromoneFieldWithDummies(
-            PheromoneField2(
-                nx=Settings.Pheromone.NUM_CELL[0],
-                ny=Settings.Pheromone.NUM_CELL[1],
-                d=Settings.Pheromone.CELL_SIZE_FOR_CALCULATION,
-                sv=para[0],
-                evaporate=para[1],
-                diffusion=para[2],
-                decrease=para[4]
-            ),
+            init_pheromone_field(para),
             Settings.Pheromone.CELL_SIZE_FOR_MUJOCO,
             True
         )
@@ -233,49 +199,19 @@ class DecTaskForRec(MjcTaskInterface):
         return 0.0
 
     def save_log(self, working_directory):
-        # stability = calc_stability(self.gas_buf, self.pheromone.get_sv())
-        # consistency = calc_consistency(self.gas_buf)
-
-        # a = np.where(stability < Settings.Evaluation.STABILITY_THRESHOLD)[0]
-        # if a.size == 0:
-        #     a = np.array([0])
-        #     warnings.warn("Pheromone viscosity is very high.")
-        # stable_state_idx = np.min(a)
-        # stable_state_time = stable_state_idx * Settings.Simulation.TIMESTEP
-
         gas_volume = np.max(self.gas_buf, axis=(1, 2))
-        max_gas = np.max(gas_volume)
 
-        # distances = calc_size(self.gas_buf, self.total_step, Settings.Pheromone.CELL_SIZE_FOR_CALCULATION)
-        # field_size = np.max(distances)
-
-        # fig = plt.figure()
-        # axis = fig.add_subplot(1, 1, 1)
-        # axis.set_title(f"The stable time: {stable_state_time:.6f}, stability: {stability[stable_state_idx]:.6f}")
-        # axis.plot((1 + np.arange(0, stability.shape[0])) * Settings.Simulation.TIMESTEP, stability)
-        # fig.savefig(os.path.join(working_directory, "stability_dec.svg"))
-
-        # fig = plt.figure()
-        # axis = fig.add_subplot(1, 1, 1)
-        # axis.set_title(f"Consistency: {consistency[stable_state_idx]}")
-        # axis.plot((1 + np.arange(0, consistency.shape[0])) * Settings.Simulation.TIMESTEP, consistency)
-        # fig.savefig(os.path.join(working_directory, "consistency_dec.svg"))
-
-        a = np.where(gas_volume <= max_gas * 0.5)[0]
-        if a.size == 0:
-            warnings.warn("The pheromone field calculation is very slow. [DECREASE]")
-            return 100000000.0
-        decreased_state_index = np.min(a)
-        decreased_state_time = decreased_state_index * Settings.Simulation.TIMESTEP
+        # decreased_err
+        decrease_idx = int(Settings.Optimization.Loss.DECREASE_TIME / Settings.Simulation.TIMESTEP + 0.5)
+        decrease_err = np.max(
+            np.abs(self.gas_buf[decrease_idx] - Settings.Optimization.Loss.RELATIVE_STABLE_GAS_VOLUME * 0.5)
+        )
 
         fig = plt.figure()
         axis = fig.add_subplot(1, 1, 1)
-        axis.set_title(f"The decreased state time: {decreased_state_time}")
-        axis.plot((1 + np.arange(0, gas_volume.shape[0])) * Settings.Simulation.TIMESTEP, gas_volume)
+        axis.set_title(f"error: {decrease_err}")
+        axis.plot(np.arange(0, gas_volume.shape[0]) * Settings.Simulation.TIMESTEP, gas_volume)
+        axis.plot(
+            decrease_idx * Settings.Simulation.TIMESTEP, Settings.Optimization.Loss.RELATIVE_STABLE_GAS_VOLUME * 0.5
+        )
         fig.savefig(os.path.join(working_directory, "gas_volume_dec.svg"))
-
-        # fig = plt.figure()
-        # axis = fig.add_subplot(1, 1, 1)
-        # axis.set_title(f"target: {Settings.Optimization.Loss.FIELD_SIZE:.6f}, size: {field_size:.6f}")
-        # axis.plot((1 + np.arange(0, distances.shape[0])) * Settings.Simulation.TIMESTEP, distances)
-        # fig.savefig(os.path.join(working_directory, "size_dec.svg"))

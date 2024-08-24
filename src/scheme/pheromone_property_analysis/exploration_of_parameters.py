@@ -12,7 +12,7 @@ from src.scheme.pheromone_property_analysis.experiment.exploration_of_parameters
 def main(working_directory):
     generator = Generator()
     cmaes = CMAES(
-        dim=5,
+        dim=4,
         generation=Settings.Optimization.GENERATION,
         population=Settings.Optimization.POPULATION,
         mu=Settings.Optimization.NUM_ELITE,
@@ -47,9 +47,9 @@ def main(working_directory):
 
     para = np.tanh(best.min_para) + 1
     print(f"sv = {para[0]}")
-    print(f"evaporate = {para[1]}")
-    print(f"diffusion = {para[2]}")
-    print(f"decrease = {para[3]}")
+    print(f"evaporate = {5 * para[1]}")
+    print(f"diffusion = {5 * para[2]}")
+    print(f"decrease = {5 * para[3]}")
 
 
 if __name__ == '__main__':
