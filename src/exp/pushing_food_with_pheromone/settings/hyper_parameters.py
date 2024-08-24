@@ -26,10 +26,10 @@ class HyperParameters:
         FOOD_ROBOT_GAIN = 1e-3
 
     class Pheromone:
-        SaturatedVapor = 0.391
-        Evaporation = 1.999
-        Diffusion = 0.875
-        Decrease = 0.880
+        SaturatedVapor = 1.0
+        Evaporation = 9.969106715220473
+        Diffusion = 3.0404992134580047
+        Decrease = 0.002026721699796563
 
     class Environment:
         NEST_POS = (cx, cy)
