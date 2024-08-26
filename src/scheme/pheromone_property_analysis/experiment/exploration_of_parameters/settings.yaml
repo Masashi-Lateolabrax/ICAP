@@ -33,6 +33,6 @@ Optimization:
     FIELD_SIZE: "eval: int(0.350 / $Pheromone.CELL_SIZE_FOR_MUJOCO + 0.5)"
     SIZE_TIME: 5
 
-    WEIGHT: "eval: [ 0, 0, 0, 1.3e1 ]" # [ 1.7e7, 0.7e-1, 7, 1.3e1, 1.3e1 ]
+    WEIGHT: "eval: [ 1.7e1, 0, 0, 1.3e1 ]" # [ 1.7e7, 0.7e-1, 7, 1.3e1, 1.3e1 ]
     CONSISTENCY_WEIGHT: 0 # 1
     L2: 0.001
