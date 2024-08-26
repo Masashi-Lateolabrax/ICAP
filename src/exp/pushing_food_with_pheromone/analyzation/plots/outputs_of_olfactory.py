@@ -50,8 +50,8 @@ def main():
     else:
         x, data = collect_data(
             project_directory=project_directory,
-            max_value=int(HyperParameters.Pheromone.SaturatedVapor),
-            min_value=-1,
+            max_value=1,
+            min_value=0,
             precision=100
         )
         np.savez(
