@@ -10,7 +10,7 @@ def convert_para(para):
     para = (np.tanh(para) + 1) * 0.5
     return {
         "sv": 3 * para[0],
-        "evaporation": 15 * para[1],
+        "evaporate": 15 * para[1],
         "diffusion": 10 * para[2],
         "decrease": 5 * para[3]
     }
