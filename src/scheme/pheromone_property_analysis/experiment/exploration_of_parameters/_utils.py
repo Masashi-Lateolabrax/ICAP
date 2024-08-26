@@ -12,7 +12,7 @@ def init_pheromone_field(para) -> PheromoneField2:
         nx=Settings.Pheromone.NUM_CELL[0],
         ny=Settings.Pheromone.NUM_CELL[1],
         d=Settings.Pheromone.CELL_SIZE_FOR_CALCULATION,
-        sv=para[0],
+        sv=3 * para[0],
         evaporate=5 * para[1],
         diffusion=5 * para[2],
         decrease=5 * para[3]
