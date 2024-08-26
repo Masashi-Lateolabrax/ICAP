@@ -6,16 +6,23 @@ from lib.pheromone import PheromoneField2
 from .settings import Settings
 
 
-def init_pheromone_field(para) -> PheromoneField2:
+def convert_para(para):
     para = (np.tanh(para) + 1) * 0.5
+    return {
+        "sv": 3 * para[0],
+        "evaporation": 10 * para[1],
+        "diffusion": 5 * para[2],
+        "decrease": 5 * para[3]
+    }
+
+
+def init_pheromone_field(para) -> PheromoneField2:
+    para = convert_para(para)
     pheromone = PheromoneField2(
         nx=Settings.Pheromone.NUM_CELL[0],
         ny=Settings.Pheromone.NUM_CELL[1],
         d=Settings.Pheromone.CELL_SIZE_FOR_CALCULATION,
-        sv=3 * para[0],
-        evaporate=10 * para[1],
-        diffusion=5 * para[2],
-        decrease=5 * para[3]
+        **para
     )
     return pheromone
 

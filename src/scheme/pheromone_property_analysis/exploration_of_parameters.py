@@ -1,6 +1,5 @@
 import os.path
 
-import numpy as np
 import mujoco
 
 from lib.optimizer import CMAES
@@ -21,7 +20,7 @@ def main(working_directory):
     )
     cmaes.optimize(generator)
     hist = cmaes.get_history()
-    hist.save(os.path.join(working_directory, "history.npy"))
+    hist.save(os.path.join(working_directory, "history"))
 
     best = hist.get_min()
 
@@ -45,11 +44,10 @@ def main(working_directory):
     task1.save_log(working_directory)
     task2.save_log(working_directory)
 
-    para = np.tanh(best.min_para) + 1
-    print(f"sv = {para[0]}")
-    print(f"evaporate = {5 * para[1]}")
-    print(f"diffusion = {5 * para[2]}")
-    print(f"decrease = {5 * para[3]}")
+    best = hist.get_min()
+    para = convert_para(best.min_para)
+    for k, v in para.items():
+        print(f"{k}: {v}")
 
 
 if __name__ == '__main__':
