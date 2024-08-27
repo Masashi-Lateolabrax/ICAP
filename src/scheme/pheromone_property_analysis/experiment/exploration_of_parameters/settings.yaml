@@ -14,7 +14,7 @@ Pheromone:
     "eval: int($Pheromone.NUM_CELL[1] * 0.5)"
   ]
 
-  CELL_SIZE_FOR_CALCULATION: 1
+  CELL_SIZE_FOR_CALCULATION: 0.2
   CELL_SIZE_FOR_MUJOCO: 0.2
 
   MIN_SV: 0.001
@@ -22,7 +22,7 @@ Pheromone:
 
 Optimization:
   GENERATION: 30
-  POPULATION: 100
+  POPULATION: 50
   NUM_ELITE: "eval: int($Optimization.POPULATION * 0.5)"
   SIGMA: 0.3
 
