@@ -9,10 +9,10 @@ from .settings import Settings
 def convert_para(para):
     para = (np.tanh(para) + 1) * 0.5
     return {
-        "sv": 3 * para[0],
-        "evaporate": 15 * para[1],
-        "diffusion": 10 * para[2],
-        "decrease": 5 * para[3]
+        "sv": 100 * para[0],
+        "evaporate": 100 * para[1],
+        "diffusion": 100 * para[2],
+        "decrease": 100 * para[3]
     }
 
 
