@@ -5,7 +5,7 @@ Display:
 
 Simulation:
   EPISODE_LENGTH: 15
-  TIMESTEP: 0.03
+  TIMESTEP: 0.001
 
 Pheromone:
   NUM_CELL: [ 51, 51 ]
@@ -21,7 +21,7 @@ Pheromone:
   LIQUID: 1000000000
 
 Optimization:
-  GENERATION: 100
+  GENERATION: 30
   POPULATION: 100
   NUM_ELITE: "eval: int($Optimization.POPULATION * 0.5)"
   SIGMA: 0.3
@@ -34,5 +34,5 @@ Optimization:
     SIZE_TIME: 5
 
     WEIGHT: "eval: [ 1.7e1, 0, 0, 1.3e1 ]" # [ 1.7e7, 0.7e-1, 7, 1.3e1, 1.3e1 ]
-    CONSISTENCY_WEIGHT: 0 # 1
+    CONSISTENCY_WEIGHT: 1 # 1
     L2: 0.001
