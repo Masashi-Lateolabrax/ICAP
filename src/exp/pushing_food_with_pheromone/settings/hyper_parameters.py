@@ -1,6 +1,4 @@
-import math
-
-cx, cy = (0, -8)
+cx, cy = (0, 0)
 
 
 class HyperParameters:
@@ -12,7 +10,7 @@ class HyperParameters:
 
     class Simulator:
         MAX_GEOM = 7800
-        EPISODE = 60
+        EPISODE = 30
         TIMESTEP = 0.01
         RESOLUTION = (900, 1350)
         TILE_SIZE = 0.2
@@ -36,13 +34,13 @@ class HyperParameters:
         NEST_SIZE = 0.5
 
         BOT_POS = [
-            (cx - 0.45, cy + 0.95, 0), (cx + 0, cy + 0.95, 0), (cx + 0.45, cy + 0.95, 0),
-            (cx - 0.45, cy + 0.50, 0), (cx + 0, cy + 0.50, 0), (cx + 0.45, cy + 0.50, 0),
-            (cx - 0.45, cy + 0.05, 0), (cx + 0, cy + 0.05, 0), (cx + 0.45, cy + 0.05, 0),
+            (cx - 0.45, cy + 0.45, 90), (cx + 0, cy + 0.45, 90), (cx + 0.45, cy + 0.45, 90),
+            (cx - 0.45, cy + 0.0, 90), (cx + 0, cy + 0.0, 90), (cx + 0.45, cy + 0.0, 90),
+            (cx - 0.45, cy - 0.45, 90), (cx + 0, cy - 0.45, 90), (cx + 0.45, cy - 0.45, 90),
         ]
 
         FOOD_POS = [
-            (0, 1), (0, 6)
+            (0, -5), (0, 5)
         ]
 
     class Robot:
