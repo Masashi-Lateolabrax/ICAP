@@ -2,7 +2,6 @@ import random
 import math
 
 
-
 class IntervalTimer:
     def __init__(self, interval):
         self._max_energy = interval
