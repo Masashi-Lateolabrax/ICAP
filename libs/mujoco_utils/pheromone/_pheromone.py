@@ -26,7 +26,7 @@ class PheromoneFieldWithDummies:
             for xi in range(pheromone_field_size[0]):
                 x = (xi - (pheromone_field_size[0] - 1) * 0.5) * cell_size_for_mujoco
                 for yi in range(pheromone_field_size[1]):
-                    y = (yi - (pheromone_field_size[1] - 1) * 0.5) * cell_size_for_mujoco
+                    y = ((pheromone_field_size[1] - 1) * 0.5 - yi) * cell_size_for_mujoco
                     create_dummies = DummyGeom(mujoco.mjtGeom.mjGEOM_PLANE)
                     create_dummies.set_size([cell_size_for_mujoco * 0.5, cell_size_for_mujoco * 0.5, 1])
                     create_dummies.set_pos([x, y, 0.001])
@@ -68,7 +68,7 @@ class PheromoneFieldWithDummies:
         sv = self._pheromone.get_sv()
         if dummies:
             for xi, yi, p in self._panels:
-                _, gas_cell = self._pheromone.get_cell(xi, yi)
-                pheromone = np.clip(gas_cell[0, 0] / sv, 0, 1)
+                cell = self._pheromone.get_cell(xi, yi)
+                pheromone = np.clip(cell.get_gas() / sv, 0, 1)
                 c = colorsys.hsv_to_rgb(0.66 * (1.0 - pheromone), 1.0, 1.0)
                 p.set_rgba((c[0], c[1], c[2], 1.0))

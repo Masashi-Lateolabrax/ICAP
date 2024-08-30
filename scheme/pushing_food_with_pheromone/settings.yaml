@@ -1,0 +1,60 @@
+Optimization:
+  GENERATION: 3
+  POPULATION: 3  # int(4 + 3 * math.log(211))
+  MU: 1
+  SIGMA: 0.3
+
+  Evaluation:
+    FOOD_RANGE: 2.3
+    FOOD_NEST_GAIN: 1.0
+    FOOD_ROBOT_GAIN: 2.756
+
+Task:
+  EPISODE: 30
+
+  Nest:
+    POSITION: [ 0, 0 ]
+    SIZE: 3.0
+
+  Robot:
+    POSITIONS: [
+      [ -0.45,  0.45, 90 ], [ 0,  0.45, 90 ], [ 0.45,  0.45, 90 ],
+      [ -0.45,  0.00, 90 ], [ 0,  0.00, 90 ], [ 0.45,  0.00, 90 ],
+      [ -0.45, -0.45, 90 ], [ 0, -0.45, 90 ], [ 0.45, -0.45, 90 ],
+    ]
+
+  Food:
+    POSITIONS: [
+      [ 0, -6 ], [ 0, 6 ]
+    ]
+
+Simulation:
+  TIMESTEP: 0.01
+
+  Pheromone:
+    TIMESTEP: 0.0005
+
+Renderer:
+  MAX_GEOM: 7800
+  RESOLUTION: [ 900, 1350 ]
+
+Characteristic:
+  Environment:
+    CELL_SIZE: 0.2
+    WIDTH: 80
+    HEIGHT: 90
+
+  Robot:
+    THINKING_INTERVAL: 0.3
+    MAX_SECRETION: 18
+    TANK_SIZE: "eval: 3 * $Characteristic.Robot.MAX_SECRETION"
+    MOVE_SPEED: 1.2
+    TURN_SPEED: 1.0
+
+    SENSOR_PRECISION: [ 2 / 0.7, 2 / 5 ]
+
+  Pheromone:
+    SATURATED_VAPOR: 1.500
+    EVAPORATION: 14.936
+    DIFFUSION: 6.500
+    DECREASE: 0.00186
