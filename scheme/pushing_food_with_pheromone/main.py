@@ -32,17 +32,21 @@ def main(workdir):
     analysis(workdir, para)
 
 
-def test_rec(workdir):
+def rec_only(workdir):
     from libs.optimizer import Hist
 
-    from scheme.pushing_food_with_pheromone.src import record
+    import scheme.pushing_food_with_pheromone.src as src
 
     git_hash = os.path.basename(workdir)[-8:]
 
     hist = Hist.load(os.path.join(workdir, f"history_{git_hash}.npz"))
-    para = hist.get_min().min_para
 
-    record(para, workdir)
+    for i in [len(hist.queues) - 1]:
+        gen_dir = os.path.join(workdir, str(i))
+        if not os.path.exists(gen_dir):
+            os.makedirs(gen_dir)
+        para = hist.queues[i].min_para
+        src.record(para, gen_dir)
 
 
 def analysis_only(work_dir):
