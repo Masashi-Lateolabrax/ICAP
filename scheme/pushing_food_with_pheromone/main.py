@@ -73,12 +73,12 @@ def test_xml():
 
 if __name__ == '__main__':
     cd = os.path.dirname(os.path.abspath(__file__))
-    # wd = prepare_workdir(cd)
-    wd = os.path.join(cd, f"results/20240831_045005_df7c77fa")
+    wd = prepare_workdir(cd)
+    # wd = os.path.join(cd, f"results/20240831_045005_df7c77fa")
 
     generate(os.path.join(cd, "settings.yaml"), os.path.join(cd, "src/settings.py"))
 
-    # main(wd)
+    main(wd)
     # test_xml()
-    # test_rec(wd)
-    analysis_only(wd)
+    # rec_only(wd)
+    # analysis_only(wd)
