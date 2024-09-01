@@ -57,9 +57,13 @@ def analysis_only(work_dir):
     git_hash = os.path.basename(work_dir)[-8:]
 
     hist = Hist.load(os.path.join(work_dir, f"history_{git_hash}.npz"))
-    para = hist.get_min().min_para
 
-    src.analysis(work_dir, para)
+    for i in [len(hist.queues) - 1]:
+        gen_dir = os.path.join(work_dir, str(i))
+        if not os.path.exists(gen_dir):
+            os.makedirs(gen_dir)
+        para = hist.queues[i].min_para
+        src.analysis(gen_dir, para)
 
 
 def test_xml():
