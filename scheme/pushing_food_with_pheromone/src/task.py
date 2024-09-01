@@ -32,6 +32,7 @@ class Task(MjcTaskInterface):
         d = np.linalg.norm(sub, axis=1)
         sub /= d
         food_nest_score = np.dot(food_vel, sub.T)
+        # food_nest_score = np.clip(food_nest_score, None, 1)
         food_nest_score = np.sum(food_nest_score)
 
         dif_food_robot_score = 0
