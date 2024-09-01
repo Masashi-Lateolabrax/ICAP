@@ -1,10 +1,10 @@
 import os
+from datetime import datetime
 
 from libs.setting import generate
 
 
 def prepare_workdir(current_dir):
-    from datetime import datetime
     from libs.utils import get_head_hash
 
     head_hash = get_head_hash()[0:8]
@@ -19,32 +19,43 @@ def prepare_workdir(current_dir):
 
 def main(workdir):
     from scheme.pushing_food_with_pheromone.src import optimization, analysis, record
-    from libs.utils import get_head_hash
 
-    head_hash = get_head_hash()[0:8]
+    git_hash = os.path.basename(workdir)[-8:]
 
     hist = optimization()
-    hist.save(os.path.join(workdir, f"history_{head_hash}.npz"))
+    hist.save(os.path.join(workdir, f"history_{git_hash}.npz"))
 
     para = hist.get_min().min_para
 
     record(para, workdir)
 
-    analysis()
+    analysis(workdir, para)
 
 
 def test_rec(workdir):
     from libs.optimizer import Hist
-    from libs.utils import get_head_hash
 
     from scheme.pushing_food_with_pheromone.src import record
 
-    head_hash = get_head_hash()[0:8]
+    git_hash = os.path.basename(workdir)[-8:]
 
-    hist = Hist.load(os.path.join(workdir, f"history_{head_hash}.npz"))
+    hist = Hist.load(os.path.join(workdir, f"history_{git_hash}.npz"))
     para = hist.get_min().min_para
 
     record(para, workdir)
+
+
+def analysis_only(work_dir):
+    from libs.optimizer import Hist
+
+    import scheme.pushing_food_with_pheromone.src as src
+
+    git_hash = os.path.basename(work_dir)[-8:]
+
+    hist = Hist.load(os.path.join(work_dir, f"history_{git_hash}.npz"))
+    para = hist.get_min().min_para
+
+    src.analysis(work_dir, para)
 
 
 def test_xml():
@@ -54,11 +65,12 @@ def test_xml():
 
 if __name__ == '__main__':
     cd = os.path.dirname(os.path.abspath(__file__))
-    wd = prepare_workdir(cd)
-    # wd = os.path.join(cd, "results/20240830_173155_70cb925e")
+    # wd = prepare_workdir(cd)
+    wd = os.path.join(cd, f"results/20240831_045005_df7c77fa")
 
     generate(os.path.join(cd, "settings.yaml"), os.path.join(cd, "src/settings.py"))
 
-    main(wd)
+    # main(wd)
     # test_xml()
     # test_rec(wd)
+    analysis_only(wd)
