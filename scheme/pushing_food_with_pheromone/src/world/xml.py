@@ -54,7 +54,6 @@ def gen_xml() -> str:
         ),
     ])
     act = Actuator()
-    sen = Sensor()
 
     for name, x, y, w, h in [
         ("wallN", 0, env_height * 0.5, env_width * 0.5, tile_size * 0.5),
@@ -85,9 +84,6 @@ def gen_xml() -> str:
                     name=f"food{i}", type_=mjc_cmn.GeomType.CYLINDER, pos=(p[0], p[1], 0.071), size=(0.5, 0.07),
                     rgba=(0, 1, 1, 1), density=300000, condim=3
                 ),
-                body.Site(
-                    name=f"food{i}.site.center", type_=mjc_cmn.GeomType.SPHERE, size=(0.04,)
-                ),
                 body.Joint(
                     name=f"food{i}.joint.slide_x", type_=mjc_cmn.JointType.SLIDE, axis=(1, 0, 0),
                     frictionloss=3000000 * 3
@@ -97,11 +93,6 @@ def gen_xml() -> str:
                     frictionloss=3000000 * 3
                 )
             ]),
-        ])
-        sen.add_children([
-            sensor.Velocimeter(
-                name=f"food{i}.sensor.vel", site=f"food{i}.site.center"
-            )
         ])
 
     bot_rev_quat = np.zeros((4, 1))
@@ -156,16 +147,10 @@ def gen_xml() -> str:
                 kv=10000000
             ),
         ])
-        sen.add_children([
-            sensor.Velocimeter(
-                name=name_table["v_sen"], site=name_table["c_site"]
-            )
-        ])
 
     generator.add_children([
         worldbody,
-        act,
-        sen
+        act
     ])
 
     xml = generator.build()

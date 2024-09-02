@@ -59,8 +59,6 @@ class Robot(BodyObject, metaclass=abc.ABCMeta):
         self._act_move_x = d.actuator(name_table["x_act"])
         self._act_move_y = d.actuator(name_table["y_act"])
 
-        self._sen_vel = d.sensor(name_table["v_sen"])
-
         self._movement_power = 0
         self._rotation_power = 0
         self._pheromone_secretion = 0
@@ -79,7 +77,6 @@ class Robot(BodyObject, metaclass=abc.ABCMeta):
 
     def act(self, env: Environment):
         mujoco.mju_rotVecQuat(self._buf.bot_direction, [0, 1, 0], self.get_body().xquat)
-        self._buf.velocity.copy_(torch.from_numpy(self._sen_vel.data[0:2]))
 
         dn = np.linalg.norm(env.nest_pos - self.get_body().xpos[0:2])
         if dn < Settings.Task.Nest.SIZE:

@@ -18,7 +18,6 @@ class Environment:
 
         self.bot_pos = np.zeros((len(Settings.Task.Robot.POSITIONS), 2))
         self.food_pos = np.zeros((len(Settings.Task.Food.POSITIONS), 2))
-        self.food_vel = np.zeros((len(Settings.Task.Food.POSITIONS), 2))
         self.nest_pos = np.array(Settings.Task.Nest.POSITION)
 
         self.pheromone = PheromoneFieldWithDummies(
@@ -51,9 +50,6 @@ class Environment:
         for fi in range(len(Settings.Task.Food.POSITIONS)):
             geom = self._d.geom(f"food{fi}")
             self.food_pos[fi, :] = geom.xpos[:2]
-
-            vel = self._d.sensor(f"food{fi}.sensor.vel")
-            self.food_vel[fi, :] = vel.data[0:2]
 
     def calc_step(self):
         mujoco.mj_step(self._m, self._d)

@@ -23,16 +23,14 @@ class Task(MjcTaskInterface):
     def calc_step(self) -> float:
         self.world.calc_step()
 
+        init_food_pos = np.array(Settings.Task.Food.POSITIONS)
         food_pos = self.world.env.food_pos
-        food_vel = self.world.env.food_vel
         bot_pos = self.world.env.bot_pos
         nest_pos = self.world.env.nest_pos
 
-        sub = food_pos - nest_pos
-        d = np.linalg.norm(sub, axis=1)
-        sub /= d
-        food_nest_score = np.dot(food_vel, sub.T)
-        food_nest_score = np.sum(food_nest_score)
+        food_nest_score = np.sum(
+            np.linalg.norm(food_pos - nest_pos, axis=1) / np.linalg.norm(init_food_pos - nest_pos, axis=1)
+        )
 
         dif_food_robot_score = 0
         d = np.zeros((bot_pos.shape[0], 2))
