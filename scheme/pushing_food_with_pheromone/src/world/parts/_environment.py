@@ -10,8 +10,8 @@ from ..xml import gen_xml
 
 
 class Environment:
-    def __init__(self, create_dummies):
-        xml = gen_xml()
+    def __init__(self, bot_pos: list[tuple[float, float, float]], create_dummies):
+        xml = gen_xml(bot_pos)
 
         self._m = mujoco.MjModel.from_xml_string(xml)
         self._d = mujoco.MjData(self._m)

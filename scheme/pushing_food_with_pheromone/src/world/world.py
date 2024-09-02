@@ -19,10 +19,10 @@ class World:
     def get_dim():
         return tr.RobotTR.get_dim()
 
-    def __init__(self, para: array, panel: bool):
+    def __init__(self, para: array, bot_pos: list[tuple[float, float, float]], panel: bool):
         self._buf = _Buffer()
 
-        self.env = Environment(create_dummies=panel)
+        self.env = Environment(bot_pos, create_dummies=panel)
 
         factory = tr.RobotFactory(True, True)
         self.bots: list[tr.RobotTR] = [

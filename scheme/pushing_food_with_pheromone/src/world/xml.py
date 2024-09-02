@@ -9,13 +9,12 @@ from mujoco_xml_generator import Visual, visual
 from mujoco_xml_generator import Asset, asset
 from mujoco_xml_generator import Body, WorldBody, body
 from mujoco_xml_generator import Actuator, actuator
-from mujoco_xml_generator import Sensor, sensor
 
 from ..settings import Settings
 from ..utils import robot_names
 
 
-def gen_xml() -> str:
+def gen_xml(bot_pos: list[tuple[float, float, float]]) -> str:
     generator = mjc_gen.Generator().add_children([
         Option(
             timestep=Settings.Simulation.TIMESTEP,
@@ -97,7 +96,7 @@ def gen_xml() -> str:
 
     bot_rev_quat = np.zeros((4, 1))
     act_dir = np.zeros((2, 3))
-    for i, p in enumerate(Settings.Task.Robot.POSITIONS):
+    for i, p in enumerate(bot_pos):
         name_table = robot_names(i)
 
         mujoco.mju_axisAngle2Quat(bot_rev_quat, [0, 0, 1], -p[2] / 180 * mujoco.mjPI)

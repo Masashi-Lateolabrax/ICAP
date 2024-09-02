@@ -11,8 +11,8 @@ from .world import World
 
 
 class Task(MjcTaskInterface):
-    def __init__(self, para: array, panel: bool):
-        self.world = World(para, panel)
+    def __init__(self, para: array, bot_pos: list[tuple[float, float, float]], panel: bool):
+        self.world = World(para, bot_pos, panel)
 
     def get_model(self) -> mujoco.MjModel:
         return self.world.env.get_model()
