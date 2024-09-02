@@ -7,11 +7,11 @@ import torch
 
 from libs.mujoco_utils.objects import BodyObject
 
-from ....settings import Settings
 from ....utils import robot_names
 from .._environment import Environment
 
-from ._pheromone_tank import PheromoneTank
+
+# from ._pheromone_tank import PheromoneTank
 
 
 class RobotDebugBuf:
@@ -49,9 +49,9 @@ class Robot(BodyObject, metaclass=abc.ABCMeta):
 
         super().__init__(m, d, name_table["body"])
 
-        self.pheromone_tank = PheromoneTank(
-            Settings.Characteristic.Robot.TANK_SIZE
-        )
+        # self.pheromone_tank = PheromoneTank(
+        #     Settings.Characteristic.Robot.TANK_SIZE
+        # )
 
         self.cam_name = name_table["camera"]
 
@@ -78,10 +78,10 @@ class Robot(BodyObject, metaclass=abc.ABCMeta):
     def act(self, env: Environment):
         mujoco.mju_rotVecQuat(self._buf.bot_direction, [0, 1, 0], self.get_body().xquat)
 
-        dn = np.linalg.norm(env.nest_pos - self.get_body().xpos[0:2])
-        if dn < Settings.Task.Nest.SIZE:
-            self.pheromone_tank.fill()
-        self._buf.tank[0] = self.pheromone_tank.remain()
+        # dn = np.linalg.norm(env.nest_pos - self.get_body().xpos[0:2])
+        # if dn < Settings.Task.Nest.SIZE:
+        #     self.pheromone_tank.fill()
+        # self._buf.tank[0] = self.pheromone_tank.remain()
 
         self.update(env)
 
@@ -90,8 +90,8 @@ class Robot(BodyObject, metaclass=abc.ABCMeta):
         self._act_move_x.ctrl[0] = move_vec[0, 0]
         self._act_move_y.ctrl[0] = move_vec[1, 0]
 
-        secretion = self.pheromone_tank.secretion(self._pheromone_secretion)
-        env.pheromone.add_liquid(self, secretion)
+        # secretion = self.pheromone_tank.secretion(self._pheromone_secretion)
+        env.pheromone.add_liquid(self, self._pheromone_secretion)
 
     def get_direction(self):
         return self._buf.bot_direction[0:2, 0]
