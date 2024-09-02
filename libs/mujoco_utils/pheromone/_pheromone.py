@@ -38,6 +38,7 @@ class PheromoneFieldWithDummies:
         return list(map(lambda x: x[2], self._panels))
 
     def _mujoco_pos_to_pheromone_field_pos(self, m_pos: np.ndarray) -> np.ndarray:
+        m_pos = np.copy(m_pos)
         m_pos[1] *= -1
         return (m_pos + self._offset) / self._cell_size_for_mujoco
 
