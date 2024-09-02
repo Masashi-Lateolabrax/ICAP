@@ -1,10 +1,15 @@
+import os
+
+import numpy as np
 import mujoco
+import matplotlib.pyplot as plt
 
 from libs.optimizer import CMAES, Hist, MultiThreadProc
 from libs.utils.data_collector import Recorder
 
 from .settings import Settings
 from .task_generator import TaskGenerator
+from .collector import Collector
 
 
 def optimization() -> Hist:
@@ -26,8 +31,33 @@ def optimization() -> Hist:
     return cmaes.get_history()
 
 
-def analysis():
-    pass
+def analysis(work_dir, para):
+    total_step = int(Settings.Task.EPISODE / Settings.Simulation.TIMESTEP + 0.5)
+
+    xs = np.arange(0, total_step) * Settings.Simulation.TIMESTEP
+
+    # Collect data
+    generator = TaskGenerator()
+    task = generator.generate(para)
+    collector = Collector()
+    collector.run(task)
+
+    evaluation = collector.evaluation
+    pheromone_gas = collector.pheromone_gas
+
+    # Evaluation
+    fig = plt.figure()
+    axis = fig.add_subplot(1, 1, 1)
+    axis.set_title("Evaluation")
+    axis.plot(xs, evaluation)
+    fig.savefig(os.path.join(work_dir, "evaluation.svg"))
+
+    # Pheromone Gas Volume
+    fig = plt.figure()
+    axis = fig.add_subplot(1, 1, 1)
+    axis.set_title("Pheromone Gas Volume")
+    axis.plot(xs, pheromone_gas)
+    fig.savefig(os.path.join(work_dir, "pheromone_gas_volume.svg"))
 
 
 def record(para, workdir):
