@@ -2,7 +2,7 @@
 
 ## Task
 
-Pushing Food with Pheromone
+Transportation with Pheromone
 
 ## Objective
 
@@ -12,6 +12,9 @@ Check if the loss calculation is appropriate.
 
 ### Evaluation
 
+- Use the distance between the nest and the food for loss calculation
+- Initial robot directions are constant
+
 | Settings        | Value |
 |-----------------|-------|
 | FOOD_RANGE      | 2.3   |
@@ -20,8 +23,8 @@ Check if the loss calculation is appropriate.
 
 ## Changes
 
-- Increase the FOOD_NEST_GAIN from 1.0 to 5.0.
+- Use the distance between the nest and the food for loss calculation
 
 ## Date
 
-2024-09-02 02:56 (JST)
+2024-09-03 13:14 (JST)
