@@ -9,6 +9,7 @@ from mujoco_xml_generator import Visual, visual
 from mujoco_xml_generator import Asset, asset
 from mujoco_xml_generator import Body, WorldBody, body
 from mujoco_xml_generator import Actuator, actuator
+from mujoco_xml_generator import Sensor, sensor
 
 from ..settings import Settings
 from ..utils import robot_names
@@ -53,6 +54,7 @@ def gen_xml(bot_pos: list[tuple[float, float, float]]) -> str:
         ),
     ])
     act = Actuator()
+    sen = Sensor()
 
     for name, x, y, w, h in [
         ("wallN", 0, env_height * 0.5, env_width * 0.5, tile_size * 0.5),
@@ -146,10 +148,16 @@ def gen_xml(bot_pos: list[tuple[float, float, float]]) -> str:
                 kv=10000000
             ),
         ])
+        sen.add_children([
+            sensor.Velocimeter(
+                name=name_table["v_sen"], site=name_table["c_site"]
+            )
+        ])
 
     generator.add_children([
         worldbody,
-        act
+        act,
+        sen
     ])
 
     xml = generator.build()
