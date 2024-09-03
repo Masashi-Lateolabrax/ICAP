@@ -23,9 +23,8 @@ def optimization() -> Hist:
         sigma=Settings.Optimization.SIGMA,
         mu=Settings.Optimization.MU
     )
-    total_gen = cmaes.get_generation()
-    for gen in range(1, 1 + total_gen):
-        task_generator = TaskGenerator(1 - gen / total_gen)
+    for gen in range(1, 1 + cmaes.get_generation()):
+        task_generator = TaskGenerator(0)
         cmaes.optimize_current_generation(task_generator, MultiThreadProc)
 
     return cmaes.get_history()
