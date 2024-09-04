@@ -6,14 +6,15 @@ Transportation with Pheromone
 
 ## Objective
 
-Check if the loss calculation is appropriate.
+To split the robots into two groups.
 
 ## Features
 
-### Evaluation
+- Comment outed Pheromone Tank code
+- Randomize the initial directions of the robots
+- Use the distances between the nest and the food for the loss calculation
 
-- Use the distance between the nest and the food for loss calculation
-- Initial robot directions are constant
+### Evaluation
 
 | Settings        | Value |
 |-----------------|-------|
@@ -23,8 +24,10 @@ Check if the loss calculation is appropriate.
 
 ## Changes
 
-- Use the distance between the nest and the food for loss calculation
+- Comment outed Pheromone Tank code
+- Randomize the initial directions of the robots
+- Use the distances between the nest and the food for the loss calculation
 
 ## Date
 
-2024-09-03 13:14 (JST)
+2024-09-02 02:56 (JST)
