@@ -143,3 +143,37 @@ def analysis(workdir, para, data_inc: IncreaseData, data_dec: DecreaseData):
     axis.set_title(f"Gas Volume at {Settings.Optimization.Target.FIELD_SIZE}, max: {gas_max}")
     axis.plot(x, gas)
     fig.savefig(os.path.join(workdir, "gas_volume_at_the_point.svg"))
+
+    # Relative Gas Volume at The Point
+    x = (np.arange(0, end_index - start_index) + 0.5) * Settings.Simulation.TIMESTEP + Settings.Plot.START
+    size = Settings.Optimization.Target.FIELD_SIZE / Settings.Pheromone.CELL_SIZE_FOR_MUJOCO
+    center_idx = Settings.Pheromone.CENTER_INDEX
+    gc = data_inc.gas[start_index:end_index, center_idx[0], center_idx[1]]
+    gc[gc == 0] = 1
+    g1 = data_inc.gas[start_index:end_index, center_idx[0], center_idx[1] + int(size)]
+    g2 = data_inc.gas[start_index:end_index, center_idx[0], center_idx[1] + int(size) + 1]
+    gas = ((g2 - g1) * (size - int(size)) + g1) / gc
+    gas_max = np.max(gas)
+
+    fig = plt.figure()
+    axis = fig.add_subplot(1, 1, 1)
+    axis.set_title(f"Gas Volume at {Settings.Optimization.Target.FIELD_SIZE}, max: {gas_max}")
+    axis.plot(x, gas)
+    fig.savefig(os.path.join(workdir, "relative_gas_volume_at_the_point.svg"))
+
+    # Relative Gas Volume at The Point Extended
+    x = (np.arange(0, data_inc.dif_liquid.shape[0]) + 0.5) * Settings.Simulation.TIMESTEP
+    size = Settings.Optimization.Target.FIELD_SIZE / Settings.Pheromone.CELL_SIZE_FOR_MUJOCO
+    center_idx = Settings.Pheromone.CENTER_INDEX
+    gc = data_inc.gas[:, center_idx[0], center_idx[1]]
+    gc[gc == 0] = 1
+    g1 = data_inc.gas[:, center_idx[0], center_idx[1] + int(size)]
+    g2 = data_inc.gas[:, center_idx[0], center_idx[1] + int(size) + 1]
+    gas = ((g2 - g1) * (size - int(size)) + g1) / gc
+    gas_max = np.max(gas)
+
+    fig = plt.figure()
+    axis = fig.add_subplot(1, 1, 1)
+    axis.set_title(f"Gas Volume at {Settings.Optimization.Target.FIELD_SIZE}, max: {gas_max}")
+    axis.plot(x, gas)
+    fig.savefig(os.path.join(workdir, "relative_gas_volume_at_the_point_ex.svg"))
