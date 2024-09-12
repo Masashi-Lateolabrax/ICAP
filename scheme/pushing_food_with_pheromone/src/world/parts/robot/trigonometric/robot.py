@@ -26,8 +26,9 @@ class _Buffer(interfaces.RobotBuf):
 
 
 class RobotFactory(interfaces.RobotFactory):
-    def __init__(self, brain_sharing: bool, buffer_sharing: bool):
-        self.brain = None if brain_sharing else Brain()
+    def __init__(self, brain_sharing: bool, buffer_sharing: bool, debug: bool):
+        self.debug = debug
+        self.brain = None if brain_sharing else Brain(self.debug)
         self.buffer_sharing = buffer_sharing
         self.buf: _Buffer | None = None
 
@@ -35,7 +36,7 @@ class RobotFactory(interfaces.RobotFactory):
         return Brain().num_dim() + 1
 
     def manufacture(self, env: Environment, bot_id: int, para: Sequence[float]):
-        brain = Brain() if self.brain is None else self.brain
+        brain = Brain(self.debug) if self.brain is None else self.brain
         brain.load_para(para[0:-1])
         secretion = 0.5 * (math.tanh(para[-1]) + 1) * Settings.Characteristic.Robot.MAX_SECRETION
 
