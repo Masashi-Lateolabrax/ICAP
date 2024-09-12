@@ -72,6 +72,17 @@ def analysis(workdir, para, data_inc: IncreaseData, data_dec: DecreaseData):
     axis.plot(x, data_inc.dif_liquid[start_index:end_index])
     fig.savefig(os.path.join(workdir, "evaporation_speed.svg"))
 
+    # Evaporation Speed Extended
+    x = (np.arange(0, data_inc.dif_liquid.shape[0]) + 0.5) * Settings.Simulation.TIMESTEP
+    base_speed = data_inc.dif_liquid[end_index]
+    ave_speed = np.average(data_inc.dif_liquid[end_index:])
+
+    fig = plt.figure()
+    axis = fig.add_subplot(1, 1, 1)
+    axis.set_title(f"base: {base_speed}, ave: {ave_speed}")
+    axis.plot(x, data_inc.dif_liquid)
+    fig.savefig(os.path.join(workdir, "evaporation_speed_ex.svg"))
+
     # Gas Volume (INCREASE)
     x = (np.arange(0, end_index - start_index) + 0.5) * Settings.Simulation.TIMESTEP + Settings.Plot.START
     gas_max = np.max(data_dec.gas[start_index: end_index]) / sv
@@ -81,6 +92,16 @@ def analysis(workdir, para, data_inc: IncreaseData, data_dec: DecreaseData):
     axis.set_title(f"max: {gas_max}")
     axis.plot(x, np.max(data_inc.gas[start_index:end_index], axis=(1, 2)) / sv)
     fig.savefig(os.path.join(workdir, "gas_volume_inc.svg"))
+
+    # Gas Volume Extended (INCREASE)
+    x = (np.arange(0, data_inc.gas.shape[0]) + 0.5) * Settings.Simulation.TIMESTEP
+    gas_max = np.max(data_dec.gas) / sv
+
+    fig = plt.figure()
+    axis = fig.add_subplot(1, 1, 1)
+    axis.set_title(f"max: {gas_max}")
+    axis.plot(x, np.max(data_inc.gas, axis=(1, 2)) / sv)
+    fig.savefig(os.path.join(workdir, "gas_volume_inc_ex.svg"))
 
     # Gas Volume (DECREASE)
     x = (np.arange(0, end_index - start_index) + 0.5) * Settings.Simulation.TIMESTEP + Settings.Plot.START
@@ -94,6 +115,19 @@ def analysis(workdir, para, data_inc: IncreaseData, data_dec: DecreaseData):
     axis.set_title(f"min: {gas_min}, half life time: {half_life_time}")
     axis.plot(x, np.max(data_dec.gas[start_index:end_index], axis=(1, 2)) / sv)
     fig.savefig(os.path.join(workdir, "gas_volume_dec.svg"))
+
+    # Gas Volume Extended (DECREASE)
+    x = (np.arange(0, data_dec.gas.shape[0]) + 0.5) * Settings.Simulation.TIMESTEP
+    gas_max = np.max(data_dec.gas)
+    gas_min = np.min(data_dec.gas) / sv
+    half_life_idx = np.min(np.where(np.max(data_dec.gas, axis=(1, 2)) < gas_max * 0.5)[0])
+    half_life_time = half_life_idx * Settings.Simulation.TIMESTEP
+
+    fig = plt.figure()
+    axis = fig.add_subplot(1, 1, 1)
+    axis.set_title(f"min: {gas_min}, half life time: {half_life_time}")
+    axis.plot(x, np.max(data_dec.gas, axis=(1, 2)) / sv)
+    fig.savefig(os.path.join(workdir, "gas_volume_dec_ex.svg"))
 
     # Gas Volume at The Point
     x = (np.arange(0, end_index - start_index) + 0.5) * Settings.Simulation.TIMESTEP + Settings.Plot.START
