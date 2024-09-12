@@ -3,6 +3,10 @@ Display:
   RESOLUTION: [ 500, 500 ]
   ZOOM: 13
 
+Plot:
+  START: 0
+  END: 5
+
 Simulation:
   EPISODE_LENGTH: 15
   TIMESTEP: 0.005

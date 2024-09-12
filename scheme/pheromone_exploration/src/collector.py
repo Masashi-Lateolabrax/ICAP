@@ -20,10 +20,11 @@ class IncreaseData:
             )
             center_cell.set_liquid(Settings.Pheromone.LIQUID)
 
+            self.gas[t] = gas = self.pheromone.get_all_gas()
+
             self.pheromone.update(Settings.Simulation.TIMESTEP)
 
             self.dif_liquid[t] = center_cell.get_liquid() - Settings.Pheromone.LIQUID
-            self.gas[t] = gas = self.pheromone.get_all_gas()
 
             a = np.min(gas)
             if a < 0.0:
@@ -57,9 +58,9 @@ class DecreaseData:
         center_cell.set_liquid(0)
 
         for t in range(total_step):
-            pheromone.update(Settings.Simulation.TIMESTEP)
-
             self.gas[t] = gas = pheromone.get_all_gas()
+
+            pheromone.update(Settings.Simulation.TIMESTEP)
 
             a = np.min(gas)
             if a < 0.0:
