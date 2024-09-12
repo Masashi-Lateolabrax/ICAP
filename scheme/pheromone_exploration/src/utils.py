@@ -16,6 +16,16 @@ def convert_para(para):
     }
 
 
+def convert_characteristic(sv, evaporation, diffusion, decrease):
+    para = np.arctanh(np.array([
+        sv / Settings.Optimization.Range.SATURATION_VAPOR,
+        evaporation / Settings.Optimization.Range.EVAPORATION,
+        diffusion / Settings.Optimization.Range.DIFFUSION,
+        decrease / Settings.Optimization.Range.DECREASE
+    ]) * 2 - 1)
+    return para
+
+
 def init_pheromone_field(para) -> PheromoneField:
     para = convert_para(para)
     pheromone = PheromoneField(
