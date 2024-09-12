@@ -36,7 +36,7 @@ def analysis(work_dir, para):
     xs = np.arange(0, total_step) * Settings.Simulation.TIMESTEP
 
     # Collect data
-    generator = TaskGenerator()
+    generator = TaskGenerator(0)
     task = generator.generate(para)
     collector = Collector()
     collector.run(task)

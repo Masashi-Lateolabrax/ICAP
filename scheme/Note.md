@@ -2,13 +2,17 @@
 
 ## Task
 
-Pushing Food with Pheromone
+Transportation with Pheromone
 
 ## Objective
 
-Check if the loss calculation is appropriate.
+To split the robots into two groups.
 
 ## Features
+
+- Comment outed Pheromone Tank code
+- Randomize the initial directions of the robots
+- Use the distances between the nest and the food for the loss calculation
 
 ### Evaluation
 
@@ -20,7 +24,9 @@ Check if the loss calculation is appropriate.
 
 ## Changes
 
-- Increase the FOOD_NEST_GAIN from 1.0 to 5.0.
+- Comment outed Pheromone Tank code
+- Randomize the initial directions of the robots
+- Use the distances between the nest and the food for the loss calculation
 
 ## Date
 
