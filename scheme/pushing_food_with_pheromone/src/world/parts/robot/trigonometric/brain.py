@@ -38,7 +38,7 @@ class Brain(nn.Module):
             self.debugger.create_investigator("l0n"),
 
             _UnsqueezeLayer(0),
-            nn.RNN(10, 30),
+            nn.RNN(9, 30),
             _IndexFilter(0),
             _IndexFilter(0),
             self.debugger.create_investigator("l1"),
@@ -58,9 +58,8 @@ class Brain(nn.Module):
             nest: torch.Tensor,
             pheromone: torch.Tensor,
             speed: torch.Tensor,
-            remaining_pheromone: float,
     ) -> torch.Tensor:
-        x = torch.concat([sight, nest, pheromone, speed, remaining_pheromone])
+        x = torch.concat([sight, nest, pheromone, speed])
         x = self.seq.forward(x)
         return x
 

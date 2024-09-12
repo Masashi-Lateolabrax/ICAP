@@ -111,7 +111,7 @@ class RobotTR(interfaces.Robot):
                 self._buf.nest,
                 self._buf.pheromone,
                 self._buf.velocity,
-                self._buf.tank
+                # self._buf.tank
             ).detach().numpy()
 
             m_power = (act[0] + act[1]) * 0.5 * Settings.Characteristic.Robot.MOVE_SPEED

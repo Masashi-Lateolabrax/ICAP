@@ -81,10 +81,10 @@ class Robot(BodyObject, metaclass=abc.ABCMeta):
         mujoco.mju_rotVecQuat(self._buf.bot_direction, [0, 1, 0], self.get_body().xquat)
         self._buf.velocity.copy_(torch.from_numpy(self._sen_vel.data[0:2]))
 
-        dn = np.linalg.norm(env.nest_pos - self.get_body().xpos[0:2])
-        if dn < Settings.Task.Nest.SIZE:
-            self.pheromone_tank.fill()
-        self._buf.tank[0] = self.pheromone_tank.remain()
+        # dn = np.linalg.norm(env.nest_pos - self.get_body().xpos[0:2])
+        # if dn < Settings.Task.Nest.SIZE:
+        #     self.pheromone_tank.fill()
+        # self._buf.tank[0] = self.pheromone_tank.remain()
 
         self.update(env)
 
@@ -93,8 +93,9 @@ class Robot(BodyObject, metaclass=abc.ABCMeta):
         self._act_move_x.ctrl[0] = move_vec[0, 0]
         self._act_move_y.ctrl[0] = move_vec[1, 0]
 
-        secretion = self.pheromone_tank.secretion(self._pheromone_secretion)
-        env.pheromone.add_liquid(self, secretion)
+        # secretion = self.pheromone_tank.secretion(self._pheromone_secretion)
+        # env.pheromone.add_liquid(self, secretion)
+        env.pheromone.add_liquid(self, self._pheromone_secretion)
 
     def get_direction(self):
         return self._buf.bot_direction[0:2, 0]
