@@ -35,6 +35,23 @@ def main(workdir):
     analysis(workdir, para, data_inc, data_dec)
 
 
+def analyse_charactor(workdir):
+    import scheme.pheromone_exploration.src as src
+
+    para = src.convert_characteristic(
+        sv=10,
+        evaporation=20,
+        decrease=0.1,
+        diffusion=35
+    )
+
+    data_inc = src.IncreaseData(para)
+    data_dec = src.DecreaseData(data_inc)
+
+    src.recode(para, data_inc, data_dec, workdir)
+    src.analysis(workdir, para, data_inc, data_dec)
+
+
 if __name__ == '__main__':
     cd = os.path.dirname(os.path.abspath(__file__))
     wd = prepare_workdir(cd)
