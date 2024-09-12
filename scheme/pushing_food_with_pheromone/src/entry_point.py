@@ -24,7 +24,7 @@ def optimization() -> Hist:
         mu=Settings.Optimization.MU
     )
     for gen in range(1, 1 + cmaes.get_generation()):
-        task_generator = TaskGenerator(0, False)
+        task_generator = TaskGenerator(1, False)
         cmaes.optimize_current_generation(task_generator, MultiThreadProc)
 
     return cmaes.get_history()
@@ -36,7 +36,7 @@ def analysis(work_dir, para):
     xs = np.arange(0, total_step) * Settings.Simulation.TIMESTEP
 
     # Collect data
-    generator = TaskGenerator(0, False)
+    generator = TaskGenerator(1, False)
     task = generator.generate(para, True)
     collector = Collector()
     collector.run(task)
@@ -60,7 +60,7 @@ def analysis(work_dir, para):
 
 
 def record(para, workdir):
-    generator = TaskGenerator(0, True)
+    generator = TaskGenerator(1, True)
     task = generator.generate(para, False)
 
     camera = mujoco.MjvCamera()
