@@ -8,8 +8,8 @@ Plot:
   END: 5
 
 Simulation:
-  EPISODE_LENGTH: 15
-  TIMESTEP: 0.005
+  EPISODE_LENGTH: 60
+  TIMESTEP: "eval: 0.033333 / 5"
 
 Pheromone:
   NUM_CELL: [ 51, 51 ]
@@ -18,7 +18,7 @@ Pheromone:
     "eval: int($Pheromone.NUM_CELL[1] * 0.5)"
   ]
 
-  CELL_SIZE_FOR_CALCULATION: 0.2
+  CELL_SIZE_FOR_CALCULATION: 1
   CELL_SIZE_FOR_MUJOCO: 0.2
 
   MIN_SV: 0.001
@@ -31,10 +31,10 @@ Optimization:
   SIGMA: 0.3
 
   Range:
-    SATURATION_VAPOR: 10
-    EVAPORATION: 10
-    DIFFUSION: 10
-    DECREASE: 10
+    SATURATION_VAPOR: 100
+    EVAPORATION: 100
+    DIFFUSION: 100
+    DECREASE: 100
 
   Target:
     RELATIVE_STABLE_GAS_VOLUME: 0.6
