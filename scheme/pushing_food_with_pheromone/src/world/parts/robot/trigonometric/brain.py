@@ -1,7 +1,28 @@
 import torch
 from torch import nn
 
-from libs.torch_utils import Debugger
+from libs.torch_utils import Debugger, NormalNoize
+
+
+class _UnsqueezeLayer(nn.Module):
+    def __init__(self, dim):
+        super(_UnsqueezeLayer, self).__init__()
+        self.requires_grad_(False)
+        self.dim = dim
+
+    def forward(self, x: torch.Tensor):
+        return x.unsqueeze(self.dim)
+
+
+class _IndexFilter(nn.Module):
+    def __init__(self, i):
+        super(_IndexFilter, self).__init__()
+        self.requires_grad_(False)
+        self.i = i
+
+    def forward(self, x):
+        x = x[self.i]
+        return x
 
 
 class Brain(nn.Module):
@@ -10,20 +31,25 @@ class Brain(nn.Module):
 
         self.debugger = Debugger(debug)
 
-        self.layer_0_to_2 = nn.Sequential(
+        self.seq = nn.Sequential(
             self.debugger.create_investigator("l0"),
-            nn.RNN(10, 5),
+
+            NormalNoize(0.01),
+            self.debugger.create_investigator("l0n"),
+
+            _UnsqueezeLayer(0),
+            nn.RNN(10, 30),
+            _IndexFilter(0),
+            _IndexFilter(0),
             self.debugger.create_investigator("l1"),
-        )
+            NormalNoize(0.01),
+            self.debugger.create_investigator("l1n"),
 
-        self.layer_2_to_3 = nn.Sequential(
-            nn.Linear(5, 5),
-            nn.Tanh(),
-            self.debugger.create_investigator("l2"),
-
-            nn.Linear(5, 3),
+            nn.Linear(30, 3),
             nn.Sigmoid(),
-            self.debugger.create_investigator("l3"),
+            self.debugger.create_investigator("l2"),
+            NormalNoize(0.01),
+            self.debugger.create_investigator("l2n"),
         )
 
     def forward(
@@ -35,9 +61,7 @@ class Brain(nn.Module):
             remaining_pheromone: float,
     ) -> torch.Tensor:
         x = torch.concat([sight, nest, pheromone, speed, remaining_pheromone])
-        x = x.unsqueeze(0)
-        x, _ = self.layer_0_to_2.forward(x)
-        x = self.layer_2_to_3.forward(x[0])
+        x = self.seq.forward(x)
         return x
 
     def load_para(self, para):
