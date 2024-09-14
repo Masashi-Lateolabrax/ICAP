@@ -1,6 +1,8 @@
 /.idea/
 /RESULT/
 
+/scheme/transportation_old/results/*
+
 /report.md
 *.TXT
 *.mp4
