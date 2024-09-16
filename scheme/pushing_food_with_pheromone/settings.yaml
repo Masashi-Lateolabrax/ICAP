@@ -1,5 +1,5 @@
 Optimization:
-  GENERATION: 500
+  GENERATION: 1000
   POPULATION: 100  # int(4 + 3 * math.log(211))
   MU: 30
   SIGMA: 0.3
@@ -10,7 +10,7 @@ Optimization:
     FOOD_ROBOT_GAIN: 2.756
 
 Task:
-  EPISODE: 30
+  EPISODE: 60
 
   Nest:
     POSITION: [ 0, 0 ]
