@@ -10,6 +10,12 @@ To achieve the robust training.
 
 ## Features
 
+### Simulation
+
+| Setting        | Value |
+|----------------|-------|
+| Episode Length | 60    |
+
 ### Robot Characteristic
 
 | Settings       | Value   |
@@ -28,13 +34,20 @@ To achieve the robust training.
 | FOOD_ROBOT_GAIN | 2.756 |
 
 - Use the distances between the nest and the food for the loss calculation
+
+### Optimization
+
+| Setting    | Value |
+|------------|-------|
+| Generation | 1000  |
+
 - Randomize the initial robot directions in each generation for the optimization
 
 ## Changes
 
-- Randomize the initial robot directions in each generation for the optimization
-- Comment outed Pheromone Tank code
+- Increase the number of generation
+- Increase the episode length
 
 ## Date
 
-2024-09-13 08:03 (JST)
+2024-09-17 00:25 (JST)
