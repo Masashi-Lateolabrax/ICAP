@@ -10,13 +10,19 @@ To achieve the robust training.
 
 ## Features
 
+### Task
+
+| Setting        | Value |
+|----------------|-------|
+| Episode Length | 60    |
+
 ### Robot Characteristic
 
 | Settings       | Value   |
 |----------------|---------|
 | Pheromone Tank | Disable |
 | RNN            | Enable  |
-| Dimension      | 1324    |
+| Dimension      | 244     |
 | Noise Layer    | Enable  |
 
 ### Evaluation
@@ -28,13 +34,23 @@ To achieve the robust training.
 | FOOD_ROBOT_GAIN | 2.756 |
 
 - Use the distances between the nest and the food for the loss calculation
+
+### Optimization
+
+| Settings   | Value |
+|------------|-------|
+| Generation | 500   |
+| Population | 50    |
+| Elite      | 25    |
+
 - Randomize the initial robot directions in each generation for the optimization
 
 ## Changes
 
-- Randomize the initial robot directions in each generation for the optimization
-- Comment outed Pheromone Tank code
+- Shrink the robot brain size
+- Decrease the population
+- Increase the episode length
 
 ## Date
 
-2024-09-13 08:03 (JST)
+2024-09-17 23:50 (JST)
