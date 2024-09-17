@@ -38,18 +38,16 @@ class Brain(nn.Module):
             self.debugger.create_investigator("l0n"),
 
             _UnsqueezeLayer(0),
-            nn.RNN(9, 30),
+            nn.RNN(9, 20),
             _IndexFilter(0),
             _IndexFilter(0),
             self.debugger.create_investigator("l1"),
             NormalNoize(0.01),
             self.debugger.create_investigator("l1n"),
 
-            nn.Linear(30, 3),
+            nn.Linear(20, 3),
             nn.Sigmoid(),
             self.debugger.create_investigator("l2"),
-            NormalNoize(0.01),
-            self.debugger.create_investigator("l2n"),
         )
 
     def forward(
