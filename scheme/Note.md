@@ -22,8 +22,8 @@ To achieve the robust training.
 |----------------|---------|
 | Pheromone Tank | Disable |
 | RNN            | Enable  |
-| Dimension      | 684     |
-| Noise Layer    | Enable  |
+| Dimension      | 244     |
+| Noise Layer    | Disable |
 
 ### Evaluation
 
@@ -47,10 +47,8 @@ To achieve the robust training.
 
 ## Changes
 
-- Shrink the robot brain size
-- Decrease the population
-- Increase the episode length
+- Disable Noise layer
 
 ## Date
 
-2024-09-17 23:33 (JST)
+2024-09-20 14:07 (JST)
