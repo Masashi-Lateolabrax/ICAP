@@ -66,6 +66,31 @@ def analysis(work_dir, para):
     plot_pheromone_gas_volume()
 
 
+def analysis2(work_dir, hist: Hist):
+    def plot_loss():
+        xs = np.arange(0, len(hist.queues))
+        min_scores = np.zeros(xs.shape[0])
+        ave_scores = np.zeros(xs.shape[0])
+        max_scores = np.zeros(xs.shape[0])
+        for i, q in enumerate(hist.queues):
+            min_scores[i] = q.min_score
+            max_scores[i] = q.max_score
+            ave_scores[i] = q.scores_avg
+
+        fig = plt.figure()
+        axis = fig.add_subplot(1, 1, 1)
+
+        axis.plot(xs, ave_scores)
+        axis.fill_between(xs, min_scores, max_scores, color="gray", alpha=0.3)
+
+        axis.set_title("Loss")
+        fig.savefig(os.path.join(work_dir, "loss.svg"))
+
+    plot_loss()
+
+    analysis(work_dir, hist.get_min().min_para)
+
+
 def record(para, workdir):
     generator = TaskGenerator(1, True)
     task = generator.generate(para, False)
