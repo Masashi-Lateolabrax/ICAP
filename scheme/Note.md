@@ -10,13 +10,6 @@ To achieve the robust training.
 
 ## Features
 
-### Robot
-
-| Setting   | Value  |
-|-----------|--------|
-| RNN       | Enable |
-| Dimension | 684    |
-
 ### Task
 
 | Setting        | Value |
@@ -29,7 +22,7 @@ To achieve the robust training.
 |----------------|---------|
 | Pheromone Tank | Disable |
 | RNN            | Enable  |
-| Dimension      | 1324    |
+| Dimension      | 684     |
 | Noise Layer    | Enable  |
 
 ### Evaluation
