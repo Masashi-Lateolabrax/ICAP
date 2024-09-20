@@ -25,18 +25,18 @@ def prepare_workdir(current_dir, specify: str = None):
 
 
 def main(workdir):
-    from scheme.pushing_food_with_pheromone.src import optimization, analysis, record
+    import scheme.pushing_food_with_pheromone.src as src
 
     git_hash = os.path.basename(workdir)[-8:]
 
-    hist = optimization()
+    hist = src.optimization()
     hist.save(os.path.join(workdir, f"history_{git_hash}.npz"))
 
     para = hist.get_min().min_para
 
-    record(para, workdir)
+    src.record(para, workdir)
 
-    analysis(workdir, para)
+    src.analysis2(workdir, hist)
 
 
 def rec_only(workdir):
@@ -64,13 +64,7 @@ def analysis_only(work_dir):
     git_hash = os.path.basename(work_dir)[-8:]
 
     hist = Hist.load(os.path.join(work_dir, f"history_{git_hash}.npz"))
-
-    for i in [len(hist.queues) - 1]:
-        gen_dir = os.path.join(work_dir, str(i))
-        if not os.path.exists(gen_dir):
-            os.makedirs(gen_dir)
-        para = hist.queues[i].min_para
-        src.analysis(gen_dir, para)
+    src.analysis2(work_dir, hist)
 
 
 def test_xml():
