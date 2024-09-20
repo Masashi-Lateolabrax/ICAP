@@ -67,11 +67,6 @@ def analysis_only(work_dir):
     src.analysis2(work_dir, hist)
 
 
-def test_xml():
-    from scheme.pushing_food_with_pheromone.src.world import gen_xml
-    print(gen_xml())
-
-
 if __name__ == '__main__':
     cd = os.path.dirname(os.path.abspath(__file__))
     wd = prepare_workdir(cd)
