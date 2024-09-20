@@ -1,15 +1,22 @@
 import os
+import warnings
 from datetime import datetime
 
 from libs.setting import generate
 
 
-def prepare_workdir(current_dir):
+def prepare_workdir(current_dir, specify: str = None):
     from libs.utils import get_head_hash
 
     head_hash = get_head_hash()[0:8]
-    current_time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
-    workdir = os.path.join(current_dir, f"results/{current_time_str}_{head_hash}")
+
+    if specify is None:
+        current_time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+        workdir = os.path.join(current_dir, f"results/{current_time_str}_{head_hash}")
+    else:
+        workdir = os.path.join(current_dir, f"results/{specify}")
+        if head_hash != specify[-8:]:
+            warnings.warn("Your specified git hash don't match the HEAD's git hash.")
 
     if not os.path.exists(workdir):
         os.makedirs(workdir)
@@ -74,7 +81,6 @@ def test_xml():
 if __name__ == '__main__':
     cd = os.path.dirname(os.path.abspath(__file__))
     wd = prepare_workdir(cd)
-    # wd = os.path.join(cd, f"results/20240831_045005_df7c77fa")
 
     generate(os.path.join(cd, "settings.yaml"), os.path.join(cd, "src/settings.py"))
 
