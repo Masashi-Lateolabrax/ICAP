@@ -31,32 +31,39 @@ def optimization() -> Hist:
 
 
 def analysis(work_dir, para):
-    total_step = int(Settings.Task.EPISODE / Settings.Simulation.TIMESTEP + 0.5)
-
-    xs = np.arange(0, total_step) * Settings.Simulation.TIMESTEP
-
-    # Collect data
     generator = TaskGenerator(1, False)
     task = generator.generate(para, True)
     collector = Collector()
     collector.run(task)
 
-    evaluation = collector.evaluation
-    pheromone_gas = collector.pheromone_gas
+    def plot_evaluation():
+        total_step = int(Settings.Task.EPISODE / Settings.Simulation.TIMESTEP + 0.5)
+        evaluation = collector.evaluation
+        xs = np.arange(0, total_step) * Settings.Simulation.TIMESTEP
 
-    # Evaluation
-    fig = plt.figure()
-    axis = fig.add_subplot(1, 1, 1)
-    axis.set_title("Evaluation")
-    axis.plot(xs, evaluation)
-    fig.savefig(os.path.join(work_dir, "evaluation.svg"))
+        fig = plt.figure()
+        axis = fig.add_subplot(1, 1, 1)
 
-    # Pheromone Gas Volume
-    fig = plt.figure()
-    axis = fig.add_subplot(1, 1, 1)
-    axis.set_title("Pheromone Gas Volume")
-    axis.plot(xs, pheromone_gas)
-    fig.savefig(os.path.join(work_dir, "pheromone_gas_volume.svg"))
+        axis.plot(xs, evaluation)
+
+        axis.set_title("Evaluation")
+        fig.savefig(os.path.join(work_dir, "evaluation.svg"))
+
+    def plot_pheromone_gas_volume():
+        total_step = int(Settings.Task.EPISODE / Settings.Simulation.TIMESTEP + 0.5)
+        pheromone_gas = collector.pheromone_gas
+        xs = np.arange(0, total_step) * Settings.Simulation.TIMESTEP
+
+        fig = plt.figure()
+        axis = fig.add_subplot(1, 1, 1)
+
+        axis.plot(xs, pheromone_gas)
+
+        axis.set_title("Pheromone Gas Volume")
+        fig.savefig(os.path.join(work_dir, "pheromone_gas_volume.svg"))
+
+    plot_evaluation()
+    plot_pheromone_gas_volume()
 
 
 def record(para, workdir):
