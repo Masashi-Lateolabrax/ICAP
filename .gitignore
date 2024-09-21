@@ -4,5 +4,6 @@
 
 /scheme/*/src/settings.py
 
+*.TXT
 *.tmp.*
 *.log.*
