@@ -36,19 +36,13 @@ def dump(task_dir):
     env_creator = EnvCreator()
     set_env_creator(env_creator)
 
-    # width: int = 500
-    # height: int = 700
-    # scale: int = 1
-    # window = miscellaneous.Window(width * scale, height * scale)
-    # camera = wrap_mjc.Camera((0, 600, 0), 2500, 90, 90)
-    # env = env_creator.create_mujoco_env(para, window, camera)
-
     env = env_creator.create(para)
 
     features = np.zeros((env.timestep, 9, 6))
     outputs = np.zeros((env.timestep, 9, 3))
     sensed_pheromone = np.zeros((env.timestep, 9))
     food_distance = np.zeros((env.timestep, 2))
+    pheromone = np.zeros((env.timestep, env.pheromone_field._nx, env.pheromone_field._ny))
 
     for _ in range(0, 5):
         env.model.step()
@@ -64,10 +58,13 @@ def dump(task_dir):
             outputs[t, i, :] = bot.brain.get_output()
             sensed_pheromone[t, i] = bot.brain.get_input()[6]
 
+        pheromone[t] = env.pheromone_field._gas.T[:, :]
+
     np.save(os.path.join(task_dir, "features.npy"), features)
     np.save(os.path.join(task_dir, "outputs.npy"), outputs)
     np.save(os.path.join(task_dir, "sensed_pheromone.npy"), sensed_pheromone)
     np.save(os.path.join(task_dir, "food_distance.npy"), food_distance)
+    np.save(os.path.join(task_dir, "pheromone.npy"), pheromone)
 
 
 def main():
@@ -85,11 +82,13 @@ def main():
 
         print(task_dir)
 
+        # dump(task_dir)
         f_existing = os.path.exists(os.path.join(task_dir, "features.npy"))
         o_existing = os.path.exists(os.path.join(task_dir, "outputs.npy"))
-        p_existing = os.path.exists(os.path.join(task_dir, "sensed_pheromone.npy"))
+        sp_existing = os.path.exists(os.path.join(task_dir, "sensed_pheromone.npy"))
         d_existing = os.path.exists(os.path.join(task_dir, "food_distance.npy"))
-        if not f_existing or not o_existing or not p_existing or not d_existing:
+        p_existing = os.path.exists(os.path.join(task_dir, "pheromone.npy"))
+        if not f_existing or not o_existing or not sp_existing or not d_existing or not p_existing:
             print("dump")
             dump(task_dir)
 
