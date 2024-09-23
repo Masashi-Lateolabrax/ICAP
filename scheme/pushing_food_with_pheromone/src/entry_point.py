@@ -31,32 +31,64 @@ def optimization() -> Hist:
 
 
 def analysis(work_dir, para):
-    total_step = int(Settings.Task.EPISODE / Settings.Simulation.TIMESTEP + 0.5)
-
-    xs = np.arange(0, total_step) * Settings.Simulation.TIMESTEP
-
-    # Collect data
     generator = TaskGenerator(1, False)
     task = generator.generate(para, True)
     collector = Collector()
     collector.run(task)
 
-    evaluation = collector.evaluation
-    pheromone_gas = collector.pheromone_gas
+    def plot_evaluation():
+        total_step = int(Settings.Task.EPISODE / Settings.Simulation.TIMESTEP + 0.5)
+        evaluation = collector.evaluation
+        xs = np.arange(0, total_step) * Settings.Simulation.TIMESTEP
 
-    # Evaluation
-    fig = plt.figure()
-    axis = fig.add_subplot(1, 1, 1)
-    axis.set_title("Evaluation")
-    axis.plot(xs, evaluation)
-    fig.savefig(os.path.join(work_dir, "evaluation.svg"))
+        fig = plt.figure()
+        axis = fig.add_subplot(1, 1, 1)
 
-    # Pheromone Gas Volume
-    fig = plt.figure()
-    axis = fig.add_subplot(1, 1, 1)
-    axis.set_title("Pheromone Gas Volume")
-    axis.plot(xs, pheromone_gas)
-    fig.savefig(os.path.join(work_dir, "pheromone_gas_volume.svg"))
+        axis.plot(xs, evaluation)
+
+        axis.set_title("Evaluation")
+        fig.savefig(os.path.join(work_dir, "evaluation.svg"))
+
+    def plot_pheromone_gas_volume():
+        total_step = int(Settings.Task.EPISODE / Settings.Simulation.TIMESTEP + 0.5)
+        pheromone_gas = collector.pheromone_gas
+        xs = np.arange(0, total_step) * Settings.Simulation.TIMESTEP
+
+        fig = plt.figure()
+        axis = fig.add_subplot(1, 1, 1)
+
+        axis.plot(xs, pheromone_gas)
+
+        axis.set_title("Pheromone Gas Volume")
+        fig.savefig(os.path.join(work_dir, "pheromone_gas_volume.svg"))
+
+    plot_evaluation()
+    plot_pheromone_gas_volume()
+
+
+def analysis2(work_dir, hist: Hist):
+    def plot_loss():
+        xs = np.arange(0, len(hist.queues))
+        min_scores = np.zeros(xs.shape[0])
+        ave_scores = np.zeros(xs.shape[0])
+        max_scores = np.zeros(xs.shape[0])
+        for i, q in enumerate(hist.queues):
+            min_scores[i] = q.min_score
+            max_scores[i] = q.max_score
+            ave_scores[i] = q.scores_avg
+
+        fig = plt.figure()
+        axis = fig.add_subplot(1, 1, 1)
+
+        axis.plot(xs, ave_scores)
+        axis.fill_between(xs, min_scores, max_scores, color="gray", alpha=0.3)
+
+        axis.set_title("Loss")
+        fig.savefig(os.path.join(work_dir, "loss.svg"))
+
+    plot_loss()
+
+    analysis(work_dir, hist.get_min().min_para)
 
 
 def record(para, workdir):

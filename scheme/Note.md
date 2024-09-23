@@ -10,7 +10,7 @@ To achieve the robust training.
 
 ## Features
 
-### Simulation
+### Task
 
 | Setting        | Value |
 |----------------|-------|
@@ -22,8 +22,8 @@ To achieve the robust training.
 |----------------|---------|
 | Pheromone Tank | Disable |
 | RNN            | Enable  |
-| Dimension      | 1324    |
-| Noise Layer    | Enable  |
+| Dimension      | 244     |
+| Noise Layer    | Disable |
 
 ### Evaluation
 
@@ -37,17 +37,18 @@ To achieve the robust training.
 
 ### Optimization
 
-| Setting    | Value |
+| Settings   | Value |
 |------------|-------|
-| Generation | 1000  |
+| Generation | 500   |
+| Population | 50    |
+| Elite      | 25    |
 
 - Randomize the initial robot directions in each generation for the optimization
 
 ## Changes
 
-- Increase the number of generation
-- Increase the episode length
+- Disable Noise layer
 
 ## Date
 
-2024-09-17 00:25 (JST)
+2024-09-20 14:07 (JST)

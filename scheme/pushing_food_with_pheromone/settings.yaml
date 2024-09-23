@@ -1,7 +1,7 @@
 Optimization:
-  GENERATION: 1000
-  POPULATION: 100  # int(4 + 3 * math.log(211))
-  MU: 30
+  GENERATION: 500
+  POPULATION: 50  # int(4 + 3 * math.log(211))
+  MU: "eval: int($Optimization.POPULATION * 0.5 + 0.5)"
   SIGMA: 0.3
 
   Evaluation:
