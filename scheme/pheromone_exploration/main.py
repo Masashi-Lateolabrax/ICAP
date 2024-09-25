@@ -44,21 +44,20 @@ def prepare_dir(current_dir, specify: str = None):
 
 
 def main(workdir):
-    from scheme.pheromone_exploration.src import optimization, analysis, recode, IncreaseData, DecreaseData
-    from libs.utils import get_head_hash
+    import scheme.pheromone_exploration.src as src
 
-    head_hash = get_head_hash()[0:8]
+    for i in range(Settings.NUM_GENERATION):
+        case_dir = os.path.join(workdir, f"case{i}")
+        os.makedirs(case_dir, exist_ok=True)
 
-    hist = optimization()
-    hist.save(os.path.join(workdir, f"history_{head_hash}.npz"))
+        para = src.gen_parameters()
 
-    para = hist.get_min().min_para
-    data_inc = IncreaseData(para)
-    data_dec = DecreaseData(data_inc)
+        data_inc = src.IncreaseData2(para)
+        data_dec = src.DecreaseData2(data_inc)
+        src.record(data_inc, data_dec, case_dir)
 
-    recode(para, data_inc, data_dec, workdir)
-
-    analysis(workdir, para, data_inc, data_dec)
+        with open(os.path.join(case_dir, "parameter.json"), mode="w", encoding="utf-8") as f:
+            json.dump(para, f, ensure_ascii=False, indent=2)
 
 
 def analyse_charactor(workdir):
@@ -80,8 +79,6 @@ def analyse_charactor(workdir):
 
 if __name__ == '__main__':
     cd = os.path.dirname(os.path.abspath(__file__))
-    wd = prepare_workdir(cd)
-
-    generate(os.path.join(cd, "settings.yaml"), os.path.join(cd, "src/settings.py"))
+    wd = prepare_dir(cd)
 
     main(wd)
