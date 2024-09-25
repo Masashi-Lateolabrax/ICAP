@@ -128,7 +128,10 @@ class RecEnv2(MjcTaskInterface):
         for xi, yi, dg in self._panels:
             value = self._gas[self._time, xi, yi]
             value = np.clip(value / self._sv, 0, 1)
-            c = colorsys.hsv_to_rgb(0.66 * (1.0 - value), 1.0, 1.0)
+            if np.isnan(value):
+                c = (0, 0, 0)
+            else:
+                c = colorsys.hsv_to_rgb(0.66 * (1.0 - value), 1.0, 1.0)
             dg.set_rgba((c[0], c[1], c[2], 1.0))
 
         self._time += 1
