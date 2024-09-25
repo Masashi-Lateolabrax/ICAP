@@ -22,7 +22,6 @@ def prepare_dir(current_dir, specify: str = None):
     if not os.path.exists(workdir):
         os.makedirs(workdir)
 
-    shutil.copy(os.path.join(current_dir, "settings.py"), workdir)
     shutil.copy(os.path.join(current_dir, "Note.md"), workdir)
 
     return workdir
