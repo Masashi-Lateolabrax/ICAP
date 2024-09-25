@@ -29,8 +29,7 @@ class Settings:
     @property
     class Environment(_HasPropertyMethod):
         NUM_CELL = (51, 51)
-        CELL_SIZE_FOR_CALCULATION = 0.2
-        CELL_SIZE_FOR_MUJOCO = 0.2
+        CELL_SIZE = 0.2
         LIQUID = 1000000000
 
         @property

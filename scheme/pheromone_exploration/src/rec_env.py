@@ -102,7 +102,7 @@ class RecEnv2(MjcTaskInterface):
         self.m = mujoco.MjModel.from_xml_string(xml)
         self.d = mujoco.MjData(self.m)
 
-        cell_size = Settings.Environment.CELL_SIZE_FOR_MUJOCO
+        cell_size = Settings.Environment.CELL_SIZE
         pheromone_field_size = Settings.Environment.NUM_CELL
 
         self._panels = []

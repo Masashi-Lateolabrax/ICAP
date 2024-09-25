@@ -45,7 +45,7 @@ class IncreaseData2:
         self.pheromone = PheromoneField(
             nx=Settings.Environment.NUM_CELL[0],
             ny=Settings.Environment.NUM_CELL[1],
-            d=Settings.Environment.CELL_SIZE_FOR_CALCULATION,
+            d=Settings.Environment.CELL_SIZE,
             **pheromone_parameter
         )
         self.sv = self.pheromone.get_sv()
