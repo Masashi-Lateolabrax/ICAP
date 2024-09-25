@@ -61,6 +61,7 @@ def analysis2(case_dir, data_inc: IncreaseData2, data_dec: DecreaseData2):
         if title is not None:
             axis.set_title(title)
         fig.savefig(os.path.join(case_dir, name))
+        plt.close(fig)
 
     plot("evaporation.svg", data_inc.evaporation)
     plot("gas_vol_inc.svg", np.max(data_inc.gas, axis=(1, 2)))
