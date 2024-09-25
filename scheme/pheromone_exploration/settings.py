@@ -4,7 +4,7 @@ class _HasPropertyMethod:
 
 
 class Settings:
-    NUM_GENERATION = 10
+    NUM_GENERATION = 1000
 
     class Display:
         MAX_GEOM = 7800
