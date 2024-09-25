@@ -18,8 +18,8 @@ class Settings:
 
     @property
     class Simulation(_HasPropertyMethod):
-        EPISODE_LENGTH = 5
-        TIMESTEP = 0.005
+        EPISODE_LENGTH = 15
+        TIMESTEP = 0.01
         EPS = 1
         MIN_SV = 0.1
 
