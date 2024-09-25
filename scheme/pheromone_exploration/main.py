@@ -1,6 +1,10 @@
 import os
+from datetime import datetime
+import shutil
+import warnings
+import json
 
-from libs.setting import generate
+from settings import Settings
 
 
 def prepare_workdir(current_dir):
@@ -13,6 +17,28 @@ def prepare_workdir(current_dir):
 
     if not os.path.exists(workdir):
         os.makedirs(workdir)
+
+    return workdir
+
+
+def prepare_dir(current_dir, specify: str = None):
+    from libs.utils import get_head_hash
+
+    head_hash = get_head_hash()[0:8]
+
+    if specify is None:
+        current_time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+        workdir = os.path.join(current_dir, f"results/{current_time_str}_{head_hash}")
+    else:
+        workdir = os.path.join(current_dir, f"results/{specify}")
+        if head_hash != specify[-8:]:
+            warnings.warn("Your specified git hash don't match the HEAD's git hash.")
+
+    if not os.path.exists(workdir):
+        os.makedirs(workdir)
+
+    shutil.copy(os.path.join(current_dir, "settings.py"), workdir)
+    shutil.copy(os.path.join(current_dir, "Note.md"), workdir)
 
     return workdir
 
