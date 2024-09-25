@@ -14,6 +14,7 @@ class Settings:
     class Plot:
         START = 0
         END = 5
+        AT_POINT = 0.35
 
     @property
     class Simulation(_HasPropertyMethod):
