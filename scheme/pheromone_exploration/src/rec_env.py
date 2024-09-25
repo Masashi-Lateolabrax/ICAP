@@ -4,12 +4,7 @@ import warnings
 import mujoco
 import numpy as np
 
-from mujoco_xml_generator import common as mjc_cmn
 from mujoco_xml_generator.utils import DummyGeom
-
-from mujoco_xml_generator import Generator, Option
-from mujoco_xml_generator import Visual, visual
-from mujoco_xml_generator import WorldBody, body
 
 from libs.optimizer import MjcTaskInterface
 
@@ -17,12 +12,17 @@ from .settings import Settings
 from .utils import convert_para
 
 
-def gen_xml():
+def _gen_xml():
+    from mujoco_xml_generator import common as mjc_cmn
+
+    from mujoco_xml_generator import Generator, Option
+    from mujoco_xml_generator import Visual, visual
+    from mujoco_xml_generator import WorldBody, body
+
     resolution = Settings.Display.RESOLUTION
     xml = Generator().add_children([
         Option(
             timestep=Settings.Simulation.TIMESTEP,
-            integrator=mjc_cmn.IntegratorType.IMPLICITFACT
         ),
         Visual().add_children([
             visual.Global(offwidth=resolution[0], offheight=resolution[1])
@@ -42,7 +42,7 @@ class RecEnv(MjcTaskInterface):
         self._gas = gas
         self._time = 0
 
-        xml = gen_xml()
+        xml = _gen_xml()
         self.m = mujoco.MjModel.from_xml_string(xml)
         self.d = mujoco.MjData(self.m)
 
