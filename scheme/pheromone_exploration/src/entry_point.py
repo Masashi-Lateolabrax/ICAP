@@ -8,9 +8,9 @@ from libs.utils.data_collector import Recorder
 
 from .settings import Settings
 from .task import Generator
-from .rec_env import RecEnv
+from .rec_env import RecEnv, RecEnv2
 from .utils import convert_para
-from .collector import IncreaseData, DecreaseData
+from .collector import IncreaseData, DecreaseData, IncreaseData2, DecreaseData2
 
 
 def optimization() -> Hist:
@@ -53,6 +53,29 @@ def recode(para, gas_inc: IncreaseData, gas_dec: DecreaseData, workdir):
     )
     recorder.run(
         RecEnv(gas_dec.gas, para)
+    )
+    recorder.release()
+
+
+def record(gas_inc: IncreaseData2, gas_dec: DecreaseData2, case_dir):
+    camera = mujoco.MjvCamera()
+    camera.elevation = -90
+    camera.distance = Settings.Display.ZOOM
+    recorder = Recorder(
+        timestep=Settings.Simulation.TIMESTEP,
+        episode=int(Settings.Simulation.EPISODE_LENGTH / Settings.Simulation.TIMESTEP + 0.5),
+        width=Settings.Display.RESOLUTION[0],
+        height=Settings.Display.RESOLUTION[1],
+        project_directory=case_dir,
+        camera=camera,
+        max_geom=Settings.Display.MAX_GEOM
+    )
+
+    recorder.run(
+        RecEnv2(gas_inc.gas, gas_inc.sv)
+    )
+    recorder.run(
+        RecEnv2(gas_dec.gas, gas_dec.sv)
     )
     recorder.release()
 
