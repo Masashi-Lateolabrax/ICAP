@@ -2,7 +2,6 @@ import os
 from datetime import datetime
 import shutil
 import warnings
-import json
 
 from settings import Settings
 
@@ -49,15 +48,10 @@ def main(workdir):
     for i in range(Settings.NUM_GENERATION):
         case_dir = os.path.join(workdir, f"case{i}")
         os.makedirs(case_dir, exist_ok=True)
-
         para = src.gen_parameters()
-
-        data_inc = src.IncreaseData2(para)
-        data_dec = src.DecreaseData2(data_inc)
+        data_inc, data_dec = src.dump(case_dir, para)
         src.record(data_inc, data_dec, case_dir)
-
-        with open(os.path.join(case_dir, "parameter.json"), mode="w", encoding="utf-8") as f:
-            json.dump(para, f, ensure_ascii=False, indent=2)
+        src.analysis2(case_dir, data_inc, data_dec)
 
 
 def analyse_charactor(workdir):
