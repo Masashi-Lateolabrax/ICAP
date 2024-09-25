@@ -4,6 +4,7 @@ import numpy as np
 
 from libs.pheromone import PheromoneField
 from .settings import Settings
+import random
 
 
 def convert_para(para):
@@ -35,6 +36,15 @@ def init_pheromone_field(para) -> PheromoneField:
         **para
     )
     return pheromone
+
+
+def gen_parameters():
+    return {
+        "sv": Settings.Optimization.Range.SATURATION_VAPOR * random.random(),
+        "evaporate": Settings.Optimization.Range.EVAPORATION * random.random(),
+        "diffusion": Settings.Optimization.Range.DIFFUSION * random.random(),
+        "decrease": Settings.Optimization.Range.DECREASE * random.random()
+    }
 
 
 def calc_consistency(gas):
