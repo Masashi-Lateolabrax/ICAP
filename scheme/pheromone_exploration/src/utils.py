@@ -40,10 +40,10 @@ def init_pheromone_field(para) -> PheromoneField:
 
 def gen_parameters():
     return {
-        "sv": Settings.Optimization.Range.SATURATION_VAPOR * random.random(),
-        "evaporate": Settings.Optimization.Range.EVAPORATION * random.random(),
-        "diffusion": Settings.Optimization.Range.DIFFUSION * random.random(),
-        "decrease": Settings.Optimization.Range.DECREASE * random.random()
+        "sv": Settings.Pheromone.SATURATION_VAPOR * random.random(),
+        "evaporate": Settings.Pheromone.EVAPORATION * random.random(),
+        "diffusion": Settings.Pheromone.DIFFUSION * random.random(),
+        "decrease": Settings.Pheromone.DECREASE * random.random()
     }
 
 
