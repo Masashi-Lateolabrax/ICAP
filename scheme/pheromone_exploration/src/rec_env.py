@@ -123,7 +123,9 @@ class RecEnv2(MjcTaskInterface):
         return self.d
 
     def calc_step(self) -> float:
-        mujoco.mj_step(self.m, self.d)
+        if self._time >= self._gas.shape[0]:
+            warnings.warn("Reset time")
+            self._time = 0
 
         for xi, yi, dg in self._panels:
             value = self._gas[self._time, xi, yi]
@@ -135,9 +137,6 @@ class RecEnv2(MjcTaskInterface):
             dg.set_rgba((c[0], c[1], c[2], 1.0))
 
         self._time += 1
-        if self._time >= self._gas.shape[0]:
-            warnings.warn("Reset time")
-            self._time = 0
 
         return 0.0
 
