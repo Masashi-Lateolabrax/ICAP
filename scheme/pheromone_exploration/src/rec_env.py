@@ -102,8 +102,8 @@ class RecEnv2(MjcTaskInterface):
         self.m = mujoco.MjModel.from_xml_string(xml)
         self.d = mujoco.MjData(self.m)
 
-        cell_size = Settings.Pheromone.CELL_SIZE_FOR_MUJOCO
-        pheromone_field_size = Settings.Pheromone.NUM_CELL
+        cell_size = Settings.Environment.CELL_SIZE_FOR_MUJOCO
+        pheromone_field_size = Settings.Environment.NUM_CELL
 
         self._panels = []
         for xi in range(pheromone_field_size[0]):
@@ -142,8 +142,7 @@ class RecEnv2(MjcTaskInterface):
         return 0.0
 
     def run(self) -> float:
-        total_step = int(Settings.Simulation.EPISODE_LENGTH / Settings.Simulation.TIMESTEP + 0.5)
-        for _ in range(total_step):
+        for _ in range(Settings.Simulation.TOTAL_STEP):
             self.calc_step()
         return 0.0
 
