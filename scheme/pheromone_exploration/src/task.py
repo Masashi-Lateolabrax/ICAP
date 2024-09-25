@@ -69,8 +69,8 @@ class Task(TaskInterface):
 
         dec_volume_err = calc_gas_volume_err(
             data_dec.gas,
-            Settings.Optimization.Target.INCREASE_TIME,
-            Settings.Optimization.Target.RELATIVE_STABLE_GAS_VOLUME,
+            Settings.Optimization.Target.DECREASE_TIME,
+            Settings.Optimization.Target.RELATIVE_STABLE_GAS_VOLUME * 0.5,
             sv
         )
 
