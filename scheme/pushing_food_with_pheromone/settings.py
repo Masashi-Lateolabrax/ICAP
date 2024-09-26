@@ -14,10 +14,10 @@ class Settings:
         def MU(self):
             return int(self.POPULATION * 0.5 + 0.5)
 
-    class Evaluation:
-        FOOD_RANGE = 2.3
-        FOOD_NEST_GAIN = 1
-        FOOD_ROBOT_GAIN = 0.01
+        class Evaluation:
+            FOOD_RANGE = 2.3
+            FOOD_NEST_GAIN = 1
+            FOOD_ROBOT_GAIN = 0.01
 
     class Task:
         EPISODE = 30
@@ -48,7 +48,8 @@ class Settings:
         MAX_GEOM = 7800
         RESOLUTION = [900, 1350]
 
-    class Characteristic:
+    @property
+    class Characteristic(_HasPropertyMethod):
         class Environment:
             CELL_SIZE = 0.2
             WIDTH = 80
@@ -63,9 +64,7 @@ class Settings:
 
             SENSOR_PRECISION = [2 / 0.7, 2 / 5]
 
-            @property
-            def MAX_SECRETION(self):
-                return 0.423 * 3
+            MAX_SECRETION = 0.423 * 3
 
             @property
             def TANK_SIZE(self):

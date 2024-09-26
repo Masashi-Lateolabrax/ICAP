@@ -25,7 +25,7 @@ class Environment:
                 nx=Settings.Characteristic.Environment.WIDTH,
                 ny=Settings.Characteristic.Environment.HEIGHT,
                 d=Settings.Characteristic.Environment.CELL_SIZE,
-                sv=Settings.Characteristic.Pheromone.SATURATED_VAPOR,
+                sv=Settings.Characteristic.Pheromone.SATURATION_VAPOR,
                 evaporate=Settings.Characteristic.Pheromone.EVAPORATION,
                 diffusion=Settings.Characteristic.Pheromone.DIFFUSION,
                 decrease=Settings.Characteristic.Pheromone.DECREASE

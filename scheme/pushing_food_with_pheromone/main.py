@@ -71,8 +71,6 @@ if __name__ == '__main__':
     cd = os.path.dirname(os.path.abspath(__file__))
     wd = prepare_workdir(cd)
 
-    generate(os.path.join(cd, "settings.yaml"), os.path.join(cd, "src/settings.py"))
-
     main(wd)
     # test_xml()
     # rec_only(wd)
