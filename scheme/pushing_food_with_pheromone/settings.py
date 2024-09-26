@@ -43,7 +43,7 @@ class Settings:
                 ]
                 global CACHE_NUM_ROBOT
                 if CACHE_NUM_ROBOT == 0:
-                    CACHE_NUM_ROBOT = len(self.POSITIONS(0))
+                    CACHE_NUM_ROBOT = len(pos)
                 return [(p[0], p[1], 90 + sigma * 180 * (2 * random.random() - 1)) for p in pos]
 
             @property

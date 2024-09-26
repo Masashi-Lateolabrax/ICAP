@@ -6,7 +6,7 @@ Transportation with Pheromone
 
 ## Objective
 
-To achieve the robust training.
+To observe the behavior of the pheromone.
 
 ## Features
 
@@ -14,7 +14,7 @@ To achieve the robust training.
 
 | Setting        | Value |
 |----------------|-------|
-| Episode Length | 60    |
+| Episode Length | 30    |
 
 ### Robot Characteristic
 
@@ -23,7 +23,16 @@ To achieve the robust training.
 | Pheromone Tank | Disable |
 | RNN            | Enable  |
 | Dimension      | 244     |
-| Noise Layer    | Disable |
+| Noise Layer    | Enable  |
+
+### Pheromone
+
+| Settings         | Value              |
+|------------------|--------------------|
+| SATURATION_VAPOR | 5.442554913756431  |
+| EVAPORATION      | 9.390048012289446  |
+| DIFFUSION        | 0.4907347580652921 |  
+| DECREASE         | 5.136664772909677  |
 
 ### Evaluation
 
@@ -51,4 +60,4 @@ To achieve the robust training.
 
 ## Date
 
-2024-09-20 14:07 (JST)
+2024-09-27 01:10 (JST)
