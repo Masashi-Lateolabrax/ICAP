@@ -1,11 +1,17 @@
-class _HasPropertyMethod:
+import random
+
+
+class _PropertyClass:
     def __init__(self, parent):
         self.parent = parent
 
 
+CACHE_NUM_ROBOT = 0
+
+
 class Settings:
     @property
-    class Optimization(_HasPropertyMethod):
+    class Optimization(_PropertyClass):
         GENERATION = 500
         POPULATION = 50  # int(4 + 3 * math.log(211))
         SIGMA = 0.3
@@ -19,19 +25,33 @@ class Settings:
             FOOD_NEST_GAIN = 1
             FOOD_ROBOT_GAIN = 0.01
 
-    class Task:
+    @property
+    class Task(_PropertyClass):
         EPISODE = 30
 
         class Nest:
             POSITION = [0, 0]
             SIZE = 3.0
 
-        class Robot:
-            POSITIONS = [
-                [-0.45, 0.45], [0, 0.45], [0.45, 0.45],
-                [-0.45, 0.00], [0, 0.00], [0.45, 0.00],
-                [-0.45, -0.45], [0, -0.45], [0.45, -0.45],
-            ]
+        @property
+        class Robot(_PropertyClass):
+            def POSITIONS(self, sigma):
+                pos = [
+                    [-0.45, 0.45], [0, 0.45], [0.45, 0.45],
+                    [-0.45, 0.00], [0, 0.00], [0.45, 0.00],
+                    [-0.45, -0.45], [0, -0.45], [0.45, -0.45],
+                ]
+                global CACHE_NUM_ROBOT
+                if CACHE_NUM_ROBOT == 0:
+                    CACHE_NUM_ROBOT = len(self.POSITIONS(0))
+                return [(p[0], p[1], 90 + sigma * 180 * (2 * random.random() - 1)) for p in pos]
+
+            @property
+            def NUM_ROBOTS(self):
+                global CACHE_NUM_ROBOT
+                if CACHE_NUM_ROBOT == 0:
+                    CACHE_NUM_ROBOT = len(self.POSITIONS(0))
+                return CACHE_NUM_ROBOT
 
         class Food:
             POSITIONS = [
@@ -49,14 +69,14 @@ class Settings:
         RESOLUTION = [900, 1350]
 
     @property
-    class Characteristic(_HasPropertyMethod):
+    class Characteristic(_PropertyClass):
         class Environment:
             CELL_SIZE = 0.2
             WIDTH = 80
             HEIGHT = 90
 
         @property
-        class Robot(_HasPropertyMethod):
+        class Robot(_PropertyClass):
             THINKING_INTERVAL = 0.3
 
             MOVE_SPEED = 1.2

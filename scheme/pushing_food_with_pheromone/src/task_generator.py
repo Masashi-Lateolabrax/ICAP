@@ -10,9 +10,7 @@ from .world import World
 class TaskGenerator(opt.TaskGenerator):
     def __init__(self, sigma, panel: bool):
         self.panel = panel
-        self.bot_pos = [
-            (p[0], p[1], 90 + sigma * 180 * (2 * random.random() - 1)) for p in Settings.Task.Robot.POSITIONS
-        ]
+        self.bot_pos = Settings.Task.Robot.POSITIONS(sigma)
 
     @staticmethod
     def get_dim():

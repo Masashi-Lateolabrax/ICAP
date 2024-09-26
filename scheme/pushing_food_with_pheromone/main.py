@@ -3,8 +3,6 @@ import warnings
 from datetime import datetime
 import shutil
 
-from libs.setting import generate
-
 
 def prepare_workdir(current_dir, specify: str = None):
     from libs.utils import get_head_hash
@@ -92,8 +90,6 @@ def analysis_only(work_dir):
 if __name__ == '__main__':
     cd = os.path.dirname(os.path.abspath(__file__))
     wd = prepare_dir(cd)
-
-    generate(os.path.join(cd, "settings.yaml"), os.path.join(cd, "src/settings.py"))
 
     main(wd)
     # test_xml()

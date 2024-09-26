@@ -16,7 +16,7 @@ class Environment:
         self._m = mujoco.MjModel.from_xml_string(xml)
         self._d = mujoco.MjData(self._m)
 
-        self.bot_pos = np.zeros((len(Settings.Task.Robot.POSITIONS), 2))
+        self.bot_pos = np.zeros((Settings.Task.Robot.NUM_ROBOTS, 2))
         self.food_pos = np.zeros((len(Settings.Task.Food.POSITIONS), 2))
         self.nest_pos = np.array(Settings.Task.Nest.POSITION)
 
@@ -41,7 +41,7 @@ class Environment:
         return self._d
 
     def _update_bot_pos(self):
-        for bi in range(len(Settings.Task.Robot.POSITIONS)):
+        for bi in range(Settings.Task.Robot.NUM_ROBOTS):
             name_table = robot_names(bi)
             bot_body = self._d.body(name_table["body"])
             self.bot_pos[bi, :] = bot_body.xpos[:2]

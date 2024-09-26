@@ -26,7 +26,7 @@ class World:
 
         factory = tr.RobotFactory(True, True, debug)
         self.bots: list[tr.RobotTR] = [
-            factory.manufacture(self.env, i, para) for i in range(len(Settings.Task.Robot.POSITIONS))
+            factory.manufacture(self.env, i, para) for i in range(Settings.Task.Robot.NUM_ROBOTS)
         ]
 
         self.food = [

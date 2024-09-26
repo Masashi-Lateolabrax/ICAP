@@ -87,7 +87,7 @@ class RobotTR(interfaces.Robot):
         direction = self.get_direction()
         pos = env.bot_pos[self.bot_id]
 
-        other_bot_index_mask = [self.bot_id != i for i in range(len(Settings.Task.Robot.POSITIONS))]
+        other_bot_index_mask = [self.bot_id != i for i in range(Settings.Task.Robot.NUM_ROBOTS)]
         other_bot_positions = env.bot_pos[other_bot_index_mask, :]
 
         self._buf.sight[0], self._buf.sight[1] = self._tri_sensor_for_bot.measure(
