@@ -18,12 +18,12 @@ To observe the behavior of the pheromone.
 
 ### Robot Characteristic
 
-| Settings       | Value   |
-|----------------|---------|
-| Pheromone Tank | Disable |
-| RNN            | Enable  |
-| Dimension      | 244     |
-| Noise Layer    | Enable  |
+| Settings       | Value      |
+|----------------|------------|
+| Pheromone Tank | Disable    |
+| RNN            | Enable     |
+| Dimension      | 244        |
+| Noise Layer    | Input Only |
 
 ### Pheromone
 
@@ -39,8 +39,8 @@ To observe the behavior of the pheromone.
 | Settings        | Value |
 |-----------------|-------|
 | FOOD_RANGE      | 2.3   |
-| FOOD_NEST_GAIN  | 5.0   |
-| FOOD_ROBOT_GAIN | 2.756 |
+| FOOD_NEST_GAIN  | 1.0   |
+| FOOD_ROBOT_GAIN | 0.1   |
 
 - Use the distances between the nest and the food for the loss calculation
 
@@ -56,7 +56,7 @@ To observe the behavior of the pheromone.
 
 ## Changes
 
-- Disable Noise layer
+- Increase FOOD_ROBOT_GAIN; 0.01 -> 0.1
 
 ## Date
 
