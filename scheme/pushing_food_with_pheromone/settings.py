@@ -22,8 +22,8 @@ class Settings:
 
         class Evaluation:
             FOOD_RANGE = 2.3
-            FOOD_NEST_GAIN = 1
-            FOOD_ROBOT_GAIN = 0.1
+            FOOD_NEST_GAIN = 5.0
+            FOOD_ROBOT_GAIN = 0.2756
 
     @property
     class Task(_PropertyClass):
