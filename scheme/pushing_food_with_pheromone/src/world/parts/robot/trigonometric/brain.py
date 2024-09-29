@@ -43,6 +43,9 @@ class Brain(nn.Module):
             _IndexFilter(0),
             self.debugger.create_investigator("l1"),
 
+            NormalNoize(0.01),
+            self.debugger.create_investigator("l1n"),
+
             nn.Linear(10, 3),
             nn.Sigmoid(),
             self.debugger.create_investigator("l2"),
