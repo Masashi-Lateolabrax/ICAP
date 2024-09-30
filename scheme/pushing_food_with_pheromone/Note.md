@@ -14,7 +14,7 @@ To observe the behavior of the pheromone.
 
 | Setting        | Value |
 |----------------|-------|
-| Episode Length | 30    |
+| Episode Length | 60    |
 
 ### Robot Characteristic
 
@@ -36,11 +36,11 @@ To observe the behavior of the pheromone.
 
 ### Evaluation
 
-| Settings        | Value  |
-|-----------------|--------|
-| FOOD_RANGE      | 2.3    |
-| FOOD_NEST_GAIN  | 5.0    |
-| FOOD_ROBOT_GAIN | 0.2756 |
+| Settings        | Value |
+|-----------------|-------|
+| FOOD_RANGE      | 2.3   |
+| FOOD_NEST_GAIN  | 50.0  |
+| FOOD_ROBOT_GAIN | 2.756 |
 
 - Use the distances between the nest and the food for the loss calculation
 
@@ -60,4 +60,4 @@ To observe the behavior of the pheromone.
 
 ## Date
 
-2024-09-28 21:03 (JST)
+2024-09-30 17:07 (JST)
