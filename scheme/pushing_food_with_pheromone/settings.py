@@ -27,7 +27,7 @@ class Settings:
 
     @property
     class Task(_PropertyClass):
-        EPISODE = 30
+        EPISODE = 60
 
         class Nest:
             POSITION = [0, 0]
