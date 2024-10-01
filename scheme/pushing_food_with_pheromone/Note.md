@@ -53,11 +53,12 @@ To observe the behavior of the pheromone.
 | Elite      | 25    |
 
 - Randomize the initial robot directions in each generation for the optimization
+- Randomize food positions in each generation.
 
 ## Changes
 
-- Enable the Noise Layer in the Middle layer.
+- Randomize food positions in each generation.
 
 ## Date
 
-2024-09-30 17:07 (JST)
+2024-10-02 05:41 (JST)

@@ -52,7 +52,7 @@ class Environment:
             self.bot_pos[bi, :] = bot_body.xpos[:2]
 
     def _update_food_state(self):
-        for fi in range(len(Settings.Task.Food.POSITIONS)):
+        for fi in range(Settings.Task.Food.NUM_FOOD):
             geom = self._d.geom(f"food{fi}")
             self.food_pos[fi, :] = geom.xpos[:2]
 

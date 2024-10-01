@@ -7,6 +7,7 @@ class _PropertyClass:
 
 
 CACHE_NUM_ROBOT = 0
+CACHE_NUM_FOOD = 0
 
 
 class Settings:
@@ -60,7 +61,17 @@ class Settings:
                     [0, -4 - 2 * random.random()],
                     [0, 4 + 2 * random.random()]
                 ]
+                global CACHE_NUM_FOOD
+                if CACHE_NUM_FOOD == 0:
+                    CACHE_NUM_FOOD = len(pos)
                 return pos
+
+            @property
+            def NUM_FOOD(self):
+                global CACHE_NUM_FOOD
+                if CACHE_NUM_FOOD == 0:
+                    CACHE_NUM_FOOD = len(self.POSITIONS())
+                return CACHE_NUM_FOOD
 
     class Simulation:
         TIMESTEP = 0.01
