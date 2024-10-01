@@ -38,8 +38,7 @@ def prepare_dir(current_dir, specify: str = None):
 
     if not os.path.exists(workdir):
         os.makedirs(workdir)
-
-    shutil.copy(os.path.join(current_dir, "Note.md"), workdir)
+        shutil.copy(os.path.join(current_dir, "Note.md"), workdir)
 
     return workdir
 
@@ -70,10 +69,14 @@ def rec_only(workdir):
 
     for i in [len(hist.queues) - 1]:
         gen_dir = os.path.join(workdir, str(i))
-        if not os.path.exists(gen_dir):
-            os.makedirs(gen_dir)
+        os.makedirs(gen_dir, exist_ok=True)
         para = hist.queues[i].min_para
         src.record(para, gen_dir)
+
+    # gen_dir = os.path.join(workdir, "min3")
+    # os.makedirs(gen_dir, exist_ok=True)
+    # para = hist.get_min().min_para
+    # src.record(para, gen_dir)
 
 
 def analysis_only(work_dir):
@@ -84,7 +87,15 @@ def analysis_only(work_dir):
     git_hash = os.path.basename(work_dir)[-8:]
 
     hist = Hist.load(os.path.join(work_dir, f"history_{git_hash}.npz"))
-    src.analysis2(work_dir, hist)
+
+    for i in [len(hist.queues) - 1]:
+        gen_dir = os.path.join(work_dir, str(i))
+        os.makedirs(gen_dir, exist_ok=True)
+        src.analysis2(gen_dir, hist)
+
+    # gen_dir = os.path.join(work_dir, "min3")
+    # os.makedirs(gen_dir, exist_ok=True)
+    # src.analysis2(gen_dir, hist)
 
 
 if __name__ == '__main__':
