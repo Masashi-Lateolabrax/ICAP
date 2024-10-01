@@ -10,14 +10,19 @@ from ..xml import gen_xml
 
 
 class Environment:
-    def __init__(self, bot_pos: list[tuple[float, float, float]], create_dummies):
-        xml = gen_xml(bot_pos)
+    def __init__(
+            self,
+            bot_pos: list[tuple[float, float, float]],
+            food_pos: list[tuple[float, float]],
+            create_dummies
+    ):
+        xml = gen_xml(bot_pos, food_pos)
 
         self._m = mujoco.MjModel.from_xml_string(xml)
         self._d = mujoco.MjData(self._m)
 
         self.bot_pos = np.zeros((Settings.Task.Robot.NUM_ROBOTS, 2))
-        self.food_pos = np.zeros((len(Settings.Task.Food.POSITIONS), 2))
+        self.food_pos = np.zeros((len(food_pos), 2))
         self.nest_pos = np.array(Settings.Task.Nest.POSITION)
 
         self.pheromone = PheromoneFieldWithDummies(

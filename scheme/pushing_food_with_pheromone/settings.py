@@ -31,7 +31,7 @@ class Settings:
 
         class Nest:
             POSITION = [0, 0]
-            SIZE = 3.0
+            SIZE = 1.5
 
         @property
         class Robot(_PropertyClass):
@@ -53,10 +53,14 @@ class Settings:
                     CACHE_NUM_ROBOT = len(self.POSITIONS(0))
                 return CACHE_NUM_ROBOT
 
-        class Food:
-            POSITIONS = [
-                [0, -6], [0, 6]
-            ]
+        @property
+        class Food(_PropertyClass):
+            def POSITIONS(self):
+                pos = [
+                    [0, -4 - 2 * random.random()],
+                    [0, 4 + 2 * random.random()]
+                ]
+                return pos
 
     class Simulation:
         TIMESTEP = 0.01

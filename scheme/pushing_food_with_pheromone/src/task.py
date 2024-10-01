@@ -11,8 +11,16 @@ from .world import World
 
 
 class Task(MjcTaskInterface):
-    def __init__(self, para: array, bot_pos: list[tuple[float, float, float]], panel: bool, debug: bool):
-        self.world = World(para, bot_pos, panel, debug)
+    def __init__(
+            self,
+            para: array,
+            bot_pos: list[tuple[float, float, float]],
+            food_pos: list[tuple[float, float]],
+            panel: bool,
+            debug: bool
+    ):
+        self.world = World(para, bot_pos, food_pos, panel, debug)
+        self.init_food_pos = np.array(food_pos)
 
     def get_model(self) -> mujoco.MjModel:
         return self.world.env.get_model()
@@ -23,13 +31,12 @@ class Task(MjcTaskInterface):
     def calc_step(self) -> float:
         self.world.calc_step()
 
-        init_food_pos = np.array(Settings.Task.Food.POSITIONS)
         food_pos = self.world.env.food_pos
         bot_pos = self.world.env.bot_pos
         nest_pos = self.world.env.nest_pos
 
         food_nest_score = np.sum(
-            np.linalg.norm(food_pos - nest_pos, axis=1) / np.linalg.norm(init_food_pos - nest_pos, axis=1)
+            np.linalg.norm(food_pos - nest_pos, axis=1) / np.linalg.norm(self.init_food_pos - nest_pos, axis=1)
         )
 
         dif_food_robot_score = 0

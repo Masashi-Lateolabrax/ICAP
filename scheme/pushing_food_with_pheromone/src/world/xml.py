@@ -15,7 +15,7 @@ from ..settings import Settings
 from ..utils import robot_names
 
 
-def gen_xml(bot_pos: list[tuple[float, float, float]]) -> str:
+def gen_xml(bot_pos: list[tuple[float, float, float]], food_pos: list[tuple[float, float]]) -> str:
     generator = mjc_gen.Generator().add_children([
         Option(
             timestep=Settings.Simulation.TIMESTEP,
@@ -78,7 +78,7 @@ def gen_xml(bot_pos: list[tuple[float, float, float]]) -> str:
         )
     ])
 
-    for i, p in enumerate(Settings.Task.Food.POSITIONS):
+    for i, p in enumerate(food_pos):
         worldbody.add_children([
             Body().add_children([
                 body.Geom(

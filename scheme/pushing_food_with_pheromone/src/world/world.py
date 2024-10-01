@@ -19,10 +19,17 @@ class World:
     def get_dim():
         return tr.RobotTR.get_dim()
 
-    def __init__(self, para: array, bot_pos: list[tuple[float, float, float]], panel: bool, debug: bool):
+    def __init__(
+            self,
+            para: array,
+            bot_pos: list[tuple[float, float, float]],
+            food_pos: list[tuple[float, float]],
+            panel: bool,
+            debug: bool
+    ):
         self._buf = _Buffer()
 
-        self.env = Environment(bot_pos, create_dummies=panel)
+        self.env = Environment(bot_pos, food_pos, create_dummies=panel)
 
         factory = tr.RobotFactory(True, True, debug)
         self.bots: list[tr.RobotTR] = [
@@ -30,7 +37,7 @@ class World:
         ]
 
         self.food = [
-            Food(self.env, i) for i in range(len(Settings.Task.Food.POSITIONS))
+            Food(self.env, i) for i in range(len(food_pos))
         ]
 
     def calc_step(self):
