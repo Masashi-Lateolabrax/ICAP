@@ -109,23 +109,23 @@ class PheromoneField:
             res += e * self._gas_master[int(x), int(y)]
         return res
 
-    def _euler_update(self, dt: float, iteration: int):
-        dt = dt / iteration
-        for _ in range(iteration):
-            dif_liquid = numpy.minimum(self._liquid, (self._sv - self._gas) * self._eva) * dt
+    def _euler_update(self, dt: float):
+        dif_liquid = numpy.minimum(self._liquid, (self._sv - self._gas) * self._eva) * dt
 
-            # padding
-            self._gas_master[0, :] = self._gas_master[1, :]
-            self._gas_master[-1, :] = self._gas_master[-2, :]
-            self._gas_master[:, 0] = self._gas_master[:, 1]
-            self._gas_master[:, -1] = self._gas_master[:, -2]
+        # padding
+        self._gas_master[0, :] = self._gas_master[1, :]
+        self._gas_master[-1, :] = self._gas_master[-2, :]
+        self._gas_master[:, 0] = self._gas_master[:, 1]
+        self._gas_master[:, -1] = self._gas_master[:, -2]
 
-            convolved = scipy.signal.convolve2d(self._gas_master, self._c, mode="valid")
+        convolved = scipy.signal.convolve2d(self._gas_master, self._c, mode="valid")
 
-            dif_gas = dif_liquid + (convolved - self._gas * self._dec) * dt
+        dif_gas = dif_liquid + (convolved - self._gas * self._dec) * dt
 
-            self._liquid -= dif_liquid
-            self._gas += dif_gas
+        self._liquid -= dif_liquid
+        self._gas += dif_gas
 
     def update(self, dt: float, iteration: int = 1):
-        self._euler_update(dt, iteration)
+        dt = dt / iteration
+        for _ in range(iteration):
+            self._euler_update(dt)
