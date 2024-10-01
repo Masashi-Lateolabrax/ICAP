@@ -109,7 +109,7 @@ class PheromoneField:
             res += e * self._gas_master[int(x), int(y)]
         return res
 
-    def update(self, dt: float, iteration: int = 1):
+    def _euler_update(self, dt: float, iteration: int):
         dt = dt / iteration
         for _ in range(iteration):
             dif_liquid = numpy.minimum(self._liquid, (self._sv - self._gas) * self._eva) * dt
@@ -126,3 +126,6 @@ class PheromoneField:
 
             self._liquid -= dif_liquid
             self._gas += dif_gas
+
+    def update(self, dt: float, iteration: int = 1):
+        self._euler_update(dt, iteration)
