@@ -51,14 +51,15 @@ To observe the behavior of the pheromone.
 | Generation | 500   |
 | Population | 50    |
 | Elite      | 25    |
+| Food Dist  | +-7m  |
 
 - Randomize the initial robot directions in each generation for the optimization
 - Randomize food positions in each generation.
 
 ## Changes
 
-- Randomize food positions in each generation.
+- Increase the distance between the food and the nest.
 
 ## Date
 
-2024-10-02 05:41 (JST)
+2024-10-04 10:04 (JST)
