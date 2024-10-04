@@ -67,16 +67,17 @@ def rec_only(workdir):
 
     hist = Hist.load(os.path.join(workdir, f"history_{git_hash}.npz"))
 
-    for i in [len(hist.queues) - 1]:
-        gen_dir = os.path.join(workdir, str(i))
-        os.makedirs(gen_dir, exist_ok=True)
-        para = hist.queues[i].min_para
-        src.record(para, gen_dir)
+    # for i in [len(hist.queues) - 1]:
+    #     gen_dir = os.path.join(workdir, str(i))
+    #     os.makedirs(gen_dir, exist_ok=True)
+    #     para = hist.queues[i].min_para
+    #     src.record(para, gen_dir)
 
-    # gen_dir = os.path.join(workdir, "min3")
-    # os.makedirs(gen_dir, exist_ok=True)
-    # para = hist.get_min().min_para
-    # src.record(para, gen_dir)
+    for name in ["test"]:
+        gen_dir = os.path.join(workdir, name)
+        os.makedirs(gen_dir, exist_ok=True)
+        para = hist.get_min().min_para
+        src.record(para, gen_dir)
 
 
 def analysis_only(work_dir):
@@ -88,14 +89,15 @@ def analysis_only(work_dir):
 
     hist = Hist.load(os.path.join(work_dir, f"history_{git_hash}.npz"))
 
-    for i in [len(hist.queues) - 1]:
-        gen_dir = os.path.join(work_dir, str(i))
+    # for i in [len(hist.queues) - 1]:
+    #     gen_dir = os.path.join(work_dir, str(i))
+    #     os.makedirs(gen_dir, exist_ok=True)
+    #     src.analysis2(gen_dir, hist)
+
+    for name in ["test"]:
+        gen_dir = os.path.join(work_dir, name)
         os.makedirs(gen_dir, exist_ok=True)
         src.analysis2(gen_dir, hist)
-
-    # gen_dir = os.path.join(work_dir, "min3")
-    # os.makedirs(gen_dir, exist_ok=True)
-    # src.analysis2(gen_dir, hist)
 
 
 if __name__ == '__main__':
