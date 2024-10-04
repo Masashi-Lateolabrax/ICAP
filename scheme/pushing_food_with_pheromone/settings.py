@@ -58,8 +58,8 @@ class Settings:
         class Food(_PropertyClass):
             def POSITIONS(self):
                 pos = [
-                    [0, -4 - 2 * random.random()],
-                    [0, 4 + 2 * random.random()]
+                    [0, -3 - 4 * random.random()],
+                    [0, 3 + 4 * random.random()]
                 ]
                 global CACHE_NUM_FOOD
                 if CACHE_NUM_FOOD == 0:
