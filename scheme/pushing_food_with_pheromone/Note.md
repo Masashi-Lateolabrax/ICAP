@@ -39,7 +39,7 @@ To observe the behavior of the pheromone.
 | Settings        | Value |
 |-----------------|-------|
 | FOOD_RANGE      | 2.3   |
-| FOOD_NEST_GAIN  | 50.0  |
+| FOOD_NEST_GAIN  | 40.0  |
 | FOOD_ROBOT_GAIN | 2.756 |
 
 - Use the distances between the nest and the food for the loss calculation
