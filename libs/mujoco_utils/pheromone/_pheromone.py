@@ -32,6 +32,8 @@ class PheromoneFieldWithDummies:
                     create_dummies.set_pos([x, y, 0.001])
                     self._panels.append((xi, yi, create_dummies))
 
+        self._limit = pheromone_field.get_sv()
+
         self._offset = np.array(pheromone_field_size, dtype=np.float32) * self._cell_size_for_mujoco * 0.5
 
     def get_dummy_panels(self):
@@ -51,6 +53,9 @@ class PheromoneFieldWithDummies:
     def get_all_liquid(self):
         return self._pheromone.get_all_liquid()
 
+    def set_limit(self, limit):
+        self._limit = limit
+
     def add_liquid(self, body: BodyObject, amount):
         m_pos = body.get_body().xpos[0:2]
         p_pos = self._mujoco_pos_to_pheromone_field_pos(m_pos)
@@ -66,10 +71,9 @@ class PheromoneFieldWithDummies:
 
     def update(self, timestep, iteration, dummies=True):
         self._pheromone.update(timestep, iteration)
-        sv = self._pheromone.get_sv()
         if dummies:
             for xi, yi, p in self._panels:
                 cell = self._pheromone.get_cell(xi, yi)
-                pheromone = np.clip(cell.get_gas() / sv, 0, 1)
+                pheromone = np.clip(cell.get_gas() / self._limit, 0, 1)
                 c = colorsys.hsv_to_rgb(0.66 * (1.0 - pheromone), 1.0, 1.0)
                 p.set_rgba((c[0], c[1], c[2], 1.0))
