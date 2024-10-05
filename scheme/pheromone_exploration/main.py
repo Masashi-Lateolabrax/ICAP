@@ -39,6 +39,19 @@ def main(workdir):
         src.analysis2(case_dir, data_inc, data_dec)
 
 
+def rec_only(workdir):
+    import scheme.pheromone_exploration.src as src
+
+    para = {
+        "sv": Settings.Pheromone.SATURATION_VAPOR,
+        "evaporate": Settings.Pheromone.EVAPORATION,
+        "diffusion": Settings.Pheromone.DIFFUSION,
+        "decrease": Settings.Pheromone.DECREASE
+    }
+    data_inc, data_dec = src.dump(workdir, para)
+    src.record(data_inc, data_dec, workdir)
+
+
 if __name__ == '__main__':
     cd = os.path.dirname(os.path.abspath(__file__))
     wd = prepare_dir(cd)
