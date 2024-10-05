@@ -1,15 +1,9 @@
 /.idea/
 /RESULTS/
+/scheme/*/results/
 
-/report.md
+/scheme/*/src/settings.py
+
 *.TXT
-*.mp4
-*.log
-*.npy
-*.npz
-*.png
-*.svg
 *.tmp.*
 *.log.*
-dump_data
-settings.py
