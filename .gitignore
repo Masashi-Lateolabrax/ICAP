@@ -1,8 +1,5 @@
 /.idea/
-/RESULTS/
-/scheme/*/results/
-
-/scheme/*/src/settings.py
+scheme/*/results
 
 *.TXT
 *.tmp.*
