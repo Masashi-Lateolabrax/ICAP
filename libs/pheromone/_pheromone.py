@@ -79,6 +79,7 @@ class PheromoneField:
         ]) * self._diffusion / (d * d)
 
         self._rk_buf = numpy.zeros((4, 2, nx, ny))
+        self._rk_arg_buf = numpy.zeros((2, nx, ny))
 
     def get_field_size(self) -> tuple[int, int]:
         return self._nx, self._ny
@@ -120,17 +121,37 @@ class PheromoneField:
         self._gas += dif_gas
 
     def _rk_update(self, dt: float):
-        def f(liq, gm, res):
-            g = gm[1:-1, 1:-1]
-            res[0, :, :] = -numpy.min(liq, self._eva * (self._sv - g))
-            lap = scipy.signal.convolve2d(gm, self._c, mode="valid")
+        def f(liq, g, res):
+            res[0, :, :] = -numpy.minimum(liq, self._eva * (self._sv - g))
+            lap = scipy.signal.convolve2d(g, self._c, mode="same", boundary="symm")
             res[1, :, :] = self._diffusion * lap - self._dec * g - res[0, :, :]
 
         # Updating
         f(self._liquid, self._gas, self._rk_buf[0])
-        f(self._liquid + 0.5 * self._rk_buf[0, 0], self._gas + 0.5 * self._rk_buf[0, 1], self._rk_buf[1])
-        f(self._liquid + 0.5 * self._rk_buf[1, 0], self._gas + 0.5 * self._rk_buf[1, 1], self._rk_buf[2])
-        f(self._liquid + dt * self._rk_buf[2, 0], self._gas + dt * self._rk_buf[2, 1], self._rk_buf[3])
+
+        self._rk_arg_buf[0] = self._rk_buf[0, 0]
+        self._rk_arg_buf[0] *= 0.5 * dt
+        self._rk_arg_buf[0] += self._liquid
+        self._rk_arg_buf[1] = self._rk_buf[0, 1]
+        self._rk_arg_buf[1] *= 0.5 * dt
+        self._rk_arg_buf[1] += self._gas
+        f(self._rk_arg_buf[0], self._rk_arg_buf[1], self._rk_buf[1])
+
+        self._rk_arg_buf[0] = self._rk_buf[1, 0]
+        self._rk_arg_buf[0] *= 0.5 * dt
+        self._rk_arg_buf[0] += self._liquid
+        self._rk_arg_buf[1] = self._rk_buf[1, 1]
+        self._rk_arg_buf[1] *= 0.5 * dt
+        self._rk_arg_buf[1] += self._gas
+        f(self._rk_arg_buf[0], self._rk_arg_buf[1], self._rk_buf[2])
+
+        self._rk_arg_buf[0] = self._rk_buf[2, 0]
+        self._rk_arg_buf[0] *= dt
+        self._rk_arg_buf[0] += self._liquid
+        self._rk_arg_buf[1] = self._rk_buf[2, 1]
+        self._rk_arg_buf[1] *= dt
+        self._rk_arg_buf[1] += self._gas
+        f(self._rk_arg_buf[0], self._rk_arg_buf[1], self._rk_buf[3])
 
         dy = dt / 6 * (self._rk_buf[0] + 2 * self._rk_buf[1] + 2 * self._rk_buf[2] + self._rk_buf[3])
         self._liquid += dy[0]
