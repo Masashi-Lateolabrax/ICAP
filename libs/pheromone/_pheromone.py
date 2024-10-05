@@ -65,8 +65,7 @@ class PheromoneField:
         self._ny = ny
 
         self._liquid = numpy.zeros((nx, ny))
-        self._gas_master = numpy.zeros((nx + 2, ny + 2))
-        self._gas = self._gas_master[1:-1, 1:-1]
+        self._gas = numpy.zeros((nx, ny))
 
         self._eva = evaporate  # 蒸発速度
         self._sv = sv  # 飽和蒸気量
@@ -107,21 +106,14 @@ class PheromoneField:
 
     def get_gas(self, xi: float, yi: float) -> float:
         res = 0.0
-        for x, y, e in _calc_dico(self._nx + 2, self._ny + 2, xi + 1, yi + 1):
-            res += e * self._gas_master[int(x), int(y)]
+        for x, y, e in _calc_dico(self._nx, self._ny, xi, yi):
+            res += e * self._gas[int(x), int(y)]
         return res
 
     def _euler_update(self, dt: float):
         dif_liquid = numpy.minimum(self._liquid, (self._sv - self._gas) * self._eva) * dt
 
-        # padding
-        self._gas_master[0, :] = self._gas_master[1, :]
-        self._gas_master[-1, :] = self._gas_master[-2, :]
-        self._gas_master[:, 0] = self._gas_master[:, 1]
-        self._gas_master[:, -1] = self._gas_master[:, -2]
-
-        convolved = scipy.signal.convolve2d(self._gas_master, self._c, mode="valid")
-
+        convolved = scipy.signal.convolve2d(self._gas, self._c, mode="same", boundary="symm")
         dif_gas = dif_liquid + (convolved - self._gas * self._dec) * dt
 
         self._liquid -= dif_liquid
@@ -134,17 +126,11 @@ class PheromoneField:
             lap = scipy.signal.convolve2d(gm, self._c, mode="valid")
             res[1, :, :] = self._diffusion * lap - self._dec * g - res[0, :, :]
 
-        # Padding
-        self._gas_master[0, :] = self._gas_master[1, :]
-        self._gas_master[-1, :] = self._gas_master[-2, :]
-        self._gas_master[:, 0] = self._gas_master[:, 1]
-        self._gas_master[:, -1] = self._gas_master[:, -2]
-
         # Updating
-        f(self._liquid, self._gas_master, self._rk_buf[0])
-        f(self._liquid + 0.5 * self._rk_buf[0, 0], self._gas_master + 0.5 * self._rk_buf[0, 1], self._rk_buf[1])
-        f(self._liquid + 0.5 * self._rk_buf[1, 0], self._gas_master + 0.5 * self._rk_buf[1, 1], self._rk_buf[2])
-        f(self._liquid + dt * self._rk_buf[2, 0], self._gas_master + dt * self._rk_buf[2, 1], self._rk_buf[3])
+        f(self._liquid, self._gas, self._rk_buf[0])
+        f(self._liquid + 0.5 * self._rk_buf[0, 0], self._gas + 0.5 * self._rk_buf[0, 1], self._rk_buf[1])
+        f(self._liquid + 0.5 * self._rk_buf[1, 0], self._gas + 0.5 * self._rk_buf[1, 1], self._rk_buf[2])
+        f(self._liquid + dt * self._rk_buf[2, 0], self._gas + dt * self._rk_buf[2, 1], self._rk_buf[3])
 
         dy = dt / 6 * (self._rk_buf[0] + 2 * self._rk_buf[1] + 2 * self._rk_buf[2] + self._rk_buf[3])
         self._liquid += dy[0]
