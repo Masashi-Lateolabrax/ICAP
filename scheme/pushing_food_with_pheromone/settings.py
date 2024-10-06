@@ -96,7 +96,7 @@ class Settings:
                 return 3 * self.MAX_SECRETION
 
         class Pheromone:
-            SATURATION_VAPOR = 5.442554913756431
-            EVAPORATION = 9.390048012289446
-            DIFFUSION = 0.4907347580652921
-            DECREASE = 5.136664772909677
+            SATURATION_VAPOR = 1
+            EVAPORATION = 1
+            DIFFUSION = 0.05
+            DECREASE = 0.1
