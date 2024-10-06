@@ -23,7 +23,7 @@ class Settings:
 
         class Evaluation:
             FOOD_RANGE = 2.3
-            FOOD_NEST_GAIN = 50.0
+            FOOD_NEST_GAIN = 20.0
             FOOD_ROBOT_GAIN = 2.756
 
     @property
