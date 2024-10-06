@@ -67,7 +67,7 @@ class Settings:
         TIMESTEP = 0.01
 
         class Pheromone:
-            TIMESTEP = 0.0005
+            TIMESTEP = 0.01
 
     class Renderer:
         MAX_GEOM = 7800
