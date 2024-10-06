@@ -27,19 +27,19 @@ To observe the behavior of the pheromone.
 
 ### Pheromone
 
-| Settings         | Value              |
-|------------------|--------------------|
-| SATURATION_VAPOR | 5.442554913756431  |
-| EVAPORATION      | 9.390048012289446  |
-| DIFFUSION        | 0.4907347580652921 |  
-| DECREASE         | 5.136664772909677  |
+| Settings         | Value |
+|------------------|-------|
+| SATURATION_VAPOR | 1     |
+| EVAPORATION      | 1     |
+| DIFFUSION        | 0.05  |  
+| DECREASE         | 0.1   |
 
 ### Evaluation
 
 | Settings        | Value |
 |-----------------|-------|
 | FOOD_RANGE      | 2.3   |
-| FOOD_NEST_GAIN  | 20.0  |
+| FOOD_NEST_GAIN  | 5.0   |
 | FOOD_ROBOT_GAIN | 2.756 |
 
 - Use the distances between the nest and the food for the loss calculation
@@ -53,12 +53,13 @@ To observe the behavior of the pheromone.
 | Elite      | 25    |
 
 - Randomize the initial robot directions in each generation for the optimization
-- Randomize food positions in each generation.
 
 ## Changes
 
-- Randomize food positions in each generation.
+- Change the pheromone characteristic.
+- Fix the food positions.
+- Reset the weights of the loss calculation.
 
 ## Date
 
-2024-10-04 16:36 (JST)
+2024-10-07 05:10 (JST)
