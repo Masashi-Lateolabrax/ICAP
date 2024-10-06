@@ -57,21 +57,11 @@ class Settings:
         @property
         class Food(_PropertyClass):
             def POSITIONS(self):
-                pos = [
-                    [0, -3 - 4 * random.random()],
-                    [0, 3 + 4 * random.random()]
-                ]
-                global CACHE_NUM_FOOD
-                if CACHE_NUM_FOOD == 0:
-                    CACHE_NUM_FOOD = len(pos)
-                return pos
+                return [0, -6], [0, 6]
 
             @property
             def NUM_FOOD(self):
-                global CACHE_NUM_FOOD
-                if CACHE_NUM_FOOD == 0:
-                    CACHE_NUM_FOOD = len(self.POSITIONS())
-                return CACHE_NUM_FOOD
+                return 2
 
     class Simulation:
         TIMESTEP = 0.01
