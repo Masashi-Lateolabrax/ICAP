@@ -41,7 +41,7 @@ To find the best optimization settings.
 | FOOD_GAIN    | 1     |
 | FOOD_RANGE   | 6     |
 | FOOD_RANGE_P | 2     |
-| NEST_GAIN    | 4     |
+| NEST_GAIN    | 5     |
 | NEST_RANGE_P | 2     |
 
 ### Optimization
@@ -53,12 +53,12 @@ To find the best optimization settings.
 | Elite      | 25    |
 
 - Randomize the initial robot directions in each generation for the optimization
+- Randomize the food positions
 
 ## Changes
 
-- Use the potential evaluation function
-- Maximizing the evaluations
+- Randomize the food positions
 
 ## Date
 
-2024-10-07 19:15 (JST)
+2024-10-08 05:56 (JST)
