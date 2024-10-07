@@ -100,6 +100,25 @@ def analysis_only(work_dir):
         src.analysis2(gen_dir, hist)
 
 
+def sampling(workdir):
+    from libs.optimizer import Hist
+    import scheme.pushing_food_with_pheromone.src as src
+
+    git_hash = os.path.basename(workdir)[-8:]
+
+    hist = Hist.load(os.path.join(workdir, f"history_{git_hash}.npz"))
+
+    # for i in [len(hist.queues) - 1]:
+    #     gen_dir = os.path.join(work_dir, str(i))
+    #     os.makedirs(gen_dir, exist_ok=True)
+    #     src.analysis2(gen_dir, hist)
+
+    for name, para in [("max", hist.get_max().max_para)]:
+        gen_dir = os.path.join(workdir, name)
+        os.makedirs(gen_dir, exist_ok=True)
+        src.sampling(gen_dir, para)
+
+
 if __name__ == '__main__':
     cd = os.path.dirname(os.path.abspath(__file__))
     wd = prepare_dir(cd)
@@ -108,3 +127,4 @@ if __name__ == '__main__':
     # test_xml()
     # rec_only(wd)
     # analysis_only(wd)
+    # sampling(wd)
