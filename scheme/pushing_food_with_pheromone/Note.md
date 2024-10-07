@@ -41,7 +41,7 @@ To find the best optimization settings.
 | FOOD_GAIN    | 1     |
 | FOOD_RANGE   | 6     |
 | FOOD_RANGE_P | 2     |
-| NEST_GAIN    | 2     |
+| NEST_GAIN    | 3     |
 | NEST_RANGE_P | 2     |
 
 ### Optimization
@@ -61,4 +61,4 @@ To find the best optimization settings.
 
 ## Date
 
-2024-10-07 18:32 (JST)
+2024-10-07 18:52 (JST)
