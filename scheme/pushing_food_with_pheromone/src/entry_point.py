@@ -9,7 +9,7 @@ from libs.utils.data_collector import Recorder
 
 from .settings import Settings
 from .task_generator import TaskGenerator
-from .collector import Collector
+from .collector import Collector, Collector2
 
 
 def optimization() -> Hist:
@@ -112,3 +112,34 @@ def record(para, workdir):
     )
 
     rec.run(task)
+
+
+def rec_and_collect_data(workdir, para):
+    generator = TaskGenerator(1, True)
+    task = generator.generate(para, False)
+
+    camera = mujoco.MjvCamera()
+    camera.elevation = -90
+    camera.distance = 29
+
+    total_step = int(Settings.Task.EPISODE / Settings.Simulation.TIMESTEP + 0.5)
+    collector = Collector2(
+        Settings.Simulation.TIMESTEP,
+        total_step,
+        Settings.Renderer.RESOLUTION[0],
+        Settings.Renderer.RESOLUTION[1],
+        workdir,
+        camera,
+        Settings.Renderer.MAX_GEOM
+    )
+
+    collector.run(task)
+    collector.release()
+
+    return collector.evaluation, collector.pheromone_gas
+
+
+def sampling(workdir, para):
+    evaluation, pheromone_gas = rec_and_collect_data(workdir, para)
+    plot_evaluation(workdir, evaluation)
+    plot_pheromone_gas_volume(workdir, pheromone_gas)
