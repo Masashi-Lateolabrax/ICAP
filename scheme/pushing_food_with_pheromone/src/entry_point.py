@@ -31,40 +31,40 @@ def optimization() -> Hist:
     return cmaes.get_history()
 
 
+def plot_evaluation(work_dir, evaluation):
+    total_step = int(Settings.Task.EPISODE / Settings.Simulation.TIMESTEP + 0.5)
+    xs = np.arange(0, total_step) * Settings.Simulation.TIMESTEP
+
+    fig = plt.figure()
+    axis = fig.add_subplot(1, 1, 1)
+
+    axis.plot(xs, evaluation)
+
+    axis.set_title("Evaluation")
+    fig.savefig(os.path.join(work_dir, "evaluation.svg"))
+
+
+def plot_pheromone_gas_volume(work_dir, pheromone_gas):
+    total_step = int(Settings.Task.EPISODE / Settings.Simulation.TIMESTEP + 0.5)
+    xs = np.arange(0, total_step) * Settings.Simulation.TIMESTEP
+
+    fig = plt.figure()
+    axis = fig.add_subplot(1, 1, 1)
+
+    axis.plot(xs, pheromone_gas)
+
+    axis.set_title("Pheromone Gas Volume")
+    fig.savefig(os.path.join(work_dir, "pheromone_gas_volume.svg"))
+
+
 def analysis(work_dir, para):
     generator = TaskGenerator(1, False)
     task = generator.generate(para, True)
     collector = Collector()
     collector.run(task)
 
-    def plot_evaluation():
-        total_step = int(Settings.Task.EPISODE / Settings.Simulation.TIMESTEP + 0.5)
-        evaluation = collector.evaluation
-        xs = np.arange(0, total_step) * Settings.Simulation.TIMESTEP
-
-        fig = plt.figure()
-        axis = fig.add_subplot(1, 1, 1)
-
-        axis.plot(xs, evaluation)
-
-        axis.set_title("Evaluation")
-        fig.savefig(os.path.join(work_dir, "evaluation.svg"))
-
-    def plot_pheromone_gas_volume():
-        total_step = int(Settings.Task.EPISODE / Settings.Simulation.TIMESTEP + 0.5)
-        pheromone_gas = collector.pheromone_gas
-        xs = np.arange(0, total_step) * Settings.Simulation.TIMESTEP
-
-        fig = plt.figure()
-        axis = fig.add_subplot(1, 1, 1)
-
-        axis.plot(xs, pheromone_gas)
-
-        axis.set_title("Pheromone Gas Volume")
-        fig.savefig(os.path.join(work_dir, "pheromone_gas_volume.svg"))
-
-    plot_evaluation()
-    plot_pheromone_gas_volume()
+    plot_evaluation(work_dir, collector.evaluation)
+    plot_pheromone_gas_volume(work_dir, collector.pheromone_gas)
 
 
 def analysis2(work_dir, hist: Hist):
