@@ -21,7 +21,8 @@ def optimization() -> Hist:
         generation=Settings.Optimization.GENERATION,
         population=Settings.Optimization.POPULATION,
         sigma=Settings.Optimization.SIGMA,
-        mu=Settings.Optimization.MU
+        mu=Settings.Optimization.MU,
+        minimalize=False
     )
     for gen in range(1, 1 + cmaes.get_generation()):
         task_generator = TaskGenerator(1, False)
