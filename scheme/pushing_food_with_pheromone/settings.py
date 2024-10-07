@@ -61,7 +61,10 @@ class Settings:
         @property
         class Food(_PropertyClass):
             def POSITIONS(self):
-                pos = [[0, -6], [0, 6]]
+                pos = [
+                    [0, -3 - 4 * random.random()],
+                    [0, 3 + 4 * random.random()]
+                ]
                 global CACHE_NUM_FOOD
                 if CACHE_NUM_FOOD == 0:
                     CACHE_NUM_FOOD = len(pos)
