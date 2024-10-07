@@ -52,10 +52,7 @@ def main(workdir):
     hist.save(os.path.join(workdir, f"history_{git_hash}.npz"))
 
     para = hist.get_max().max_para
-
-    src.record(para, workdir)
-
-    src.analysis2(workdir, hist)
+    src.sampling(workdir, para)
 
 
 def rec_only(workdir):
