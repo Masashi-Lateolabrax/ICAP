@@ -76,7 +76,7 @@ def rec_only(workdir):
     for name in ["test"]:
         gen_dir = os.path.join(workdir, name)
         os.makedirs(gen_dir, exist_ok=True)
-        para = hist.get_min().min_para
+        para = hist.get_max().max_para
         src.record(para, gen_dir)
 
 

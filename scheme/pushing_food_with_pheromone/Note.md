@@ -6,7 +6,7 @@ Transportation with Pheromone
 
 ## Objective
 
-To observe the behavior of the pheromone.
+To find the best optimization settings.
 
 ## Features
 
@@ -36,13 +36,13 @@ To observe the behavior of the pheromone.
 
 ### Evaluation
 
-| Settings        | Value |
-|-----------------|-------|
-| FOOD_RANGE      | 2.3   |
-| FOOD_NEST_GAIN  | 5.0   |
-| FOOD_ROBOT_GAIN | 2.756 |
-
-- Use the distances between the nest and the food for the loss calculation
+| Settings     | Value |
+|--------------|-------|
+| FOOD_GAIN    | 1     |
+| FOOD_RANGE   | 6     |
+| FOOD_RANGE_P | 2     |
+| NEST_GAIN    | 2     |
+| NEST_RANGE_P | 2     |
 
 ### Optimization
 
@@ -56,10 +56,9 @@ To observe the behavior of the pheromone.
 
 ## Changes
 
-- Change the pheromone characteristic.
-- Fix the food positions.
-- Reset the weights of the loss calculation.
+- Use the potential evaluation function
+- Maximizing the evaluations
 
 ## Date
 
-2024-10-07 05:10 (JST)
+2024-10-07 18:32 (JST)
