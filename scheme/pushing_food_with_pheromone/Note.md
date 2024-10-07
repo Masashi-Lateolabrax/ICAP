@@ -41,7 +41,7 @@ To find the best optimization settings.
 | FOOD_GAIN    | 1     |
 | FOOD_RANGE   | 6     |
 | FOOD_RANGE_P | 2     |
-| NEST_GAIN    | 4     |
+| NEST_GAIN    | 6     |
 | NEST_RANGE_P | 2     |
 
 ### Optimization
