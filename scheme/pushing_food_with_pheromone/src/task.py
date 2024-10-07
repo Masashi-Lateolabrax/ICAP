@@ -10,6 +10,10 @@ from .settings import Settings
 from .world import World
 
 
+def _squared_sigma(size, p):
+    return np.log10(np.exp((size ** 2) / p))
+
+
 class Task(MjcTaskInterface):
     def __init__(
             self,
@@ -20,7 +24,17 @@ class Task(MjcTaskInterface):
             debug: bool
     ):
         self.world = World(para, bot_pos, food_pos, panel, debug)
-        self.init_food_pos = np.array(food_pos)
+        self.init_food_dist = np.linalg.norm(np.array(food_pos), axis=1)
+
+        self._food_p_sigma = _squared_sigma(
+            Settings.Optimization.Evaluation.FOOD_RANGE, Settings.Optimization.Evaluation.FOOD_RANGE_P
+        )
+        self._nest_p_sigma = _squared_sigma(
+            self.init_food_dist, Settings.Optimization.Evaluation.NEST_RANGE_P
+        )
+
+        self._bot_food_dist_buf = np.zeros((Settings.Task.Robot.NUM_ROBOTS, 2))
+        self._bot_food_dist_buf[:, 1] = 0.5 + 0.175
 
     def get_model(self) -> mujoco.MjModel:
         return self.world.env.get_model()
@@ -35,26 +49,19 @@ class Task(MjcTaskInterface):
         bot_pos = self.world.env.bot_pos
         nest_pos = self.world.env.nest_pos
 
-        food_nest_score = np.sum(
-            np.linalg.norm(food_pos - nest_pos, axis=1) / np.linalg.norm(self.init_food_pos - nest_pos, axis=1)
-        )
+        dist_bet_n_f = np.linalg.norm(food_pos - nest_pos, axis=1)
+        nest_food_score = np.sum(np.exp(-(dist_bet_n_f ** 2) / self._nest_p_sigma))
 
-        dif_food_robot_score = 0
-        d = np.zeros((bot_pos.shape[0], 2))
-        d[:, 1] = 0.5 + 0.175
+        food_robot_score = 0
         for f in food_pos:
-            d[:, 0] = np.linalg.norm(bot_pos - f, axis=1)
-            m = np.max(d, axis=1) - d[:, 1]
-            dif_food_robot_score -= np.sum(
-                np.exp(-m / math.pow(Settings.Optimization.Evaluation.FOOD_RANGE, 2))
-            )
+            self._bot_food_dist_buf[:, 0] = np.linalg.norm(bot_pos - f, axis=1)
+            m = np.max(self._bot_food_dist_buf, axis=1) - self._bot_food_dist_buf[:, 1]
+            food_robot_score += np.sum(np.exp(-(m ** 2) / self._food_p_sigma))
 
-        food_nest_score *= Settings.Optimization.Evaluation.FOOD_NEST_GAIN / len(food_pos)
-        dif_food_robot_score *= Settings.Optimization.Evaluation.FOOD_ROBOT_GAIN / (len(food_pos) * len(bot_pos))
+        nest_food_score *= Settings.Optimization.Evaluation.NEST_GAIN / len(food_pos)
+        food_robot_score *= Settings.Optimization.Evaluation.FOOD_GAIN / (len(food_pos) * len(bot_pos))
 
-        # print(dif_food_robot_score, food_nest_score)
-
-        return dif_food_robot_score + food_nest_score
+        return nest_food_score + food_robot_score
 
     def run(self) -> float:
         total_step = int(Settings.Task.EPISODE / Settings.Simulation.TIMESTEP + 0.5)

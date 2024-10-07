@@ -21,10 +21,14 @@ class Settings:
         def MU(self):
             return int(self.POPULATION * 0.5 + 0.5)
 
-        class Evaluation:
-            FOOD_RANGE = 2.3
-            FOOD_NEST_GAIN = 5.0
-            FOOD_ROBOT_GAIN = 2.756
+        @property
+        class Evaluation(_PropertyClass):
+            FOOD_GAIN = 1
+            FOOD_RANGE = 6
+            FOOD_RANGE_P = 2
+
+            NEST_GAIN = 1
+            NEST_RANGE_P = 2
 
     @property
     class Task(_PropertyClass):
@@ -57,11 +61,18 @@ class Settings:
         @property
         class Food(_PropertyClass):
             def POSITIONS(self):
-                return [0, -6], [0, 6]
+                pos = [[0, -6], [0, 6]]
+                global CACHE_NUM_FOOD
+                if CACHE_NUM_FOOD == 0:
+                    CACHE_NUM_FOOD = len(pos)
+                return pos
 
             @property
             def NUM_FOOD(self):
-                return 2
+                global CACHE_NUM_FOOD
+                if CACHE_NUM_FOOD == 0:
+                    CACHE_NUM_FOOD = len(self.POSITIONS())
+                return CACHE_NUM_FOOD
 
     class Simulation:
         TIMESTEP = 0.01
