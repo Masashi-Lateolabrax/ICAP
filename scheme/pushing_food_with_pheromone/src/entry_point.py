@@ -89,7 +89,7 @@ def analysis2(work_dir, hist: Hist):
 
     plot_loss()
 
-    analysis(work_dir, hist.get_min().min_para)
+    analysis(work_dir, hist.get_max().max_para)
 
 
 def record(para, workdir):
