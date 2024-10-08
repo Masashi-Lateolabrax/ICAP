@@ -53,6 +53,7 @@ def main(workdir):
 
     para = hist.get_max().max_para
     src.sampling(workdir, para)
+    src.plot_loss(workdir, hist)
 
 
 def rec_only(workdir):
@@ -104,6 +105,7 @@ def sampling(workdir):
     git_hash = os.path.basename(workdir)[-8:]
 
     hist = Hist.load(os.path.join(workdir, f"history_{git_hash}.npz"))
+    # src.plot_loss(workdir, hist)
 
     # for i in [len(hist.queues) - 1]:
     #     gen_dir = os.path.join(work_dir, str(i))
