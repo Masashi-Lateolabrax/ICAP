@@ -53,11 +53,11 @@ To find the best optimization settings.
 | Elite      | 25    |
 
 - Randomize the initial robot directions in each generation for the optimization
+- Randomize the food positions
 
 ## Changes
 
-- Use the potential evaluation function
-- Maximizing the evaluations
+- Randomize the food positions
 
 ## Date
 

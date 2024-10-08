@@ -110,7 +110,7 @@ def sampling(workdir):
     #     os.makedirs(gen_dir, exist_ok=True)
     #     src.analysis2(gen_dir, hist)
 
-    for name, para in [("max", hist.get_max().max_para)]:
+    for name, para in [(f"sample{i}", hist.get_max().max_para) for i in range(10)]:
         gen_dir = os.path.join(workdir, name)
         os.makedirs(gen_dir, exist_ok=True)
         src.sampling(gen_dir, para)
