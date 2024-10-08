@@ -27,7 +27,7 @@ class Settings:
             FOOD_RANGE = 6
             FOOD_RANGE_P = 2
 
-            NEST_GAIN = 5
+            NEST_GAIN = 7
             NEST_RANGE_P = 2
 
     @property
