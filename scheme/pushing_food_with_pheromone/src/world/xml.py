@@ -52,6 +52,11 @@ def gen_xml(bot_pos: list[tuple[float, float, float]], food_pos: list[tuple[floa
             type_=mjc_cmn.GeomType.PLANE, material="ground", rgba=(0, 0, 0, 1),
             pos=(0, 0, 0), size=(env_width * 0.5, env_height * 0.5, 1)
         ),
+        body.Geom(
+            type_=mjc_cmn.GeomType.BOX, rgba=(0, 0, 0, 1),
+            pos=(0, 0, Settings.Simulation.CEIL_HEIGHT - 0.5 * Settings.Simulation.CEIL_THICKNESS),
+            size=(env_width * 0.5, env_height * 0.5, 0.5 * Settings.Simulation.CEIL_THICKNESS)
+        ),
     ])
     act = Actuator()
     sen = Sensor()
@@ -80,9 +85,9 @@ def gen_xml(bot_pos: list[tuple[float, float, float]], food_pos: list[tuple[floa
 
     for i, p in enumerate(food_pos):
         worldbody.add_children([
-            Body().add_children([
+            Body(name=f"food{i}", pos=(p[0], p[1], 0.071)).add_children([
                 body.Geom(
-                    name=f"food{i}", type_=mjc_cmn.GeomType.CYLINDER, pos=(p[0], p[1], 0.071), size=(0.5, 0.07),
+                    type_=mjc_cmn.GeomType.CYLINDER, size=(0.5, 0.07),
                     rgba=(0, 1, 1, 1), density=300000, condim=3
                 ),
                 body.Joint(

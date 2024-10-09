@@ -77,11 +77,18 @@ class Settings:
                     CACHE_NUM_FOOD = len(self.POSITIONS())
                 return CACHE_NUM_FOOD
 
-    class Simulation:
+    @property
+    class Simulation(_PropertyClass):
         TIMESTEP = 0.01
 
         class Pheromone:
             TIMESTEP = 0.01
+
+        CEIL_THICKNESS = 1
+
+        @property
+        def CEIL_HEIGHT(self):
+            return self.parent.Renderer.ZOOM + self.parent.CEIL_THICKNESS + 0.1
 
     class Renderer:
         MAX_GEOM = 7800

@@ -25,6 +25,9 @@ class Environment:
         self.food_pos = np.zeros((len(food_pos), 2))
         self.nest_pos = np.array(Settings.Task.Nest.POSITION)
 
+        self.food_nest_dist = np.zeros(len(food_pos))
+        self.food_in_nest = np.zeros(len(food_pos), dtype=bool)
+
         self.pheromone = PheromoneFieldWithDummies(
             PheromoneField(
                 nx=Settings.Characteristic.Environment.WIDTH,
@@ -53,8 +56,18 @@ class Environment:
 
     def _update_food_state(self):
         for fi in range(Settings.Task.Food.NUM_FOOD):
-            geom = self._d.geom(f"food{fi}")
-            self.food_pos[fi, :] = geom.xpos[:2]
+            food_body = self._d.body(f"food{fi}")
+            self.food_pos[fi, :] = food_body.xpos[:2]
+
+        self.food_nest_dist = np.linalg.norm(self.food_pos - self.nest_pos, axis=1)
+        food_in_nest = self.food_nest_dist < Settings.Task.Nest.SIZE
+        food_in_nest = np.logical_and(food_in_nest, np.logical_not(self.food_in_nest))
+
+        for fi in np.where(food_in_nest)[0]:
+            food_body = self._d.body(f"food{fi}")
+            food_body.xpos[2] = Settings.Simulation.CEIL_HEIGHT + 0.071
+
+        self.food_in_nest |= food_in_nest
 
     def calc_step(self):
         mujoco.mj_step(self._m, self._d)
@@ -66,6 +79,9 @@ class Environment:
 
         self._update_bot_pos()
         self._update_food_state()
+
+    def get_valid_food(self):
+        return self.food_pos[np.logical_not(self.food_in_nest), :]
 
     def get_dummies(self):
         return self.pheromone.get_dummy_panels()
