@@ -98,7 +98,7 @@ def record(para, workdir):
 
     camera = mujoco.MjvCamera()
     camera.elevation = -90
-    camera.distance = 29
+    camera.distance = Settings.Renderer.ZOOM
 
     total_step = int(Settings.Task.EPISODE / Settings.Simulation.TIMESTEP + 0.5)
     rec = Recorder(
@@ -120,7 +120,7 @@ def rec_and_collect_data(workdir, para):
 
     camera = mujoco.MjvCamera()
     camera.elevation = -90
-    camera.distance = 29
+    camera.distance = Settings.Renderer.ZOOM
 
     total_step = int(Settings.Task.EPISODE / Settings.Simulation.TIMESTEP + 0.5)
     collector = Collector2(

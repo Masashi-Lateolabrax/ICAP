@@ -86,6 +86,7 @@ class Settings:
     class Renderer:
         MAX_GEOM = 7800
         RESOLUTION = [900, 1350]
+        ZOOM = 29
 
     @property
     class Characteristic(_PropertyClass):
