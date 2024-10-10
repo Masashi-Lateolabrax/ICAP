@@ -179,9 +179,9 @@ if __name__ == '__main__':
     cd = os.path.dirname(os.path.abspath(__file__))
     wd = prepare_dir(cd)
 
-    # main(wd, Logger)
+    main(wd, Logger)
     # test_xml()
     # rec_only(wd)
     # analysis_only(wd)
     # sampling(wd)
-    load_log()
+    # load_log()
