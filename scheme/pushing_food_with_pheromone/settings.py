@@ -30,6 +30,11 @@ class Settings:
             NEST_GAIN = 7
             NEST_RANGE_P = 2
 
+        class OldEvaluation:
+            FOOD_RANGE = 2.3
+            FOOD_NEST_GAIN = 5.0
+            FOOD_ROBOT_GAIN = 2.756
+
     @property
     class Task(_PropertyClass):
         EPISODE = 60
