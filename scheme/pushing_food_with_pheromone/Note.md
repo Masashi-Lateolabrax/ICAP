@@ -6,7 +6,7 @@ Transportation with Pheromone
 
 ## Objective
 
-To find the best optimization settings.
+Collecting the evaluations of all individuals.
 
 ## Features
 
@@ -57,7 +57,7 @@ To find the best optimization settings.
 
 ## Changes
 
-- Randomize the food positions
+- Implement Logger
 
 ## Date
 
