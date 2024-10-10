@@ -111,7 +111,8 @@ class Task(MjcTaskInterface):
         e = 0
         for _ in range(total_step):
             e += self.calc_step()
-        self.logger.add_fragment(self.log_fragment)
+        if self.logger is not None:
+            self.logger.add_fragment(self.log_fragment)
         return e / total_step
 
     def get_dummies(self):
