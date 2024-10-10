@@ -6,6 +6,8 @@ import numpy as np
 
 from libs.optimizer import MjcTaskInterface
 
+from .logger import Logger
+
 from .settings import Settings
 from .world import World
 
@@ -60,6 +62,8 @@ class Task(MjcTaskInterface):
             panel: bool,
             debug: bool
     ):
+        self.log_fragment = Logger.create_fragment(para)
+
         self.world = World(para, bot_pos, food_pos, panel, debug)
         self.init_food_dist = np.linalg.norm(np.array(food_pos), axis=1)
 
@@ -97,20 +101,16 @@ class Task(MjcTaskInterface):
             self.world.env.nest_pos
         )
 
-        food_robot_score = 0
-        for f in food_pos:
-            self._bot_food_dist_buf[:, 0] = np.linalg.norm(bot_pos - f, axis=1)
-            m = np.max(self._bot_food_dist_buf, axis=1) - self._bot_food_dist_buf[:, 1]
-            food_robot_score += np.sum(np.exp(-(m ** 2) / self._food_p_sigma))
+        self.log_fragment.add_score((e_latest, e_old))
 
         return e_latest[0] + e_latest[1]
 
     def run(self) -> float:
         total_step = int(Settings.Task.EPISODE / Settings.Simulation.TIMESTEP + 0.5)
-        evaluation = 0
+        e = 0
         for _ in range(total_step):
-            evaluation += self.calc_step()
-        return evaluation / total_step
+            e += self.calc_step()
+        return e / total_step
 
     def get_dummies(self):
         return self.world.get_dummies()
