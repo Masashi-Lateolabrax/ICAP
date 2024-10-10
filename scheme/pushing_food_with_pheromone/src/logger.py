@@ -1,6 +1,18 @@
+import copy
 import os
-import numpy as np
+
+import pickle
 import concurrent.futures
+
+
+class LogFragment:
+    def __init__(self, gen, para):
+        self.gen = gen
+        self.para = copy.deepcopy(para)
+        self.data = []
+
+    def add_score(self, data):
+        self.data.append(copy.deepcopy(data))
 
 
 class _Logger:
@@ -19,19 +31,36 @@ class _Logger:
             self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=max_workers)
             self._initialized = True
 
+            self.gen = -1
+            self.paras = []
+            self.fragments = []
+
     def __del__(self):
         if self.executor:
             self.executor.shutdown(wait=True)
 
-    def log(self, gen, solutions, food_robot_eva, nest_food_eva):
-        future = self.executor.submit(self._save, gen, solutions, food_robot_eva, nest_food_eva)
+    def set_gen(self, gen: int):
+        self.gen = gen
+
+    def create_fragment(self, para):
+        fragment = LogFragment(self.gen, para)
+        self.fragments.append(fragment)
+        return fragment
+
+    def save(self, gen):
+        fragments = self.fragments
+        self.fragments = []
+        future = self.executor.submit(self._save, self.dir_path, gen, fragments)
         future.add_done_callback(lambda f: self._handle_exception(f, gen))
 
-    def _save(self, gen: int, solutions, food_robot_eva, nest_food_eva):
-        log_file: str = os.path.join(self.dir_path, f"{gen}.npz")
-        np.savez(log_file, solutions=solutions, food_robot_eva=food_robot_eva, nest_food_eva=nest_food_eva)
+    @staticmethod
+    def _save(dir_path, gen, fragments: list[LogFragment]):
+        log_file: str = os.path.join(dir_path, f"{gen}.pkl")
+        with open(log_file, "bw") as f:
+            pickle.dump(fragments, f)
 
-    def _handle_exception(self, future, gen):
+    @staticmethod
+    def _handle_exception(future, gen):
         if future.exception() is not None:
             print(f"Error occurred in generation {gen}: {future.exception()}")
 
