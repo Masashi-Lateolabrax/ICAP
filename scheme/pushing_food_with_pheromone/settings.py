@@ -88,7 +88,7 @@ class Settings:
 
         @property
         def CEIL_HEIGHT(self):
-            return self.parent.Renderer.ZOOM + self.parent.CEIL_THICKNESS + 0.1
+            return self.parent.Renderer.ZOOM + self.CEIL_THICKNESS + 0.1
 
     class Renderer:
         MAX_GEOM = 7800

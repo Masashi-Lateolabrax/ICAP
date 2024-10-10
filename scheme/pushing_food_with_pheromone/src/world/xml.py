@@ -91,6 +91,9 @@ def gen_xml(bot_pos: list[tuple[float, float, float]], food_pos: list[tuple[floa
                     rgba=(0, 1, 1, 1), density=300000, condim=3
                 ),
                 body.Joint(
+                    name=f"food{i}.joint.slide_z", type_=mjc_cmn.JointType.SLIDE, axis=(0, 0, 1),
+                ),
+                body.Joint(
                     name=f"food{i}.joint.slide_x", type_=mjc_cmn.JointType.SLIDE, axis=(1, 0, 0),
                     frictionloss=3000000 * 3
                 ),

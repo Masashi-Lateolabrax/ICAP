@@ -57,17 +57,17 @@ class Environment:
     def _update_food_state(self):
         for fi in range(Settings.Task.Food.NUM_FOOD):
             food_body = self._d.body(f"food{fi}")
-            self.food_pos[fi, :] = food_body.xpos[:2]
-
-        self.food_nest_dist = np.linalg.norm(self.food_pos - self.nest_pos, axis=1)
-        food_in_nest = self.food_nest_dist < Settings.Task.Nest.SIZE
-        food_in_nest = np.logical_and(food_in_nest, np.logical_not(self.food_in_nest))
-
-        for fi in np.where(food_in_nest)[0]:
-            food_body = self._d.body(f"food{fi}")
-            food_body.xpos[2] = Settings.Simulation.CEIL_HEIGHT + 0.071
-
-        self.food_in_nest |= food_in_nest
+            self.food_pos[fi, :] = pos = food_body.xpos[:2]
+            self.food_nest_dist[fi] = dist = np.linalg.norm(pos - self.nest_pos)
+            food_in_nest = (dist < Settings.Task.Nest.SIZE) and not self.food_in_nest[fi]
+            if food_in_nest:
+                food_x_joint = self._d.joint(f"food{fi}.joint.slide_x")
+                food_y_joint = self._d.joint(f"food{fi}.joint.slide_y")
+                food_z_joint = self._d.joint(f"food{fi}.joint.slide_z")
+                food_x_joint.qvel[0] = 0
+                food_y_joint.qvel[0] = 0
+                food_z_joint.qpos[0] = Settings.Simulation.CEIL_HEIGHT + 0.07
+                self.food_in_nest[fi] = True
 
     def calc_step(self):
         mujoco.mj_step(self._m, self._d)
