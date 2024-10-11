@@ -94,7 +94,7 @@ class RobotTR(interfaces.Robot):
             pos, direction, other_bot_positions
         )
         self._buf.sight[2], self._buf.sight[3] = self._tri_sensor_for_food.measure(
-            pos, direction, env.food_pos
+            pos, direction, env.get_valid_food()
         )
 
         self._buf.nest[0], self._buf.nest[1] = direction_sensor(

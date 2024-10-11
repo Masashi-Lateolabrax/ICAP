@@ -104,14 +104,15 @@ class Task(MjcTaskInterface):
 
         self.log_fragment.add_score((e_latest, e_old))
 
-        return e_latest[0] + e_latest[1]
+        return e_old[0] + e_old[1]
 
     def run(self) -> float:
         total_step = int(Settings.Task.EPISODE / Settings.Simulation.TIMESTEP + 0.5)
         e = 0
         for _ in range(total_step):
             e += self.calc_step()
-        self.logger.add_fragment(self.log_fragment)
+        if self.logger is not None:
+            self.logger.add_fragment(self.log_fragment)
         return e / total_step
 
     def get_dummies(self):

@@ -8,7 +8,7 @@ from .world import World
 
 
 class TaskGenerator(opt.TaskGenerator):
-    def __init__(self, sigma, panel: bool, logger):
+    def __init__(self, sigma, panel: bool, logger=None):
         self.panel = panel
         self.logger = logger
         self.bot_pos = Settings.Task.Robot.POSITIONS(sigma)
