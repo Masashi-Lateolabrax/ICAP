@@ -176,7 +176,12 @@ class Parsed:
         self.scores = np.array(fragment.data)
 
         self.latest_evaluation = self.scores[:, 0]
+        self.latest_evaluation_fr = self.latest_evaluation[:, 0]
+        self.latest_evaluation_fn = self.latest_evaluation[:, 1]
+
         self.old_evaluation = self.scores[:, 1]
+        self.old_evaluation_fr = self.old_evaluation[:, 0]
+        self.old_evaluation_fn = self.old_evaluation[:, 1]
 
         self.latest_sum_evaluation = np.sum(self.latest_evaluation)
         self.old_sum_evaluation = np.sum(self.old_evaluation)
@@ -187,35 +192,59 @@ def load_log():
     import scheme.pushing_food_with_pheromone.src as src
 
     for i in [1, 100, 200, 300, 400]:
-        with open(f"./results/log/{i}.pkl", "br") as f:
+        with open(f"./results/logs/{i}.pkl", "br") as f:
             log_list: list[LogFragment] = pickle.load(f)
 
         log_list: list[Parsed] = [Parsed(j, lf) for j, lf in enumerate(log_list)]
         a: list[Parsed] = list(reversed(sorted(log_list, key=lambda x: x.latest_sum_evaluation)))
         b: list[Parsed] = sorted(log_list, key=lambda x: x.old_sum_evaluation)
 
-        os.makedirs(f"./results/log/{i}_video/latest", exist_ok=True)
-        os.makedirs(f"./results/log/{i}_video/old", exist_ok=True)
+        os.makedirs(f"./results/logs/{i}_video/latest", exist_ok=True)
+        os.makedirs(f"./results/logs/{i}_video/old", exist_ok=True)
 
-        src.sampling(f"./results/log/{i}_video/latest", a[0].para)
-        src.sampling(f"./results/log/{i}_video/old", b[0].para)
+        src.sampling(f"./results/logs/{i}_video/latest", a[0].para)
+        src.sampling(f"./results/logs/{i}_video/old", b[0].para)
 
-        with open(f"./results/log/{i}_video/score.txt", "w") as f:
+        with open(f"./results/logs/{i}_video/score.txt", "w") as f:
             f.write(f"latest: {a[0].latest_sum_evaluation}\n")
             f.write(f"latest_idx: {a[0].i}\n")
             f.write(f"old: {b[0].old_sum_evaluation}\n")
             f.write(f"old_idx: {b[0].i}\n")
 
 
+def plot_ele_eva():
+    import pickle
+    import scheme.pushing_food_with_pheromone.src as src
+
+    latest = []
+    old = []
+
+    for i in range(1, 501):
+        with open(f"./results/logs/{i}.pkl", "br") as f:
+            log_list: list[LogFragment] = pickle.load(f)
+        log_list: list[Parsed] = [Parsed(j, lf) for j, lf in enumerate(log_list)]
+        a: list[Parsed] = list(reversed(sorted(log_list, key=lambda x: x.latest_sum_evaluation)))
+        b: list[Parsed] = sorted(log_list, key=lambda x: x.old_sum_evaluation)
+        latest.append((np.sum(a[0].latest_evaluation_fn), np.sum(a[0].latest_evaluation_fr)))
+        old.append((np.sum(b[0].old_evaluation_fn), np.sum(b[0].old_evaluation_fr)))
+        print("Processed:", i)
+
+    latest = np.array(latest)
+    old = np.array(old)
+
+    src.plot_element_evaluation(f"./results/logs/", latest, old)
+
+
 if __name__ == '__main__':
     Logger = _Logger()
 
     cd = os.path.dirname(os.path.abspath(__file__))
-    # wd = prepare_dir(cd)
+    wd = prepare_dir(cd)
 
-    # main(wd, Logger)
+    main(wd, Logger)
     # test_xml()
     # rec_only(wd)
     # analysis_only(wd)
     # sampling(wd)
-    load_log()
+    # load_log()
+    # plot_ele_eva()
