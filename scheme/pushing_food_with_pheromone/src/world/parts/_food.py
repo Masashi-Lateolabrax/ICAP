@@ -8,4 +8,4 @@ class Food(BodyObject):
         super().__init__(env.get_model(), env.get_data(), f"food{food_id}")
 
     def is_valid(self):
-        return self.get_geom().xpos[2] > 0
+        return self.get_body().xpos[2] > 0
