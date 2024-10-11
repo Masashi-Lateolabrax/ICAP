@@ -30,6 +30,11 @@ class Settings:
             NEST_GAIN = 7
             NEST_RANGE_P = 2
 
+        class OldEvaluation:
+            FOOD_RANGE = 2.3
+            FOOD_NEST_GAIN = 5.0
+            FOOD_ROBOT_GAIN = 2.756
+
     @property
     class Task(_PropertyClass):
         EPISODE = 60
@@ -77,15 +82,23 @@ class Settings:
                     CACHE_NUM_FOOD = len(self.POSITIONS())
                 return CACHE_NUM_FOOD
 
-    class Simulation:
+    @property
+    class Simulation(_PropertyClass):
         TIMESTEP = 0.01
 
         class Pheromone:
             TIMESTEP = 0.01
 
+        CEIL_THICKNESS = 1
+
+        @property
+        def CEIL_HEIGHT(self):
+            return self.parent.Renderer.ZOOM + self.CEIL_THICKNESS + 0.1
+
     class Renderer:
         MAX_GEOM = 7800
         RESOLUTION = [900, 1350]
+        ZOOM = 29
 
     @property
     class Characteristic(_PropertyClass):
