@@ -8,7 +8,6 @@ from libs.optimizer import MjcTaskInterface
 
 from .settings import Settings
 from .world import World
-from ..main import LogFragment
 
 
 def _squared_sigma(size, p):
@@ -59,12 +58,8 @@ class Task(MjcTaskInterface):
             bot_pos: list[tuple[float, float, float]],
             food_pos: list[tuple[float, float]],
             panel: bool,
-            logger,
             debug: bool
     ):
-        self.log_fragment = LogFragment(para)
-        self.logger = logger
-
         self.world = World(para, bot_pos, food_pos, panel, debug)
         self.init_food_dist = np.linalg.norm(np.array(food_pos), axis=1)
 
@@ -102,8 +97,6 @@ class Task(MjcTaskInterface):
             self.world.env.nest_pos
         )
 
-        self.log_fragment.add_score((e_latest, e_old))
-
         return e_old[0] + e_old[1]
 
     def run(self) -> float:
@@ -111,8 +104,6 @@ class Task(MjcTaskInterface):
         e = 0
         for _ in range(total_step):
             e += self.calc_step()
-        if self.logger is not None:
-            self.logger.add_fragment(self.log_fragment)
         return e / total_step
 
     def get_dummies(self):

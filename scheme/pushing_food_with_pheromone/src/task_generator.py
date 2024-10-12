@@ -8,9 +8,8 @@ from .world import World
 
 
 class TaskGenerator(opt.TaskGenerator):
-    def __init__(self, sigma, panel: bool, logger=None):
+    def __init__(self, sigma, panel: bool):
         self.panel = panel
-        self.logger = logger
         self.bot_pos = Settings.Task.Robot.POSITIONS(sigma)
         self.food_pos = Settings.Task.Food.POSITIONS()
 
@@ -19,4 +18,4 @@ class TaskGenerator(opt.TaskGenerator):
         return World.get_dim()
 
     def generate(self, para, debug=False) -> Task:
-        return Task(para, self.bot_pos, self.food_pos, self.panel, self.logger, debug)
+        return Task(para, self.bot_pos, self.food_pos, self.panel, debug)

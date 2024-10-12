@@ -7,9 +7,10 @@ from deap import cma
 import numpy
 import sys
 
-from libs.optimizer import Hist, TaskGenerator
-from libs.optimizer.individual import MinimalizeIndividual, MaximizeIndividual, Individual
-from libs.optimizer.processe import ProcInterface
+from ..history import Hist
+from ..task_interface import TaskGenerator
+from ..individual import MinimalizeIndividual, MaximizeIndividual, Individual
+from ..processe import ProcInterface
 
 
 def default_start_handler(gen, generation, start_time):

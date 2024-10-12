@@ -1,6 +1,6 @@
 import datetime
 
-import numpy
+import numpy as np
 
 
 class Hist:
@@ -8,20 +8,20 @@ class Hist:
         def __init__(
                 self,
                 scores_avg: float,
-                centroid: numpy.ndarray,
+                centroid: np.ndarray,
                 min_score: float,
-                min_para: numpy.ndarray,
+                min_para: np.ndarray,
                 max_score: float,
-                max_para: numpy.ndarray,
+                max_para: np.ndarray,
                 sigma: float
         ):
             self.time = datetime.datetime.now()
             self.scores_avg: float = scores_avg
-            self.centroid: numpy.ndarray = centroid.copy()
+            self.centroid: np.ndarray = centroid.copy()
             self.min_score: float = min_score
-            self.min_para: numpy.ndarray = min_para.copy()
+            self.min_para: np.ndarray = min_para.copy()
             self.max_score: float = max_score
-            self.max_para: numpy.ndarray = max_para.copy()
+            self.max_para: np.ndarray = max_para.copy()
             self.sigma: float = sigma
 
     def __init__(self, dim: int, population: int, mu: int):
@@ -31,31 +31,31 @@ class Hist:
         self.mu = mu
         self.min_index = 0
         self.max_index = 0
-        self.min_cmatrix = numpy.zeros(0)
-        self.max_cmatrix = numpy.zeros(0)
-        self.last_cmatrix = numpy.zeros(0)
+        self.min_cmatrix = np.zeros(0)
+        self.max_cmatrix = np.zeros(0)
+        self.last_cmatrix = np.zeros(0)
 
     def save(self, file_path: str = None):
         if file_path is None:
             file_path = f"./TMP_HIST.tmp"
 
-        meta = numpy.array([self.dim, self.population, self.mu])
+        meta = np.array([self.dim, self.population, self.mu])
 
         time: list[str] = []
-        centroids = numpy.zeros((len(self.queues), self.dim))
-        min_para = numpy.zeros((len(self.queues), self.dim))
-        max_para = numpy.zeros((len(self.queues), self.dim))
-        score = numpy.zeros((len(self.queues), 3))
-        sigmas = numpy.zeros((len(self.queues),))
+        centroids = np.zeros((len(self.queues), self.dim))
+        min_para = np.zeros((len(self.queues), self.dim))
+        max_para = np.zeros((len(self.queues), self.dim))
+        score = np.zeros((len(self.queues), 3))
+        sigmas = np.zeros((len(self.queues),))
         for i, q in enumerate(self.queues):
             time.append(q.time.strftime("%Y-%m-%d %H:%M:%S.%f"))
             centroids[i] = q.centroid
             min_para[i] = q.min_para
             max_para[i] = q.max_para
-            score[i] = numpy.array([q.scores_avg, q.min_score, q.max_score])
+            score[i] = np.array([q.scores_avg, q.min_score, q.max_score])
             sigmas[i] = q.sigma
 
-        numpy.savez(
+        np.savez(
             file_path,
             meta=meta,
             time=time,
@@ -73,7 +73,7 @@ class Hist:
 
     @staticmethod
     def load(file_path: str):
-        npz = numpy.load(file_path)
+        npz = np.load(file_path)
 
         meta = npz["meta"]
         this = Hist(dim=meta[0], population=meta[1], mu=meta[2])
@@ -99,13 +99,13 @@ class Hist:
     def add(
             self,
             scores_avg: float,
-            centroid: numpy.ndarray,
+            centroid: np.ndarray,
             min_score: float,
-            min_para: numpy.ndarray,
+            min_para: np.ndarray,
             max_score: float,
-            max_para: numpy.ndarray,
+            max_para: np.ndarray,
             sigma: float,
-            cmatrix: numpy.ndarray,
+            cmatrix: np.ndarray,
     ):
         self.queues.append(Hist.Queue(scores_avg, centroid, min_score, min_para, max_score, max_para, sigma))
         self.last_cmatrix = cmatrix.copy()

@@ -12,7 +12,7 @@ from .task_generator import TaskGenerator
 from .collector import Collector, Collector2
 
 
-def optimization(logger) -> Hist:
+def optimization() -> Hist:
     dim = TaskGenerator.get_dim()
     print(f"DIM: {dim}")
 
@@ -25,9 +25,8 @@ def optimization(logger) -> Hist:
         minimalize=False
     )
     for gen in range(1, 1 + cmaes.get_generation()):
-        task_generator = TaskGenerator(1, False, logger)
+        task_generator = TaskGenerator(1, False)
         cmaes.optimize_current_generation(task_generator, MultiThreadProc)
-        logger.save("./results/logs", gen)
 
     return cmaes.get_history()
 
