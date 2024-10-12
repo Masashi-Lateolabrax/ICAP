@@ -57,7 +57,7 @@ Collecting the evaluations of all individuals.
 
 ## Changes
 
-- Use the old evaluation formula
+- Implement Logger
 
 ## Date
 
