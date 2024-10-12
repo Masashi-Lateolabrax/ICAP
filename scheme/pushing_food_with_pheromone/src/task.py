@@ -97,7 +97,7 @@ class Task(MjcTaskInterface):
             self.world.env.nest_pos
         )
 
-        return e_old[0] + e_old[1]
+        return e_latest[0] + e_latest[1]
 
     def run(self) -> float:
         total_step = int(Settings.Task.EPISODE / Settings.Simulation.TIMESTEP + 0.5)
