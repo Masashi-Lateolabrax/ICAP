@@ -13,8 +13,8 @@ CACHE_NUM_FOOD = 0
 class Settings:
     @property
     class Optimization(_PropertyClass):
-        GENERATION = 500
-        POPULATION = 50  # int(4 + 3 * math.log(211))
+        GENERATION = 1000
+        POPULATION = 100  # int(4 + 3 * math.log(211))
         SIGMA = 0.3
 
         @property
