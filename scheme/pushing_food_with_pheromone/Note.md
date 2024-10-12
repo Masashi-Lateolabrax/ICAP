@@ -36,6 +36,8 @@ Collecting the evaluations of all individuals.
 
 ### Evaluation
 
+Potential
+
 | Settings     | Value |
 |--------------|-------|
 | FOOD_GAIN    | 1     |
@@ -43,6 +45,14 @@ Collecting the evaluations of all individuals.
 | FOOD_RANGE_P | 2     |
 | NEST_GAIN    | 7     |
 | NEST_RANGE_P | 2     |
+
+Distance
+
+| Settings        | Value |
+|-----------------|-------|
+| FOOD_RANGE      | 2.3   |
+| FOOD_NEST_GAIN  | 5.0   |
+| FOOD_ROBOT_GAIN | 2.756 |
 
 ### Optimization
 
@@ -57,8 +67,10 @@ Collecting the evaluations of all individuals.
 
 ## Changes
 
-- Implement Logger
+- Remove Logger
+- Increase GENERATION and POPULATION
+- Use the latest evaluation formula (Distance)
 
 ## Date
 
-2024-10-08 06:05 (JST)
+2024-10-12 17:25 (JST)
