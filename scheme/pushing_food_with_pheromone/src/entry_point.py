@@ -4,19 +4,20 @@ import numpy as np
 import mujoco
 import matplotlib.pyplot as plt
 
-from libs.optimizer import CMAES, Hist, MultiThreadProc
+from libs.optimizer import CMAES, MultiThreadProc
 from libs.utils.data_collector import Recorder
 
 from .settings import Settings
 from .task_generator import TaskGenerator
 from .collector import Collector, Collector2
+from .logger import Logger
 
 
-def optimization(workdir) -> Hist:
+def optimization(workdir):
     dim = TaskGenerator.get_dim()
     print(f"DIM: {dim}")
 
-    history = Hist(workdir)
+    logger = Logger(workdir)
 
     cmaes = CMAES(
         dim=dim,
@@ -24,14 +25,16 @@ def optimization(workdir) -> Hist:
         population=Settings.Optimization.POPULATION,
         sigma=Settings.Optimization.SIGMA,
         mu=Settings.Optimization.MU,
-        minimalize=Settings.Optimization.Evaluation != 0,
-        logger=history
+        minimalize=Settings.Optimization.EVALUATION_TYPE != 0,
+        logger=logger
     )
     for gen in range(1, 1 + cmaes.get_generation()):
         task_generator = TaskGenerator(1, False)
         cmaes.optimize_current_generation(task_generator, MultiThreadProc)
 
-    return history
+    logger.save()
+
+    return logger.best_para
 
 
 def plot_evaluation(work_dir, evaluation):
@@ -109,9 +112,9 @@ def analysis(work_dir, para):
     plot_pheromone_gas_volume(work_dir, collector.pheromone_gas)
 
 
-def analysis2(work_dir, hist: Hist):
-    plot_loss(work_dir, hist)
-    analysis(work_dir, hist.get_max().max_para)
+# def analysis2(work_dir, hist: Hist):
+#     plot_loss(work_dir, hist)
+#     analysis(work_dir, hist.get_max().max_para)
 
 
 def record(para, workdir):

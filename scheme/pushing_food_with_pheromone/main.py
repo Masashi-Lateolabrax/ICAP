@@ -53,14 +53,8 @@ def prepare_dir(current_dir, specify: str = None):
 def main(workdir):
     import scheme.pushing_food_with_pheromone.src as src
 
-    git_hash = os.path.basename(workdir)[-8:]
-
-    hist = src.optimization(workdir)
-    hist.save(f"history_{git_hash}.npz")
-
-    para = hist.get_max().max_para
-    src.sampling(workdir, para)
-    src.plot_loss(workdir, hist)
+    best_para = src.optimization(workdir)
+    src.sampling(workdir, best_para)
 
 
 def rec_only(workdir):
