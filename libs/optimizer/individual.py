@@ -1,3 +1,5 @@
+import copy
+
 from deap import base
 import array
 import numpy
@@ -23,6 +25,17 @@ class Individual(array.array):
         this.fitness = fitness
         this.dump = None
         return this
+
+    def __copy__(self):
+        new_instance = Individual(self.fitness, self)
+        new_instance.dump = self.dump
+        return new_instance
+
+    def __deepcopy__(self, memo):
+        fitness_copy = copy.deepcopy(self.fitness)
+        new_instance = Individual(fitness_copy, self)
+        new_instance.dump = copy.deepcopy(self.dump)  # dumpのコピー
+        return new_instance
 
 
 class MaximizeIndividual(Individual):
