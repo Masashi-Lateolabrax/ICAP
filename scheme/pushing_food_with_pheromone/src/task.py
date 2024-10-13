@@ -73,6 +73,14 @@ class Task(MjcTaskInterface):
         self._bot_food_dist_buf = np.zeros((Settings.Task.Robot.NUM_ROBOTS, 2))
         self._bot_food_dist_buf[:, 1] = 0.5 + 0.175
 
+        self.latest_e = 0
+        self.old_e = 0
+
+        self._dump = np.zeros((
+            int(Settings.Task.EPISODE / Settings.Simulation.TIMESTEP + 0.5),
+            2, 2
+        ))
+
     def get_model(self) -> mujoco.MjModel:
         return self.world.env.get_model()
 
@@ -82,34 +90,39 @@ class Task(MjcTaskInterface):
     def calc_step(self) -> float:
         self.world.calc_step()
 
+        self.latest_e = evaluation(
+            self._nest_p_sigma,
+            self._food_p_sigma,
+            self.world.env.food_pos,
+            self.world.env.bot_pos,
+            self.world.env.nest_pos,
+            self._bot_food_dist_buf
+        )
+        self.old_e = old_evaluation(
+            self.init_food_dist,
+            self.world.env.food_pos,
+            self.world.env.bot_pos,
+            self.world.env.nest_pos
+        )
+
         if Settings.Optimization.Evaluation == 0:
-            e = evaluation(
-                self._nest_p_sigma,
-                self._food_p_sigma,
-                self.world.env.food_pos,
-                self.world.env.bot_pos,
-                self.world.env.nest_pos,
-                self._bot_food_dist_buf
-            )
+            e = self.latest_e
         else:
-            e = old_evaluation(
-                self.init_food_dist,
-                self.world.env.food_pos,
-                self.world.env.bot_pos,
-                self.world.env.nest_pos
-            )
+            e = self.old_e
 
         return e[0] + e[1]
 
     def run(self) -> float:
         total_step = int(Settings.Task.EPISODE / Settings.Simulation.TIMESTEP + 0.5)
         e = 0
-        for _ in range(total_step):
+        for t in range(total_step):
             e += self.calc_step()
+            self._dump[t, 0, :] = self.latest_e
+            self._dump[t, 1, :] = self.old_e
         return e / total_step
 
     def get_dummies(self):
         return self.world.get_dummies()
 
-    def get_dump_data(self) -> bytes | None:
-        return None
+    def get_dump_data(self) -> object | None:
+        return self._dump
