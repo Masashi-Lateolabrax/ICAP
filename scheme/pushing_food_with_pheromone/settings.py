@@ -110,7 +110,7 @@ class Settings:
 
         @property
         class Robot(_PropertyClass):
-            THINKING_INTERVAL = 0.3
+            THINKING_INTERVAL = 0.1
 
             MOVE_SPEED = 1.2
             TURN_SPEED = 1.0
