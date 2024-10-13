@@ -18,25 +18,28 @@ Collecting the evaluations of all individuals.
 
 ### Robot Characteristic
 
-| Settings       | Value                  |
-|----------------|------------------------|
-| Pheromone Tank | Disable                |
-| RNN            | Enable                 |
-| Dimension      | 244                    |
-| Noise Layer    | Input and Middle Layer |
+| Settings       | Value                 |
+|----------------|-----------------------|
+| Pheromone Tank | Disable               |
+| GRU            | Enable                |
+| Dimension      | 259                   |
+| Noise Layer    | Input, Middle, Output |
 
 ### Pheromone
 
-| Settings         | Value |
-|------------------|-------|
-| SATURATION_VAPOR | 1     |
-| EVAPORATION      | 1     |
-| DIFFUSION        | 0.05  |  
-| DECREASE         | 0.1   |
+| Settings         | Value     |
+|------------------|-----------|
+| SATURATION_VAPOR | 1         |
+| EVAPORATION      | 1         |
+| DIFFUSION        | 0.05      |  
+| DECREASE         | 0.1       |
+| MAX_SECRETION    | 0.423 * 5 |
 
 ### Evaluation
 
-Potential
+Use 'Distance' evaluation.
+
+#### Potential
 
 | Settings     | Value |
 |--------------|-------|
@@ -46,7 +49,7 @@ Potential
 | NEST_GAIN    | 7     |
 | NEST_RANGE_P | 2     |
 
-Distance
+#### Distance
 
 | Settings        | Value |
 |-----------------|-------|
@@ -58,7 +61,7 @@ Distance
 
 | Settings   | Value |
 |------------|-------|
-| Generation | 500   |
+| Generation | 1000  |
 | Population | 50    |
 | Elite      | 25    |
 
@@ -67,10 +70,9 @@ Distance
 
 ## Changes
 
-- Remove Logger
-- Increase GENERATION and POPULATION
-- Use the latest evaluation formula (Distance)
+- Implement Logger
+- Use the Distance evaluation
 
 ## Date
 
-2024-10-12 17:25 (JST)
+2024-10-14 04:54 (JST)
