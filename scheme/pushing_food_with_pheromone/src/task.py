@@ -82,22 +82,24 @@ class Task(MjcTaskInterface):
     def calc_step(self) -> float:
         self.world.calc_step()
 
-        e_latest = evaluation(
-            self._nest_p_sigma,
-            self._food_p_sigma,
-            self.world.env.food_pos,
-            self.world.env.bot_pos,
-            self.world.env.nest_pos,
-            self._bot_food_dist_buf
-        )
-        e_old = old_evaluation(
-            self.init_food_dist,
-            self.world.env.food_pos,
-            self.world.env.bot_pos,
-            self.world.env.nest_pos
-        )
+        if Settings.Optimization.Evaluation == 0:
+            e = evaluation(
+                self._nest_p_sigma,
+                self._food_p_sigma,
+                self.world.env.food_pos,
+                self.world.env.bot_pos,
+                self.world.env.nest_pos,
+                self._bot_food_dist_buf
+            )
+        else:
+            e = old_evaluation(
+                self.init_food_dist,
+                self.world.env.food_pos,
+                self.world.env.bot_pos,
+                self.world.env.nest_pos
+            )
 
-        return e_latest[0] + e_latest[1]
+        return e[0] + e[1]
 
     def run(self) -> float:
         total_step = int(Settings.Task.EPISODE / Settings.Simulation.TIMESTEP + 0.5)
