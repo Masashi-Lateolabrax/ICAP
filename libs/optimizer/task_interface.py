@@ -14,6 +14,10 @@ class TaskInterface(metaclass=abc.ABCMeta):
     def run(self) -> float:
         raise NotImplementedError()
 
+    @abc.abstractmethod
+    def get_dump_data(self) -> object | None:
+        raise NotImplementedError()
+
 
 class MjcTaskInterface(TaskInterface):
     """

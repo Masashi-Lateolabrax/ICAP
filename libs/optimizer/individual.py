@@ -18,12 +18,10 @@ class FitnessMin(base.Fitness):
 
 
 class Individual(array.array):
-    fitness: base.Fitness = None
-
     def __new__(cls, fitness: base.Fitness, arr: numpy.ndarray):
         this = super().__new__(cls, "d", arr)
-        if this.fitness is None:
-            this.fitness = fitness
+        this.fitness = fitness
+        this.dump = None
         return this
 
 

@@ -12,9 +12,11 @@ from .task_generator import TaskGenerator
 from .collector import Collector, Collector2
 
 
-def optimization() -> Hist:
+def optimization(workdir) -> Hist:
     dim = TaskGenerator.get_dim()
     print(f"DIM: {dim}")
+
+    history = Hist(workdir)
 
     cmaes = CMAES(
         dim=dim,
@@ -22,13 +24,14 @@ def optimization() -> Hist:
         population=Settings.Optimization.POPULATION,
         sigma=Settings.Optimization.SIGMA,
         mu=Settings.Optimization.MU,
-        minimalize=Settings.Optimization.Evaluation != 0
+        minimalize=Settings.Optimization.Evaluation != 0,
+        logger=history
     )
     for gen in range(1, 1 + cmaes.get_generation()):
         task_generator = TaskGenerator(1, False)
         cmaes.optimize_current_generation(task_generator, MultiThreadProc)
 
-    return cmaes.get_history()
+    return history
 
 
 def plot_evaluation(work_dir, evaluation):

@@ -1,9 +1,10 @@
 import array
 import psutil
 
-from libs.optimizer import Hist, TaskGenerator
-from libs.optimizer.cmaes import base
-from libs.optimizer.processe import MultiThreadProc
+from ..task_interface import TaskGenerator
+from ..processe import MultiThreadProc
+from .logger import Logger
+from . import base
 
 
 class CMAES:
@@ -18,6 +19,7 @@ class CMAES:
             cmatrix=None,
             minimalize: bool = True,
             split_tasks: int = 0,
+            logger: Logger = None
     ):
         num_cpu = psutil.cpu_count(logical=False)
         if split_tasks <= 0:
@@ -26,7 +28,7 @@ class CMAES:
             else:
                 split_tasks = num_cpu - 2
 
-        self._base = base.BaseCMAES(dim, population, mu, sigma, centroid, minimalize, split_tasks, cmatrix)
+        self._base = base.BaseCMAES(dim, population, mu, sigma, centroid, minimalize, split_tasks, cmatrix, logger)
         self._generation = generation
         self._current_generation = 0
 
@@ -35,9 +37,6 @@ class CMAES:
 
     def get_best_score(self) -> float:
         return self.get_best_score()
-
-    def get_history(self) -> Hist:
-        return self._base.get_history()
 
     def set_start_handler(self, handler=base.default_start_handler):
         self._base.set_start_handler(handler)
@@ -55,10 +54,10 @@ class CMAES:
             self, env_creator: TaskGenerator, proc=MultiThreadProc
     ) -> tuple[int, float, float, float, array.array]:
         self._current_generation += 1
-        num_err, ave_score, min_score, max_score, good_para = self._base.optimize_current_generation(
+        num_err, ave_score, min_score, max_score, best_para = self._base.optimize_current_generation(
             self._current_generation, self._generation, env_creator, proc
         )
-        return num_err, ave_score, min_score, max_score, good_para
+        return num_err, ave_score, min_score, max_score, best_para
 
     def optimize(self, env_creator: TaskGenerator, proc=MultiThreadProc):
         for gen in range(1, self._generation + 1):

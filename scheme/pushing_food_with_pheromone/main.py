@@ -55,8 +55,8 @@ def main(workdir):
 
     git_hash = os.path.basename(workdir)[-8:]
 
-    hist = src.optimization()
-    hist.save(os.path.join(workdir, f"history_{git_hash}.npz"))
+    hist = src.optimization(workdir)
+    hist.save(f"history_{git_hash}.npz")
 
     para = hist.get_max().max_para
     src.sampling(workdir, para)

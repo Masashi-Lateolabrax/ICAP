@@ -1,9 +1,14 @@
 import datetime
+import os
 
 import numpy as np
+from deap.cma import Strategy
+
+from .cmaes.logger import Logger
+from .individual import Individual
 
 
-class Hist:
+class Hist(Logger):
     class Queue:
         def __init__(
                 self,
@@ -24,20 +29,44 @@ class Hist:
             self.max_para: np.ndarray = max_para.copy()
             self.sigma: float = sigma
 
-    def __init__(self, dim: int, population: int, mu: int):
+    def __init__(self, save_dir):
+        self.save_dir = save_dir
+
         self.queues: list[Hist.Queue] = []
-        self.dim = dim
-        self.population = population
-        self.mu = mu
+        self.dim: int = -1
+        self.population: int = -1
+        self.mu: int = -1
         self.min_index = 0
         self.max_index = 0
-        self.min_cmatrix = np.zeros(0)
-        self.max_cmatrix = np.zeros(0)
         self.last_cmatrix = np.zeros(0)
 
-    def save(self, file_path: str = None):
-        if file_path is None:
-            file_path = f"./TMP_HIST.tmp"
+    def log(
+            self,
+            num_error, avg, min_score, min_para, max_score, max_para, best_para,
+            individuals: list[Individual],
+            strategy: Strategy
+    ):
+        self.queues.append(Hist.Queue(avg, strategy.centroid, min_score, min_para, max_score, max_para, strategy.sigma))
+        self.last_cmatrix = strategy.C.copy()
+
+        if self.queues[self.min_index].min_score > min_score:
+            self.min_index = len(self.queues) - 1
+        if self.queues[self.max_index].max_score < max_score:
+            self.max_index = len(self.queues) - 1
+
+        if self.dim < 0:
+            self.dim = len(individuals[0])
+        if self.population < 0:
+            self.population = len(individuals)
+        if self.mu < 0:
+            self.mu = strategy.mu
+
+    def save_tmp(self, gen):
+        file_path = os.path.join(self.save_dir, "TMP_LOG.tmp.npz")
+        self.save(file_path)
+
+    def save(self, file_name: str):
+        file_path = os.path.join(self.save_dir, file_name)
 
         meta = np.array([self.dim, self.population, self.mu])
 
@@ -65,9 +94,7 @@ class Hist:
             score=score,
             sigmas=sigmas,
             min_index=self.min_index,
-            min_cmatrix=self.min_cmatrix,
             max_index=self.max_index,
-            max_cmatrix=self.max_cmatrix,
             last_cmatrix=self.last_cmatrix,
         )
 
@@ -78,9 +105,7 @@ class Hist:
         meta = npz["meta"]
         this = Hist(dim=meta[0], population=meta[1], mu=meta[2])
         this.min_index = npz["min_index"]
-        this.min_cmatrix = npz["min_cmatrix"]
         this.max_index = npz["max_index"]
-        this.max_cmatrix = npz["max_cmatrix"]
         this.last_cmatrix = npz["last_cmatrix"]
 
         time = npz["time"]
@@ -94,27 +119,9 @@ class Hist:
             q.time = datetime.datetime.strptime(t, "%Y-%m-%d %H:%M:%S.%f")
             this.queues.append(q)
 
-        return this
+        this.save_dir = os.path.dirname(file_path)
 
-    def add(
-            self,
-            scores_avg: float,
-            centroid: np.ndarray,
-            min_score: float,
-            min_para: np.ndarray,
-            max_score: float,
-            max_para: np.ndarray,
-            sigma: float,
-            cmatrix: np.ndarray,
-    ):
-        self.queues.append(Hist.Queue(scores_avg, centroid, min_score, min_para, max_score, max_para, sigma))
-        self.last_cmatrix = cmatrix.copy()
-        if self.queues[self.min_index].min_score > min_score:
-            self.min_index = len(self.queues) - 1
-            self.min_cmatrix = self.last_cmatrix
-        if self.queues[self.max_index].max_score < max_score:
-            self.max_index = len(self.queues) - 1
-            self.max_cmatrix = self.last_cmatrix
+        return this
 
     def get_min(self) -> Queue:
         return self.queues[self.min_index]

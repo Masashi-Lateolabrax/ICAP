@@ -110,3 +110,6 @@ class Task(MjcTaskInterface):
 
     def get_dummies(self):
         return self.world.get_dummies()
+
+    def get_dump_data(self) -> bytes | None:
+        return None
