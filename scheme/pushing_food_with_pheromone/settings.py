@@ -117,7 +117,7 @@ class Settings:
 
             SENSOR_PRECISION = [2 / 0.7, 2 / 5]
 
-            MAX_SECRETION = 0.423 * 3
+            MAX_SECRETION = 0.423 * 5
 
             @property
             def TANK_SIZE(self):
