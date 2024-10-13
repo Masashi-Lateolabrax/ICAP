@@ -4,25 +4,21 @@ from torch import nn
 from libs.torch_utils import Debugger, NormalNoize
 
 
-class _UnsqueezeLayer(nn.Module):
-    def __init__(self, dim):
-        super(_UnsqueezeLayer, self).__init__()
-        self.requires_grad_(False)
-        self.dim = dim
+class MyGRU(nn.Module):
+    def __init__(
+            self, input_size, hidden_size, bias=True, device=None, dtype=None
+    ):
+        super(MyGRU, self).__init__()
 
-    def forward(self, x: torch.Tensor):
-        return x.unsqueeze(self.dim)
+        self.gru = nn.GRUCell(input_size, hidden_size, bias, device, dtype)
+        self.noise = NormalNoize(0.01)
+        self.hidden: torch.Tensor = None
 
-
-class _IndexFilter(nn.Module):
-    def __init__(self, i):
-        super(_IndexFilter, self).__init__()
-        self.requires_grad_(False)
-        self.i = i
-
-    def forward(self, x):
-        x = x[self.i]
-        return x
+    def forward(self, input_):
+        y = self.gru.forward(input_, self.hidden)
+        y = self.noise.forward(y)
+        self.hidden = y.detach()
+        return y
 
 
 class Brain(nn.Module):
@@ -37,17 +33,12 @@ class Brain(nn.Module):
             NormalNoize(0.01),
             self.debugger.create_investigator("l0n"),
 
-            _UnsqueezeLayer(0),
-            nn.RNN(9, 10),
-            _IndexFilter(0),
-            _IndexFilter(0),
-            self.debugger.create_investigator("l1"),
-
-            NormalNoize(0.01),
+            MyGRU(9, 5),
             self.debugger.create_investigator("l1n"),
 
-            nn.Linear(10, 3),
+            nn.Linear(5, 3),
             nn.Sigmoid(),
+            NormalNoize(0.001),
             self.debugger.create_investigator("l2"),
         )
 
