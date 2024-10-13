@@ -60,6 +60,6 @@ class MultiThreadProc(ProcInterface):
     def join(self) -> (int, int):
         for origin in self.individuals:
             result = self.queue.get()
-            origin.fitness.values = result.fitness.values
+            origin.__dict__.update(result.__dict__)
         self.handle.join()
         return self.gen, self.thread_id
