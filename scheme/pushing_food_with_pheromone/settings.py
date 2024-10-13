@@ -16,7 +16,7 @@ class Settings:
         GENERATION = 1000
         POPULATION = 50  # int(4 + 3 * math.log(211))
         SIGMA = 0.3
-        EVALUATION_TYPE = 0
+        EVALUATION_TYPE = 1
 
         @property
         def MU(self):
