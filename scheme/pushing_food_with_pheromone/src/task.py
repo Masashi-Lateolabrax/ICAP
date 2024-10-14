@@ -6,7 +6,7 @@ import numpy as np
 
 from libs.optimizer import MjcTaskInterface
 
-from .settings import Settings
+from .settings import Settings, EType
 from .world import World
 
 
@@ -77,8 +77,7 @@ class Task(MjcTaskInterface):
         self.old_e = 0
 
         self._dump = np.zeros((
-            int(Settings.Task.EPISODE / Settings.Simulation.TIMESTEP + 0.5),
-            2, 2
+            Settings.Simulation.TOTAL_STEP, 2, 2
         ))
 
     def get_model(self) -> mujoco.MjModel:
@@ -105,21 +104,22 @@ class Task(MjcTaskInterface):
             self.world.env.nest_pos
         )
 
-        if Settings.Optimization.Evaluation == 0:
+        if Settings.Optimization.EVALUATION_TYPE == EType.POTENTIAL:
             e = self.latest_e
-        else:
+        elif Settings.Optimization.EVALUATION_TYPE == EType.DISTANCE:
             e = self.old_e
+        else:
+            raise Exception("selected invalid EVALUATION_TYPE.")
 
         return e[0] + e[1]
 
     def run(self) -> float:
-        total_step = int(Settings.Task.EPISODE / Settings.Simulation.TIMESTEP + 0.5)
         e = 0
-        for t in range(total_step):
+        for t in range(Settings.Simulation.TOTAL_STEP):
             e += self.calc_step()
-            self._dump[t, 0, :] = self.latest_e
-            self._dump[t, 1, :] = self.old_e
-        return e / total_step
+            self._dump[t, EType.POTENTIAL, :] = self.latest_e
+            self._dump[t, EType.DISTANCE, :] = self.old_e
+        return e / Settings.Simulation.TOTAL_STEP
 
     def get_dummies(self):
         return self.world.get_dummies()
