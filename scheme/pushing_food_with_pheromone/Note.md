@@ -10,34 +10,28 @@ Collecting the evaluations of all individuals.
 
 ## Features
 
-### Task
-
-| Setting        | Value |
-|----------------|-------|
-| Episode Length | 60    |
-
 ### Robot Characteristic
 
-| Settings       | Value                 |
-|----------------|-----------------------|
-| Pheromone Tank | Disable               |
-| GRU            | Enable                |
-| Dimension      | 259                   |
-| Noise Layer    | Input, Middle, Output |
+| Settings       | Value         |
+|----------------|---------------|
+| Pheromone Tank | Disable       |
+| GRU            | Disable       |
+| Dimension      | 134           |
+| Noise Layer    | Input, Middle |
 
-### Pheromone
+### Optimization
 
-| Settings         | Value     |
-|------------------|-----------|
-| SATURATION_VAPOR | 1         |
-| EVAPORATION      | 1         |
-| DIFFUSION        | 0.05      |  
-| DECREASE         | 0.1       |
-| MAX_SECRETION    | 0.423 * 5 |
+| Settings   | Value |
+|------------|-------|
+| Generation | 500   |
+| Population | 50    |
+| Elite      | 25    |
+
+- Use 'Potential' evaluation.
+- Randomize the initial robot directions in each generation for the optimization
+- Randomize the food positions
 
 ### Evaluation
-
-Use 'Potential' evaluation.
 
 #### Potential
 
@@ -57,22 +51,29 @@ Use 'Potential' evaluation.
 | FOOD_NEST_GAIN  | 5.0   |
 | FOOD_ROBOT_GAIN | 2.756 |
 
-### Optimization
+### Task
 
-| Settings   | Value |
-|------------|-------|
-| Generation | 1000  |
-| Population | 50    |
-| Elite      | 25    |
+| Setting        | Value |
+|----------------|-------|
+| Episode Length | 60    |
 
-- Randomize the initial robot directions in each generation for the optimization
-- Randomize the food positions
+### Pheromone
+
+| Settings         | Value     |
+|------------------|-----------|
+| SATURATION_VAPOR | 1         |
+| EVAPORATION      | 1         |
+| DIFFUSION        | 0.05      |  
+| DECREASE         | 0.1       |
+| MAX_SECRETION    | 0.423 * 3 |
 
 ## Changes
 
-- Implement Logger
-- Use Potential evaluation
+- Disable RNN and use Liner
+- Increase EPISODE from 45 to 60
+- Decrease POPULATION from 100 to 50
+- Decrease GENERATION from 1000 to 500
 
 ## Date
 
-2024-10-14 04:54 (JST)
+2024-10-14 04:38 (JST)
