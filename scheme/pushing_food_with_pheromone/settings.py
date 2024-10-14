@@ -1,4 +1,5 @@
 import random
+from enum import IntEnum
 
 
 class _PropertyClass:
@@ -10,13 +11,18 @@ CACHE_NUM_ROBOT = 0
 CACHE_NUM_FOOD = 0
 
 
+class EType(IntEnum):
+    POTENTIAL = 0
+    DISTANCE = 1
+
+
 class Settings:
     @property
     class Optimization(_PropertyClass):
-        GENERATION = 1000
-        POPULATION = 50  # int(4 + 3 * math.log(211))
+        GENERATION = 500
+        POPULATION = 100  # int(4 + 3 * math.log(211))
         SIGMA = 0.3
-        EVALUATION_TYPE = 1
+        EVALUATION_TYPE = EType.POTENTIAL
 
         @property
         def MU(self):
@@ -38,7 +44,7 @@ class Settings:
 
     @property
     class Task(_PropertyClass):
-        EPISODE = 60
+        EPISODE = 45
 
         class Nest:
             POSITION = [0, 0]
@@ -86,6 +92,10 @@ class Settings:
     @property
     class Simulation(_PropertyClass):
         TIMESTEP = 0.01
+
+        @property
+        def TOTAL_STEP(self):
+            return int(self.parent.Task.EPISODE / self.TIMESTEP + 0.5)
 
         class Pheromone:
             TIMESTEP = 0.01

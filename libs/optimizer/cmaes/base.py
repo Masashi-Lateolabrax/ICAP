@@ -108,14 +108,12 @@ class BaseCMAES:
             if self._best_score > min_score:
                 self._best_score = min_score
                 self._best_para = min_para.copy()
-            best_para = min_para.copy()
         else:
             if self._best_score < max_score:
                 self._best_score = max_score
                 self._best_para = max_para.copy()
-            best_para = max_para.copy()
 
-        return num_error, avg, (min_score, min_para), (max_score, max_para), best_para
+        return num_error, avg, (min_score, min_para), (max_score, max_para), self._best_para
 
     def _divide_tasks(self):
         num_task = int(len(self._individuals) / self._split_tasks)

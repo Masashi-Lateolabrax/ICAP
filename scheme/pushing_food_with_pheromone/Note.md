@@ -37,7 +37,7 @@ Collecting the evaluations of all individuals.
 
 ### Evaluation
 
-Use 'Distance' evaluation.
+Use 'Potential' evaluation.
 
 #### Potential
 
@@ -71,7 +71,7 @@ Use 'Distance' evaluation.
 ## Changes
 
 - Implement Logger
-- Use the Distance evaluation
+- Use Potential evaluation
 
 ## Date
 

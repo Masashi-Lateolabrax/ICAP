@@ -16,7 +16,7 @@ class MyGRU(nn.Module):
 
     def forward(self, input_):
         y = self.gru.forward(input_, self.hidden)
-        y = self.noise.forward(y)
+        # y = self.noise.forward(y)
         self.hidden = y.detach()
         return y
 
@@ -38,7 +38,7 @@ class Brain(nn.Module):
 
             nn.Linear(5, 3),
             nn.Sigmoid(),
-            NormalNoize(0.001),
+            # NormalNoize(0.001),
             self.debugger.create_investigator("l2"),
         )
 

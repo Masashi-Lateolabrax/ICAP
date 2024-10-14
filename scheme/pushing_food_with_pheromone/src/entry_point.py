@@ -5,12 +5,11 @@ import mujoco
 import matplotlib.pyplot as plt
 
 from libs.optimizer import CMAES, MultiThreadProc
-from libs.utils.data_collector import Recorder
 
-from .settings import Settings
+from .settings import Settings, EType
 from .task_generator import TaskGenerator
-from .collector import Collector, Collector2
-from .logger import Logger
+from .collector import Collector2
+from .logger import Logger, LogLoader
 
 
 def optimization(workdir):
@@ -38,34 +37,13 @@ def optimization(workdir):
 
 
 def plot_evaluation(work_dir, evaluation):
-    total_step = int(Settings.Task.EPISODE / Settings.Simulation.TIMESTEP + 0.5)
-    xs = np.arange(0, total_step) * Settings.Simulation.TIMESTEP
+    xs = np.arange(0, Settings.Simulation.TOTAL_STEP) * Settings.Simulation.TIMESTEP
 
     fig = plt.figure()
     axis = fig.add_subplot(1, 1, 1)
     axis.plot(xs, evaluation)
     axis.set_title("Evaluation")
     fig.savefig(os.path.join(work_dir, "evaluation.svg"))
-    plt.close(fig)
-
-
-def plot_element_evaluation(work_dir, latest, old):
-    xs = np.arange(0, latest.shape[0])
-    fig = plt.figure()
-    axis = fig.add_subplot(1, 1, 1)
-    axis.plot(xs, latest[:, 0])
-    axis.plot(xs, latest[:, 1])
-    axis.set_title("Evaluation_latest")
-    fig.savefig(os.path.join(work_dir, "evaluation2_latest.svg"))
-    plt.close(fig)
-
-    xs = np.arange(0, old.shape[0])
-    fig = plt.figure()
-    axis = fig.add_subplot(1, 1, 1)
-    axis.plot(xs, old[:, 0])
-    axis.plot(xs, old[:, 1])
-    axis.set_title("Evaluation_old")
-    fig.savefig(os.path.join(work_dir, "evaluation2_old.svg"))
     plt.close(fig)
 
 
@@ -82,63 +60,6 @@ def plot_pheromone_gas_volume(work_dir, pheromone_gas):
     fig.savefig(os.path.join(work_dir, "pheromone_gas_volume.svg"))
 
 
-def plot_loss(workdir, hist):
-    xs = np.arange(0, len(hist.queues))
-    min_scores = np.zeros(xs.shape[0])
-    ave_scores = np.zeros(xs.shape[0])
-    max_scores = np.zeros(xs.shape[0])
-    for i, q in enumerate(hist.queues):
-        min_scores[i] = q.min_score
-        max_scores[i] = q.max_score
-        ave_scores[i] = q.scores_avg
-
-    fig = plt.figure()
-    axis = fig.add_subplot(1, 1, 1)
-
-    axis.plot(xs, ave_scores)
-    axis.fill_between(xs, min_scores, max_scores, color="gray", alpha=0.3)
-
-    axis.set_title("Loss")
-    fig.savefig(os.path.join(workdir, "loss.svg"))
-
-
-def analysis(work_dir, para):
-    generator = TaskGenerator(1, False)
-    task = generator.generate(para, True)
-    collector = Collector()
-    collector.run(task)
-
-    plot_evaluation(work_dir, collector.evaluation)
-    plot_pheromone_gas_volume(work_dir, collector.pheromone_gas)
-
-
-# def analysis2(work_dir, hist: Hist):
-#     plot_loss(work_dir, hist)
-#     analysis(work_dir, hist.get_max().max_para)
-
-
-def record(para, workdir):
-    generator = TaskGenerator(1, True)
-    task = generator.generate(para, False)
-
-    camera = mujoco.MjvCamera()
-    camera.elevation = -90
-    camera.distance = Settings.Renderer.ZOOM
-
-    total_step = int(Settings.Task.EPISODE / Settings.Simulation.TIMESTEP + 0.5)
-    rec = Recorder(
-        Settings.Simulation.TIMESTEP,
-        total_step,
-        Settings.Renderer.RESOLUTION[0],
-        Settings.Renderer.RESOLUTION[1],
-        workdir,
-        camera,
-        Settings.Renderer.MAX_GEOM
-    )
-
-    rec.run(task)
-
-
 def rec_and_collect_data(workdir, para):
     generator = TaskGenerator(1, True)
     task = generator.generate(para, False)
@@ -147,10 +68,9 @@ def rec_and_collect_data(workdir, para):
     camera.elevation = -90
     camera.distance = Settings.Renderer.ZOOM
 
-    total_step = int(Settings.Task.EPISODE / Settings.Simulation.TIMESTEP + 0.5)
     collector = Collector2(
         Settings.Simulation.TIMESTEP,
-        total_step,
+        Settings.Simulation.TOTAL_STEP,
         Settings.Renderer.RESOLUTION[0],
         Settings.Renderer.RESOLUTION[1],
         workdir,
@@ -168,3 +88,78 @@ def sampling(workdir, para):
     evaluation, pheromone_gas = rec_and_collect_data(workdir, para)
     plot_evaluation(workdir, evaluation)
     plot_pheromone_gas_volume(workdir, pheromone_gas)
+
+
+def plot_evaluation_elements_for_each_generation(workdir, loader: LogLoader):
+    evaluations = np.zeros((Settings.Optimization.GENERATION, 3))
+
+    for gen in range(len(loader)):
+        inds = loader.get_individuals(gen)
+
+        dump = np.array([i.dump for i in inds])
+        dump = np.sum(dump, axis=1)
+        summed_dump = np.sum(dump, axis=2)
+
+        if Settings.Optimization.EVALUATION_TYPE == EType.POTENTIAL:
+            i = np.argmax(summed_dump[:, EType.POTENTIAL])
+            evaluations[gen, 0:2] = dump[i, EType.POTENTIAL, :]
+            evaluations[gen, 2] = np.sum(evaluations[gen, 0:2])
+
+        elif Settings.Optimization.EVALUATION_TYPE == EType.DISTANCE:
+            i = np.argmin(summed_dump[:, EType.DISTANCE])
+            evaluations[gen, 0:2] = dump[i, EType.DISTANCE, :]
+            evaluations[gen, 2] = np.sum(evaluations[gen, 0:2])
+
+        else:
+            raise Exception("Selected an invalid EVALUATION_TYPE.")
+
+    evaluations /= Settings.Simulation.TOTAL_STEP
+    xs = np.arange(0, evaluations.shape[0])
+
+    fig = plt.figure()
+    axis = fig.add_subplot(1, 1, 1)
+    axis.plot(xs, evaluations[:, 2], c="#d3d3d3")
+    axis.plot(xs, evaluations[:, 0], c="#0000ff")
+    axis.plot(xs, evaluations[:, 1], c="#ff0000")
+
+    fig.savefig(
+        os.path.join(workdir, "evaluation_elements_for_each_generation.svg")
+    )
+    plt.close(fig)
+
+
+def plot_evaluation_for_each_generation(workdir, loader: LogLoader):
+    e_type = Settings.Optimization.EVALUATION_TYPE
+    evaluations = np.zeros((Settings.Optimization.GENERATION, 3))
+
+    for gen in range(len(loader)):
+        inds = loader.get_individuals(gen)
+
+        dump = np.array([i.dump for i in inds])
+        dump = np.sum(dump, axis=1)
+        summed_dump = np.sum(dump, axis=2)
+
+        min_i = np.argmin(summed_dump[:, e_type])
+        min_score = summed_dump[min_i, e_type]
+
+        max_i = np.argmax(summed_dump[:, e_type])
+        max_score = summed_dump[max_i, e_type]
+
+        ave_score = np.average(summed_dump[:, e_type])
+
+        evaluations[gen, 0] = min_score
+        evaluations[gen, 1] = max_score
+        evaluations[gen, 2] = ave_score
+
+    evaluations /= Settings.Simulation.TOTAL_STEP
+    xs = np.arange(0, evaluations.shape[0])
+
+    fig = plt.figure()
+    axis = fig.add_subplot(1, 1, 1)
+    axis.plot(xs, evaluations[:, 2])
+    axis.fill_between(xs, evaluations[:, 0], evaluations[:, 1], color="gray", alpha=0.3)
+
+    fig.savefig(
+        os.path.join(workdir, "evaluation_for_each_generation.svg")
+    )
+    plt.close(fig)
