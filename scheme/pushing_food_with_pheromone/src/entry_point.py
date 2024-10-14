@@ -82,26 +82,6 @@ def plot_pheromone_gas_volume(work_dir, pheromone_gas):
     fig.savefig(os.path.join(work_dir, "pheromone_gas_volume.svg"))
 
 
-def plot_loss(workdir, hist):
-    xs = np.arange(0, len(hist.queues))
-    min_scores = np.zeros(xs.shape[0])
-    ave_scores = np.zeros(xs.shape[0])
-    max_scores = np.zeros(xs.shape[0])
-    for i, q in enumerate(hist.queues):
-        min_scores[i] = q.min_score
-        max_scores[i] = q.max_score
-        ave_scores[i] = q.scores_avg
-
-    fig = plt.figure()
-    axis = fig.add_subplot(1, 1, 1)
-
-    axis.plot(xs, ave_scores)
-    axis.fill_between(xs, min_scores, max_scores, color="gray", alpha=0.3)
-
-    axis.set_title("Loss")
-    fig.savefig(os.path.join(workdir, "loss.svg"))
-
-
 def analysis(work_dir, para):
     generator = TaskGenerator(1, False)
     task = generator.generate(para, True)
