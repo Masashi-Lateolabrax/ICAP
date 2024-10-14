@@ -5,11 +5,10 @@ import mujoco
 import matplotlib.pyplot as plt
 
 from libs.optimizer import CMAES, MultiThreadProc
-from libs.utils.data_collector import Recorder
 
 from .settings import Settings
 from .task_generator import TaskGenerator
-from .collector import Collector, Collector2
+from .collector import Collector2
 from .logger import Logger
 
 
@@ -35,6 +34,17 @@ def optimization(workdir):
     logger.save()
 
     return logger.best_para
+
+
+def plot_evaluation(work_dir, evaluation):
+    xs = np.arange(0, Settings.Simulation.TOTAL_STEP) * Settings.Simulation.TIMESTEP
+
+    fig = plt.figure()
+    axis = fig.add_subplot(1, 1, 1)
+    axis.plot(xs, evaluation)
+    axis.set_title("Evaluation")
+    fig.savefig(os.path.join(work_dir, "evaluation.svg"))
+    plt.close(fig)
 
 
 def plot_pheromone_gas_volume(work_dir, pheromone_gas):
