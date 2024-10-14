@@ -50,7 +50,8 @@ class Logger(optLogger):
             this.logs, this.last_average, this.last_cmatrix, this.best_para = pickle.load(f)
         return this
 
-    def load(self, gen):
-        file_path = os.path.join(self.save_dir, f"LOG_{gen}.pkl")
+    def load(self, file_name):
+        file_path = os.path.join(self.save_dir, file_name)
         with open(file_path, "rb") as f:
             self.logs, self.last_average, self.last_cmatrix, self.best_para = pickle.load(f)
+        return self
