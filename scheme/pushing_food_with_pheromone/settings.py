@@ -44,7 +44,7 @@ class Settings:
 
     @property
     class Task(_PropertyClass):
-        EPISODE = 45
+        EPISODE = 60
 
         class Nest:
             POSITION = [0, 0]
@@ -120,14 +120,14 @@ class Settings:
 
         @property
         class Robot(_PropertyClass):
-            THINKING_INTERVAL = 0.1
+            THINKING_INTERVAL = 0.3
 
             MOVE_SPEED = 1.2
             TURN_SPEED = 1.0
 
             SENSOR_PRECISION = [2 / 0.7, 2 / 5]
 
-            MAX_SECRETION = 0.423 * 5
+            MAX_SECRETION = 0.423 * 3
 
             @property
             def TANK_SIZE(self):
