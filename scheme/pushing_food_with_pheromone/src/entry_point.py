@@ -37,26 +37,6 @@ def optimization(workdir):
     return logger.best_para
 
 
-def plot_element_evaluation(work_dir, latest, old):
-    xs = np.arange(0, latest.shape[0])
-    fig = plt.figure()
-    axis = fig.add_subplot(1, 1, 1)
-    axis.plot(xs, latest[:, 0])
-    axis.plot(xs, latest[:, 1])
-    axis.set_title("Evaluation_latest")
-    fig.savefig(os.path.join(work_dir, "evaluation2_latest.svg"))
-    plt.close(fig)
-
-    xs = np.arange(0, old.shape[0])
-    fig = plt.figure()
-    axis = fig.add_subplot(1, 1, 1)
-    axis.plot(xs, old[:, 0])
-    axis.plot(xs, old[:, 1])
-    axis.set_title("Evaluation_old")
-    fig.savefig(os.path.join(work_dir, "evaluation2_old.svg"))
-    plt.close(fig)
-
-
 def plot_pheromone_gas_volume(work_dir, pheromone_gas):
     total_step = int(Settings.Task.EPISODE / Settings.Simulation.TIMESTEP + 0.5)
     xs = np.arange(0, total_step) * Settings.Simulation.TIMESTEP
