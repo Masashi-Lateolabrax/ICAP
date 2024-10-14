@@ -68,10 +68,9 @@ def rec_and_collect_data(workdir, para):
     camera.elevation = -90
     camera.distance = Settings.Renderer.ZOOM
 
-    total_step = int(Settings.Task.EPISODE / Settings.Simulation.TIMESTEP + 0.5)
     collector = Collector2(
         Settings.Simulation.TIMESTEP,
-        total_step,
+        Settings.Simulation.TOTAL_STEP,
         Settings.Renderer.RESOLUTION[0],
         Settings.Renderer.RESOLUTION[1],
         workdir,
