@@ -19,7 +19,7 @@ class EType(IntEnum):
 class Settings:
     @property
     class Optimization(_PropertyClass):
-        GENERATION = 1000
+        GENERATION = 500
         POPULATION = 50  # int(4 + 3 * math.log(211))
         SIGMA = 0.3
         EVALUATION_TYPE = EType.POTENTIAL
@@ -44,7 +44,7 @@ class Settings:
 
     @property
     class Task(_PropertyClass):
-        EPISODE = 60
+        EPISODE = 45
 
         class Nest:
             POSITION = [0, 0]
