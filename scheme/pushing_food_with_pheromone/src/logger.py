@@ -42,6 +42,14 @@ class Logger(optLogger):
     def save(self):
         self.save_tmp("FINISH")
 
+    @staticmethod
+    def load_with_abspath(file_path):
+        save_dir = os.path.dirname(file_path)
+        this = Logger(save_dir)
+        with open(file_path, "rb") as f:
+            this.logs, this.last_average, this.last_cmatrix, this.best_para = pickle.load(f)
+        return this
+
     def load(self, gen):
         file_path = os.path.join(self.save_dir, f"LOG_{gen}.pkl")
         with open(file_path, "rb") as f:
