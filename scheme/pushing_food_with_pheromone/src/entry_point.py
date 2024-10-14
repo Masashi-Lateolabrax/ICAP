@@ -6,10 +6,10 @@ import matplotlib.pyplot as plt
 
 from libs.optimizer import CMAES, MultiThreadProc
 
-from .settings import Settings
+from .settings import Settings, EType
 from .task_generator import TaskGenerator
 from .collector import Collector2
-from .logger import Logger
+from .logger import Logger, LogLoader
 
 
 def optimization(workdir):
@@ -88,3 +88,78 @@ def sampling(workdir, para):
     evaluation, pheromone_gas = rec_and_collect_data(workdir, para)
     plot_evaluation(workdir, evaluation)
     plot_pheromone_gas_volume(workdir, pheromone_gas)
+
+
+def plot_evaluation_elements_for_each_generation(workdir, loader: LogLoader):
+    evaluations = np.zeros((Settings.Optimization.GENERATION, 3))
+
+    for gen in range(len(loader)):
+        inds = loader.get_individuals(gen)
+
+        dump = np.array([i.dump for i in inds])
+        dump = np.sum(dump, axis=1)
+        summed_dump = np.sum(dump, axis=2)
+
+        if Settings.Optimization.EVALUATION_TYPE == EType.POTENTIAL:
+            i = np.argmax(summed_dump[:, EType.POTENTIAL])
+            evaluations[gen, 0:2] = dump[i, EType.POTENTIAL, :]
+            evaluations[gen, 2] = np.sum(evaluations[gen, 0:2])
+
+        elif Settings.Optimization.EVALUATION_TYPE == EType.DISTANCE:
+            i = np.argmin(summed_dump[:, EType.DISTANCE])
+            evaluations[gen, 0:2] = dump[i, EType.DISTANCE, :]
+            evaluations[gen, 2] = np.sum(evaluations[gen, 0:2])
+
+        else:
+            raise Exception("Selected an invalid EVALUATION_TYPE.")
+
+    evaluations /= Settings.Simulation.TOTAL_STEP
+    xs = np.arange(0, evaluations.shape[0])
+
+    fig = plt.figure()
+    axis = fig.add_subplot(1, 1, 1)
+    axis.plot(xs, evaluations[:, 2], c="#d3d3d3")
+    axis.plot(xs, evaluations[:, 0], c="#0000ff")
+    axis.plot(xs, evaluations[:, 1], c="#ff0000")
+
+    fig.savefig(
+        os.path.join(workdir, "evaluation_elements_for_each_generation.svg")
+    )
+    plt.close(fig)
+
+
+def plot_evaluation_for_each_generation(workdir, loader: LogLoader):
+    e_type = Settings.Optimization.EVALUATION_TYPE
+    evaluations = np.zeros((Settings.Optimization.GENERATION, 3))
+
+    for gen in range(len(loader)):
+        inds = loader.get_individuals(gen)
+
+        dump = np.array([i.dump for i in inds])
+        dump = np.sum(dump, axis=1)
+        summed_dump = np.sum(dump, axis=2)
+
+        min_i = np.argmin(summed_dump[:, e_type])
+        min_score = summed_dump[min_i, e_type]
+
+        max_i = np.argmax(summed_dump[:, e_type])
+        max_score = summed_dump[max_i, e_type]
+
+        ave_score = np.average(summed_dump[:, e_type])
+
+        evaluations[gen, 0] = min_score
+        evaluations[gen, 1] = max_score
+        evaluations[gen, 2] = ave_score
+
+    evaluations /= Settings.Simulation.TOTAL_STEP
+    xs = np.arange(0, evaluations.shape[0])
+
+    fig = plt.figure()
+    axis = fig.add_subplot(1, 1, 1)
+    axis.plot(xs, evaluations[:, 2])
+    axis.fill_between(xs, evaluations[:, 0], evaluations[:, 1], color="gray", alpha=0.3)
+
+    fig.savefig(
+        os.path.join(workdir, "evaluation_for_each_generation.svg")
+    )
+    plt.close(fig)
