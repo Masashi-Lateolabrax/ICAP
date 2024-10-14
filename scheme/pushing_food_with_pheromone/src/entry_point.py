@@ -50,21 +50,6 @@ def plot_pheromone_gas_volume(work_dir, pheromone_gas):
     fig.savefig(os.path.join(work_dir, "pheromone_gas_volume.svg"))
 
 
-def analysis(work_dir, para):
-    generator = TaskGenerator(1, False)
-    task = generator.generate(para, True)
-    collector = Collector()
-    collector.run(task)
-
-    plot_evaluation(work_dir, collector.evaluation)
-    plot_pheromone_gas_volume(work_dir, collector.pheromone_gas)
-
-
-# def analysis2(work_dir, hist: Hist):
-#     plot_loss(work_dir, hist)
-#     analysis(work_dir, hist.get_max().max_para)
-
-
 def record(para, workdir):
     generator = TaskGenerator(1, True)
     task = generator.generate(para, False)
