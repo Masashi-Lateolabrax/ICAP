@@ -37,18 +37,6 @@ def optimization(workdir):
     return logger.best_para
 
 
-def plot_evaluation(work_dir, evaluation):
-    total_step = int(Settings.Task.EPISODE / Settings.Simulation.TIMESTEP + 0.5)
-    xs = np.arange(0, total_step) * Settings.Simulation.TIMESTEP
-
-    fig = plt.figure()
-    axis = fig.add_subplot(1, 1, 1)
-    axis.plot(xs, evaluation)
-    axis.set_title("Evaluation")
-    fig.savefig(os.path.join(work_dir, "evaluation.svg"))
-    plt.close(fig)
-
-
 def plot_element_evaluation(work_dir, latest, old):
     xs = np.arange(0, latest.shape[0])
     fig = plt.figure()
