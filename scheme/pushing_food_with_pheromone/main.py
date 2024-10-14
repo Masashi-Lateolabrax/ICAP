@@ -4,6 +4,8 @@ import shutil
 
 import os
 
+from settings import Settings, EType
+
 
 def prepare_dir(current_dir, specify: str = None):
     from libs.utils import get_head_hash
@@ -33,23 +35,26 @@ def main(workdir):
 
 
 def sampling(workdir):
-    from libs.optimizer import Hist
     import scheme.pushing_food_with_pheromone.src as src
 
-    git_hash = os.path.basename(workdir)[-8:]
+    gen_dir = os.path.join(workdir, "best")
+    os.makedirs(gen_dir, exist_ok=True)
 
-    hist = Hist.load(os.path.join(workdir, f"history_{git_hash}.npz"))
-    # src.plot_loss(workdir, hist)
+    loader = src.LogLoader(workdir)
+    if Settings().Optimization.EVALUATION_TYPE == EType.POTENTIAL:
+        para = loader.get_max_individual()
+    else:
+        para = loader.get_min_individual()
 
-    # for i in [len(hist.queues) - 1]:
-    #     gen_dir = os.path.join(work_dir, str(i))
-    #     os.makedirs(gen_dir, exist_ok=True)
-    #     src.analysis2(gen_dir, hist)
+    src.sampling(gen_dir, para)
 
-    for name, para in [(f"sample{i}", hist.get_max().max_para) for i in range(10)]:
-        gen_dir = os.path.join(workdir, name)
-        os.makedirs(gen_dir, exist_ok=True)
-        src.sampling(gen_dir, para)
+
+def plot_evaluations(workdir):
+    import scheme.pushing_food_with_pheromone.src as src
+    loader = src.LogLoader(workdir)
+
+    src.plot_evaluation_for_each_generation(workdir, loader)
+    src.plot_evaluation_elements_for_each_generation(workdir, loader)
 
 
 if __name__ == '__main__':
@@ -57,9 +62,5 @@ if __name__ == '__main__':
     wd = prepare_dir(cd)
 
     main(wd)
-    # test_xml()
-    # rec_only(wd)
-    # analysis_only(wd)
     # sampling(wd)
-    # load_log()
-    # plot_ele_eva()
+    # plot_evaluations(wd)
