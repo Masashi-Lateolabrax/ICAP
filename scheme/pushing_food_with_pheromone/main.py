@@ -62,9 +62,5 @@ if __name__ == '__main__':
     wd = prepare_dir(cd)
 
     main(wd)
-    # test_xml()
-    # rec_only(wd)
-    # analysis_only(wd)
     # sampling(wd)
-    # load_log()
-    # plot_ele_eva()
+    # plot_evaluations(wd)
