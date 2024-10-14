@@ -50,28 +50,6 @@ def plot_pheromone_gas_volume(work_dir, pheromone_gas):
     fig.savefig(os.path.join(work_dir, "pheromone_gas_volume.svg"))
 
 
-def record(para, workdir):
-    generator = TaskGenerator(1, True)
-    task = generator.generate(para, False)
-
-    camera = mujoco.MjvCamera()
-    camera.elevation = -90
-    camera.distance = Settings.Renderer.ZOOM
-
-    total_step = int(Settings.Task.EPISODE / Settings.Simulation.TIMESTEP + 0.5)
-    rec = Recorder(
-        Settings.Simulation.TIMESTEP,
-        total_step,
-        Settings.Renderer.RESOLUTION[0],
-        Settings.Renderer.RESOLUTION[1],
-        workdir,
-        camera,
-        Settings.Renderer.MAX_GEOM
-    )
-
-    rec.run(task)
-
-
 def rec_and_collect_data(workdir, para):
     generator = TaskGenerator(1, True)
     task = generator.generate(para, False)
