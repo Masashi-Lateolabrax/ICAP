@@ -42,9 +42,9 @@ def sampling(workdir):
 
     loader = src.LogLoader(workdir)
     if Settings().Optimization.EVALUATION_TYPE == EType.POTENTIAL:
-        para = loader.get_max_individual()
+        para, _ = loader.get_max_individual()
     else:
-        para = loader.get_min_individual()
+        para, _ = loader.get_min_individual()
 
     src.sampling(gen_dir, para)
 

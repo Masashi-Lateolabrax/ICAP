@@ -122,7 +122,7 @@ class LogLoader:
                     min_score = i.fitness.values[0]
                     min_ind = i
                     gen = g
-        return min_ind, g
+        return min_ind, gen
 
     def get_max_individual(self):
         max_score = -float("inf")
@@ -131,7 +131,6 @@ class LogLoader:
         for g in range(0, self.length):
             inds = self.get_individuals(g)
             for i in inds:
-                print(g, i.fitness.values[0])
                 if max_score < i.fitness.values[0]:
                     max_score = i.fitness.values[0]
                     max_ind = i
