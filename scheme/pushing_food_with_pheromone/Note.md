@@ -15,9 +15,10 @@ Collecting the evaluations of all individuals.
 | Settings       | Value   |
 |----------------|---------|
 | Pheromone Tank | Disable |
-| GRU            | Enable  |
-| Dimension      | 664     |
+| GRU            | Disable |
+| Dimension      | 134     |
 | Noise Layer    | Input   |
+| Think Interval | 0.1     |
 
 ### Optimization
 
@@ -27,7 +28,7 @@ Collecting the evaluations of all individuals.
 | Population | 100   |
 | Elite      | 50    |
 
-- Use 'Potential' evaluation.
+- Use 'Distance' evaluation.
 - Randomize the initial robot directions in each generation for the optimization
 - Randomize the food positions
 
@@ -69,8 +70,8 @@ Collecting the evaluations of all individuals.
 
 ## Changes
 
-- Bug fix
+- Use the DISTANCE evaluation method.
 
 ## Date
 
-2024-10-14 22:28 (JST)
+2024-10-16 17:32 (JST)
