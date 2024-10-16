@@ -33,8 +33,12 @@ class Brain(nn.Module):
             NormalNoize(0.01),
             self.debugger.create_investigator("l0n"),
 
-            MyGRU(9, 10),
+            nn.Linear(9, 10),
+            nn.Tanh(),
             self.debugger.create_investigator("l1"),
+
+            NormalNoize(0.01),
+            self.debugger.create_investigator("l1n"),
 
             nn.Linear(10, 3),
             nn.Sigmoid(),
