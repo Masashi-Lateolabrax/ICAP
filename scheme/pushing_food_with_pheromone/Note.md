@@ -17,7 +17,7 @@ Collecting the evaluations of all individuals.
 | Pheromone Tank | Disable |
 | GRU            | Disable |
 | Dimension      | 134     |
-| Noise Layer    | Input   |
+| Noise Layer    | Disable |
 | Think Interval | 0.1     |
 
 ### Optimization
@@ -70,7 +70,7 @@ Collecting the evaluations of all individuals.
 
 ## Changes
 
-- Use the DISTANCE evaluation method.
+- Disable all noize layers.
 
 ## Date
 
