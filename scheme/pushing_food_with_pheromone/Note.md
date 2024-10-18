@@ -12,20 +12,20 @@ Collecting the evaluations of all individuals.
 
 ### Robot Characteristic
 
-| Settings       | Value         |
-|----------------|---------------|
-| Pheromone Tank | Disable       |
-| GRU            | Disable       |
-| Dimension      | 134           |
-| Noise Layer    | Input, Middle |
+| Settings       | Value   |
+|----------------|---------|
+| Pheromone Tank | Disable |
+| GRU            | Enable  |
+| Dimension      | 664     |
+| Noise Layer    | Input   |
 
 ### Optimization
 
 | Settings   | Value |
 |------------|-------|
-| Generation | 500   |
-| Population | 50    |
-| Elite      | 25    |
+| Generation | 1000  |
+| Population | 100   |
+| Elite      | 50    |
 
 - Use 'Distance' evaluation.
 - Randomize the initial robot directions in each generation for the optimization
@@ -65,15 +65,12 @@ Collecting the evaluations of all individuals.
 | EVAPORATION      | 1         |
 | DIFFUSION        | 0.05      |  
 | DECREASE         | 0.1       |
-| MAX_SECRETION    | 0.423 * 3 |
+| MAX_SECRETION    | 0.423 * 5 |
 
 ## Changes
 
-- Disable RNN and use Liner
-- Increase EPISODE from 45 to 60
-- Decrease POPULATION from 100 to 50
-- Decrease GENERATION from 1000 to 500
+- Use the DISTANCE evaluation method.
 
 ## Date
 
-2024-10-14 04:38 (JST)
+2024-10-16 17:32 (JST)
