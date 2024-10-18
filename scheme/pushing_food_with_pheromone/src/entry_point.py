@@ -118,12 +118,15 @@ def plot_evaluation_elements_for_each_generation(workdir, loader: LogLoader):
 
     fig = plt.figure()
     axis = fig.add_subplot(1, 1, 1)
-    axis.plot(xs, evaluations[:, 2], c="#d3d3d3")
-    axis.plot(xs, evaluations[:, 0], c="#0000ff")
-    axis.plot(xs, evaluations[:, 1], c="#ff0000")
+    axis.plot(xs, evaluations[:, 2], c="#d3d3d3", label="SUM")
+    axis.plot(xs, evaluations[:, 0], c="#0000ff", label="Food-Robot")
+    axis.plot(xs, evaluations[:, 1], c="#ff0000", label="Nest-Food")
+
+    axis.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1), ncol=3)
 
     fig.savefig(
-        os.path.join(workdir, "evaluation_elements_for_each_generation.svg")
+        os.path.join(workdir, "evaluation_elements_for_each_generation.svg"),
+        bbox_inches="tight"
     )
     plt.close(fig)
 
