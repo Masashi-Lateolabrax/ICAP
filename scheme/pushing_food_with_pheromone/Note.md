@@ -15,9 +15,10 @@ Collecting the evaluations of all individuals.
 | Settings       | Value   |
 |----------------|---------|
 | Pheromone Tank | Disable |
-| GRU            | Enable  |
-| Dimension      | 664     |
+| GRU            | Disable |
+| Dimension      | 134     |
 | Noise Layer    | Input   |
+| Think Interval | 0.1     |
 
 ### Optimization
 

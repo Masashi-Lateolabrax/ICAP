@@ -19,8 +19,8 @@ class EType(IntEnum):
 class Settings:
     @property
     class Optimization(_PropertyClass):
-        GENERATION = 500
-        POPULATION = 50  # int(4 + 3 * math.log(211))
+        GENERATION = 1000
+        POPULATION = 100  # int(4 + 3 * math.log(211))
         SIGMA = 0.3
         EVALUATION_TYPE = EType.DISTANCE
 
@@ -120,14 +120,14 @@ class Settings:
 
         @property
         class Robot(_PropertyClass):
-            THINKING_INTERVAL = 0.3
+            THINKING_INTERVAL = 0.1
 
             MOVE_SPEED = 1.2
             TURN_SPEED = 1.0
 
             SENSOR_PRECISION = [2 / 0.7, 2 / 5]
 
-            MAX_SECRETION = 0.423 * 3
+            MAX_SECRETION = 0.423 * 5
 
             @property
             def TANK_SIZE(self):
