@@ -17,7 +17,7 @@ Collecting the evaluations of all individuals.
 | Pheromone Tank | Disable |
 | GRU            | Disable |
 | Dimension      | 134     |
-| Noise Layer    | Disable |
+| Noise Layer    | Input   |
 | Think Interval | 0.1     |
 
 ### Optimization
@@ -25,8 +25,8 @@ Collecting the evaluations of all individuals.
 | Settings   | Value |
 |------------|-------|
 | Generation | 1000  |
-| Population | 100   |
-| Elite      | 50    |
+| Population | 50    |
+| Elite      | 25    |
 
 - Use 'Distance' evaluation.
 - Randomize the initial robot directions in each generation for the optimization
@@ -70,8 +70,8 @@ Collecting the evaluations of all individuals.
 
 ## Changes
 
-- Disable all noize layers.
+- Decrease POPULATION
 
 ## Date
 
-2024-10-16 17:32 (JST)
+2024-10-18 14:39 (JST)
