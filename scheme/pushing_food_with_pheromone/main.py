@@ -34,12 +34,8 @@ def main(workdir):
     src.sampling(workdir, best_para)
 
 
-def sampling(workdir):
+def sampling(workdir, repeat=1):
     import scheme.pushing_food_with_pheromone.src as src
-
-    current_time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
-    sub_workdir = os.path.join(workdir, current_time_str)
-    os.makedirs(sub_workdir, exist_ok=True)
 
     loader = src.LogLoader(workdir)
     if Settings().Optimization.EVALUATION_TYPE == EType.POTENTIAL:
@@ -47,7 +43,12 @@ def sampling(workdir):
     else:
         para, _ = loader.get_min_individual()
 
-    src.sampling(sub_workdir, para)
+    for _ in range(repeat):
+        current_time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+        sub_workdir = os.path.join(workdir, current_time_str)
+        os.makedirs(sub_workdir, exist_ok=True)
+
+        src.sampling(sub_workdir, para)
 
 
 def plot_evaluations(workdir):
