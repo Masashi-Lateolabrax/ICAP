@@ -33,7 +33,7 @@ class Brain(nn.Module):
             NormalNoize(0.01),
             self.debugger.create_investigator("l0n"),
 
-            nn.Linear(9, 8),
+            nn.Linear(9, 6),
             nn.Tanh(),
             self.debugger.create_investigator("l1"),
 
