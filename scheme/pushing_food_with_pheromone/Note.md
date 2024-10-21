@@ -16,7 +16,7 @@ Collecting the evaluations of all individuals.
 |----------------|---------|
 | Pheromone Tank | Disable |
 | GRU            | Disable |
-| Dimension      | 134     |
+| Dimension      | 56      |
 | Noise Layer    | Input   |
 | Think Interval | 0.1     |
 
@@ -70,8 +70,8 @@ Collecting the evaluations of all individuals.
 
 ## Changes
 
-- Decrease POPULATION
+- Decrease the number of nodes in the hidden layer from 10 to 4.
 
 ## Date
 
-2024-10-18 14:39 (JST)
+2024-10-22 05:57 (JST)
