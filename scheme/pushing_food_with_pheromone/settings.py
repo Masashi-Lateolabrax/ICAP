@@ -22,7 +22,7 @@ class Settings:
         GENERATION = 1000
         POPULATION = 100  # int(4 + 3 * math.log(211))
         SIGMA = 0.3
-        EVALUATION_TYPE = EType.DISTANCE
+        EVALUATION_TYPE = EType.POTENTIAL
 
         @property
         def MU(self):
