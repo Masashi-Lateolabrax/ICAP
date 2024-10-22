@@ -25,10 +25,10 @@ Collecting the evaluations of all individuals.
 | Settings   | Value |
 |------------|-------|
 | Generation | 1000  |
-| Population | 50    |
-| Elite      | 25    |
+| Population | 100   |
+| Elite      | 50    |
 
-- Use 'Distance' evaluation.
+- Use 'POTENTIAL' evaluation.
 - Randomize the initial robot directions in each generation for the optimization
 - Randomize the food positions
 
@@ -70,7 +70,8 @@ Collecting the evaluations of all individuals.
 
 ## Changes
 
-- Decrease the number of nodes in the hidden layer from 10 to 8.
+- Use POTENTIAL evaluation
+- Increase POPULATION from 50 to 100
 
 ## Date
 
