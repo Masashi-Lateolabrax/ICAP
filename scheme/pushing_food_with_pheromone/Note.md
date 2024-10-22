@@ -16,7 +16,7 @@ Collecting the evaluations of all individuals.
 |----------------|---------|
 | Pheromone Tank | Disable |
 | GRU            | Disable |
-| Dimension      | 108     |
+| Dimension      | 82      |
 | Noise Layer    | Input   |
 | Think Interval | 0.1     |
 
@@ -25,10 +25,10 @@ Collecting the evaluations of all individuals.
 | Settings   | Value |
 |------------|-------|
 | Generation | 1000  |
-| Population | 100   |
-| Elite      | 50    |
+| Population | 50    |
+| Elite      | 25    |
 
-- Use 'POTENTIAL' evaluation.
+- Use 'Distance' evaluation.
 - Randomize the initial robot directions in each generation for the optimization
 - Randomize the food positions
 
@@ -70,9 +70,8 @@ Collecting the evaluations of all individuals.
 
 ## Changes
 
-- Use POTENTIAL evaluation
-- Increase POPULATION from 50 to 100
+- Decrease the number of nodes in the hidden layer from 8 to 6.
 
 ## Date
 
-2024-10-22 02:48 (JST)
+2024-10-22 2:55 (JST)
