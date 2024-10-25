@@ -34,14 +34,23 @@ def main(workdir):
     src.sampling(workdir, best_para)
 
 
-def sampling(workdir, repeat=1):
+def sampling(workdir, repeat=1, gen=None):
     import scheme.pushing_food_with_pheromone.src as src
 
     loader = src.LogLoader(workdir)
+
+    if gen is None:
+        if Settings().Optimization.EVALUATION_TYPE == EType.POTENTIAL:
+            _, gen = loader.get_max_individual()
+        else:
+            _, gen = loader.get_min_individual()
+
+    individuals = loader.get_individuals(gen)
+    individuals = sorted(individuals, key=lambda x: x.fitness)
     if Settings().Optimization.EVALUATION_TYPE == EType.POTENTIAL:
-        para, _ = loader.get_max_individual()
+        para = individuals[-1]
     else:
-        para, _ = loader.get_min_individual()
+        para = individuals[0]
 
     for _ in range(repeat):
         current_time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
