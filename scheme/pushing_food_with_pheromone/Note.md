@@ -25,10 +25,10 @@ Collecting the evaluations of all individuals.
 | Settings   | Value |
 |------------|-------|
 | Generation | 1000  |
-| Population | 50    |
-| Elite      | 25    |
+| Population | 100   |
+| Elite      | 50    |
 
-- Use 'Distance' evaluation.
+- Use 'Potential' evaluation.
 - Randomize the initial robot directions in each generation for the optimization
 - Randomize the food positions
 
@@ -74,4 +74,4 @@ Collecting the evaluations of all individuals.
 
 ## Date
 
-2024-10-22 05:57 (JST)
+2024-10-23 20:13 (JST)
