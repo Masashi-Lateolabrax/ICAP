@@ -43,7 +43,7 @@ def plot_evaluation(work_dir, evaluation):
     axis = fig.add_subplot(1, 1, 1)
     axis.plot(xs, evaluation)
     axis.set_title("Evaluation")
-    fig.savefig(os.path.join(work_dir, "evaluation.svg"))
+    fig.savefig(os.path.join(work_dir, "evaluation.pdf"))
     plt.close(fig)
 
 
@@ -57,7 +57,7 @@ def plot_pheromone_gas_volume(work_dir, pheromone_gas):
     axis.plot(xs, pheromone_gas)
 
     axis.set_title("Pheromone Gas Volume")
-    fig.savefig(os.path.join(work_dir, "pheromone_gas_volume.svg"))
+    fig.savefig(os.path.join(work_dir, "pheromone_gas_volume.pdf"))
 
 
 def rec_and_collect_data(workdir, para):
@@ -125,7 +125,7 @@ def plot_evaluation_elements_for_each_generation(workdir, loader: LogLoader):
     axis.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1), ncol=3)
 
     fig.savefig(
-        os.path.join(workdir, "evaluation_elements_for_each_generation.svg"),
+        os.path.join(workdir, "evaluation_elements_for_each_generation.pdf"),
         bbox_inches="tight"
     )
     plt.close(fig)
@@ -163,6 +163,6 @@ def plot_evaluation_for_each_generation(workdir, loader: LogLoader):
     axis.fill_between(xs, evaluations[:, 0], evaluations[:, 1], color="gray", alpha=0.3)
 
     fig.savefig(
-        os.path.join(workdir, "evaluation_for_each_generation.svg")
+        os.path.join(workdir, "evaluation_for_each_generation.pdf")
     )
     plt.close(fig)
