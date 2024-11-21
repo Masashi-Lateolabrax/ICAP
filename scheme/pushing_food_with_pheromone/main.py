@@ -64,8 +64,8 @@ def plot_evaluations(workdir):
     import scheme.pushing_food_with_pheromone.src as src
     loader = src.LogLoader(workdir)
 
-    src.plot_evaluation_for_each_generation(workdir, loader)
-    src.plot_evaluation_elements_for_each_generation(workdir, loader)
+    src.plot.evaluation_for_each_generation(workdir, loader)
+    # src.plot_evaluation_elements_for_each_generation(workdir, loader)
 
 
 if __name__ == '__main__':
