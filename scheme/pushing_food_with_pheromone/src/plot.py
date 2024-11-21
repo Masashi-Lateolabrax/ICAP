@@ -137,8 +137,8 @@ def evaluation_for_each_generation(workdir, loader: LogLoader):
         xs = np.arange(0, evaluations.shape[0])
 
         axis = fig.add_subplot(1, 1, 1)
+        axis.fill_between(xs, evaluations[:, 0], evaluations[:, 1], color="gray")
         axis.plot(xs, evaluations[:, 2])
-        axis.fill_between(xs, evaluations[:, 0], evaluations[:, 1], color="gray", alpha=0.3)
 
         axis.set_ylabel("Evaluation")
         axis.set_xlabel("Generation")
