@@ -143,6 +143,8 @@ def evaluation_for_each_generation(workdir, loader: LogLoader):
         axis.set_ylabel("Evaluation")
         axis.set_xlabel("Generation")
 
+        axis.set_xticks([0, 200, 400, 600, 800, 1000])
+
     create_and_save_fig(
         os.path.join(workdir, "evaluation_for_each_generation.pdf"),
         plotter,
