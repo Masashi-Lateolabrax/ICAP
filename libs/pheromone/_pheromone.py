@@ -1,6 +1,8 @@
 import numpy
 import scipy
 
+from _interface import PheromoneFieldInf, PheromoneCellInf
+
 
 def _calc_dico(w: int, h: int, xi: float, yi: float):
     xc = int(xi + 0.5)
@@ -36,7 +38,7 @@ def _calc_dico(w: int, h: int, xi: float, yi: float):
     return hit
 
 
-class PheromoneCell:
+class PheromoneCell(PheromoneCellInf):
     def __init__(self, liquid_cell: numpy.ndarray, gas_cell: numpy.ndarray):
         self._liquid = liquid_cell
         self._gas = gas_cell
@@ -54,7 +56,7 @@ class PheromoneCell:
         return self._liquid[0, 0]
 
 
-class PheromoneField:
+class PheromoneField(PheromoneFieldInf):
     def __init__(
             self,
             nx: int, ny: int, d: float,
