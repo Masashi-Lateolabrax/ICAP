@@ -2,6 +2,8 @@ import mujoco
 
 from mujoco_xml_generator.utils import DummyGeom
 
+from .world_clock import WorldClock
+
 
 class World:
     """
@@ -28,20 +30,22 @@ class World:
         raise RuntimeError("Use WorldBuilder to create World instances")
 
     @classmethod
-    def _create(cls, model: mujoco.MjModel):
+    def _create(cls, model: mujoco.MjModel, timer: WorldClock):
         instance = cls.__new__(cls)
-        instance.__init_instance(model)
+        instance.__init_instance(model, timer)
         return instance
 
-    def __init_instance(self, model: mujoco.MjModel):
+    def __init_instance(self, model: mujoco.MjModel, timer: WorldClock):
         self.model = model
         self.data = mujoco.MjData(self.model)
+        self.timer = timer
 
     def calc_step(self):
         """
         シミュレーションを1ステップ進める。
         """
         mujoco.mj_step(self.model, self.data)
+        self.timer._time += 1
 
     def get_dummy_geoms(self) -> list[DummyGeom]:
         """

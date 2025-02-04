@@ -9,7 +9,7 @@ from mujoco_xml_generator.utils import MuJoCoView
 from mujoco_xml_generator import Sensor, Actuator, Body, WorldBody
 from mujoco_xml_generator import common, body, actuator, asset
 
-from scheme.pushing_food_with_pheromone.lib.world import WorldObjectBuilder, BaseWorldBuilder
+from scheme.pushing_food_with_pheromone.lib.world import WorldObjectBuilder, BaseWorldBuilder, WorldClock
 
 TIMESTEP = 0.01
 WIDTH = 5
@@ -239,7 +239,7 @@ class RobotBuilder(WorldObjectBuilder):
     def gen_sen(self) -> Sensor | None:
         return None
 
-    def extract(self, data: mujoco.MjData):
+    def extract(self, data: mujoco.MjData, timer: WorldClock):
         body_ = data.body(self.name_table["body"])
         act_x = data.actuator(self.name_table["act_x"])
         act_y = data.actuator(self.name_table["act_y"])

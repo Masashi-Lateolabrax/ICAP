@@ -3,6 +3,7 @@ import mujoco
 from mujoco_xml_generator import common, asset
 from mujoco_xml_generator import Generator, WorldBody, Actuator, Sensor, Asset
 
+from .world_clock import WorldClock
 from .obj_builder import WorldObjectBuilder
 from .world import World
 
@@ -146,9 +147,13 @@ class BaseWorldBuilder:
                 - World: 生成結果のWorldインスタンス
                 - dict: WorldObjectBuilderの名前をキーに持ち，そのWorldObjectBuilderが返したものが格納される
         """
+        timer = WorldClock()
+
         self.generator.add_children([self.asset, self.world_body, self.actuator, self.sensor])
         xml = self.generator.build()
         model = mujoco.MjModel.from_xml_string(xml)
-        world = World._create(model)
-        objects = {o.builder_name: o.extract(world.data) for o in self._objs}
+        world = World._create(model, timer)
+
+        objects = {o.builder_name: o.extract(world.data, timer) for o in self._objs}
+
         return world, objects

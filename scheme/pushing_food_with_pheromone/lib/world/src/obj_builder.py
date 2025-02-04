@@ -3,6 +3,8 @@ import abc
 import mujoco
 from mujoco_xml_generator import Body, Actuator, Sensor
 
+from .world_clock import WorldClock
+
 
 class WorldObjectBuilder(metaclass=abc.ABCMeta):
     """
@@ -118,7 +120,7 @@ class WorldObjectBuilder(metaclass=abc.ABCMeta):
         return self.gen_body(), self.gen_act(), self.gen_sen()
 
     @abc.abstractmethod
-    def extract(self, data: mujoco.MjData):
+    def extract(self, data: mujoco.MjData, timer: WorldClock):
         """
         MjDataから必要なデータの参照を取り出すための抽象メソッド。
 
@@ -127,6 +129,8 @@ class WorldObjectBuilder(metaclass=abc.ABCMeta):
 
         Args:
             data (mujoco.MjData): MuJoCoのデータオブジェクト。
+
+            timer: MuJoCoのシミュレーション時間が格納されているクラス
 
         Returns:
             object: 任意のobjectを返すことができる．不要であればNoneを返す。
