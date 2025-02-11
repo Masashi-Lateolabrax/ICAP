@@ -6,7 +6,7 @@ from scheme.pushing_food_with_pheromone.lib.objects.food import FoodBuilder
 
 from scheme.pushing_food_with_pheromone.src.utils import random_point_avoiding_invalid_areas
 
-from settings import Settings
+from scheme.pushing_food_with_pheromone.examples.move_to_food.settings import Settings
 
 
 def create_robot_builders(id_, brain: BrainInterface, invalid_area: list[np.ndarray] = None):

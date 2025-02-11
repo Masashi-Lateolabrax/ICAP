@@ -1,7 +1,25 @@
+import torch
+
 from scheme.pushing_food_with_pheromone.lib.parts import OmniSensor, BrainJudgement, BrainInterface
 
-from .data import Data
+from .robot_data import RobotData
 from .actuator import Actuator
+
+
+class BrainInput:
+    def __init__(self, data: RobotData, other_robot_sensor: OmniSensor, food_sensor: OmniSensor):
+        self.data = data
+        self.robot_sensor = other_robot_sensor
+        self.food_sensor = food_sensor
+        self.touch = torch.zeros(4, dtype=torch.float32)
+
+    def get(self) -> torch.Tensor:
+        self.touch[0:2] = torch.tensor(self.robot_sensor.get(self.data.direction, self.data.pos)[0:2])
+        self.touch[2:4] = torch.tensor(self.food_sensor.get(self.data.direction, self.data.pos)[0:2])
+        return self.touch
+
+    def get_food(self) -> torch.Tensor:
+        return self.get()[2:4]
 
 
 class Robot:
@@ -9,15 +27,17 @@ class Robot:
             self,
             brain: BrainInterface,
             body_,
-            data: Data,
+            data: RobotData,
             actuator: Actuator,
-            sensor: OmniSensor,
+            other_robot_sensor: OmniSensor,
+            food_sensor: OmniSensor,
     ):
         self.brain = brain
         self.body = body_
         self._data = data
         self._actuator = actuator
-        self._sensor = sensor
+
+        self._input = BrainInput(data, other_robot_sensor, food_sensor)
 
     def update(self):
         self._data.update()
@@ -30,8 +50,8 @@ class Robot:
     def direction(self):
         return self._data.direction
 
-    def action(self):
-        match self.brain.think():
+    def action(self, _input=None):
+        match self.brain.think(self._input):
             case BrainJudgement.STOP:
                 self._actuator.stop()
             case BrainJudgement.FORWARD:

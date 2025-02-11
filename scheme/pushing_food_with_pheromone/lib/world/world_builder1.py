@@ -1,10 +1,10 @@
 from mujoco_xml_generator import WorldBody
 from mujoco_xml_generator import common, asset, body
 
-from ..prerude import world
+from .src import BaseWorldBuilder
 
 
-class WorldBuilder(world.BaseWorldBuilder):
+class WorldBuilder1(BaseWorldBuilder):
     @staticmethod
     def _create_wall(world_body: WorldBody, width: float, height: float):
         """
@@ -79,4 +79,4 @@ class WorldBuilder(world.BaseWorldBuilder):
             ),
         ])
 
-        WorldBuilder._create_wall(self.world_body, width, height)
+        WorldBuilder1._create_wall(self.world_body, width, height)

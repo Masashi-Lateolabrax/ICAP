@@ -2,14 +2,14 @@ import dataclasses
 
 from mujoco._structs import _MjDataActuatorViews
 
-from .data import Data
+from .robot_data import RobotData
 
 
 @dataclasses.dataclass
 class Actuator:
     move_speed: float
     turn_speed: float
-    data: Data
+    data: RobotData
     act_x: _MjDataActuatorViews
     act_y: _MjDataActuatorViews
     act_r: _MjDataActuatorViews

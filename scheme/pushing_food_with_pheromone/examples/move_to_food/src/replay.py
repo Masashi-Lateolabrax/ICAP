@@ -1,16 +1,14 @@
 import dataclasses
+import tkinter as tk
 from typing import Optional
 
-import tkinter as tk
-
 import mujoco
-
 from mujoco_xml_generator.utils import MuJoCoView
 
-from scheme.pushing_food_with_pheromone.lib import world
-from scheme.pushing_food_with_pheromone.lib.objects import robot, food
+from libs.optimizer import Hist, MjcTaskInterface
 
-from settings import Settings
+from .prerulde import Settings
+from .task import TaskGenerator
 
 
 @dataclasses.dataclass
@@ -19,10 +17,9 @@ class _SimCache:
 
 
 class SimulationManager:
-    def __init__(self, world_: world.World, robot_: robot.Robot, food_: food.Food):
-        self.world = world_
-        self.robot = robot_
-        self.food = food_
+    def __init__(self, para):
+        task_generator = TaskGenerator()
+        self.task: MjcTaskInterface = task_generator.generate(para, debug=True)
 
         self._cache = _SimCache()
 
@@ -32,24 +29,23 @@ class SimulationManager:
 
         if self._cache.renderer is None:
             self._cache.renderer = mujoco.Renderer(
-                self.world.model, height, width, max_geom
+                self.task.get_model(), height, width, max_geom
             )
 
         view.render(
-            self.world.data,
+            self.task.get_data(),
             self._cache.renderer,
-            dummy_geoms=self.world.get_dummy_geoms()
+            dummy_geoms=self.task.get_dummies()
         )
 
     def calc_step(self):
-        self.robot.action()
-        self.world.calc_step()
+        self.task.calc_step()
 
 
 class App(tk.Tk):
-    def __init__(self, simulation: SimulationManager, width, height, max_geom):
+    def __init__(self, para, width, height, max_geom):
         super().__init__()
-        self.simulation = simulation
+        self.simulation = SimulationManager(para)
         self.max_geom = max_geom
 
         self.title("World")
@@ -67,3 +63,11 @@ class App(tk.Tk):
         self.simulation.calc_step()
         self.simulation.draw_on_view_frame(self.view, self.max_geom)
         self.after(1, self.update)
+
+
+def replay(log_path):
+    logger = Hist.load(log_path)
+
+    best_para = logger.get_min().min_para
+    app = App(best_para, Settings.RENDER_WIDTH, Settings.RENDER_HEIGHT, Settings.MAX_GEOM)
+    app.mainloop()

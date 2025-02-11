@@ -4,3 +4,4 @@ scheme/*/results
 *.TXT
 *.tmp.*
 *.log.*
+*.pkl

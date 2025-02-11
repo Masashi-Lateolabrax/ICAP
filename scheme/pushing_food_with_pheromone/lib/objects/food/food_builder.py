@@ -3,24 +3,16 @@ import mujoco
 from mujoco_xml_generator import Sensor, Actuator, Body
 from mujoco_xml_generator import common, body, sensor
 
-from scheme.pushing_food_with_pheromone.lib.world import WorldClock
+from scheme.pushing_food_with_pheromone.lib.world import WorldClock, WorldObjectBuilder
 
-from ...prerude import world
+from ..name_table import FoodNameTable
 from .food import Food
 
 
-class FoodBuilder(world.WorldObjectBuilder):
-    class NameTable:
-        def __init__(self, id_):
-            self.BODY = f"food{id_}.body"
-            self.JOINT_X = f"food{id_}.joint.x"
-            self.JOINT_Y = f"food{id_}.joint.y"
-            self.CENTER_SITE = f"food{id_}.site.center"
-            self.VELOCIMETER = f"food{id_}.sensor.velocity"
-
+class FoodBuilder(WorldObjectBuilder):
     def __init__(self, id_: int, pos: tuple[float, float], size: float, frictionloss: float):
         super().__init__(f"food{id_}_builder")
-        self._name_table = FoodBuilder.NameTable(id_)
+        self._name_table = FoodNameTable(id_)
 
         self.pos: tuple[float, float] = pos
         self.size = size
@@ -61,4 +53,4 @@ class FoodBuilder(world.WorldObjectBuilder):
     def extract(self, model: mujoco.MjModel, data: mujoco.MjData, timer: WorldClock):
         body_ = data.body(self._name_table.BODY)
         velocimeter = data.sensor(self._name_table.VELOCIMETER)
-        return Food(body_, velocimeter, timer)
+        return Food(body_, velocimeter)
