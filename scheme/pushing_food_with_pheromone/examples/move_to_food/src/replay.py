@@ -68,6 +68,6 @@ class App(tk.Tk):
 def replay(log_path):
     logger = Hist.load(log_path)
 
-    best_para = logger.get_min().min_para
+    best_para = logger._hist.queues[-1].min_para
     app = App(best_para, Settings.RENDER_WIDTH, Settings.RENDER_HEIGHT, Settings.MAX_GEOM)
     app.mainloop()

@@ -45,24 +45,31 @@ class Task(optimizer.MjcTaskInterface):
 
 
 class TaskGenerator(optimizer.TaskGenerator):
+    def __init__(self):
+        invalid_area = []
+        self.robot_builders = [
+            create_robot_builders(0, None, invalid_area)
+        ]
+        self.food_builders = [
+            create_food_builders(0, invalid_area)
+        ]
+
     def generate(self, para, debug=False) -> Task:
         brain = Brain(para, Settings.ROBOT_THINK_INTERVAL)
+        for builder in self.robot_builders:
+            builder.brain = brain
+        builders = self.robot_builders + self.food_builders
 
-        invalid_area = []
-        builders = {
-            "robots": create_robot_builders(0, brain, invalid_area),
-            "food": create_food_builders(0, invalid_area)
-        }
         w_builder = WorldBuilder1(
             Settings.SIMULATION_TIMESTEP,
             (Settings.RENDER_WIDTH, Settings.RENDER_HEIGHT),
             Settings.WORLD_WIDTH, Settings.WORLD_HEIGHT
         )
-        w_builder.add_builders(builders.values())
+        w_builder.add_builders(builders)
 
         world, w_objs = w_builder.build()
 
-        robot = w_objs[builders["robots"].builder_name]
-        food = w_objs[builders["food"].builder_name]
+        robot = w_objs[self.robot_builders[0].builder_name]
+        food = w_objs[self.food_builders[0].builder_name]
 
         return Task(Settings.SIMULATION_TIME_LENGTH, world, robot, food)
