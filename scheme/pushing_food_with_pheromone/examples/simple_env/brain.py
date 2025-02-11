@@ -11,7 +11,7 @@ class Brain(BrainInterface):
     def __init__(self):
         self.state = BrainJudgement.STOP
 
-    def think(self) -> BrainJudgement:
+    def think(self, input_) -> BrainJudgement:
         r = random.uniform(0, 4 * 200)
         if 0 <= r < 5:
             self.state = BrainJudgement(int(r))

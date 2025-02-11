@@ -19,5 +19,5 @@ class BrainInterface(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def think(self) -> BrainJudgement:
+    def think(self, input_) -> BrainJudgement:
         raise NotImplementedError
