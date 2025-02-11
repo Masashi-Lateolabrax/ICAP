@@ -1,4 +1,4 @@
 import scheme.pushing_food_with_pheromone.settings
+from scheme.pushing_food_with_pheromone.lib import world, utilities
 
-EType = scheme.pushing_food_with_pheromone.settings.EType
 Settings = scheme.pushing_food_with_pheromone.settings.Settings()

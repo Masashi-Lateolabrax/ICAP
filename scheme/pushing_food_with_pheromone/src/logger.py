@@ -9,7 +9,7 @@ from deap.cma import Strategy
 from libs.optimizer import Logger as optLogger
 from libs.optimizer.individual import Individual
 
-from .settings import Settings
+from .prerude import Settings
 
 
 class Logger(optLogger):

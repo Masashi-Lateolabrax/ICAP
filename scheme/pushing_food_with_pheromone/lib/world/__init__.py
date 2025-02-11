@@ -1,1 +1,1 @@
-from .src import WorldObjectBuilder, BaseWorldBuilder, WorldClock
+from .src import WorldObjectBuilder, BaseWorldBuilder, World, WorldClock

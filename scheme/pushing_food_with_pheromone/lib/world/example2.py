@@ -260,7 +260,7 @@ class App(tk.Tk):
         self.view.enable_input()
         self.view.pack()
 
-        self.world, w_objs = WorldBuilder(TIMESTEP, (width, height), WIDTH, HEIGHT).add_obj(
+        self.world, w_objs = WorldBuilder(TIMESTEP, (width, height), WIDTH, HEIGHT).add_builder(
             RobotBuilder(0, (0, 0, 0))
         ).build()
 

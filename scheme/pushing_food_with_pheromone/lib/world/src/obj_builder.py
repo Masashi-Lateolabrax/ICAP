@@ -120,7 +120,7 @@ class WorldObjectBuilder(metaclass=abc.ABCMeta):
         return self.gen_body(), self.gen_act(), self.gen_sen()
 
     @abc.abstractmethod
-    def extract(self, data: mujoco.MjData, timer: WorldClock):
+    def extract(self, model: mujoco.MjModel, data: mujoco.MjData, timer: WorldClock):
         """
         MjDataから必要なデータの参照を取り出すための抽象メソッド。
 
@@ -128,6 +128,8 @@ class WorldObjectBuilder(metaclass=abc.ABCMeta):
         返すobjectに制限はないため，参照をタプル型や辞書型にまとめて返すことも，構造体に整理して入れて返すこともできる．
 
         Args:
+            model (mujoco.MjModel): MuJoCoのモデルオブジェクト。
+
             data (mujoco.MjData): MuJoCoのデータオブジェクト。
 
             timer: MuJoCoのシミュレーション時間が格納されているクラス

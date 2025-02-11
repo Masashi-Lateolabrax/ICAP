@@ -4,20 +4,25 @@ import numpy as np
 
 from mujoco_xml_generator.utils import MuJoCoView
 from mujoco_xml_generator import Sensor, Actuator, Body, WorldBody
-from mujoco_xml_generator import common, body, actuator, asset, sensor
+from mujoco_xml_generator import common, body, asset, sensor
 
-from scheme.pushing_food_with_pheromone.lib.world import WorldObjectBuilder, BaseWorldBuilder, WorldClock
+from .prerude import world
+from .utils import random_point_avoiding_invalid_areas
+from .mujoco_objects.robot import RobotBuilder, Robot
 
-TIMESTEP = 0.01
-NUM_ROBOTS = 3
-ROBOT_WEIGHT = 30  # kg
-ROBOT_SPEED = 0.8
-FOOD_FRICTIONLOSS = 1500
-WIDTH = 2.5
-HEIGHT = 10
+RENDER_WIDTH = 10
+RENDER_HEIGHT = 10
+
+WORLD_WIDTH = 10
+WORLD_HEIGHT = 10
+
+ROBOT_SIZE = 1
+ROBOT_WEIGHT = 1
+
+FOOD_SIZE = 1
 
 
-class WorldBuilder(BaseWorldBuilder):
+class WorldBuilder(world.BaseWorldBuilder):
     @staticmethod
     def _create_wall(world_body: WorldBody, width: float, height: float):
         """
@@ -92,88 +97,6 @@ class WorldBuilder(BaseWorldBuilder):
         WorldBuilder._create_wall(self.world_body, width, height)
 
 
-class Robot:
-    def __init__(self, body_, act_y):
-        from mujoco._structs import _MjDataBodyViews, _MjDataActuatorViews
-
-        self.body: _MjDataBodyViews = body_
-        self.act_y: _MjDataActuatorViews = act_y
-
-        self._cache = {
-            "direction": np.array([0., 1, 0]),
-            "position": np.zeros(3),
-            "velocity": np.zeros(3),
-            "speed": 0.0
-        }
-
-    def _update_direction(self):
-        initial_direction = np.array([0., 1, 0])
-        mujoco.mju_rotVecQuat(self._cache["direction"], initial_direction, self.body.xquat)
-        return self._cache["direction"]
-
-    def _update_movement(self):
-        pos = np.copy(self.body.xpos)
-        self._cache["velocity"] = (pos - self._cache["position"]) / TIMESTEP
-        self._cache["position"] = pos
-        self._cache["speed"] = float(np.linalg.norm(self._cache["velocity"]))
-
-    def update(self):
-        self._update_direction()
-        self._update_movement()
-
-    def action(self):
-        self.act_y.ctrl[0] = ROBOT_SPEED
-
-    @property
-    def SPEED(self):
-        return self._cache["speed"]
-
-
-class RobotBuilder(WorldObjectBuilder):
-    def __init__(self, id_: int, pos: tuple[float, float, float]):
-        super().__init__(f"robot{id_}_builder")
-        self.name_table = {
-            "body": f"robot{id_}_body",
-            "joint_y": f"robot{id_}_joint_y",
-            "act_y": f"robot{id_}_act_y",
-        }
-        self.pos = pos
-
-    def gen_body(self) -> Body | None:
-        return Body(
-            name=self.name_table["body"], pos=self.pos,
-            orientation=common.Orientation.AxisAngle(0, 0, 1, 0)
-        ).add_children([
-            body.Geom(
-                type_=common.GeomType.CYLINDER, size=(0.175, 0.05), rgba=(1, 1, 0, 0.5), mass=ROBOT_WEIGHT, condim=1
-            ),
-
-            body.Joint(
-                name=self.name_table["joint_y"], type_=common.JointType.SLIDE, axis=(0, 1, 0)
-            ),
-
-            body.Site(
-                type_=common.GeomType.SPHERE, size=(0.04,), rgba=(1, 0, 0, 1), pos=(0, 0.13, 0.051),
-            ),
-            body.Site(type_=common.GeomType.SPHERE, size=(0.04,)),
-        ])
-
-    def gen_act(self) -> Actuator | None:
-        return Actuator().add_children([
-            actuator.Velocity(
-                name=self.name_table["act_y"], joint=self.name_table["joint_y"], kv=1000
-            )
-        ])
-
-    def gen_sen(self) -> Sensor | None:
-        return None
-
-    def extract(self, data: mujoco.MjData, timer: WorldClock):
-        body_ = data.body(self.name_table["body"])
-        act_y = data.actuator(self.name_table["act_y"])
-        return Robot(body_, act_y)
-
-
 class Food:
     def __init__(self, body_, speed_sensor):
         from mujoco._structs import _MjDataBodyViews, _MjDataSensorViews
@@ -238,22 +161,6 @@ class App(tk.Tk):
         self.view.enable_input()
         self.view.pack()
 
-        w_builder = WorldBuilder(0.01, (width, height), WIDTH, HEIGHT)
-
-        w_builder.add_builder(FoodBuilder((0, 0, 0.071)))
-
-        dw = (WIDTH - 1) / (NUM_ROBOTS + 1)
-        for i in range(NUM_ROBOTS):
-            w_builder.add_builder(RobotBuilder(
-                i,
-                (-0.5 * (WIDTH - 1) + dw * (i + 1), HEIGHT * -0.4, 0.1)
-            ))
-
-        self.world, w_objs = w_builder.build()
-
-        self.robot: list[Robot] = [w_objs[f"robot{i}_builder"] for i in range(NUM_ROBOTS)]
-        self.food: Food = w_objs["food_builder"]
-
         self.renderer = mujoco.Renderer(
             self.world.model, height, width, 3000
         )
@@ -268,6 +175,48 @@ class App(tk.Tk):
         print(self.food.get_speed())
 
         self.after(1, self.update)
+
+
+def init_simulator():
+    invalid_area = []
+
+    w_builder = WorldBuilder(
+        0.01,
+        (RENDER_WIDTH, RENDER_HEIGHT),
+        WORLD_WIDTH, WORLD_HEIGHT
+    )
+
+    # Create Robot
+    pos = random_point_avoiding_invalid_areas(
+        (WORLD_WIDTH * -0.5, WORLD_HEIGHT * 0.5),
+        (WORLD_WIDTH * 0.5, WORLD_HEIGHT * -0.5),
+        invalid_area,
+    )
+    w_builder.add_builder(
+        RobotBuilder(0, (pos[0], pos[1], 180), ROBOT_SIZE, ROBOT_WEIGHT)
+    )
+    invalid_area.append(
+        np.array([pos[0], pos[1], ROBOT_SIZE])
+    )
+
+    # Create Food
+    pos = random_point_avoiding_invalid_areas(
+        (WORLD_WIDTH * -0.5, WORLD_HEIGHT * 0.5),
+        (WORLD_WIDTH * 0.5, WORLD_HEIGHT * -0.5),
+        invalid_area,
+    )
+    w_builder.add_builder(
+        FoodBuilder(0, (pos[0], pos[1]), FOOD_SIZE)
+    )
+    invalid_area.append(
+        np.array([pos[0], pos[1], FOOD_SIZE])
+    )
+
+    world_, w_objs = w_builder.build()
+    robot_ = w_objs["robot0_builder"]
+    food_ = w_objs["food_builder"]
+
+    return world_, robot_, food_
 
 
 def main():

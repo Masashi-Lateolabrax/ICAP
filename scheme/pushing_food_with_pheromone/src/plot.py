@@ -4,7 +4,7 @@ from typing import Callable
 import matplotlib.pyplot as plt
 import numpy as np
 
-from .settings import Settings, EType
+from .prerude import Settings
 from .logger import LogLoader
 
 

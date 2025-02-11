@@ -30,18 +30,18 @@ class Brain(nn.Module):
         self.seq = nn.Sequential(
             self.debugger.create_investigator("l0"),
 
-            NormalNoize(0.01),
+            # NormalNoize(0.01),
             self.debugger.create_investigator("l0n"),
 
-            nn.Linear(9, 4),
+            nn.Linear(9, 6),
             nn.Tanh(),
             self.debugger.create_investigator("l1"),
 
             # NormalNoize(0.01),
             # self.debugger.create_investigator("l1n"),
 
-            nn.Linear(4, 3),
-            nn.Sigmoid(),
+            nn.Linear(6, 6),
+            nn.Softmax(dim=0),
             self.debugger.create_investigator("l2"),
 
             # NormalNoize(0.001),

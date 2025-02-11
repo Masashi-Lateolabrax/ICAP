@@ -4,9 +4,9 @@ import numpy as np
 import mujoco
 import matplotlib.pyplot as plt
 
-from libs.optimizer import CMAES, MultiThreadProc
+from libs.optimizer import CMAES, MultiThreadProc, OneThreadProc
 
-from .settings import Settings, EType
+from .prerude import Settings
 from .task_generator import TaskGenerator
 from .collector import Collector2
 from .logger import Logger, LogLoader
@@ -29,7 +29,7 @@ def optimization(workdir):
     )
     for gen in range(1, 1 + cmaes.get_generation()):
         task_generator = TaskGenerator(1, False)
-        cmaes.optimize_current_generation(task_generator, MultiThreadProc)
+        cmaes.optimize_current_generation(task_generator, OneThreadProc)
 
     logger.save()
 

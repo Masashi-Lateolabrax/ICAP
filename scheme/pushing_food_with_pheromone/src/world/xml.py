@@ -11,11 +11,11 @@ from mujoco_xml_generator import Body, WorldBody, body
 from mujoco_xml_generator import Actuator, actuator
 from mujoco_xml_generator import Sensor, sensor
 
-from ..settings import Settings
+from ..prerude import Settings
 from ..utils import robot_names
 
 
-def gen_xml(bot_pos: list[tuple[float, float, float]], food_pos: list[tuple[float, float]]) -> str:
+def gen_xml(bot_pos: np.ndarray, food_pos: np.ndarray) -> str:
     generator = mjc_gen.Generator().add_children([
         Option(
             timestep=Settings.Simulation.TIMESTEP,
@@ -44,8 +44,8 @@ def gen_xml(bot_pos: list[tuple[float, float, float]], food_pos: list[tuple[floa
     ])
 
     tile_size = Settings.Characteristic.Environment.CELL_SIZE
-    env_width = Settings.Characteristic.Environment.WIDTH * tile_size
-    env_height = Settings.Characteristic.Environment.HEIGHT * tile_size
+    env_width = Settings.Characteristic.Environment.WIDTH_METER
+    env_height = Settings.Characteristic.Environment.HEIGHT_METER
 
     worldbody = WorldBody().add_children([
         body.Geom(
@@ -89,9 +89,6 @@ def gen_xml(bot_pos: list[tuple[float, float, float]], food_pos: list[tuple[floa
                 body.Geom(
                     type_=mjc_cmn.GeomType.CYLINDER, size=(0.5, 0.07),
                     rgba=(0, 1, 1, 1), density=300000, condim=3
-                ),
-                body.Joint(
-                    name=f"food{i}.joint.slide_z", type_=mjc_cmn.JointType.SLIDE, axis=(0, 0, 1),
                 ),
                 body.Joint(
                     name=f"food{i}.joint.slide_x", type_=mjc_cmn.JointType.SLIDE, axis=(1, 0, 0),

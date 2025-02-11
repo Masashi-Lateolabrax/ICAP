@@ -1,9 +1,10 @@
 from dataclasses import dataclass
 from array import array
 
+import numpy as np
 import torch
 
-from ..settings import Settings
+from ..prerude import Settings
 from .parts import Environment, Food
 from .parts.robot import trigonometric as tr
 
@@ -22,13 +23,11 @@ class World:
     def __init__(
             self,
             para: array,
-            bot_pos: list[tuple[float, float, float]],
-            food_pos: list[tuple[float, float]],
+            bot_pos: np.ndarray,
+            food_pos: np.ndarray,
             panel: bool,
             debug: bool
     ):
-        self._buf = _Buffer()
-
         self.env = Environment(bot_pos, food_pos, create_dummies=panel)
 
         factory = tr.RobotFactory(True, True, debug)
@@ -47,3 +46,4 @@ class World:
 
     def get_dummies(self):
         return self.env.get_dummies()
+

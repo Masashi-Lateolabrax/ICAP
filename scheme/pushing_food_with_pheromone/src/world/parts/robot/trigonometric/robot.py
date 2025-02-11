@@ -7,7 +7,7 @@ import torch
 from libs.sensor import TrigonoOmniSensor, TrigonoOmniSensorBuf, direction_sensor
 from libs.utils import IntervalTimer
 
-from .....settings import Settings
+from .....prerude import Settings
 from ... import Environment
 from .. import _robot as interfaces
 from .brain import Brain
@@ -94,29 +94,25 @@ class RobotTR(interfaces.Robot):
             pos, direction, other_bot_positions
         )
         self._buf.sight[2], self._buf.sight[3] = self._tri_sensor_for_food.measure(
-            pos, direction, env.get_valid_food()
+            pos, direction, env.food_pos
         )
 
         self._buf.nest[0], self._buf.nest[1] = direction_sensor(
             pos, direction, env.nest_pos, Settings.Task.Nest.SIZE
         )
 
-        self._buf.pheromone[0] = env.pheromone.get_gas(self) / env.pheromone.get_sv()
+        self._buf.pheromone[0] = env.pheromone.get_gas(self)
 
-    def update(self, env: Environment):
-        if self._timer.count(Settings.Simulation.TIMESTEP):
-            self._update_input(env)
-
-            act = self._brain.forward(
-                self._buf.sight,
-                self._buf.nest,
-                self._buf.pheromone,
-                self._buf.velocity,
-                # self._buf.tank
-            ).detach().numpy()
-
-            m_power = (act[0] + act[1]) * 0.5 * Settings.Characteristic.Robot.MOVE_SPEED
-            r_power = (act[0] - act[1]) * 0.5 * Settings.Characteristic.Robot.TURN_SPEED
-            secretion = act[2] * self._secretion * Settings.Simulation.TIMESTEP
-
-            self.set_powers(m_power, r_power, secretion)
+    def think(self, env: Environment):
+        if not self._timer.count(Settings.Simulation.TIMESTEP):
+            return
+        self._update_input(env)
+        act = self._brain.forward(
+            self._buf.sight,
+            self._buf.nest,
+            self._buf.pheromone,
+            self._buf.velocity,
+            # self._buf.tank
+        ).detach().numpy()
+        act = interfaces.RobotAction(np.argmax(act))
+        return act

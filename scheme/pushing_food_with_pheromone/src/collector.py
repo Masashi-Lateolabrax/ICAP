@@ -3,7 +3,7 @@ import mujoco
 
 from libs.utils.data_collector import BaseDataCollector, Recorder
 
-from .settings import Settings
+from .prerude import Settings
 from .task import Task
 
 

@@ -1,3 +1,5 @@
+from typing import Iterable
+
 import mujoco
 
 from mujoco_xml_generator import common, asset
@@ -115,7 +117,7 @@ class BaseWorldBuilder:
             )
         ])
 
-    def add_obj(self, obj: WorldObjectBuilder):
+    def add_builder(self, builder: WorldObjectBuilder):
         """
         Worldにオブジェクトを追加する。
 
@@ -123,20 +125,24 @@ class BaseWorldBuilder:
         このメソッドでは渡されたWorldObjectBuilderの生成メソッドを呼び出し，その結果をXMLに追加する．
 
         Args:
-            obj (WorldObjectBuilder): 追加するオブジェクトのビルダー。
+            builder (WorldObjectBuilder): 追加するオブジェクトのビルダー。
 
         Returns:
             WorldBuilder: 自身のインスタンスを返す。
         """
-        b, a, s = obj._gen_all()
+        b, a, s = builder._gen_all()
         if b is not None:
             self.world_body.add_children([b])
         if a is not None:
             self.actuator.add_children(a.get_children())
         if s is not None:
             self.sensor.add_children(s.get_children())
-        self._objs.append(obj)
+        self._objs.append(builder)
         return self
+
+    def add_builders(self, builders: Iterable[WorldObjectBuilder]):
+        for builder in builders:
+            self.add_builder(builder)
 
     def build(self) -> tuple[World, dict]:
         """
@@ -154,6 +160,6 @@ class BaseWorldBuilder:
         model = mujoco.MjModel.from_xml_string(xml)
         world = World._create(model, timer)
 
-        objects = {o.builder_name: o.extract(world.data, timer) for o in self._objs}
+        objects = {o.builder_name: o.extract(model, world.data, timer) for o in self._objs}
 
         return world, objects

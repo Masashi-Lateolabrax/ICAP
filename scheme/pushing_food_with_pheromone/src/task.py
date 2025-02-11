@@ -6,7 +6,7 @@ import numpy as np
 
 from libs.optimizer import MjcTaskInterface
 
-from .settings import Settings, EType
+from .prerude import Settings
 from .world import World
 
 
@@ -55,26 +55,12 @@ class Task(MjcTaskInterface):
     def __init__(
             self,
             para: array,
-            bot_pos: list[tuple[float, float, float]],
-            food_pos: list[tuple[float, float]],
+            bot_pos: np.ndarray,
+            food_pos: np.ndarray,
             panel: bool,
             debug: bool
     ):
         self.world = World(para, bot_pos, food_pos, panel, debug)
-        self.init_food_dist = np.linalg.norm(np.array(food_pos), axis=1)
-
-        self._food_p_sigma = _squared_sigma(
-            Settings.Optimization.Evaluation.FOOD_RANGE, Settings.Optimization.Evaluation.FOOD_RANGE_P
-        )
-        self._nest_p_sigma = _squared_sigma(
-            self.init_food_dist, Settings.Optimization.Evaluation.NEST_RANGE_P
-        )
-
-        self._bot_food_dist_buf = np.zeros((Settings.Task.Robot.NUM_ROBOTS, 2))
-        self._bot_food_dist_buf[:, 1] = 0.5 + 0.175
-
-        self.latest_e = 0
-        self.old_e = 0
 
         self._dump = np.zeros((
             Settings.Simulation.TOTAL_STEP, 2, 2
@@ -89,36 +75,22 @@ class Task(MjcTaskInterface):
     def calc_step(self) -> float:
         self.world.calc_step()
 
-        self.latest_e = evaluation(
-            self._nest_p_sigma,
-            self._food_p_sigma,
-            self.world.env.food_pos,
-            self.world.env.bot_pos,
-            self.world.env.nest_pos,
-            self._bot_food_dist_buf
-        )
-        self.old_e = old_evaluation(
-            self.init_food_dist,
-            self.world.env.food_pos,
-            self.world.env.bot_pos,
-            self.world.env.nest_pos
-        )
+        vector_between_nest_and_food = self.world.env.nest_pos - self.world.env.food_pos
+        v_dist = np.linalg.norm(vector_between_nest_and_food, axis=1)
+        normalized_vector = vector_between_nest_and_food / v_dist[:, None]
 
-        if Settings.Optimization.EVALUATION_TYPE == EType.POTENTIAL:
-            e = self.latest_e
-        elif Settings.Optimization.EVALUATION_TYPE == EType.DISTANCE:
-            e = self.old_e
-        else:
-            raise Exception("selected invalid EVALUATION_TYPE.")
+        food_vel_norm = np.linalg.norm(self.world.env.food_vel, axis=1)
+        food_vel_norm = np.where(food_vel_norm == 0, 1, food_vel_norm)
+        food_direction = self.world.env.food_vel / food_vel_norm[:, None]
 
-        return e[0] + e[1]
+        cos_similarity = np.max(np.sum(normalized_vector * food_direction, axis=1), 0)
+
+        return np.sum(cos_similarity)
 
     def run(self) -> float:
         e = 0
         for t in range(Settings.Simulation.TOTAL_STEP):
             e += self.calc_step()
-            self._dump[t, EType.POTENTIAL, :] = self.latest_e
-            self._dump[t, EType.DISTANCE, :] = self.old_e
         return e / Settings.Simulation.TOTAL_STEP
 
     def get_dummies(self):

@@ -30,14 +30,14 @@ def prepare_dir(current_dir, specify: str = None):
 def main(workdir):
     import scheme.pushing_food_with_pheromone.src as src
 
-    best_para = src.optimization(workdir)
-    src.sampling(workdir, best_para)
+    best_para = bin.optimization(workdir)
+    bin.sampling(workdir, best_para)
 
 
 def sampling(workdir, repeat=1, gen=None):
     import scheme.pushing_food_with_pheromone.src as src
 
-    loader = src.LogLoader(workdir)
+    loader = bin.LogLoader(workdir)
 
     if gen is None:
         if Settings().Optimization.EVALUATION_TYPE == EType.POTENTIAL:
@@ -57,14 +57,14 @@ def sampling(workdir, repeat=1, gen=None):
         sub_workdir = os.path.join(workdir, current_time_str)
         os.makedirs(sub_workdir, exist_ok=True)
 
-        src.sampling(sub_workdir, para)
+        bin.sampling(sub_workdir, para)
 
 
 def plot_evaluations(workdir):
     import scheme.pushing_food_with_pheromone.src as src
-    loader = src.LogLoader(workdir)
+    loader = bin.LogLoader(workdir)
 
-    src.plot.evaluation_for_each_generation(workdir, loader)
+    bin.plot.evaluation_for_each_generation(workdir, loader)
     # src.plot_evaluation_elements_for_each_generation(workdir, loader)
 
 

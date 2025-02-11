@@ -1,7 +1,7 @@
 import numpy
 import scipy
 
-from _interface import PheromoneFieldInf, PheromoneCellInf
+from ._interface import PheromoneFieldInf, PheromoneCellInf
 
 
 def _calc_dico(w: int, h: int, xi: float, yi: float):

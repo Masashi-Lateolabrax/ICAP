@@ -1,5 +1,6 @@
 import abc
 from collections.abc import Sequence
+import enum
 
 import numpy as np
 import mujoco
@@ -7,11 +8,20 @@ import torch
 
 from libs.mujoco_utils.objects import BodyObject
 
-from ....settings import Settings
+from ....prerude import Settings
 from ....utils import robot_names
 from .._environment import Environment
 
 from ._pheromone_tank import PheromoneTank
+
+
+class RobotAction(enum.Enum):
+    MOVE_FORWARD = 0
+    MOVE_BACKWARD = 1
+    TURN_LEFT = 2
+    TURN_RIGHT = 3
+    SECRETION = 4
+    STOP = 5
 
 
 class RobotDebugBuf:
@@ -61,20 +71,28 @@ class Robot(BodyObject, metaclass=abc.ABCMeta):
 
         self._sen_vel = d.sensor(name_table["v_sen"])
 
-        self._movement_power = 0
-        self._rotation_power = 0
-        self._pheromone_secretion = 0
-
         self._buf = buf
         self._input_buf: RobotDebugBuf | None = None
 
-    def set_powers(self, movement_power, rotation_power, pheromone_secretion):
-        self._movement_power = movement_power
-        self._rotation_power = rotation_power
-        self._pheromone_secretion = pheromone_secretion
+    def take_action(self, act: RobotAction, env: Environment):
+        mv = self._buf.bot_direction * Settings.Characteristic.Robot.MOVE_SPEED
+        match act:
+            case RobotAction.MOVE_FORWARD:
+                self._act_move_x.ctrl[0] = mv[0]
+                self._act_move_y.ctrl[0] = mv[1]
+            case RobotAction.MOVE_BACKWARD:
+                self._act_move_x.ctrl[0] = -mv[0]
+                self._act_move_y.ctrl[0] = -mv[1]
+            case RobotAction.TURN_LEFT:
+                self._act_rot.ctrl[0] += Settings.Characteristic.Robot.TURN_SPEED
+            case RobotAction.TURN_RIGHT:
+                self._act_rot.ctrl[0] -= Settings.Characteristic.Robot.TURN_SPEED
+            case RobotAction.SECRETION:
+                secretion = self.pheromone_tank.secretion(Settings.Characteristic.Robot.SECRETION)
+                env.pheromone.add_liquid(self, secretion)
 
     @abc.abstractmethod
-    def update(self, env: Environment):
+    def think(self, env: Environment) -> RobotAction:
         raise NotImplemented
 
     def act(self, env: Environment):
@@ -85,17 +103,9 @@ class Robot(BodyObject, metaclass=abc.ABCMeta):
         # if dn < Settings.Task.Nest.SIZE:
         #     self.pheromone_tank.fill()
         # self._buf.tank[0] = self.pheromone_tank.remain()
+        decision = self.think(env)
 
-        self.update(env)
-
-        move_vec = self._buf.bot_direction * self._movement_power
-        self._act_rot.ctrl[0] = self._rotation_power
-        self._act_move_x.ctrl[0] = move_vec[0, 0]
-        self._act_move_y.ctrl[0] = move_vec[1, 0]
-
-        # secretion = self.pheromone_tank.secretion(self._pheromone_secretion)
-        # env.pheromone.add_liquid(self, secretion)
-        env.pheromone.add_liquid(self, self._pheromone_secretion)
+        self.take_action(decision, env)
 
     def get_direction(self):
         return self._buf.bot_direction[0:2, 0]
