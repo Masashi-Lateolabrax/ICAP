@@ -57,6 +57,10 @@ class App(tk.Tk):
         self.view.enable_input()
         self.view.pack()
 
+        self.view.camera.lookat[:] = [0, 0, 0]
+        self.view.camera.elevation = -90
+        self.view.camera.distance = 16
+
         self.after(0, self.update)
 
     def update(self):

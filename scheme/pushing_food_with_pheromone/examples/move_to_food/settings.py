@@ -9,6 +9,7 @@ class _Settings:
 
     RENDER_WIDTH = 500
     RENDER_HEIGHT = 500
+    RENDER_ZOOM = 18
     MAX_GEOM = 3000
 
     WORLD_WIDTH = 10
