@@ -168,7 +168,7 @@ class RobotBuilder(WorldObjectBuilder):
     def gen_sen(self) -> Sensor | None:
         return None
 
-    def extract(self, data: mujoco.MjData, timer: WorldClock):
+    def extract(self, model: mujoco.MjModel, data: mujoco.MjData, timer: WorldClock):
         body_ = data.body(self.name_table["body"])
         act_y = data.actuator(self.name_table["act_y"])
         return Robot(body_, act_y)
@@ -219,7 +219,7 @@ class FoodBuilder(WorldObjectBuilder):
             sensor.Velocimeter(self.name_table["center_site"], self.name_table["velocisensor"])
         ])
 
-    def extract(self, data: mujoco.MjData, timer: WorldClock):
+    def extract(self, _model: mujoco.MjModel, data: mujoco.MjData, timer: WorldClock):
         body_ = data.body(self.name_table["body"])
         speed_sensor = data.sensor(self.name_table["velocisensor"])
         return Food(body_, speed_sensor)
