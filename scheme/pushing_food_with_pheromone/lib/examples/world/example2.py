@@ -239,7 +239,7 @@ class RobotBuilder(WorldObjectBuilder):
     def gen_sen(self) -> Sensor | None:
         return None
 
-    def extract(self, data: mujoco.MjData, timer: WorldClock):
+    def extract(self, _model: mujoco.MjModel, data: mujoco.MjData, timer: WorldClock):
         body_ = data.body(self.name_table["body"])
         act_x = data.actuator(self.name_table["act_x"])
         act_y = data.actuator(self.name_table["act_y"])
@@ -277,7 +277,6 @@ class App(tk.Tk):
         self.world.calc_step()
 
         self.view.render(self.world.data, self.renderer, dummy_geoms=self.world.get_dummy_geoms())
-        print(self.robot.GET_SPEED)
 
         self.after(1, self.update)
 
