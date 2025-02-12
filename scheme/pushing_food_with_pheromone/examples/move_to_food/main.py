@@ -7,7 +7,7 @@ def main():
     save_dir = os.path.dirname(os.path.abspath(__file__))
     log_file_path = os.path.join(save_dir, "log.pkl")
 
-    train2(log_file_path)
+    train(log_file_path)
     replay(log_file_path)
 
 

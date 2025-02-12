@@ -41,6 +41,7 @@ def create_robot_builders(id_, brain: BrainInterface, invalid_area: list[np.ndar
         (pos[0], pos[1], angle),
         size, Settings.ROBOT_WEIGHT, Settings.SENSOR_GAIN, Settings.SENSOR_OFFSET,
         Settings.ROBOT_MOVE_SPEED, Settings.ROBOT_TURN_SPEED,
+        n_food=0
     )
     invalid_area.append(
         np.array([pos[0], pos[1], size])

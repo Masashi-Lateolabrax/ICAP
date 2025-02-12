@@ -55,6 +55,9 @@ class OmniSensor:
 
         sub = self.target_positions - bot_pos[0:2]
         distance = np.linalg.norm(sub, axis=1)
+        if distance == 0:
+            return np.zeros(2)
+
         sub = sub.T / distance
         trigono_components = np.dot(direction, sub)
         scaled_distance = self.gain * np.maximum(distance - self.offset, 0)

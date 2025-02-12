@@ -22,6 +22,7 @@ class _Settings:
 
     FOOD_SIZE = 0.5
     FOOD_FRICTIONLOSS = 1500
+    FOOD_NUM = 1
 
     SENSOR_GAIN = 1
 

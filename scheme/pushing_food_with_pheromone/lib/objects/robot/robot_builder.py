@@ -5,9 +5,8 @@ from mujoco_xml_generator import common, actuator, body
 
 from scheme.pushing_food_with_pheromone.lib.world import WorldObjectBuilder, WorldClock
 from scheme.pushing_food_with_pheromone.lib.parts import BrainInterface, OmniSensor
-from scheme.pushing_food_with_pheromone.lib.objects.food import FoodBuilder
 
-from ..name_table import RobotNameTable
+from ..name_table import RobotNameTable, FoodNameTable
 from .robot_data import RobotData
 from .actuator import Actuator as BotActuator
 from .robot import Robot
@@ -25,7 +24,7 @@ class RobotBuilder(WorldObjectBuilder):
             turn_speed: float,
             sensor_gain: float,
             sensor_offset: float,
-            n_food: int = 0
+            n_food: int
     ):
         super().__init__(f"robot{id_}_builder")
         self.id = id_
@@ -107,11 +106,11 @@ class RobotBuilder(WorldObjectBuilder):
         other_robot_sensor = OmniSensor(
             self.sensor_gain,
             self.sensor_offset,
-            [data.site(RobotBuilder.NameTable(i).CENTER_SITE) for i in range(self.n_food) if i is not self.id],
+            [data.site(RobotNameTable(i).CENTER_SITE) for i in range(self.n_food) if i is not self.id],
         )
         food_sensor = OmniSensor(
             self.sensor_gain,
             self.sensor_offset,
-            [data.site(FoodBuilder.NameTable(i).CENTER_SITE) for i in range(self.n_food)]
+            [data.site(FoodNameTable(i).CENTER_SITE) for i in range(self.n_food)]
         )
         return Robot(self.brain, body_, bot_data, bot_actuator, other_robot_sensor, food_sensor)
