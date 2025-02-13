@@ -55,6 +55,10 @@ class OmniSensor:
 
         sub = self.target_positions - bot_pos[0:2]
         distance = np.linalg.norm(sub, axis=1)
+        if np.any(distance == 0):
+            # print("distance array contains 0")
+            return np.zeros(2)
+
         sub = sub.T / distance
         trigono_components = np.dot(direction, sub)
         scaled_distance = self.gain * np.maximum(distance - self.offset, 0)
@@ -68,13 +72,6 @@ class OmniSensor:
 
 
 class _TestOmniSensor(unittest.TestCase):
-    @staticmethod
-    def _create_bot_data():
-        bot_data = Mock()
-        bot_data.direction = np.array([0, 1, 0])
-        bot_data.pos = np.array([0, 0, 0])
-        return bot_data
-
     @staticmethod
     def _create_target_sites(pos: list[tuple[float, float, float]]):
         target_sites: list[_MjDataSiteViews] = []
@@ -183,3 +180,27 @@ class _TestOmniSensor(unittest.TestCase):
 
         assert abs(res[0] - -0.066585) < 1e-5
         assert abs(res[1] - -0.009665) < 1e-5
+
+    def test_rnh_x0y10(self):
+        sensor = OmniSensor(
+            1, 0,
+            _TestOmniSensor._create_target_sites([
+                (0, 10, 0)
+            ])
+        )
+        res = sensor.get(np.array([-1, 0]), np.array([0, 0, 0]))
+
+        assert abs(res[0] - 0.09090) < 1e-5
+        assert abs(res[1] - 0) < 1e-5
+
+    def test_rnh_x10y0(self):
+        sensor = OmniSensor(
+            1, 0,
+            _TestOmniSensor._create_target_sites([
+                (10, 0, 0)
+            ])
+        )
+        res = sensor.get(np.array([-1, 0]), np.array([0, 0, 0]))
+
+        assert abs(res[0] - 0) < 1e-5
+        assert abs(res[1] - -0.09090) < 1e-5

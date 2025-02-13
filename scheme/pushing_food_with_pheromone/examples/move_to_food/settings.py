@@ -1,5 +1,5 @@
 class _Settings:
-    CMAES_GENERATION = 100
+    CMAES_GENERATION = 1000
     CMAES_POPULATION = 1000
     CMAES_MU = 500
     CMAES_SIGMA = 3
@@ -9,6 +9,7 @@ class _Settings:
 
     RENDER_WIDTH = 500
     RENDER_HEIGHT = 500
+    RENDER_ZOOM = 18
     MAX_GEOM = 3000
 
     WORLD_WIDTH = 10
@@ -22,6 +23,7 @@ class _Settings:
 
     FOOD_SIZE = 0.5
     FOOD_FRICTIONLOSS = 1500
+    FOOD_NUM = 1
 
     SENSOR_GAIN = 1
 
