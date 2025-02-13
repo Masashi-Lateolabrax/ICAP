@@ -56,7 +56,7 @@ class OmniSensor:
         sub = self.target_positions - bot_pos[0:2]
         distance = np.linalg.norm(sub, axis=1)
         if np.any(distance == 0):
-            print("distance array contains 0")
+            # print("distance array contains 0")
             return np.zeros(2)
 
         sub = sub.T / distance
