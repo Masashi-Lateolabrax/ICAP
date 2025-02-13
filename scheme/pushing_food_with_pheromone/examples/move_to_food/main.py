@@ -5,7 +5,7 @@ import src
 
 def main():
     save_dir = os.path.dirname(os.path.abspath(__file__))
-    log_file_path = os.path.join(save_dir, "log_tmp.pkl")
+    log_file_path = os.path.join(save_dir, "log.pkl")
 
     src.train(log_file_path)
     # src.replay(log_file_path)

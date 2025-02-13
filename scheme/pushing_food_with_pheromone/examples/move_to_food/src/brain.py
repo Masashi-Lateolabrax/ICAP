@@ -62,7 +62,7 @@ class Brain(BrainInterface):
         self.neural_network.set_para(para)
 
     def think(self, input_: BrainInput) -> BrainJudgement:
-        if self.timer.tick():
+        if not self.timer.tick():
             return self.state
 
         res = self.neural_network.forward(input_)
