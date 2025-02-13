@@ -1,4 +1,8 @@
+import unittest
+from unittest.mock import Mock
+
 import torch
+import numpy as np
 
 from scheme.pushing_food_with_pheromone.lib.parts import OmniSensor, BrainJudgement, BrainInterface
 
@@ -39,6 +43,22 @@ class Robot:
 
         self._input = BrainInput(data, other_robot_sensor, food_sensor)
 
+    def calc_relative_position(self, target_pos):
+        """
+        Calculate relative position from robot to target_pos
+
+        Args:
+            target_pos: target position. [x, y, z]
+
+        Returns:
+            relative position. [front, left, up]
+        """
+        direction_to_front = self._data.direction[:2]
+        direction_to_left = np.array([direction_to_front[1], -direction_to_front[0]], dtype=np.float64)
+        front = np.dot((target_pos - self._data.pos)[:2], direction_to_front)
+        left = np.dot((target_pos - self._data.pos)[:2], direction_to_left)
+        return np.array([left, front, 0], dtype=np.float64)
+
     def update(self):
         self._data.update()
 
@@ -66,3 +86,52 @@ class Robot:
                 self._actuator.secretion()
             case _:  # pragma: no cover
                 raise ValueError("Invalid judge")
+
+
+class _TestRobot(unittest.TestCase):
+    def test_calc_relative_position(self):
+        robot = Robot(
+            brain=Mock(),
+            body_=Mock(),
+            data=RobotData(Mock(), Mock(), Mock()),
+            actuator=Mock(),
+            other_robot_sensor=Mock(),
+            food_sensor=Mock(),
+        )
+
+        robot._data.pos = np.array([0, 0, 0])
+        robot._data.angle = 0
+        robot._data._update_direction()
+
+        res = robot.calc_relative_position(np.array([1, 0, 0]))
+        assert np.allclose(res, np.array([1, 0, 0]))
+
+        res = robot.calc_relative_position(np.array([0, 1, 0]))
+        assert np.allclose(res, np.array([0, 1, 0]))
+
+        robot._data.angle = np.pi / 2
+        robot._data._update_direction()
+
+        res = robot.calc_relative_position(np.array([1, 0, 0]))
+        assert np.allclose(res, np.array([0, -1, 0]))
+
+        res = robot.calc_relative_position(np.array([0, 1, 0]))
+        assert np.allclose(res, np.array([1, 0, 0]))
+
+        robot._data.angle = np.pi
+        robot._data._update_direction()
+
+        res = robot.calc_relative_position(np.array([1, 0, 0]))
+        assert np.allclose(res, np.array([-1, 0, 0]))
+
+        res = robot.calc_relative_position(np.array([0, 1, 0]))
+        assert np.allclose(res, np.array([0, -1, 0]))
+
+        robot._data.angle = np.pi * 3 / 2
+        robot._data._update_direction()
+
+        res = robot.calc_relative_position(np.array([1, 0, 0]))
+        assert np.allclose(res, np.array([0, 1, 0]))
+
+        res = robot.calc_relative_position(np.array([0, 1, 0]))
+        assert np.allclose(res, np.array([-1, 0, 0]))
