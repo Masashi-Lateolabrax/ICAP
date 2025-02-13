@@ -66,8 +66,8 @@ class Brain(BrainInterface):
             return self.state
 
         res = self.neural_network.forward(input_)
-        # selected = int(torch.multinomial(res, 1))
-        selected = torch.argmax(res).item()
+        selected = int(torch.multinomial(res, 1))
+        # selected = torch.argmax(res).item()
         self.state = BrainJudgement(selected)
 
         return self.state
