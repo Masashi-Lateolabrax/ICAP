@@ -39,6 +39,9 @@ class RobotBuilder(WorldObjectBuilder):
         self.sensor_offset = sensor_offset
         self.n_food = n_food
 
+    def gen_static_object(self) -> list[body.Geom]:
+        return []
+
     def gen_body(self) -> Body | None:
         return Body(
             name=self.name_table.BODY, pos=(self.pos[0], self.pos[1], 0.06),

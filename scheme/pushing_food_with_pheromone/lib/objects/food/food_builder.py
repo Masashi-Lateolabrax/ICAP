@@ -18,6 +18,9 @@ class FoodBuilder(WorldObjectBuilder):
         self.size = size
         self.frictionloss = frictionloss
 
+    def gen_static_object(self) -> list[body.Geom]:
+        return []
+
     def gen_body(self) -> Body | None:
         height = 0.07
 

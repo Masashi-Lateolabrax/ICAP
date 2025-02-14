@@ -2,6 +2,7 @@ import abc
 
 import mujoco
 from mujoco_xml_generator import Body, Actuator, Sensor
+from mujoco_xml_generator import body
 
 from .world_clock import WorldClock
 
@@ -87,6 +88,16 @@ class WorldObjectBuilder(metaclass=abc.ABCMeta):
         self.builder_name = name
 
     @abc.abstractmethod
+    def gen_static_object(self) -> list[body.Geom]:
+        """
+        WorldBodyに追加する静的な物体のXML要素を生成する抽象メソッド。
+
+        Returns:
+            list[body.Geom]: 生成された静的な物体のXML要素のリスト。
+        """
+        raise NotImplemented
+
+    @abc.abstractmethod
     def gen_body(self) -> Body | None:
         """
         このオブジェクトを構成するBodyのXML要素を生成する抽象メソッド。
@@ -116,8 +127,8 @@ class WorldObjectBuilder(metaclass=abc.ABCMeta):
         """
         raise NotImplemented
 
-    def _gen_all(self) -> tuple[Body | None, Actuator | None, Sensor | None]:
-        return self.gen_body(), self.gen_act(), self.gen_sen()
+    def _gen_all(self) -> tuple[list[body.Geom], Body | None, Actuator | None, Sensor | None]:
+        return self.gen_static_object(), self.gen_body(), self.gen_act(), self.gen_sen()
 
     @abc.abstractmethod
     def extract(self, model: mujoco.MjModel, data: mujoco.MjData, timer: WorldClock):
