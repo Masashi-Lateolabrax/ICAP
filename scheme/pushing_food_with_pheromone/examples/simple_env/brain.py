@@ -1,6 +1,6 @@
 import random
 
-from scheme.pushing_food_with_pheromone.lib.parts import BrainInterface, BrainJudgement
+from scheme.pushing_food_with_pheromone.lib.objects.robot import BrainInterface, BrainJudgement
 
 
 class Brain(BrainInterface):
