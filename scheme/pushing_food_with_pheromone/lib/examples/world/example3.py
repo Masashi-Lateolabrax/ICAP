@@ -6,8 +6,7 @@ from mujoco_xml_generator.utils import MuJoCoView
 
 from scheme.pushing_food_with_pheromone.lib.world import WorldBuilder1
 from scheme.pushing_food_with_pheromone.lib.objects.food import Food, FoodBuilder
-from scheme.pushing_food_with_pheromone.lib.objects.robot import Robot, RobotBuilder
-from scheme.pushing_food_with_pheromone.lib.parts import BrainInterface, BrainJudgement
+from scheme.pushing_food_with_pheromone.lib.objects.robot import RobotBuilder, BrainInterface, BrainJudgement, Robot
 
 RENDER_WIDTH = 500
 RENDER_HEIGHT = 500

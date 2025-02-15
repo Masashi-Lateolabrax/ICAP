@@ -20,7 +20,7 @@ class App(tk.Tk):
         self.view.pack()
 
         self.world, _ = WorldBuilder1(
-            0.01, (width, height), 30, 30
+            0.01, (width, height), 10, 10
         ).build()
 
         self.renderer = mujoco.Renderer(

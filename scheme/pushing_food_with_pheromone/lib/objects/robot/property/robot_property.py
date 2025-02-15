@@ -7,7 +7,7 @@ from scheme.pushing_food_with_pheromone.lib.world import WorldClock
 from scheme.pushing_food_with_pheromone.lib.utilities import Cache
 
 
-class RobotData(Cache):
+class RobotProperty(Cache):
     def __init__(self, body: _MjDataBodyViews, joint_r: _MjDataJointViews, timer: WorldClock):
         super().__init__(timer)
 

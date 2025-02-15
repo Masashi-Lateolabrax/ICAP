@@ -2,14 +2,14 @@ import dataclasses
 
 from mujoco._structs import _MjDataActuatorViews
 
-from .robot_data import RobotData
+from ..property import RobotProperty
 
 
 @dataclasses.dataclass
 class Actuator:
     move_speed: float
     turn_speed: float
-    data: RobotData
+    property: RobotProperty
     act_x: _MjDataActuatorViews
     act_y: _MjDataActuatorViews
     act_r: _MjDataActuatorViews
@@ -25,13 +25,13 @@ class Actuator:
         self.act_r.ctrl[0] = -self.turn_speed
 
     def forward(self):
-        v = self.data.local_direction * self.move_speed
+        v = self.property.local_direction * self.move_speed
         self.act_x.ctrl[0] = v[0]
         self.act_y.ctrl[0] = v[1]
         self.act_r.ctrl[0] = 0
 
     def back(self):
-        v = -self.data.local_direction * self.move_speed
+        v = -self.property.local_direction * self.move_speed
         self.act_x.ctrl[0] = v[0]
         self.act_y.ctrl[0] = v[1]
         self.act_r.ctrl[0] = 0

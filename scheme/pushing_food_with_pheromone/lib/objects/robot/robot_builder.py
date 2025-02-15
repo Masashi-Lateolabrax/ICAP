@@ -4,10 +4,11 @@ from mujoco_xml_generator import Sensor, Actuator, Body
 from mujoco_xml_generator import common, actuator, body
 
 from scheme.pushing_food_with_pheromone.lib.world import WorldObjectBuilder, WorldClock
-from scheme.pushing_food_with_pheromone.lib.parts import BrainInterface, OmniSensor
 
 from ..name_table import RobotNameTable, FoodNameTable
-from .robot_data import RobotData
+from .property import RobotProperty
+from .brain import BrainInterface
+from .input import RobotInput, OmniSensor
 from .actuator import Actuator as BotActuator
 from .robot import Robot
 
@@ -93,27 +94,34 @@ class RobotBuilder(WorldObjectBuilder):
 
     def extract(self, model: mujoco.MjModel, data: mujoco.MjData, timer: WorldClock):
         body_ = data.body(self.name_table.BODY)
-        bot_data = RobotData(
+
+        property_ = RobotProperty(
             body_,
             data.joint(self.name_table.JOINT_R),
             timer
         )
-        bot_actuator = BotActuator(
+
+        input_ = RobotInput(
+            property_,
+            other_robot_sensor=OmniSensor(
+                self.sensor_gain,
+                self.sensor_offset,
+                [data.site(RobotNameTable(i).CENTER_SITE) for i in range(self.n_food) if i is not self.id],
+            ),
+            food_sensor=OmniSensor(
+                self.sensor_gain,
+                self.sensor_offset,
+                [data.site(FoodNameTable(i).CENTER_SITE) for i in range(self.n_food)]
+            )
+        )
+
+        actuator_ = BotActuator(
             self.move_speed,
             self.turn_speed,
-            bot_data,
+            property_,
             data.actuator(self.name_table.ACT_X),
             data.actuator(self.name_table.ACT_Y),
             data.actuator(self.name_table.ACT_R),
         )
-        other_robot_sensor = OmniSensor(
-            self.sensor_gain,
-            self.sensor_offset,
-            [data.site(RobotNameTable(i).CENTER_SITE) for i in range(self.n_food) if i is not self.id],
-        )
-        food_sensor = OmniSensor(
-            self.sensor_gain,
-            self.sensor_offset,
-            [data.site(FoodNameTable(i).CENTER_SITE) for i in range(self.n_food)]
-        )
-        return Robot(self.brain, body_, bot_data, bot_actuator, other_robot_sensor, food_sensor)
+
+        return Robot(self.brain, property_, input_, actuator_)

@@ -2,6 +2,8 @@ import abc
 
 import enum
 
+from ..input import RobotInput
+
 
 class BrainJudgement(enum.Enum):
     STOP = 0
@@ -19,5 +21,5 @@ class BrainInterface(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def think(self, input_) -> BrainJudgement:
+    def think(self, input_: RobotInput) -> BrainJudgement:
         raise NotImplementedError
