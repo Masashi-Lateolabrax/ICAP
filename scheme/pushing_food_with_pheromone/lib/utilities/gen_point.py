@@ -4,6 +4,7 @@ import numpy as np
 def random_point_avoiding_invalid_areas(
         left_upper_point: tuple[float, float],
         right_lower_point: tuple[float, float],
+        size: float,
         invalid_area: list[np.ndarray],
         retry=-1
 ) -> np.ndarray | None:
@@ -21,6 +22,8 @@ def random_point_avoiding_invalid_areas(
         The (x, y) coordinates of the upper-left corner of the rectangular area.
     right_lower_point : tuple of float
         The (x, y) coordinates of the lower-right corner of the rectangular area.
+    size : float
+        The size of the object to be placed within the rectangular area.
     invalid_area : list of np.ndarray
         A list of NumPy arrays representing invalid regions. Each array should contain at least three elements:
         the first two elements are the (x, y) coordinates of the center of the invalid area, and the third
@@ -39,10 +42,10 @@ def random_point_avoiding_invalid_areas(
 
     pos = np.zeros(2)
     while retry < 0 or retry > 0:
-        pos[0] = np.random.uniform(left_upper_point[0], right_lower_point[0])
-        pos[1] = np.random.uniform(right_lower_point[1], left_upper_point[1])
+        pos[0] = np.random.uniform(left_upper_point[0] + size, right_lower_point[0] - size)
+        pos[1] = np.random.uniform(right_lower_point[1] - size, left_upper_point[1] + size)
 
-        if np.any([np.linalg.norm(area[:2] - pos) < area[2] for area in invalid_area]):
+        if np.any([np.linalg.norm(area[:2] - pos) < area[2] + size for area in invalid_area]):
             if retry > 0:
                 retry -= 1
             continue
