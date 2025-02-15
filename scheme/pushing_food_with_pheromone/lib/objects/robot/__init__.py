@@ -1,3 +1,4 @@
+from .input import RobotInput
 from .brain import BrainInterface, BrainJudgement
-from .robot_builder import RobotBuilder
 from .robot import Robot
+from .robot_builder import RobotBuilder

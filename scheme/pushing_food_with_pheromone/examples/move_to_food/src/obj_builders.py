@@ -1,7 +1,6 @@
 import numpy as np
 
-from scheme.pushing_food_with_pheromone.lib.parts import BrainInterface
-from scheme.pushing_food_with_pheromone.lib.objects.robot import RobotBuilder
+from scheme.pushing_food_with_pheromone.lib.objects.robot import RobotBuilder, BrainInterface
 from scheme.pushing_food_with_pheromone.lib.objects.food import FoodBuilder
 
 from scheme.pushing_food_with_pheromone.src.utils import random_point_avoiding_invalid_areas

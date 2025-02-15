@@ -1,7 +1,6 @@
 import torch
 
-from scheme.pushing_food_with_pheromone.lib.parts import BrainInterface, BrainJudgement
-from scheme.pushing_food_with_pheromone.lib.objects.robot import BrainInput
+from scheme.pushing_food_with_pheromone.lib.objects.robot import BrainInterface, BrainJudgement, RobotInput
 
 
 class Timer:
@@ -28,7 +27,7 @@ class NeuralNetwork(torch.nn.Module):
             torch.nn.Softmax(dim=0)
         )
 
-    def forward(self, x: BrainInput):
+    def forward(self, x: RobotInput):
         x = x.get_food()
         y = self.sequence(x)
         return y
@@ -61,7 +60,7 @@ class Brain(BrainInterface):
         self.neural_network = NeuralNetwork()
         self.neural_network.set_para(para)
 
-    def think(self, input_: BrainInput) -> BrainJudgement:
+    def think(self, input_: RobotInput) -> BrainJudgement:
         if not self.timer.tick():
             return self.state
 
