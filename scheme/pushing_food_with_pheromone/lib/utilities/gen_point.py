@@ -6,7 +6,8 @@ def random_point_avoiding_invalid_areas(
         right_lower_point: tuple[float, float],
         size: float,
         invalid_area: list[np.ndarray],
-        retry=-1
+        retry: int = -1,
+        padding: float = 0
 ) -> np.ndarray | None:
     """
     Generates a random point within a specified rectangular area while avoiding designated invalid regions.
@@ -31,6 +32,8 @@ def random_point_avoiding_invalid_areas(
     retry : int, optional
         The number of attempts to generate a valid point. If set to -1, the function will retry indefinitely
         until a valid point is found. The default value is -1.
+    padding : float, optional
+        The padding around the rectangular area. The default value is 0.
 
     Returns
     -------
@@ -42,10 +45,14 @@ def random_point_avoiding_invalid_areas(
 
     pos = np.zeros(2)
     while retry < 0 or retry > 0:
-        pos[0] = np.random.uniform(left_upper_point[0] + size, right_lower_point[0] - size)
-        pos[1] = np.random.uniform(right_lower_point[1] - size, left_upper_point[1] + size)
+        pos[0] = np.random.uniform(
+            left_upper_point[0] + size + padding, right_lower_point[0] - size - padding
+        )
+        pos[1] = np.random.uniform(
+            right_lower_point[1] + size + padding, left_upper_point[1] - size - padding
+        )
 
-        if np.any([np.linalg.norm(area[:2] - pos) < area[2] + size for area in invalid_area]):
+        if np.any([np.linalg.norm(area[:2] - pos) <= area[2] + size for area in invalid_area]):
             if retry > 0:
                 retry -= 1
             continue

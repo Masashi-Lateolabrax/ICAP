@@ -52,7 +52,8 @@ class RobotBuilder(WorldObjectBuilder):
                 type_=common.GeomType.CYLINDER,
                 size=(self.size, 0.05),
                 mass=self.weight,
-                rgba=(1, 1, 0, 0.5)
+                rgba=(1, 1, 0, 0.5),
+                condim=1
             ),
 
             body.Joint(
@@ -85,7 +86,8 @@ class RobotBuilder(WorldObjectBuilder):
                 name=self.name_table.ACT_Y, joint=self.name_table.JOINT_Y, kv=1000
             ),
             actuator.Velocity(
-                name=self.name_table.ACT_R, joint=self.name_table.JOINT_R, kv=1000
+                name=self.name_table.ACT_R, joint=self.name_table.JOINT_R, kv=100,
+
             )
         ])
 
@@ -97,6 +99,7 @@ class RobotBuilder(WorldObjectBuilder):
 
         property_ = RobotProperty(
             body_,
+            self.size,
             data.joint(self.name_table.JOINT_R),
             timer
         )

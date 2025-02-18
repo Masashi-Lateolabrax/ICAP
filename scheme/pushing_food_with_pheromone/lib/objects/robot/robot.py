@@ -43,6 +43,10 @@ class Robot:
         self.property.update()
 
     @property
+    def size(self):
+        return self.property.size
+
+    @property
     def position(self):
         return self.property.pos
 

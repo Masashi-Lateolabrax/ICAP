@@ -43,5 +43,5 @@ class NestBuilder(WorldObjectBuilder):
         return None
 
     def extract(self, model: mujoco.MjModel, data: mujoco.MjData, timer: WorldClock):
-        geom = model.geom(f"nest{self.id}")
-        return Nest(geom)
+        geom = data.geom(f"nest{self.id}")
+        return Nest(geom, self.size)

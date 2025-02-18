@@ -1,2 +1,2 @@
-from .food import Food
-from .food_builder import FoodBuilder
+from .normal import Food, FoodBuilder
+from .replace import ReFood

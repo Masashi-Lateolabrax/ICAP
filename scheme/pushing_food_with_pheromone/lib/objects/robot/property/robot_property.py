@@ -8,9 +8,10 @@ from scheme.pushing_food_with_pheromone.lib.utilities import Cache
 
 
 class RobotProperty(Cache):
-    def __init__(self, body: _MjDataBodyViews, joint_r: _MjDataJointViews, timer: WorldClock):
+    def __init__(self, body: _MjDataBodyViews, size: float, joint_r: _MjDataJointViews, timer: WorldClock):
         super().__init__(timer)
 
+        self.size = size
         self.pos = body.xpos
         self.xquat = body.xquat
         self.angle = joint_r.qpos
