@@ -11,6 +11,7 @@ class _Settings:
     ROBOT_TURN_SPEED = 3.14 / 2
 
     FOOD_SIZE = 0.5
+    FOOD_DENSITY = 500
     FOOD_FRICTIONLOSS = 1500
 
     SENSOR_GAIN = 1
