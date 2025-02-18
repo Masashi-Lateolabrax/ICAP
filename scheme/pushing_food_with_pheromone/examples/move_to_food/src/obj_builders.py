@@ -33,6 +33,7 @@ def create_robot_builders(id_, brain: BrainInterface, invalid_area: list[np.ndar
         (Settings.WORLD_WIDTH * 0.5, Settings.WORLD_HEIGHT * -0.5),
         size,
         invalid_area,
+        padding=size * 0.01
     )
     angle = np.random.uniform(0, 360)
     builder = RobotBuilder(
@@ -70,8 +71,9 @@ def create_food_builders(id_, invalid_area: list[np.ndarray] = None):
         (Settings.WORLD_WIDTH * 0.5, Settings.WORLD_HEIGHT * -0.5),
         size,
         invalid_area,
+        padding=size * 0.01
     )
-    builder = FoodBuilder(id_, pos, size, Settings.FOOD_FRICTIONLOSS)
+    builder = FoodBuilder(id_, pos, size, Settings.FOOD_DENSITY, Settings.FOOD_FRICTIONLOSS)
     invalid_area.append(
         np.array([pos[0], pos[1], size])
     )
