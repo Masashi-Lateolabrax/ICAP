@@ -23,7 +23,7 @@ class WorldBuilder1(BaseWorldBuilder):
         self.generator.add_children([
             Option(
                 timestep=timestep,
-                integrator=common.IntegratorType.IMPLICITFACT
+                integrator=common.IntegratorType.RK4
             ),
             Visual().add_children([
                 visual.Global(
@@ -41,15 +41,16 @@ class WorldBuilder1(BaseWorldBuilder):
             ),
             asset.Material(
                 name="ground", texture="simple_checker",
-                texrepeat=(int(width / 2), int(height / 2))
+                texrepeat=(width / 2, height / 2)
             )
         ])
 
         self.world_body.add_children([
             body.Geom(
-                type_=common.GeomType.PLANE, material="ground", rgba=(0, 0, 0, 1),
+                type_=common.GeomType.PLANE, material="ground", rgba=(0, 0, 0, 0.5),
                 pos=(0, 0, 0), size=(width * 0.5, height * 0.5, 1)
             ),
         ])
 
-        self.add_builder(WallBuilder(0.5, width, height, 0.1))
+        self.thickness = 0.5
+        self.add_builder(WallBuilder(width, height, self.thickness, 0.1))
