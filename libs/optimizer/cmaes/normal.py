@@ -30,7 +30,6 @@ class CMAES:
 
         self._base = base.BaseCMAES(dim, population, mu, sigma, centroid, minimalize, split_tasks, cmatrix, logger)
         self._generation = generation
-        self._current_generation = 0
 
     def get_lambda(self):
         return self._base.get_lambda()
@@ -54,20 +53,21 @@ class CMAES:
         return self._generation
 
     def get_current_generation(self):
-        return self._current_generation
+        return self._base.get_current_generation()
+
+    def update(self):
+        return self._base.update()
 
     def optimize_current_generation(
             self, env_creator: TaskGenerator, proc=MultiThreadProc
     ) -> tuple[int, float, float, float, numpy.ndarray]:
-        self._current_generation += 1
         num_err, ave_score, min_score, max_score, best_para = self._base.optimize_current_generation(
-            self._current_generation, self._generation, env_creator, proc
+            self._generation, env_creator, proc
         )
         return num_err, ave_score, min_score, max_score, best_para
 
     def optimize(self, env_creator: TaskGenerator, proc=MultiThreadProc):
-        for gen in range(1, self._generation + 1):
+        for _ in range(1, self._generation + 1):
             self._base.optimize_current_generation(
-                gen, self._generation, env_creator, proc
+                self._generation, env_creator, proc
             )
-        self._current_generation = self._generation
