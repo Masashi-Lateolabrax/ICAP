@@ -1,4 +1,3 @@
-import array
 import copy
 import datetime
 import socket
@@ -41,7 +40,7 @@ class BaseCMAES:
             cmatrix=None,
             logger: Logger = None
     ):
-        self._best_para: array.array = array.array("d", [0.0] * dim)
+        self._best_para: numpy.ndarray = numpy.zeros(dim)
         self._start_handler = default_start_handler
         self._end_handler = default_end_handler
         self._split_tasks: int = split_tasks
@@ -115,7 +114,7 @@ class BaseCMAES:
 
         return num_error, avg, (min_score, min_para), (max_score, max_para), self._best_para
 
-    def _divide_tasks(self):
+    def _divide_tasks(self) -> list[list[Individual]]:
         num_task = int(len(self._individuals) / self._split_tasks)
         tasks = [list(self._individuals[s * num_task:(s + 1) * num_task]) for s in range(self._split_tasks)]
         for thread_id in range(len(self._individuals) % self._split_tasks):
@@ -152,7 +151,7 @@ class BaseCMAES:
 
     def optimize_current_generation(
             self, gen: int, generation: int, task_generator: TaskGenerator, proc=ProcInterface
-    ) -> tuple[int, float, float, float, array.array]:
+    ) -> tuple[int, float, float, float, numpy.ndarray]:
 
         start_time = datetime.datetime.now()
         self._start_handler(gen, generation, start_time)
@@ -175,8 +174,7 @@ class BaseCMAES:
                     self.logger.save_tmp(gen)
                     self._save_counter = self._save_count
 
-        self._strategy.update(self._individuals)
-        self._individuals: list[Individual] = self._strategy.generate(self._ind_type)
+        self.update()
 
         finish_time = datetime.datetime.now()
         self._end_handler(
@@ -188,13 +186,17 @@ class BaseCMAES:
 
         return num_error, avg, min_score, max_score, best_para
 
-    def get_ind(self, index: int) -> array.array:
+    def update(self):
+        self._strategy.update(self._individuals)
+        self._individuals: list[Individual] = self._strategy.generate(self._ind_type)
+
+    def get_ind(self, index: int) -> Individual:
         if index >= self._strategy.lambda_:
             raise "'index' >= self._strategy.lambda_"
         ind = self._individuals[index]
         return ind
 
-    def get_best_para(self) -> array.array:
+    def get_best_para(self) -> numpy.ndarray:
         return copy.deepcopy(self._best_para)
 
     def get_best_score(self) -> float:

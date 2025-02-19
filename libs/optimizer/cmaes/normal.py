@@ -1,4 +1,4 @@
-import array
+import numpy
 import psutil
 
 from ..task_interface import TaskGenerator
@@ -32,7 +32,13 @@ class CMAES:
         self._generation = generation
         self._current_generation = 0
 
-    def get_best_para(self) -> array.array:
+    def get_lambda(self):
+        return self._base.get_lambda()
+
+    def get_individual(self, index: int) -> base.Individual:
+        return self._base.get_ind(index)
+
+    def get_best_para(self) -> numpy.ndarray:
         return self._base.get_best_para()
 
     def get_best_score(self) -> float:
@@ -52,7 +58,7 @@ class CMAES:
 
     def optimize_current_generation(
             self, env_creator: TaskGenerator, proc=MultiThreadProc
-    ) -> tuple[int, float, float, float, array.array]:
+    ) -> tuple[int, float, float, float, numpy.ndarray]:
         self._current_generation += 1
         num_err, ave_score, min_score, max_score, best_para = self._base.optimize_current_generation(
             self._current_generation, self._generation, env_creator, proc
