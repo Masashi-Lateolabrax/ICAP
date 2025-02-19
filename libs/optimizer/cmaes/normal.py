@@ -55,6 +55,9 @@ class CMAES:
     def get_current_generation(self):
         return self._base.get_current_generation()
 
+    def log(self, num_error, avg, min_score, min_para, max_score, max_para, best_para):
+        return self._base.log(num_error, avg, min_score, min_para, max_score, max_para, best_para)
+
     def update(self):
         return self._base.update()
 

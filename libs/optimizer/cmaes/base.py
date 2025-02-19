@@ -162,7 +162,7 @@ class BaseCMAES:
 
         num_error, avg, (min_score, min_para), (max_score, max_para), best_para = self.update()
 
-        self._log(
+        self.log(
             num_error, avg, min_score, min_para, max_score, max_para, best_para
         )
 
@@ -176,7 +176,7 @@ class BaseCMAES:
 
         return num_error, avg, min_score, max_score, best_para
 
-    def _log(self, num_error, avg, min_score, min_para, max_score, max_para, best_para):
+    def log(self, num_error, avg, min_score, min_para, max_score, max_para, best_para):
         if self.logger is not None:
             self.logger.log(
                 num_error, avg, min_score, min_para, max_score, max_para, best_para,
