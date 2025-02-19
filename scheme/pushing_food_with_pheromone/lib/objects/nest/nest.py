@@ -1,11 +1,11 @@
-from mujoco._structs import _MjDataGeomViews
+from mujoco._structs import _MjDataSiteViews
 
 
 class Nest:
-    def __init__(self, gome: _MjDataGeomViews, size: float):
+    def __init__(self, site: _MjDataSiteViews, size: float):
         self.size = size
-        self.geom = gome
+        self.obj = site
 
     @property
     def position(self):
-        return self.geom.xpos[0:2]
+        return self.obj.xpos[0:2]

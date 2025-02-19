@@ -11,27 +11,28 @@ from .nest import Nest
 class NestBuilder(WorldObjectBuilder):
     def __init__(
             self,
-            id_: int,
             pos: tuple[float, float],
             size: float,
             rgba: tuple[float, float, float, float] = (0, 1, 0, 1)
     ):
-        super().__init__(f"nest{id_}_builder")
+        super().__init__(f"nest_builder")
 
-        self.id = id_
+        if type(pos) is not tuple or len(pos) != 2:
+            raise ValueError("Invalid argument. 'pos' must be tuple[float, float].")
+
         self.pos = pos
         self.size = size
         self.rgba = rgba
 
-    def gen_static_object(self) -> list[body.Geom]:
+    def gen_static_object(self) -> list[body.Geom | body.Site]:
         thickness = 0.01
-        nest_geom = body.Geom(
-            name=f"nest{self.id}",
+        nest = body.Site(
+            name="nest",
             type_=common.GeomType.CYLINDER,
             size=(self.size, thickness), pos=(self.pos[0], self.pos[1], -thickness - 0.001),
             rgba=self.rgba
         )
-        return [nest_geom]
+        return [nest]
 
     def gen_body(self) -> Body | None:
         return None
@@ -43,5 +44,7 @@ class NestBuilder(WorldObjectBuilder):
         return None
 
     def extract(self, model: mujoco.MjModel, data: mujoco.MjData, timer: WorldClock):
-        geom = data.geom(f"nest{self.id}")
-        return Nest(geom, self.size)
+        return Nest(
+            data.site("nest"),
+            self.size
+        )

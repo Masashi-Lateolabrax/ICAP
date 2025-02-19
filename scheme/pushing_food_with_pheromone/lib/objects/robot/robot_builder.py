@@ -8,7 +8,7 @@ from scheme.pushing_food_with_pheromone.lib.world import WorldObjectBuilder, Wor
 from ..name_table import RobotNameTable, FoodNameTable
 from .property import RobotProperty
 from .brain import BrainInterface
-from .input import RobotInput, OmniSensor
+from .input import RobotInput, OmniSensor, DirectionSensor
 from .actuator import Actuator as BotActuator
 from .robot import Robot
 
@@ -87,7 +87,6 @@ class RobotBuilder(WorldObjectBuilder):
             ),
             actuator.Velocity(
                 name=self.name_table.ACT_R, joint=self.name_table.JOINT_R, kv=100,
-
             )
         ])
 
@@ -115,6 +114,10 @@ class RobotBuilder(WorldObjectBuilder):
                 self.sensor_gain,
                 self.sensor_offset,
                 [data.site(FoodNameTable(i).CENTER_SITE) for i in range(self.n_food)]
+            ),
+            nest_sensor=DirectionSensor(
+                r=model.site("nest").size[0],
+                target_site=data.site("nest")
             )
         )
 

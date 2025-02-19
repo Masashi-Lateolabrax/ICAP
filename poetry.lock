@@ -777,7 +777,7 @@ pillow = "^10.3.0"
 type = "git"
 url = "https://github.com/Masashi-Lateolabrax/mujoco-xml-generator.git"
 reference = "dev"
-resolved_reference = "129908ed51f975946d92e2abe7b467bda7b7fc47"
+resolved_reference = "67926e93a13c5f379bc1a75abe8a19d14343c147"
 
 [[package]]
 name = "networkx"
