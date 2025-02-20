@@ -5,8 +5,7 @@ from mujoco_xml_generator.utils import MuJoCoView
 
 from scheme.pushing_food_with_pheromone.lib.world import WorldBuilder1
 from scheme.pushing_food_with_pheromone.lib.objects.food import Food, FoodBuilder
-from scheme.pushing_food_with_pheromone.lib.objects.robot import Robot, RobotBuilder
-from scheme.pushing_food_with_pheromone.lib.parts import BrainInterface, BrainJudgement
+from scheme.pushing_food_with_pheromone.lib.objects.robot import RobotBuilder, BrainInterface, BrainJudgement, Robot
 
 RENDER_WIDTH = 500
 RENDER_HEIGHT = 500
@@ -82,7 +81,7 @@ class App(tk.Tk):
         print(f"Local Direction: {self.robot.local_direction}")
         print(f"Global Direction: {self.robot.global_direction}")
         print(f"Relative position: {self.robot.calc_relative_position(self.food.position)}")
-        print(f"Sensor value: {self.robot._input.get_food()}")
+        print(f"Sensor value: {self.robot.input.get_food()}")
         print("")
 
         self.after(500, self.update)

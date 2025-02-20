@@ -130,7 +130,9 @@ class BaseWorldBuilder:
         Returns:
             WorldBuilder: 自身のインスタンスを返す。
         """
-        b, a, s = builder._gen_all()
+        sg, b, a, s = builder._gen_all()
+        if len(sg) > 0:
+            self.world_body.add_children(sg)
         if b is not None:
             self.world_body.add_children([b])
         if a is not None:

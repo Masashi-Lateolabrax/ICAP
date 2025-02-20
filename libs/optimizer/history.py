@@ -85,8 +85,6 @@ class Hist(Logger):
         file_path = os.path.join(self.save_dir, file_name)
         with open(file_path, "wb") as f:
             pickle.dump(self._hist, f)
-        with open(os.path.join(os.path.dirname(file_path), "test.pkl"), "wb") as f:
-            pickle.dump(self._hist.queues, f)
 
     @staticmethod
     def load(file_path: str):

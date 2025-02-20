@@ -1,0 +1,1 @@
+from scheme.pushing_food_with_pheromone.examples.collect_food.settings import Settings

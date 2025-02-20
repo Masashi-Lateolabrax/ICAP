@@ -4,10 +4,11 @@ from mujoco_xml_generator import Sensor, Actuator, Body
 from mujoco_xml_generator import common, actuator, body
 
 from scheme.pushing_food_with_pheromone.lib.world import WorldObjectBuilder, WorldClock
-from scheme.pushing_food_with_pheromone.lib.parts import BrainInterface, OmniSensor
 
 from ..name_table import RobotNameTable, FoodNameTable
-from .robot_data import RobotData
+from .property import RobotProperty
+from .brain import BrainInterface
+from .input import RobotInput, OmniSensor, DirectionSensor
 from .actuator import Actuator as BotActuator
 from .robot import Robot
 
@@ -39,6 +40,9 @@ class RobotBuilder(WorldObjectBuilder):
         self.sensor_offset = sensor_offset
         self.n_food = n_food
 
+    def gen_static_object(self) -> list[body.Geom]:
+        return []
+
     def gen_body(self) -> Body | None:
         return Body(
             name=self.name_table.BODY, pos=(self.pos[0], self.pos[1], 0.06),
@@ -48,7 +52,8 @@ class RobotBuilder(WorldObjectBuilder):
                 type_=common.GeomType.CYLINDER,
                 size=(self.size, 0.05),
                 mass=self.weight,
-                rgba=(1, 1, 0, 0.5)
+                rgba=(1, 1, 0, 0.5),
+                condim=1
             ),
 
             body.Joint(
@@ -81,7 +86,7 @@ class RobotBuilder(WorldObjectBuilder):
                 name=self.name_table.ACT_Y, joint=self.name_table.JOINT_Y, kv=1000
             ),
             actuator.Velocity(
-                name=self.name_table.ACT_R, joint=self.name_table.JOINT_R, kv=1000
+                name=self.name_table.ACT_R, joint=self.name_table.JOINT_R, kv=100,
             )
         ])
 
@@ -90,27 +95,39 @@ class RobotBuilder(WorldObjectBuilder):
 
     def extract(self, model: mujoco.MjModel, data: mujoco.MjData, timer: WorldClock):
         body_ = data.body(self.name_table.BODY)
-        bot_data = RobotData(
+
+        property_ = RobotProperty(
             body_,
+            self.size,
             data.joint(self.name_table.JOINT_R),
             timer
         )
-        bot_actuator = BotActuator(
+
+        input_ = RobotInput(
+            property_,
+            other_robot_sensor=OmniSensor(
+                self.sensor_gain,
+                self.sensor_offset,
+                [data.site(RobotNameTable(i).CENTER_SITE) for i in range(self.n_food) if i is not self.id],
+            ),
+            food_sensor=OmniSensor(
+                self.sensor_gain,
+                self.sensor_offset,
+                [data.site(FoodNameTable(i).CENTER_SITE) for i in range(self.n_food)]
+            ),
+            nest_sensor=DirectionSensor(
+                r=model.site("nest").size[0],
+                target_site=data.site("nest")
+            )
+        )
+
+        actuator_ = BotActuator(
             self.move_speed,
             self.turn_speed,
-            bot_data,
+            property_,
             data.actuator(self.name_table.ACT_X),
             data.actuator(self.name_table.ACT_Y),
             data.actuator(self.name_table.ACT_R),
         )
-        other_robot_sensor = OmniSensor(
-            self.sensor_gain,
-            self.sensor_offset,
-            [data.site(RobotNameTable(i).CENTER_SITE) for i in range(self.n_food) if i is not self.id],
-        )
-        food_sensor = OmniSensor(
-            self.sensor_gain,
-            self.sensor_offset,
-            [data.site(FoodNameTable(i).CENTER_SITE) for i in range(self.n_food)]
-        )
-        return Robot(self.brain, body_, bot_data, bot_actuator, other_robot_sensor, food_sensor)
+
+        return Robot(self.brain, property_, input_, actuator_)
