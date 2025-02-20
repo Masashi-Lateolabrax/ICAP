@@ -3,6 +3,7 @@ import abc
 import mujoco
 from mujoco_xml_generator import Body, Actuator, Sensor
 from mujoco_xml_generator import body
+from mujoco_xml_generator.utils import DummyGeom
 
 from .world_clock import WorldClock
 
@@ -127,11 +128,21 @@ class WorldObjectBuilder(metaclass=abc.ABCMeta):
         """
         raise NotImplemented
 
+    @abc.abstractmethod
+    def gen_dummy_geom(self) -> list[DummyGeom] | None:
+        """
+        このオブジェクトに関わるDummyGeomのXML要素を生成する抽象メソッド。
+
+        Returns:
+            DummyGeom | None: 生成されたDummyGeomオブジェクト．DummyGeomを持たない場合はNoneを返す。
+        """
+        raise NotImplemented
+
     def _gen_all(self) -> tuple[list[body.Geom], Body | None, Actuator | None, Sensor | None]:
         return self.gen_static_object(), self.gen_body(), self.gen_act(), self.gen_sen()
 
     @abc.abstractmethod
-    def extract(self, model: mujoco.MjModel, data: mujoco.MjData, timer: WorldClock):
+    def extract(self, model: mujoco.MjModel, data: mujoco.MjData, dummy: list[DummyGeom], timer: WorldClock):
         """
         MjDataから必要なデータの参照を取り出すための抽象メソッド。
 
@@ -142,6 +153,8 @@ class WorldObjectBuilder(metaclass=abc.ABCMeta):
             model (mujoco.MjModel): MuJoCoのモデルオブジェクト。
 
             data (mujoco.MjData): MuJoCoのデータオブジェクト。
+
+            dummy (list[DummyGeom]): ダミージオメトリのリスト。
 
             timer: MuJoCoのシミュレーション時間が格納されているクラス
 
