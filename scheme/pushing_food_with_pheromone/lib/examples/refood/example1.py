@@ -87,7 +87,7 @@ class App(tk.Tk):
         w_builder = WorldBuilder1(
             0.01, (width, height), WORLD_WIDTH, WORLD_HEIGHT
         ).add_builder(
-            NestBuilder(0, (0, 0), NEST_SIZE)
+            NestBuilder((0, 0), NEST_SIZE)
         ).add_builder(
             FoodBuilder(0, (0, 1.5), FOOD_SIZE, FOOD_DENSITY, FOOD_FRICTIONLOSS)
         ).add_builder(RobotBuilder(
@@ -100,7 +100,7 @@ class App(tk.Tk):
 
         world, w_objs = w_builder.build()
 
-        nest: Nest = w_objs["nest0_builder"]
+        nest: Nest = w_objs["nest_builder"]
         robot: Robot = w_objs["robot0_builder"]
         food: Food = w_objs["food0_builder"]
         refood = ReFood(
