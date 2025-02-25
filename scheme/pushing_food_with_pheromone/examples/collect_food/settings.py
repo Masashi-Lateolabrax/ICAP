@@ -7,12 +7,12 @@ def _calc_loss_sigma(point, value):
 
 class _Settings:
     CMAES_GENERATION = 500
-    CMAES_POPULATION = 10000
-    CMAES_MU = 5000
+    CMAES_POPULATION = 1000
+    CMAES_MU = 500
     CMAES_SIGMA = 0.1
 
     SIMULATION_TIMESTEP = 0.01
-    SIMULATION_TIME_LENGTH = 1000
+    SIMULATION_TIME_LENGTH = 2000
 
     LOSS_RATE_FN = 1
     LOSS_SIGMA_FN = _calc_loss_sigma(3, 0.1)

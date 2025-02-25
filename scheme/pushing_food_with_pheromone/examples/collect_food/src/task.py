@@ -21,6 +21,7 @@ class Task(optimizer.MjcTaskInterface):
         self.nest: Nest = nest
         self.robot: Robot = robot
         self.refood: ReFood = refood
+        self.dump = []
 
     def get_model(self) -> mujoco.MjModel:
         return self.world.model
@@ -41,6 +42,7 @@ class Task(optimizer.MjcTaskInterface):
         )
         loss_fr = -Settings.LOSS_RATE_FR * np.exp(-(distance_fr ** 2) / (Settings.LOSS_SIGMA_FR ** 2))
 
+        self.dump.append((loss_fn, loss_fr))
         return loss_fn + loss_fr
 
     def calc_step(self) -> float:
@@ -49,7 +51,7 @@ class Task(optimizer.MjcTaskInterface):
         return self.calc_loss()
 
     def get_dump_data(self) -> object | None:
-        pass
+        return self.dump
 
     def run(self) -> float:
         loss = 0
