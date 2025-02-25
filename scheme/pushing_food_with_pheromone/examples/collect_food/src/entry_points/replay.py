@@ -43,29 +43,28 @@ class SimulationManager:
 
 
 class App(tk.Tk):
-    def __init__(self, para, width, height, max_geom):
+    def __init__(self, para):
         super().__init__()
         self.simulation = SimulationManager(para)
-        self.max_geom = max_geom
 
         self.title("World")
 
         self.frame = tk.Frame(self)
         self.frame.pack()
 
-        self.view = MuJoCoView(self.frame, width, height)
+        self.view = MuJoCoView(self.frame, Settings.RENDER_WIDTH, Settings.RENDER_HEIGHT)
         self.view.enable_input()
         self.view.pack()
 
         self.view.camera.lookat[:] = [0, 0, 0]
         self.view.camera.elevation = -90
-        self.view.camera.distance = 16
+        self.view.camera.distance = Settings.RENDER_ZOOM
 
         self.after(0, self.update)
 
     def update(self):
         self.simulation.calc_step()
-        self.simulation.draw_on_view_frame(self.view, self.max_geom)
+        self.simulation.draw_on_view_frame(self.view, Settings.MAX_GEOM)
         self.after(1, self.update)
 
 
@@ -73,5 +72,5 @@ def replay(log_path):
     logger = Hist.load(log_path)
 
     best_para = logger._hist.queues[-1].min_para
-    app = App(best_para, Settings.RENDER_WIDTH, Settings.RENDER_HEIGHT, Settings.MAX_GEOM)
+    app = App(best_para)
     app.mainloop()
