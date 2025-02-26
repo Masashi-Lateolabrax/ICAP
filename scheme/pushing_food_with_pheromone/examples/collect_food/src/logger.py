@@ -56,6 +56,15 @@ class _Logger:
         sorted_queues = sorted(self.queues, key=lambda q: q.min_score)
         return sorted_queues[n]
 
+    def __getitem__(self, index: int) -> Queue:
+        if 0 <= index < len(self.queues):
+            return self.queues[index]
+        else:
+            raise IndexError("Index out of range")
+
+    def __len__(self):
+        return len(self.queues)
+
 
 class Logger(opt.Logger):
     def __init__(self, save_dir):
@@ -92,3 +101,26 @@ class Logger(opt.Logger):
 
     def get_rangking_Nth(self, n: int) -> Queue:
         return self._logger.get_rangking_Nth(n)
+
+    def __getitem__(self, index: int) -> Queue:
+        return self._logger[index]
+
+    def __iter__(self):
+        return iter(self._logger.queues)
+
+
+class LoggerIter:
+    def __init__(self, logger: Logger):
+        self._logger = logger
+        self._index = 0
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self._index < len(self._logger):
+            result = self._logger[self._index]
+            self._index += 1
+            return result
+        else:
+            raise StopIteration
