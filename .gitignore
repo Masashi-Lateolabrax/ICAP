@@ -1,6 +1,6 @@
 /.idea/
-/scheme/pushing_food_with_pheromone/examples/move_to_food/results/
-/scheme/pushing_food_with_pheromone/results/
+/scheme/transportation_with_pheromone/examples/move_to_food/results/
+/scheme/transportation_with_pheromone/results/
 
 *.TXT
 *.tmp.*
