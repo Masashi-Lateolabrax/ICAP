@@ -1,6 +1,9 @@
 /.idea/
-scheme/*/results
+/scheme/transportation_with_pheromone/examples/move_to_food/results/
+/scheme/transportation_with_pheromone/results/
 
 *.TXT
 *.tmp.*
 *.log.*
+*.pkl
+
