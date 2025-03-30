@@ -29,7 +29,7 @@ leading to advancements in robotics, logistics, and communication.
 2. Find settings for successful training.
 3. Collect trained behaviors with various settings.
     - Test difference: sensor sensitivity, number of robots, number of food sources, environment size, loss function,
-      hyperparameters of optimizer.
+      hyperparameters of optimizer, robot's controller.
 4. Define the index that represents how well robots are organized.
 5. Analyze the relationship between settings and the organized indexes.
 6. Convert the trained models into explainable models.

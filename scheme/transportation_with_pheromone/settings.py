@@ -37,15 +37,6 @@ class Settings:
             THINKING_INTERVAL = 0.1
             TANK_SIZE = 10
 
-            WEIGHT = 30  # kg
-
-            SIZE = 0.175  # radius
-
-            SECRETION = 1
-
-            MOVE_SPEED = 0.8
-            TURN_SPEED = 1.0
-
             SENSOR_GAIN = [2 / 0.7, 2 / 5]
             SENSOR_OFFSET = [2 / 0.7, 2 / 5]
 
