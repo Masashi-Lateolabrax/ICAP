@@ -87,8 +87,9 @@ TODO
 # Progress
 
 1. Create simulation program.
-    - [ ] Create framework
-    - [ ] Create the simplest environment example.
+    - [x] Create framework
+    - [x] Create the simplest environment example.
+    - [ ] Examine CMA-ES applying to robots which take discrete actions.
 2. Find settings for successful training.
 3. Collect trained behaviors with various settings.
 4. Define the index that represents how well robots are organized.
