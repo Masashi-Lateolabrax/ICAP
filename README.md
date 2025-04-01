@@ -114,5 +114,8 @@ Nothing yet.
 
 # History Log
 
+- 2025-04-02 1:45 (JST)
+    - Add the simplest
+
 - 2025-03-19 0:12 (JST)
     - Create this note
