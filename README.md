@@ -87,8 +87,9 @@ TODO
 # Progress
 
 1. Create simulation program.
-    - [ ] Create framework
-    - [ ] Create the simplest environment example.
+    - [x] Create framework
+    - [x] Create the simplest environment example.
+    - [ ] Examine CMA-ES applying to robots which take discrete actions.
 2. Find settings for successful training.
 3. Collect trained behaviors with various settings.
 4. Define the index that represents how well robots are organized.
@@ -104,7 +105,6 @@ TODO
 |--------|--------------------------------------------------------------------------------------------|
 | add    | Indicates that something has been added, such as files, directories, functions, and so on. |
 | exp    | Indicates setup done for experiments.                                                      |
-| fix    | Indicates that a bug has been fixed.                                                       |
 | mod    | Indicates changes with alternation of interfaces.                                          |
 | doc    | Indicates that documentation has been added or modified.                                   |
 
@@ -113,6 +113,9 @@ TODO
 Nothing yet.
 
 # History Log
+
+- 2025-04-02 1:45 (JST)
+    - Add the simplest
 
 - 2025-03-19 0:12 (JST)
     - Create this note
