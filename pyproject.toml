@@ -8,7 +8,6 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.11"
 numpy = "1.26.4"
-mujoco-xml-generator = { git = "https://github.com/Masashi-Lateolabrax/mujoco-xml-generator.git", rev = "dev" }
 torch = { version = "2.2.2+cpu", source = "torch" }
 torchvision = { version = "0.17.2+cpu", source = "torch" }
 torchaudio = { version = "2.2.2+cpu", source = "torch" }
@@ -19,6 +18,10 @@ psutil = "6.0.0"
 scipy = "1.13.1"
 cupy-cuda12x = { version = "13.2.0", optional = true }
 pyyaml = "6.0.1"
+pytest = "^8.3.4"
+pytest-mock = "^3.14.0"
+pandas = "^2.2.3"
+mujoco-xml-generator = {git = "https://github.com/Masashi-Lateolabrax/mujoco-xml-generator.git", rev = "dev"}
 
 [tool.poetry.extras]
 cuda = ["cupy-cuda12x"]
