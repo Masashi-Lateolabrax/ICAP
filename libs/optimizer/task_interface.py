@@ -14,6 +14,10 @@ class TaskInterface(metaclass=abc.ABCMeta):
     def run(self) -> float:
         raise NotImplementedError()
 
+    @abc.abstractmethod
+    def get_dump_data(self) -> object | None:
+        raise NotImplementedError()
+
 
 class MjcTaskInterface(TaskInterface):
     """
@@ -52,3 +56,9 @@ class TaskGenerator(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def generate(self, para, debug=False) -> TaskInterface:
         raise NotImplementedError()
+
+    def __getstate__(self):
+        return self.__dict__
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)

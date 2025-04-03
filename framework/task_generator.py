@@ -1,10 +1,9 @@
-from typing import Type
-
 from libs import optimizer
+from libs.optimizer import Individual
+import framework
 
 from .settings import Settings
-from .parameters import Parameters
-from .interfaceis import BrainInterface
+from .interfaceis import BrainBuilder
 from .task import Task
 
 from .simulator.objects.utils import rand_robot_pos, rand_food_pos
@@ -13,8 +12,9 @@ from .simulator.world import WorldBuilder
 
 
 class TaskGenerator(optimizer.TaskGenerator):
-    def __init__(self, settings: Settings):
+    def __init__(self, settings: Settings, brain_builder: BrainBuilder):
         self.settings = settings
+        self.brain_builder = brain_builder
 
         invalid_area = []
         self.robot_positions = [
@@ -24,8 +24,8 @@ class TaskGenerator(optimizer.TaskGenerator):
             rand_food_pos(self.settings, invalid_area)
         ]
 
-    def generate(self, para: Parameters, debug=False) -> Task:
-        brain = para.brain
+    def generate(self, para: Individual, debug=False) -> Task:
+        brain = self.brain_builder.build(para)
 
         robot_builders = [
             RobotBuilder(self.settings, i, brain, pos_and_angle) for i, pos_and_angle in enumerate(self.robot_positions)
@@ -46,4 +46,13 @@ class TaskGenerator(optimizer.TaskGenerator):
         food = [w_objs[food_builders[i].builder_name] for i in range(len(food_builders))]
         nest = w_objs[nest_builder.builder_name]
 
-        return Task(self.settings, world, nest, robots, food)
+        refood = framework.simulator.objects.ReFood(
+            Settings.Simulation.WORLD_WIDTH,
+            Settings.Simulation.WORLD_HEIGHT,
+            w_builder.thickness,
+            food,
+            nest,
+            robots
+        )
+
+        return Task(self.settings, world, nest, robots, refood)

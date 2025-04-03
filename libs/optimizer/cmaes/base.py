@@ -1,15 +1,17 @@
-import array
 import copy
 import datetime
 import socket
+import time
 
 from deap import cma
 import numpy
 import sys
 
-from libs.optimizer import Hist, TaskGenerator
-from libs.optimizer.individual import MinimalizeIndividual, MaximizeIndividual, Individual
-from libs.optimizer.processe import ProcInterface
+from ..task_interface import TaskGenerator
+from ..individual import MinimalizeIndividual, MaximizeIndividual, Individual
+from ..processe import ProcInterface
+
+from .logger import Logger
 
 
 def default_start_handler(gen, generation, start_time):
@@ -35,13 +37,16 @@ class BaseCMAES:
             centroid=None,
             minimalize: bool = True,
             split_tasks: int = 1,
-            cmatrix=None
+            cmatrix=None,
+            logger: Logger = None
     ):
-        self._best_para: array.array = array.array("d", [0.0] * dim)
-        self._history: Hist = Hist(dim, population, mu)
+        self._best_para: numpy.ndarray = numpy.zeros(dim)
         self._start_handler = default_start_handler
         self._end_handler = default_end_handler
         self._split_tasks: int = split_tasks
+        self._current_generation = 0
+
+        self.logger = logger
 
         self._save_count = 10
         self._save_counter = self._save_count
@@ -72,7 +77,7 @@ class BaseCMAES:
 
         self._individuals: list[Individual] = self._strategy.generate(self._ind_type)
 
-    def _generate_new_generation(self) -> (int, float, float, float, numpy.array):
+    def _check_individuals(self) -> (int, float, (numpy.array, float), (numpy.array, float)):
         num_error = 0
         avg = 0.0
         min_score = float("inf")
@@ -103,52 +108,26 @@ class BaseCMAES:
             if self._best_score > min_score:
                 self._best_score = min_score
                 self._best_para = min_para.copy()
-            good_para = min_para.copy()
         else:
             if self._best_score < max_score:
                 self._best_score = max_score
                 self._best_para = max_para.copy()
-            good_para = max_para.copy()
 
-        self._history.add(
-            avg,
-            self._strategy.centroid,
-            min_score,
-            min_para,
-            max_score,
-            max_para,
-            self._strategy.sigma,
-            self._strategy.C
-        )
+        return num_error, avg, (min_score, min_para), (max_score, max_para), self._best_para
 
-        self._strategy.update(self._individuals)
-        self._individuals: list[Individual] = self._strategy.generate(self._ind_type)
-
-        if self._save_count is not None:
-            self._save_counter -= 1
-            if self._save_counter <= 0:
-                self._history.save()
-                self._save_counter = self._save_count
-
-        return num_error, avg, min_score, max_score, good_para
-
-    def optimize_current_generation(
-            self, gen: int, generation: int, task_generator: TaskGenerator, proc=ProcInterface
-    ) -> tuple[int, float, float, float, array.array]:
-        import time
-
-        start_time = datetime.datetime.now()
-        self._start_handler(gen, generation, start_time)
-
+    def _divide_tasks(self) -> list[list[Individual]]:
         num_task = int(len(self._individuals) / self._split_tasks)
         tasks = [list(self._individuals[s * num_task:(s + 1) * num_task]) for s in range(self._split_tasks)]
         for thread_id in range(len(self._individuals) % self._split_tasks):
             tasks[thread_id].append(self._individuals[-1 - thread_id])
+        return tasks
 
+    def _optimize(self, task_generator: TaskGenerator, proc=ProcInterface):
+        tasks = self._divide_tasks()
         try:
             handles = []
             for i, ts in enumerate(tasks):
-                handles.append(proc(gen, i, ts, task_generator))
+                handles.append(proc(self._current_generation, i, ts, task_generator))
 
             while len(handles) > 0:
                 index = 0
@@ -162,43 +141,76 @@ class BaseCMAES:
 
         except KeyboardInterrupt:
             print(f"Interrupt CMAES Optimizing.")
-            self._history.save()
-            sys.exit()
+            return False
         except socket.timeout:
             print(f"[CMAES ERROR] Timeout.")
-            self._history.save()
-            sys.exit()
+            return False
         except Exception as e:
             print(f"[CMAES ERROR] {e}")
-            self._history.save()
+            return False
+        return True
+
+    def optimize_current_generation(
+            self, generation: int, task_generator: TaskGenerator, proc=ProcInterface
+    ) -> tuple[int, float, float, float, numpy.ndarray]:
+
+        start_time = datetime.datetime.now()
+        self._start_handler(self._current_generation, generation, start_time)
+
+        if not self._optimize(task_generator, proc):
             sys.exit()
 
-        num_error, avg, min_value, max_value, good_para = self._generate_new_generation()
+        num_error, avg, (min_score, min_para), (max_score, max_para), best_para = self.update()
+
+        self.log(
+            num_error, avg, min_score, min_para, max_score, max_para, best_para
+        )
 
         finish_time = datetime.datetime.now()
         self._end_handler(
-            self.get_lambda(), gen, generation,
+            self.get_lambda(), self._current_generation, generation,
             start_time, finish_time,
             num_error,
-            avg, min_value, max_value, self._best_score
+            avg, min_score, max_score, self._best_score
         )
 
-        return num_error, avg, min_value, max_value, good_para
+        return num_error, avg, min_score, max_score, best_para
 
-    def get_ind(self, index: int) -> array.array:
+    def log(self, num_error, avg, min_score, min_para, max_score, max_para, best_para):
+        if self.logger is not None:
+            self.logger.log(
+                num_error, avg, min_score, min_para, max_score, max_para, best_para,
+                self._individuals,
+                self._strategy
+            )
+
+            if self._save_count is not None:
+                self._save_counter -= 1
+                if self._save_counter <= 0:
+                    self.logger.save_tmp(self._current_generation)
+                    self._save_counter = self._save_count
+
+    def update(self):
+        num_error, avg, (min_score, min_para), (max_score, max_para), best_para = self._check_individuals()
+
+        self._strategy.update(self._individuals)
+        self._individuals: list[Individual] = self._strategy.generate(self._ind_type)
+
+        self._current_generation += 1
+
+        return num_error, avg, (min_score, min_para), (max_score, max_para), best_para
+
+    def get_ind(self, index: int) -> Individual:
         if index >= self._strategy.lambda_:
             raise "'index' >= self._strategy.lambda_"
         ind = self._individuals[index]
         return ind
 
-    def get_best_para(self) -> array.array:
+    def get_best_para(self) -> numpy.ndarray:
         return copy.deepcopy(self._best_para)
 
     def get_best_score(self) -> float:
         return self._best_score
-
-    def get_history(self) -> Hist:
-        return copy.deepcopy(self._history)
 
     def get_lambda(self) -> int:
         return self._strategy.lambda_
@@ -208,3 +220,6 @@ class BaseCMAES:
 
     def set_end_handler(self, handler=default_end_handler):
         self._end_handler = handler
+
+    def get_current_generation(self):
+        return self._current_generation

@@ -1,6 +1,8 @@
 import abc
 import enum
 
+from libs.optimizer import Individual
+
 
 class BrainJudgement(enum.Enum):
     STOP = 0
@@ -12,14 +14,16 @@ class BrainJudgement(enum.Enum):
 
 
 class BrainInterface(metaclass=abc.ABCMeta):
+    def think(self, input_) -> BrainJudgement:
+        raise NotImplementedError
+
+
+class BrainBuilder(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def __init__(self, para):
+    def build(self, para: Individual) -> BrainInterface:
         raise NotImplementedError
 
     @staticmethod
     @abc.abstractmethod
     def get_dim() -> int:
-        raise NotImplementedError
-
-    def think(self, input_) -> BrainJudgement:
         raise NotImplementedError

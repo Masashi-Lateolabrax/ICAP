@@ -27,6 +27,7 @@ class OneThreadProc(ProcInterface):
             task = task_generator.generate(ind)
             score = task.run()
             ind.fitness.values = (score,)
+            ind.dump = task.get_dump_data()
 
     def finished(self) -> bool:
         return True
@@ -39,6 +40,7 @@ def _multi_proc_func(individuals: list[Individual], task_generator: TaskGenerato
     for ind in individuals:
         task = task_generator.generate(ind)
         ind.fitness.values = (task.run(),)
+        ind.dump = task.get_dump_data()
         queue.put(ind)
 
 
@@ -58,6 +60,6 @@ class MultiThreadProc(ProcInterface):
     def join(self) -> (int, int):
         for origin in self.individuals:
             result = self.queue.get()
-            origin.fitness.values = result.fitness.values
+            origin.__dict__.update(result.__dict__)
         self.handle.join()
         return self.gen, self.thread_id

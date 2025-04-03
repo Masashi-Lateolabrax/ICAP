@@ -1,15 +1,12 @@
-from typing import Type
-
 import numpy as np
 
-from libs.optimizer import CMAES
-from .interfaceis import BrainInterface, Loss
+from .interfaceis import Loss
 
 
 class Settings:
     class Simulation:
         TIME_STEP = 0.01
-        TIME_LENGTH = 60  # Episode length (in steps)
+        TIME_LENGTH: int = int(60 / 0.01)  # Episode length (in steps)
 
         RENDER_WIDTH = 300
         RENDER_HEIGHT = 300
@@ -34,7 +31,7 @@ class Settings:
 
     class Robot:
         NUM = 1
-
+        THINK_INTERVAL = 0.3  # Unit is second
         MAX_SECRETION = 0.423 * 5
 
         class OtherRobotSensor:
@@ -43,7 +40,7 @@ class Settings:
 
         class FoodSensor:
             GAIN = 2 / 0.7
-            OFFSET = 2 / 5
+            OFFSET = 0.175 + 0.5
 
     class Food:
         NUM = 1

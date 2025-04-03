@@ -1,9 +1,14 @@
 /.idea/
-/scheme/transportation_with_pheromone/examples/move_to_food/results/
-/scheme/transportation_with_pheromone/results/
+/RESULTS/
 
+/report.md
 *.TXT
+*.mp4
+*.log
+*.npy
+*.npz
+*.png
+*.svg
 *.tmp.*
 *.log.*
 *.pkl
-

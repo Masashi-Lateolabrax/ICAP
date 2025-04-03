@@ -1,6 +1,8 @@
 import numpy
 import scipy
 
+from ._interface import PheromoneFieldInf, PheromoneCellInf
+
 
 def _calc_dico(w: int, h: int, xi: float, yi: float):
     xc = int(xi + 0.5)
@@ -36,7 +38,7 @@ def _calc_dico(w: int, h: int, xi: float, yi: float):
     return hit
 
 
-class PheromoneCell:
+class PheromoneCell(PheromoneCellInf):
     def __init__(self, liquid_cell: numpy.ndarray, gas_cell: numpy.ndarray):
         self._liquid = liquid_cell
         self._gas = gas_cell
@@ -54,7 +56,7 @@ class PheromoneCell:
         return self._liquid[0, 0]
 
 
-class PheromoneField:
+class PheromoneField(PheromoneFieldInf):
     def __init__(
             self,
             nx: int, ny: int, d: float,
@@ -65,7 +67,8 @@ class PheromoneField:
         self._ny = ny
 
         self._liquid = numpy.zeros((nx, ny))
-        self._gas = numpy.zeros((nx, ny))
+        self._gas_master = numpy.zeros((nx + 2, ny + 2))
+        self._gas = self._gas_master[1:-1, 1:-1]
 
         self._eva = evaporate  # 蒸発速度
         self._sv = sv  # 飽和蒸気量
@@ -77,9 +80,6 @@ class PheromoneField:
             [1.0, -4.0, 1.0],
             [0.0, 1.0, 0.0],
         ]) * self._diffusion / (d * d)
-
-        self._rk_buf = numpy.zeros((4, 2, nx, ny))
-        self._rk_arg_buf = numpy.zeros((2, nx, ny))
 
     def get_field_size(self) -> tuple[int, int]:
         return self._nx, self._ny
@@ -107,58 +107,24 @@ class PheromoneField:
 
     def get_gas(self, xi: float, yi: float) -> float:
         res = 0.0
-        for x, y, e in _calc_dico(self._nx, self._ny, xi, yi):
-            res += e * self._gas[int(x), int(y)]
+        for x, y, e in _calc_dico(self._nx + 2, self._ny + 2, xi + 1, yi + 1):
+            res += e * self._gas_master[int(x), int(y)]
         return res
-
-    def _euler_update(self, dt: float):
-        dif_liquid = numpy.minimum(self._liquid, (self._sv - self._gas) * self._eva) * dt
-
-        convolved = scipy.signal.convolve2d(self._gas, self._c, mode="same", boundary="symm")
-        dif_gas = dif_liquid + (convolved - self._gas * self._dec) * dt
-
-        self._liquid -= dif_liquid
-        self._gas += dif_gas
-
-    def _rk_update(self, dt: float):
-        def f(liq, g, res):
-            res[0, :, :] = -numpy.minimum(liq, self._eva * (self._sv - g))
-            lap = scipy.signal.convolve2d(g, self._c, mode="same", boundary="symm")
-            res[1, :, :] = self._diffusion * lap - self._dec * g - res[0, :, :]
-
-        # Updating
-        f(self._liquid, self._gas, self._rk_buf[0])
-
-        self._rk_arg_buf[0] = self._rk_buf[0, 0]
-        self._rk_arg_buf[0] *= 0.5 * dt
-        self._rk_arg_buf[0] += self._liquid
-        self._rk_arg_buf[1] = self._rk_buf[0, 1]
-        self._rk_arg_buf[1] *= 0.5 * dt
-        self._rk_arg_buf[1] += self._gas
-        f(self._rk_arg_buf[0], self._rk_arg_buf[1], self._rk_buf[1])
-
-        self._rk_arg_buf[0] = self._rk_buf[1, 0]
-        self._rk_arg_buf[0] *= 0.5 * dt
-        self._rk_arg_buf[0] += self._liquid
-        self._rk_arg_buf[1] = self._rk_buf[1, 1]
-        self._rk_arg_buf[1] *= 0.5 * dt
-        self._rk_arg_buf[1] += self._gas
-        f(self._rk_arg_buf[0], self._rk_arg_buf[1], self._rk_buf[2])
-
-        self._rk_arg_buf[0] = self._rk_buf[2, 0]
-        self._rk_arg_buf[0] *= dt
-        self._rk_arg_buf[0] += self._liquid
-        self._rk_arg_buf[1] = self._rk_buf[2, 1]
-        self._rk_arg_buf[1] *= dt
-        self._rk_arg_buf[1] += self._gas
-        f(self._rk_arg_buf[0], self._rk_arg_buf[1], self._rk_buf[3])
-
-        dy = dt / 6 * (self._rk_buf[0] + 2 * self._rk_buf[1] + 2 * self._rk_buf[2] + self._rk_buf[3])
-        self._liquid += dy[0]
-        self._gas += dy[1]
 
     def update(self, dt: float, iteration: int = 1):
         dt = dt / iteration
         for _ in range(iteration):
-            # self._euler_update(dt)
-            self._rk_update(dt)
+            dif_liquid = numpy.minimum(self._liquid, (self._sv - self._gas) * self._eva) * dt
+
+            # padding
+            self._gas_master[0, :] = self._gas_master[1, :]
+            self._gas_master[-1, :] = self._gas_master[-2, :]
+            self._gas_master[:, 0] = self._gas_master[:, 1]
+            self._gas_master[:, -1] = self._gas_master[:, -2]
+
+            convolved = scipy.signal.convolve2d(self._gas_master, self._c, mode="valid")
+
+            dif_gas = dif_liquid + (convolved - self._gas * self._dec) * dt
+
+            self._liquid -= dif_liquid
+            self._gas += dif_gas

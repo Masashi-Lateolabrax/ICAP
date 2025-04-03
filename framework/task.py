@@ -4,17 +4,17 @@ import numpy as np
 from libs import optimizer
 from libs.mujoco_builder import World
 
-from .simulator.objects import Nest, Robot, Food
+from .simulator.objects import Nest, Robot, ReFood
 from .settings import Settings
 
 
 class Task(optimizer.MjcTaskInterface):
-    def __init__(self, settings: Settings, world: World, nest: Nest, robots: list[Robot], food: list[Food]):
+    def __init__(self, settings: Settings, world: World, nest: Nest, robots: list[Robot], refood: ReFood):
         self.settings = settings
         self.world: World = world
         self.nest: Nest = nest
         self.robots: list[Robot] = robots
-        self.food: list[Food] = food
+        self.food: ReFood = refood
 
     def get_model(self) -> mujoco.MjModel:
         return self.world.model
