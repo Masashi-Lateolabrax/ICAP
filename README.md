@@ -108,14 +108,14 @@ TODO
 | mod    | Indicates changes with alternation of interfaces.                                          |
 | doc    | Indicates that documentation has been added or modified.                                   |
 
+## Branching strategy
+
+| Name     | Description                                         | source       | merge to       |
+|----------|-----------------------------------------------------|--------------|----------------|
+| main     | Main branch                                         | -            | -              |
+| develop  | Manage shared codes in scheme branches              | initial main | main, scheme/* |
+| scheme/* | Manage codes of experiments for specific conditions | develop      | main           |
+
 # Reference
 
 Nothing yet.
-
-# History Log
-
-- 2025-04-02 1:45 (JST)
-    - Add the simplest
-
-- 2025-03-19 0:12 (JST)
-    - Create this note
