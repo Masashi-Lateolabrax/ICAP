@@ -1,4 +1,3 @@
-import random
 import torch
 
 import framework
@@ -54,6 +53,8 @@ class NeuralNetwork(torch.nn.Module):
 
 class Brain(framework.interfaceis.BrainInterface):
     def __init__(self, settings: framework.Settings, para: Individual):
+        self.settings = settings
+
         self.timer = Timer(settings.Robot.THINK_INTERVAL / settings.Simulation.TIME_STEP)
         self.state = framework.BrainJudgement.STOP
 
@@ -61,9 +62,16 @@ class Brain(framework.interfaceis.BrainInterface):
         self.neural_network.set_para(para)
 
     def think(self, input_: framework.simulator.objects.RobotInput) -> framework.BrainJudgement:
-        r = random.uniform(0, 4 * 200)
-        if 0 <= r < 5:
-            self.state = framework.BrainJudgement(int(r))
+        if self.timer.tick():
+            output = self.neural_network(input_)
+
+            if self.settings.Robot.ARGMAX_SELECTION:
+                r = torch.argmax(output).item()
+            else:
+                r = torch.multinomial(output, 1).item()
+
+            self.state = framework.BrainJudgement(r)
+
         return self.state
 
 

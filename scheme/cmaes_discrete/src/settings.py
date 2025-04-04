@@ -23,6 +23,7 @@ class Settings(framework.Settings):
         self.Simulation.WORLD_HEIGHT = 8
 
         self.Robot.THINK_INTERVAL = 1
+        self.Robot.ARGMAX_SELECTION = False
         self.Robot.FoodSensor.GAIN = 1
 
     def __getstate__(self):

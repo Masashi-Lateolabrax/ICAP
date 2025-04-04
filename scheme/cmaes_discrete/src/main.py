@@ -14,6 +14,8 @@ def main():
 
     brain_builder = BrainBuilder(settings)
     framework.entry_points.train(settings, log_file_path, brain_builder)
+
+    settings.Robot.ARGMAX_SELECTION = True
     framework.entry_points.record(settings, log_file_path, brain_builder)
 
 
