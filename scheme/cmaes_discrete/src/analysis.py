@@ -31,6 +31,6 @@ def plot_loss(settings: Settings, dump: framework.Dump, file_path):
     ax2.set_ylabel('nest loss')
     ax1.set_title('Loss')
 
-    fig.legend(handles=[loss_line_r, loss_line_n], loc='lower center')
+    fig.legend(handles=[loss_line_r[0], loss_line_n[0]], loc='lower center')
 
     fig.savefig(file_path)
