@@ -1,3 +1,4 @@
+import copy
 import datetime
 import os
 import pickle
@@ -14,18 +15,18 @@ class Queue:
             scores_avg: float,
             centroid: np.ndarray,
             min_score: float,
-            min_para: np.ndarray,
+            min_ind: opt.Individual,
             max_score: float,
-            max_para: np.ndarray,
+            max_ind: opt.Individual,
             sigma: float
     ):
         self.time = datetime.datetime.now()
         self.scores_avg: float = scores_avg
         self.centroid: np.ndarray = centroid.copy()
         self.min_score: float = min_score
-        self.min_para: np.ndarray = min_para.copy()
+        self.min_para: opt.Individual = copy.copy(min_ind)
         self.max_score: float = max_score
-        self.max_para: np.ndarray = max_para.copy()
+        self.max_para: opt.Individual = copy.copy(max_ind)
         self.sigma: float = sigma
 
 
@@ -45,9 +46,9 @@ class _Logger:
             individuals: list[opt.Individual],
             strategy: Strategy
     ):
-        min_para = individuals[min_idx].view()
-        max_para = individuals[max_idx].view()
-        self.queues.append(Queue(avg, strategy.centroid, min_score, min_para, max_score, max_para, strategy.sigma))
+        min_ind = individuals[min_idx]
+        max_ind = individuals[max_idx]
+        self.queues.append(Queue(avg, strategy.centroid, min_score, min_ind, max_score, max_ind, strategy.sigma))
         self.last_cmatrix = strategy.C.copy()
 
         if self.queues[self.min_index].min_score > min_score:

@@ -2,21 +2,25 @@ import os.path
 
 import framework
 
+from logger import Logger
 from brain import BrainBuilder
 from settings import Settings
 
 
 def main():
     save_dir = os.path.dirname(os.path.abspath(__file__))
-    log_file_path = os.path.join(save_dir, "result.pkl")
+    log_file_name = "result.pkl"
 
+    logger = Logger(save_dir)
     settings = Settings()
 
     brain_builder = BrainBuilder(settings)
-    framework.entry_points.train(settings, log_file_path, brain_builder)
+    framework.entry_points.train(settings, logger, brain_builder)
+    logger.save(log_file_name)
 
     settings.Robot.ARGMAX_SELECTION = True
-    framework.entry_points.record(settings, log_file_path, brain_builder)
+    para = logger.get_min().min_para
+    framework.entry_points.record(settings, save_dir, para, brain_builder)
 
 
 if __name__ == '__main__':
