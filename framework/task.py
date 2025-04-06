@@ -9,12 +9,17 @@ from .settings import Settings
 
 
 class Task(optimizer.MjcTaskInterface):
-    def __init__(self, settings: Settings, world: World, nest: Nest, robots: list[Robot], refood: ReFood):
+    def __init__(
+            self, settings: Settings, world: World, nest: Nest, robots: list[Robot], refood: ReFood, debug: bool = False
+    ):
         self.settings = settings
         self.world: World = world
         self.nest: Nest = nest
         self.robots: list[Robot] = robots
         self.food: ReFood = refood
+
+        self.debug = debug
+        self.dump = [] if debug else None
 
     def get_model(self) -> mujoco.MjModel:
         return self.world.model
@@ -22,19 +27,27 @@ class Task(optimizer.MjcTaskInterface):
     def get_data(self) -> mujoco.MjData:
         return self.world.data
 
-    def calc_loss(self) -> float:
-        robot_pos = np.array([robot.position for robot in self.robots])
-        food_pos = np.array([food.position for food in self.food])
-        return self.settings.CMAES._loss(self.nest.position, robot_pos, food_pos)
-
     def calc_step(self) -> float:
         for r in self.robots:
             r.action()
         self.world.calc_step()
-        return self.calc_loss()
+
+        robot_pos = np.array([robot.position for robot in self.robots])
+        food_pos = np.array([food.position for food in self.food])
+        loss = self.settings.CMAES._loss(self.nest.position, robot_pos, food_pos)
+
+        if self.debug:
+            self.dump.append(
+                {
+                    "robot_pos": robot_pos,
+                    "food_pos": food_pos,
+                }
+            )
+
+        return loss
 
     def get_dump_data(self) -> object | None:
-        pass
+        return self.dump
 
     def run(self) -> float:
         loss = 0

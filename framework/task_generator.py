@@ -55,4 +55,4 @@ class TaskGenerator(optimizer.TaskGenerator):
             robots
         )
 
-        return Task(self.settings, world, nest, robots, refood)
+        return Task(self.settings, world, nest, robots, refood, debug)
