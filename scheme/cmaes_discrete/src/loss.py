@@ -15,16 +15,24 @@ class Loss(framework.interfaceis.Loss):
         self.gain_nest_and_food = 0.001
         self.gain_robot_and_food = _calc_loss_sigma(1, 0.5)
 
-    def calc_loss(self, nest_pos: np.ndarray, robot_pos: np.ndarray, food_pos: np.ndarray) -> float:
+    def calc_r_loss(self, robot_pos: np.ndarray, food_pos: np.ndarray) -> float:
         # Evaluate the distance between robots and food
         dist_r = np.sum((robot_pos[:, :2] - food_pos) ** 2, axis=1)
         loss_r = -np.average(np.exp(-dist_r / self.sigma_robot_and_food))
 
+        return self.gain_robot_and_food * loss_r
+
+    def calc_n_loss(self, nest_pos: np.ndarray, food_pos: np.ndarray) -> float:
         # Evaluate the distance between nest and food
         dist_n = np.sum((food_pos - nest_pos) ** 2, axis=1)
         loss_n = -np.average(np.exp(-dist_n / self.sigma_nest_and_food))
 
-        return self.gain_robot_and_food * loss_r + self.gain_nest_and_food * loss_n
+        return self.gain_nest_and_food * loss_n
+
+    def calc_loss(self, nest_pos: np.ndarray, robot_pos: np.ndarray, food_pos: np.ndarray) -> float:
+        loss_r = self.calc_r_loss(robot_pos, food_pos)
+        loss_n = self.calc_n_loss(nest_pos, food_pos)
+        return loss_r + loss_n
 
     def __getstate__(self):
         return self.__dict__
