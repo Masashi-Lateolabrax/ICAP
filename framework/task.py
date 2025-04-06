@@ -6,6 +6,7 @@ from libs.mujoco_builder import World
 
 from .simulator.objects import Nest, Robot, ReFood
 from .settings import Settings
+from .dump import Dump
 
 
 class Task(optimizer.MjcTaskInterface):
@@ -19,7 +20,7 @@ class Task(optimizer.MjcTaskInterface):
         self.food: ReFood = refood
 
         self.debug = debug
-        self.dump = [] if debug else None
+        self.dump = Dump if debug else None
 
     def get_model(self) -> mujoco.MjModel:
         return self.world.model
@@ -37,12 +38,7 @@ class Task(optimizer.MjcTaskInterface):
         loss = self.settings.CMAES._loss(self.nest.position, robot_pos, food_pos)
 
         if self.debug:
-            self.dump.append(
-                {
-                    "robot_pos": robot_pos,
-                    "food_pos": food_pos,
-                }
-            )
+            self.dump.dump(robot_pos, food_pos)
 
         return loss
 
