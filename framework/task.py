@@ -19,7 +19,6 @@ class Task(optimizer.MjcTaskInterface):
         self.robots: list[Robot] = robots
         self.food: ReFood = refood
 
-        self.debug = debug
         self.dump = Dump if debug else None
 
     def get_model(self) -> mujoco.MjModel:
@@ -37,7 +36,7 @@ class Task(optimizer.MjcTaskInterface):
         food_pos = np.array([food.position for food in self.food])
         loss = self.settings.CMAES._loss(self.nest.position, robot_pos, food_pos)
 
-        if self.debug:
+        if isinstance(self.dump, Dump):
             self.dump.dump(robot_pos, food_pos)
 
         return loss
