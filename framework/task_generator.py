@@ -18,10 +18,10 @@ class TaskGenerator(optimizer.TaskGenerator):
 
         invalid_area = []
         self.robot_positions = [
-            rand_robot_pos(self.settings, invalid_area)
+            rand_robot_pos(self.settings, invalid_area) for _ in range(settings.Robot.NUM)
         ]
         self.food_positions = [
-            rand_food_pos(self.settings, invalid_area)
+            rand_food_pos(self.settings, invalid_area) for _ in range(settings.Food.NUM)
         ]
 
     def generate(self, para: Individual, debug=False) -> Task:
