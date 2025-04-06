@@ -19,7 +19,7 @@ class Task(optimizer.MjcTaskInterface):
         self.robots: list[Robot] = robots
         self.food: ReFood = refood
 
-        self.dump = Dump if debug else None
+        self.dump = Dump() if debug else None
 
     def get_model(self) -> mujoco.MjModel:
         return self.world.model
