@@ -2,7 +2,8 @@ from framework import Settings
 from loss import Loss
 
 Settings.Simulation.RENDER_WIDTH = 800
-Settings.Simulation.RENDER_WIDTH = 800
+Settings.Simulation.RENDER_HEIGHT = 800
+Settings.Simulation.RENDER_ZOOM = 10
 
 Settings.CMAES.GENERATION = 300
 Settings.CMAES.POPULATION = 1000
