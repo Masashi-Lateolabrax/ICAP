@@ -1,5 +1,3 @@
-import os
-
 from libs import optimizer
 
 from ..settings import Settings
@@ -7,8 +5,7 @@ from ..interfaceis import BrainBuilder
 from ..task_generator import TaskGenerator
 
 
-def train(settings: Settings, log_path, brain_builder: BrainBuilder):
-    logger = optimizer.Hist(os.path.dirname(log_path))
+def train(settings: Settings, logger: optimizer.Logger, brain_builder: BrainBuilder):
     cmaes = optimizer.CMAES(
         dim=brain_builder.get_dim(),
         generation=settings.CMAES.GENERATION,
@@ -21,5 +18,3 @@ def train(settings: Settings, log_path, brain_builder: BrainBuilder):
         task_generator = TaskGenerator(settings, brain_builder)
         cmaes.optimize_current_generation(task_generator, proc=optimizer.MultiThreadProc)
         # cmaes.optimize_current_generation(task_generator, proc=optimizer.OneThreadProc)
-
-    logger.save(os.path.basename(log_path))

@@ -10,10 +10,7 @@ from ..interfaceis import BrainBuilder
 from ..task_generator import TaskGenerator
 
 
-def record(settings: Settings, log_path, brain_builder: BrainBuilder):
-    logger = optimizer.Hist.load(log_path)
-    para = logger._hist.queues[-1].min_para
-
+def record(settings: Settings, save_dir, para: optimizer.Individual, brain_builder: BrainBuilder):
     generator = TaskGenerator(settings, brain_builder)
     task = generator.generate(para, debug=True)
 
@@ -26,7 +23,7 @@ def record(settings: Settings, log_path, brain_builder: BrainBuilder):
         settings.Simulation.TIME_LENGTH,
         settings.Simulation.RENDER_WIDTH,
         settings.Simulation.RENDER_HEIGHT,
-        os.path.dirname(log_path),
+        os.path.dirname(save_dir),
         camera,
         Settings.Simulation.MAX_GEOM
     )
