@@ -1,37 +1,25 @@
-import framework
+from framework import Settings
 from loss import Loss
 
+Settings.Simulation.RENDER_WIDTH = 800
+Settings.Simulation.RENDER_WIDTH = 800
 
-class Settings(framework.Settings):
-    def __init__(self):
-        super().__init__()
+Settings.CMAES.GENERATION = 300
+Settings.CMAES.POPULATION = 1000
+Settings.CMAES.MU = int(Settings.CMAES.POPULATION / 2)
+Settings.CMAES.SIGMA = 0.1
 
-        self.Simulation.RENDER_HEIGHT = 800
-        self.Simulation.RENDER_WIDTH = 800
+Settings.Simulation.TIME_STEP = 0.01
+Settings.Simulation.TIME_LENGTH = int(30 / Settings.Simulation.TIME_STEP)
 
-        self.CMAES.GENERATION = 300
-        self.CMAES.POPULATION = 1000
-        self.CMAES.MU = int(self.CMAES.POPULATION / 2)
-        self.CMAES.SIGMA = 0.1
+Settings.CMAES.LOSS = Loss()
 
-        self.Simulation.TIME_STEP = 0.01
-        self.Simulation.TIME_LENGTH = int(30 / self.Simulation.TIME_STEP)
+Settings.Simulation.WORLD_WIDTH = 8
+Settings.Simulation.WORLD_HEIGHT = 8
 
-        self.CMAES.LOSS = Loss()
+Settings.Robot.THINK_INTERVAL = 1
+Settings.Robot.ARGMAX_SELECTION = False
+Settings.Robot.FoodSensor.GAIN = 1
 
-        self.Simulation.WORLD_WIDTH = 8
-        self.Simulation.WORLD_HEIGHT = 8
-
-        self.Robot.THINK_INTERVAL = 1
-        self.Robot.ARGMAX_SELECTION = False
-        self.Robot.FoodSensor.GAIN = 1
-
-    def __getstate__(self):
-        state = self.__dict__.copy()
-        state['CMAES.LOSS'] = self.CMAES.LOSS.__getstate__()
-        return state
-
-    def __setstate__(self, state):
-        self.__dict__.update(state)
-        self.CMAES.LOSS = Loss()
-        self.CMAES.LOSS.__setstate__(state['CMAES.LOSS'])
+Settings.Robot.NUM = 3
+Settings.Food.NUM = 1
