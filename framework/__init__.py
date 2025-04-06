@@ -11,3 +11,5 @@ from .task import Task
 from .task_generator import TaskGenerator
 
 from . import entry_points
+
+from .dump import Dump
