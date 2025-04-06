@@ -1,7 +1,6 @@
-import os
-
 import mujoco
 
+import framework
 from libs import optimizer
 from libs.utils.data_collector import Recorder
 
@@ -10,9 +9,15 @@ from ..interfaceis import BrainBuilder
 from ..task_generator import TaskGenerator
 
 
-def record(settings: Settings, save_dir, para: optimizer.Individual, brain_builder: BrainBuilder):
+def record(
+        settings: Settings,
+        save_dir,
+        para: optimizer.Individual,
+        brain_builder: BrainBuilder,
+        debug=False
+) -> framework.Dump | None:
     generator = TaskGenerator(settings, brain_builder)
-    task = generator.generate(para, debug=True)
+    task = generator.generate(para, debug=debug)
 
     camera = mujoco.MjvCamera()
     camera.elevation = -90
@@ -30,3 +35,5 @@ def record(settings: Settings, save_dir, para: optimizer.Individual, brain_build
 
     recorder.run(task)
     recorder.release()
+
+    return task.get_dump_data() if debug else None
