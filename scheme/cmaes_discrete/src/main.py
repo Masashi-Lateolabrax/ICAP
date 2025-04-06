@@ -22,7 +22,7 @@ def main():
 
     settings.Robot.ARGMAX_SELECTION = True
     para = logger.get_min().min_para
-    dump = framework.entry_points.record(settings, save_dir, para, brain_builder)
+    dump = framework.entry_points.record(settings, save_dir, para, brain_builder, debug=True)
 
     analysis.plot_loss(settings, dump, save_dir)
 
