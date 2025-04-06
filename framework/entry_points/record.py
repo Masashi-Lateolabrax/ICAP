@@ -23,7 +23,7 @@ def record(settings: Settings, save_dir, para: optimizer.Individual, brain_build
         settings.Simulation.TIME_LENGTH,
         settings.Simulation.RENDER_WIDTH,
         settings.Simulation.RENDER_HEIGHT,
-        os.path.dirname(save_dir),
+        save_dir,
         camera,
         Settings.Simulation.MAX_GEOM
     )
