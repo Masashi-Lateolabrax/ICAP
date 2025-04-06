@@ -24,7 +24,7 @@ def main():
     para = logger.get_min().min_para
     dump = framework.entry_points.record(settings, save_dir, para, brain_builder, debug=True)
 
-    analysis.plot_loss(settings, dump, save_dir)
+    analysis.plot_loss(settings, dump, os.path.join(save_dir, "loss.png"))
 
 
 if __name__ == '__main__':
