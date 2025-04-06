@@ -1,75 +1,82 @@
-import dataclasses
+import datetime
 import os
 import pickle
 
-from deap.cma import Strategy
 import numpy as np
+from deap.cma import Strategy
 
-import libs.optimizer as opt
-from libs.optimizer import Individual
+from libs import optimizer as opt
 
 
-@dataclasses.dataclass
 class Queue:
-    ave: float
-    min_score: float
-    min_para: np.ndarray
-    loss_fn: np.ndarray
-    loss_fr: np.ndarray
-    loss: float
+    def __init__(
+            self,
+            scores_avg: float,
+            centroid: np.ndarray,
+            min_score: float,
+            min_para: np.ndarray,
+            max_score: float,
+            max_para: np.ndarray,
+            sigma: float
+    ):
+        self.time = datetime.datetime.now()
+        self.scores_avg: float = scores_avg
+        self.centroid: np.ndarray = centroid.copy()
+        self.min_score: float = min_score
+        self.min_para: np.ndarray = min_para.copy()
+        self.max_score: float = max_score
+        self.max_para: np.ndarray = max_para.copy()
+        self.sigma: float = sigma
 
 
 class _Logger:
     def __init__(self):
-        self.last_centroid = None
-        self.last_sigma = None
         self.queues: list[Queue] = []
+        self.dim: int = -1
+        self.population: int = -1
+        self.mu: int = -1
+        self.min_index = 0
+        self.max_index = 0
+        self.last_cmatrix = np.zeros(0)
 
-    def log(self, avg, min_score, min_para, individuals: list[Individual], strategy):
-        self.last_centroid = strategy.centroid
-        self.last_sigma = strategy.sigma
+    def log(
+            self,
+            _num_error, avg, min_score, min_idx, max_score, max_idx,
+            individuals: list[opt.Individual],
+            strategy: Strategy
+    ):
+        min_para = individuals[min_idx].view()
+        max_para = individuals[max_idx].view()
+        self.queues.append(Queue(avg, strategy.centroid, min_score, min_para, max_score, max_para, strategy.sigma))
+        self.last_cmatrix = strategy.C.copy()
 
-        loss_element = np.array(
-            [[(loss_fn, loss_fr) for (loss_fn, loss_fr) in i.dump] for i in individuals]
-        )
-        loss = np.sum(loss_element, axis=(1, 2))
+        if self.queues[self.min_index].min_score > min_score:
+            self.min_index = len(self.queues) - 1
+        if self.queues[self.max_index].max_score < max_score:
+            self.max_index = len(self.queues) - 1
 
-        self.queues.append(
-            Queue(avg, min_score, min_para, loss_element[:, :, 0], loss_element[:, :, 1], loss)
-        )
-
-    def get_loss_elements(self, generation, ind_idx, time):
-        loss_fn = self.queues[generation].loss_fn[ind_idx, time]
-        loss_fr = self.queues[generation].loss_fr[ind_idx, time]
-        return loss_fn, loss_fr
+        if self.dim < 0:
+            self.dim = len(individuals[0])
+        if self.population < 0:
+            self.population = len(individuals)
+        if self.mu < 0:
+            self.mu = strategy.mu
 
     def get_min(self) -> Queue:
-        the_most_min_idx = 0
-        the_most_min = self.queues[the_most_min_idx].min_score
-        for i, q in enumerate(self.queues):
-            if q.min_score < the_most_min:
-                the_most_min_idx = i
-                the_most_min = q.min_score
-        return self.queues[the_most_min_idx]
+        return self.queues[self.min_index]
+
+    def get_max(self) -> Queue:
+        return self.queues[self.max_index]
 
     def get_rangking_Nth(self, n: int) -> Queue:
-        sorted_queues = sorted(self.queues, key=lambda q: q.min_score)
-        return sorted_queues[n]
-
-    def __getitem__(self, index: int) -> Queue:
-        if 0 <= index < len(self.queues):
-            return self.queues[index]
-        else:
-            raise IndexError("Index out of range")
-
-    def __len__(self):
-        return len(self.queues)
+        ranking = sorted(map(lambda x: (x[1].min_score, x[0]), enumerate(self.queues)))[0:5]
+        return self.queues[ranking[n][1]]
 
 
 class Logger(opt.Logger):
     def __init__(self, save_dir):
         self.save_dir = save_dir
-        self._logger: _Logger = _Logger()
+        self._hist = _Logger()
 
     def save_tmp(self, gen):
         file_path = os.path.join(self.save_dir, "TMP_LOG.pkl")
@@ -78,49 +85,28 @@ class Logger(opt.Logger):
     def save(self, file_name: str):
         file_path = os.path.join(self.save_dir, file_name)
         with open(file_path, "wb") as f:
-            pickle.dump(self._logger, f)
+            pickle.dump(self._hist, f)
 
     @staticmethod
     def load(file_path: str):
         this = Logger("")
-        this.save_dir = os.path.dirname(file_path)
         with open(file_path, "rb") as f:
-            this._logger = pickle.load(f)
+            this._hist = pickle.load(f)
         return this
 
     def log(
             self,
-            num_error, avg, min_score, min_para, max_score, max_para, best_para,
+            num_error, avg, min_score, min_idx, max_score, max_idx,
             individuals: list[opt.Individual],
             strategy: Strategy
     ):
-        self._logger.log(avg, min_score, min_para, individuals, strategy)
+        self._hist.log(num_error, avg, min_score, min_idx, max_score, max_idx, individuals, strategy)
 
     def get_min(self) -> Queue:
-        return self._logger.get_min()
+        return self._hist.get_min()
+
+    def get_max(self) -> Queue:
+        return self._hist.get_max()
 
     def get_rangking_Nth(self, n: int) -> Queue:
-        return self._logger.get_rangking_Nth(n)
-
-    def __getitem__(self, index: int) -> Queue:
-        return self._logger[index]
-
-    def __iter__(self):
-        return iter(self._logger.queues)
-
-
-class LoggerIter:
-    def __init__(self, logger: Logger):
-        self._logger = logger
-        self._index = 0
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        if self._index < len(self._logger):
-            result = self._logger[self._index]
-            self._index += 1
-            return result
-        else:
-            raise StopIteration
+        return self._hist.get_rangking_Nth(n)
