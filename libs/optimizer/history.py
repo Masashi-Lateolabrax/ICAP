@@ -42,10 +42,12 @@ class _Hist:
 
     def log(
             self,
-            num_error, avg, min_score, min_para, max_score, max_para, best_para,
+            _num_error, avg, min_score, min_idx, max_score, max_idx,
             individuals: list[Individual],
             strategy: Strategy
     ):
+        min_para = individuals[min_idx].view()
+        max_para = individuals[max_idx].view()
         self.queues.append(Queue(avg, strategy.centroid, min_score, min_para, max_score, max_para, strategy.sigma))
         self.last_cmatrix = strategy.C.copy()
 
@@ -95,11 +97,11 @@ class Hist(Logger):
 
     def log(
             self,
-            num_error, avg, min_score, min_para, max_score, max_para, best_para,
+            num_error, avg, min_score, min_idx, max_score, max_idx,
             individuals: list[Individual],
             strategy: Strategy
     ):
-        self._hist.log(num_error, avg, min_score, min_para, max_score, max_para, best_para, individuals, strategy)
+        self._hist.log(num_error, avg, min_score, min_idx, max_score, max_idx, individuals, strategy)
 
     def get_min(self) -> Queue:
         return self._hist.get_min()
