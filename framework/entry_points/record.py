@@ -16,6 +16,20 @@ def record(
         brain_builder: BrainBuilder,
         debug=False
 ) -> framework.Dump | None:
+    """
+    Record the simulation of an individual.
+
+    Args:
+        settings (Settings): The settings object.
+        save_dir (str): The directory to save the recorded data.
+        para (optimizer.Individual): The individual to be recorded.
+        brain_builder (BrainBuilder): The brain builder object.
+        debug (bool): Whether to run in debug mode.
+
+    Returns:
+        framework.Dump | None: The dump object if debug is True, otherwise None.
+    """
+
     generator = TaskGenerator(settings, brain_builder)
     task = generator.generate(para, debug=debug)
 
