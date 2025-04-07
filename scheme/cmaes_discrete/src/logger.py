@@ -128,3 +128,6 @@ class Logger(opt.Logger):
 
     def is_empty(self):
         return self._logger.is_empty()
+
+    def __iter__(self):
+        return iter(self._logger.queues)
