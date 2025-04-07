@@ -59,9 +59,11 @@ class _Logger:
         self.last_cmatrix = strategy.C.copy()
 
         ## Update `min_gen` and `max_gen`
-        if self.queues[self.min_gen].min_ind.fitness > min_score:
+        recorded_min_score = self.queues[self.min_gen].min_ind.fitness.values[0]
+        recorded_max_score = self.queues[self.max_gen].max_ind.fitness.values[0]
+        if recorded_min_score > min_score:
             self.min_gen = len(self.queues) - 1
-        if self.queues[self.max_gen].max_ind.fitness < max_score:
+        if recorded_max_score < max_score:
             self.max_gen = len(self.queues) - 1
 
         ## Update `dim`, `population`, and `mu` if necessary.
@@ -113,7 +115,6 @@ class Logger(opt.Logger):
             individuals: list[opt.Individual],
             strategy: Strategy
     ):
-        print(min_idx)
         self._hist.log(num_error, avg, min_idx, max_idx, individuals, strategy)
 
     def get_min(self) -> Queue:
