@@ -45,8 +45,8 @@ class _Logger:
         ## Extract important variables.
         min_ind = individuals[min_idx]
         max_ind = individuals[max_idx]
-        min_score = min_ind.fitness[0]
-        max_score = max_ind.fitness[0]
+        min_score = min_ind.fitness.values[0]
+        max_score = max_ind.fitness.values[0]
 
         ## Remove dump data of previous generation for reduce memory size
         if len(self.queues) > 0:
@@ -113,6 +113,7 @@ class Logger(opt.Logger):
             individuals: list[opt.Individual],
             strategy: Strategy
     ):
+        print(min_idx)
         self._hist.log(num_error, avg, min_idx, max_idx, individuals, strategy)
 
     def get_min(self) -> Queue:

@@ -48,8 +48,8 @@ class _Hist:
     ):
         min_ind = individuals[min_idx]
         max_ind = individuals[max_idx]
-        min_score = min_ind.fitness[0]
-        max_score = max_ind.fitness[0]
+        min_score = min_ind.fitness.values[0]
+        max_score = max_ind.fitness.values[0]
 
         self.queues.append(Queue(avg, strategy.centroid, min_score, min_ind.view(), max_score, max_ind.view(), strategy.sigma))
         self.last_cmatrix = strategy.C.copy()
