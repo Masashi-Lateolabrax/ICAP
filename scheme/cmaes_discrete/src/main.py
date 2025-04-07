@@ -18,8 +18,9 @@ def main():
     logger = Logger(save_dir)
 
     ## Training.
-    framework.entry_points.train(settings, logger, brain_builder)
-    logger.save(log_file_name)
+    if not os.path.exists(os.path.join(save_dir, log_file_name)):
+        framework.entry_points.train(settings, logger, brain_builder)
+        logger.save(log_file_name)
 
     ## Record the training result in mp4 format.
     settings.Robot.ARGMAX_SELECTION = True
