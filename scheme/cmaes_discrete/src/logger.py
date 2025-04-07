@@ -91,7 +91,7 @@ class _Logger:
 class Logger(opt.Logger):
     def __init__(self, save_dir):
         self.save_dir = save_dir
-        self._hist = _Logger()
+        self._logger = _Logger()
 
     def save_tmp(self, gen):
         file_path = os.path.join(self.save_dir, "TMP_LOG.pkl")
@@ -100,13 +100,13 @@ class Logger(opt.Logger):
     def save(self, file_name: str):
         file_path = os.path.join(self.save_dir, file_name)
         with open(file_path, "wb") as f:
-            pickle.dump(self._hist, f)
+            pickle.dump(self._logger, f)
 
     @staticmethod
     def load(file_path: str):
         this = Logger("")
         with open(file_path, "rb") as f:
-            this._hist = pickle.load(f)
+            this._logger = pickle.load(f)
         return this
 
     def log(
@@ -115,16 +115,16 @@ class Logger(opt.Logger):
             individuals: list[opt.Individual],
             strategy: Strategy
     ):
-        self._hist.log(num_error, avg, min_idx, max_idx, individuals, strategy)
+        self._logger.log(num_error, avg, min_idx, max_idx, individuals, strategy)
 
     def get_min(self) -> Queue:
-        return self._hist.get_min()
+        return self._logger.get_min()
 
     def get_max(self) -> Queue:
-        return self._hist.get_max()
+        return self._logger.get_max()
 
     def get_rangking_Nth(self, n: int) -> Queue:
-        return self._hist.get_rangking_Nth(n)
+        return self._logger.get_rangking_Nth(n)
 
     def is_empty(self):
-        return self._hist.is_empty()
+        return self._logger.is_empty()
