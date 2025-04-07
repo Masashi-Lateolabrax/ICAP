@@ -73,6 +73,9 @@ class _Logger:
         ranking = sorted(map(lambda x: (x[1].min_score, x[0]), enumerate(self.queues)))[0:5]
         return self.queues[ranking[n][1]]
 
+    def is_empty(self):
+        return len(self.queues) == 0
+
 
 class Logger(opt.Logger):
     def __init__(self, save_dir):
@@ -111,3 +114,6 @@ class Logger(opt.Logger):
 
     def get_rangking_Nth(self, n: int) -> Queue:
         return self._hist.get_rangking_Nth(n)
+
+    def is_empty(self):
+        return self._hist.is_empty()
