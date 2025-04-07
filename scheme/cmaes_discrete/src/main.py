@@ -13,14 +13,18 @@ def main():
     save_dir = os.path.dirname(os.path.abspath(__file__))
     log_file_name = "result.pkl"
 
-    logger = Logger(save_dir)
     settings = Settings()
-
     brain_builder = BrainBuilder(settings)
+    logger = Logger(save_dir)
+
+    ## Training.
     framework.entry_points.train(settings, logger, brain_builder)
     logger.save(log_file_name)
 
+    ## Record the training result in mp4 format.
     settings.Robot.ARGMAX_SELECTION = True
+    if logger.is_empty():
+        logger = Logger.load(os.path.join(save_dir, log_file_name))
     para = logger.get_min().min_para
     dump = framework.entry_points.record(settings, save_dir, para, brain_builder, debug=True)
 
