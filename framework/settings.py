@@ -33,6 +33,7 @@ class Settings:
         NUM = 1
         THINK_INTERVAL = 0.3  # Unit is second
         MAX_SECRETION = 0.423 * 5
+        ARGMAX_SELECTION = False
 
         class OtherRobotSensor:
             GAIN = 2 / 0.7
