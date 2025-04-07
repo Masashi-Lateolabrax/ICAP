@@ -1,4 +1,5 @@
 from .settings import Settings
+from .dump import Dump
 
 from . import interfaceis
 from . import simulator
