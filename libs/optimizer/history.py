@@ -36,25 +36,28 @@ class _Hist:
         self.dim: int = -1
         self.population: int = -1
         self.mu: int = -1
-        self.min_index = 0
-        self.max_index = 0
+        self.min_gen = 0
+        self.max_gen = 0
         self.last_cmatrix = np.zeros(0)
 
     def log(
             self,
-            _num_error, avg, min_score, min_idx, max_score, max_idx,
+            _num_error, avg, min_idx, max_idx,
             individuals: list[Individual],
             strategy: Strategy
     ):
-        min_para = individuals[min_idx].view()
-        max_para = individuals[max_idx].view()
-        self.queues.append(Queue(avg, strategy.centroid, min_score, min_para, max_score, max_para, strategy.sigma))
+        min_ind = individuals[min_idx]
+        max_ind = individuals[max_idx]
+        min_score = min_ind.fitness[0]
+        max_score = max_ind.fitness[0]
+
+        self.queues.append(Queue(avg, strategy.centroid, min_score, min_ind.view(), max_score, max_ind.view(), strategy.sigma))
         self.last_cmatrix = strategy.C.copy()
 
-        if self.queues[self.min_index].min_score > min_score:
-            self.min_index = len(self.queues) - 1
-        if self.queues[self.max_index].max_score < max_score:
-            self.max_index = len(self.queues) - 1
+        if self.queues[self.min_gen].min_score > min_score:
+            self.min_gen = len(self.queues) - 1
+        if self.queues[self.max_gen].max_score < max_score:
+            self.max_gen = len(self.queues) - 1
 
         if self.dim < 0:
             self.dim = len(individuals[0])
@@ -64,10 +67,10 @@ class _Hist:
             self.mu = strategy.mu
 
     def get_min(self) -> Queue:
-        return self.queues[self.min_index]
+        return self.queues[self.min_gen]
 
     def get_max(self) -> Queue:
-        return self.queues[self.max_index]
+        return self.queues[self.max_gen]
 
     def get_rangking_Nth(self, n: int) -> Queue:
         ranking = sorted(map(lambda x: (x[1].min_score, x[0]), enumerate(self.queues)))[0:5]
@@ -97,11 +100,11 @@ class Hist(Logger):
 
     def log(
             self,
-            num_error, avg, min_score, min_idx, max_score, max_idx,
+            num_error, avg, min_idx, max_idx,
             individuals: list[Individual],
             strategy: Strategy
     ):
-        self._hist.log(num_error, avg, min_score, min_idx, max_score, max_idx, individuals, strategy)
+        self._hist.log(num_error, avg, min_idx, max_idx, individuals, strategy)
 
     def get_min(self) -> Queue:
         return self._hist.get_min()

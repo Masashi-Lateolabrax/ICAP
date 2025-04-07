@@ -14,19 +14,15 @@ class Queue:
             self,
             scores_avg: float,
             centroid: np.ndarray,
-            min_score: float,
             min_ind: opt.Individual,
-            max_score: float,
             max_ind: opt.Individual,
             sigma: float
     ):
         self.time = datetime.datetime.now()
         self.scores_avg: float = scores_avg
         self.centroid: np.ndarray = centroid.copy()
-        self.min_score: float = min_score
-        self.min_para: opt.Individual = copy.copy(min_ind)
-        self.max_score: float = max_score
-        self.max_para: opt.Individual = copy.copy(max_ind)
+        self.min_ind: opt.Individual = copy.deepcopy(min_ind)
+        self.max_ind: opt.Individual = copy.deepcopy(max_ind)
         self.sigma: float = sigma
 
 
@@ -36,26 +32,39 @@ class _Logger:
         self.dim: int = -1
         self.population: int = -1
         self.mu: int = -1
-        self.min_index = 0
-        self.max_index = 0
+        self.min_gen = 0
+        self.max_gen = 0
         self.last_cmatrix = np.zeros(0)
 
     def log(
             self,
-            _num_error, avg, min_score, min_idx, max_score, max_idx,
+            _num_error, avg, min_idx, max_idx,
             individuals: list[opt.Individual],
             strategy: Strategy
     ):
+        ## Extract important variables.
         min_ind = individuals[min_idx]
         max_ind = individuals[max_idx]
-        self.queues.append(Queue(avg, strategy.centroid, min_score, min_ind, max_score, max_ind, strategy.sigma))
+        min_score = min_ind.fitness[0]
+        max_score = max_ind.fitness[0]
+
+        ## Remove dump data of previous generation for reduce memory size
+        if len(self.queues) > 0:
+            q = self.queues[-1]
+            q.min_ind.dump = None
+            q.max_ind.dump = None
+
+        ## Record information of generation
+        self.queues.append(Queue(avg, strategy.centroid, min_ind, max_ind, strategy.sigma))
         self.last_cmatrix = strategy.C.copy()
 
-        if self.queues[self.min_index].min_score > min_score:
-            self.min_index = len(self.queues) - 1
-        if self.queues[self.max_index].max_score < max_score:
-            self.max_index = len(self.queues) - 1
+        ## Update `min_gen` and `max_gen`
+        if self.queues[self.min_gen].min_ind.fitness > min_score:
+            self.min_gen = len(self.queues) - 1
+        if self.queues[self.max_gen].max_ind.fitness < max_score:
+            self.max_gen = len(self.queues) - 1
 
+        ## Update `dim`, `population`, and `mu` if necessary.
         if self.dim < 0:
             self.dim = len(individuals[0])
         if self.population < 0:
@@ -64,10 +73,10 @@ class _Logger:
             self.mu = strategy.mu
 
     def get_min(self) -> Queue:
-        return self.queues[self.min_index]
+        return self.queues[self.min_gen]
 
     def get_max(self) -> Queue:
-        return self.queues[self.max_index]
+        return self.queues[self.max_gen]
 
     def get_rangking_Nth(self, n: int) -> Queue:
         ranking = sorted(map(lambda x: (x[1].min_score, x[0]), enumerate(self.queues)))[0:5]
@@ -100,11 +109,11 @@ class Logger(opt.Logger):
 
     def log(
             self,
-            num_error, avg, min_score, min_idx, max_score, max_idx,
+            num_error, avg, min_idx, max_idx,
             individuals: list[opt.Individual],
             strategy: Strategy
     ):
-        self._hist.log(num_error, avg, min_score, min_idx, max_score, max_idx, individuals, strategy)
+        self._hist.log(num_error, avg, min_idx, max_idx, individuals, strategy)
 
     def get_min(self) -> Queue:
         return self._hist.get_min()
