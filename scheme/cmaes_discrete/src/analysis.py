@@ -5,6 +5,7 @@ import framework
 
 from loss import Loss
 from settings import Settings
+from logger import Logger
 
 
 def plot_loss(settings: Settings, dump: framework.Dump, file_path):
@@ -33,4 +34,19 @@ def plot_loss(settings: Settings, dump: framework.Dump, file_path):
 
     fig.legend(handles=[loss_line_r[0], loss_line_n[0]], loc='lower center')
 
+    fig.savefig(file_path)
+
+
+def plot_parameter_movements(logger: Logger, file_path):
+    prev_para = logger[0].min_ind
+    movement = []
+    for queue in logger:
+        distance = np.linalg.norm(queue.min_ind - prev_para)
+        movement.append(distance)
+
+    xs = np.arange(len(movement))
+
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+    ax.plot(xs, movement)
     fig.savefig(file_path)
