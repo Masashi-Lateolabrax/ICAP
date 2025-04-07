@@ -87,8 +87,10 @@ TODO
 # Progress
 
 1. Create simulation program.
-    - [x] Create framework
+    - [x] Create framework.
     - [x] Create the simplest environment example.
+    - [ ] Refactor the framework for debugging.
+    - [ ] Implement a function to record the loss function output.
     - [ ] Examine CMA-ES applying to robots which take discrete actions.
 2. Find settings for successful training.
 3. Collect trained behaviors with various settings.
