@@ -4,19 +4,25 @@ import numpy as np
 from libs import optimizer
 from libs.mujoco_builder import World
 
-from .simulator.objects import Nest, Robot, ReFood
+from .simulator.objects import Nest, Robot, ReFood, CRobot
 from .settings import Settings
 from .dump import Dump
 
 
 class Task(optimizer.MjcTaskInterface):
     def __init__(
-            self, settings: Settings, world: World, nest: Nest, robots: list[Robot], refood: ReFood, debug: bool = False
+            self,
+            settings: Settings,
+            world: World,
+            nest: Nest,
+            robots: list[Robot | CRobot],
+            refood: ReFood,
+            debug: bool = False
     ):
         self.settings = settings
         self.world: World = world
         self.nest: Nest = nest
-        self.robots: list[Robot] = robots
+        self.robots: list[Robot | CRobot] = robots
         self.food: ReFood = refood
 
         self.dump = Dump() if debug else None

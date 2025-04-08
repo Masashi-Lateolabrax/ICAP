@@ -60,5 +60,5 @@ class CRobot:
         return self.property.angle
 
     def action(self, _input=None):
-        out = self.brain.think(_input)
+        out = self.brain.think(self.input)
         self.actuator.execute(out)
