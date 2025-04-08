@@ -1,3 +1,4 @@
+import os
 import mujoco
 
 import framework
@@ -11,7 +12,7 @@ from ..task_generator import TaskGenerator
 
 def record(
         settings: Settings,
-        save_dir,
+        file_path: str,
         para: optimizer.Individual,
         brain_builder: BrainBuilder,
         debug=False
@@ -21,7 +22,7 @@ def record(
 
     Args:
         settings (Settings): The settings object.
-        save_dir (str): The directory to save the recorded data.
+        file_path (str): The path to save the recorded video.
         para (optimizer.Individual): The individual to be recorded.
         brain_builder (BrainBuilder): The brain builder object.
         debug (bool): Whether to run in debug mode.
@@ -29,6 +30,10 @@ def record(
     Returns:
         framework.Dump | None: The dump object if debug is True, otherwise None.
     """
+
+    save_dir = os.path.dirname(file_path)
+    if os.path.exists(save_dir):
+        os.makedirs(save_dir, exist_ok=True)
 
     generator = TaskGenerator(settings, brain_builder)
     task = generator.generate(para, debug=debug)
@@ -38,11 +43,11 @@ def record(
     camera.distance = settings.Simulation.RENDER_ZOOM
 
     recorder = Recorder(
+        file_path,
         settings.Simulation.TIME_STEP,
         settings.Simulation.TIME_LENGTH,
         settings.Simulation.RENDER_WIDTH,
         settings.Simulation.RENDER_HEIGHT,
-        save_dir,
         camera,
         Settings.Simulation.MAX_GEOM
     )
