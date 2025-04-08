@@ -45,9 +45,9 @@ def main():
     for gen in [logger.get_min_gen()]:
         para = logger[gen].min_ind
         if gen == logger.get_min_gen():
-            file_path = os.path.join(save_dir, f"gen{gen}(best).png")
+            file_path = os.path.join(save_dir, f"gen{gen}(best).mp4")
         else:
-            file_path = os.path.join(save_dir, f"gen{gen}.png")
+            file_path = os.path.join(save_dir, f"gen{gen}.mp4")
 
         ## Record the simulation.
         dump = framework.entry_points.record(
