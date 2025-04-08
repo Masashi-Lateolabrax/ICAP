@@ -36,7 +36,7 @@ def main():
         logger = Logger.load(os.path.join(save_dir, log_file_name))
 
     ## Plot the movements of the parameters.
-    file_path = os.path.join(save_dir, "parameter_movements.png")
+    file_path = os.path.join(save_dir, "parameter_movement.png")
     if not os.path.exists(file_path):
         analysis.plot_parameter_movements(logger, file_path)
 
