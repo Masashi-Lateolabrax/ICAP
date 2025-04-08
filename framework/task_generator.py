@@ -3,16 +3,16 @@ from libs.optimizer import Individual
 import framework
 
 from .settings import Settings
-from .interfaceis import BrainBuilder
+from .interfaceis import BrainBuilder, BrainInterface, CBrainBuilder, CBrainInterface
 from .task import Task
 
 from .simulator.objects.utils import rand_robot_pos, rand_food_pos
-from .simulator.objects import NestBuilder, RobotBuilder, FoodBuilder
+from .simulator.objects import NestBuilder, RobotBuilder, CRobotBuilder, FoodBuilder
 from .simulator.world import WorldBuilder
 
 
 class TaskGenerator(optimizer.TaskGenerator):
-    def __init__(self, settings: Settings, brain_builder: BrainBuilder):
+    def __init__(self, settings: Settings, brain_builder: BrainBuilder | CBrainBuilder):
         self.settings = settings
         self.brain_builder = brain_builder
 
@@ -27,9 +27,17 @@ class TaskGenerator(optimizer.TaskGenerator):
     def generate(self, para: Individual, debug=False) -> Task:
         brain = self.brain_builder.build(para)
 
-        robot_builders = [
-            RobotBuilder(self.settings, i, brain, pos_and_angle) for i, pos_and_angle in enumerate(self.robot_positions)
-        ]
+        if isinstance(brain, CBrainInterface):
+            robot_builders = [
+                CRobotBuilder(self.settings, i, brain, x) for i, x in enumerate(self.robot_positions)
+            ]
+        elif isinstance(brain, BrainInterface):
+            robot_builders = [
+                RobotBuilder(self.settings, i, brain, x) for i, x in enumerate(self.robot_positions)
+            ]
+        else:
+            raise TypeError("Invalid brain type")
+
         food_builders = [
             FoodBuilder(i, pos) for i, pos in enumerate(self.food_positions)
         ]
