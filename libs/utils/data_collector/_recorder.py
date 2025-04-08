@@ -14,11 +14,11 @@ from ._base import BaseDataCollector
 class Recorder(BaseDataCollector):
     def __init__(
             self,
+            file_path: str,
             timestep: float,
             episode: int,
             width: int,
             height: int,
-            project_directory: str,
             camera: mujoco.MjvCamera,
             max_geom: int = 10000
     ):
@@ -29,15 +29,12 @@ class Recorder(BaseDataCollector):
         self.max_geom = max_geom
         self.camera = camera
 
-        time = datetime.now()
-        timestamp = time.strftime("%Y%m%d_%H%M%S")
-
         self.img = np.zeros((height, width, 3), dtype=np.uint8)
         self.renderer: mujoco.Renderer | None = None
 
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         self.writer = cv2.VideoWriter(
-            os.path.join(project_directory, f"./result_{timestamp}.mp4"),
+            file_path,
             fourcc, int(1 / timestep), (width, height)
         )
 
