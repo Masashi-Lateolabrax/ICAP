@@ -34,6 +34,11 @@ def main():
     if logger.is_empty():
         logger = Logger.load(os.path.join(save_dir, log_file_name))
 
+    ## Plot the movements of the parameters.
+    file_path = os.path.join(save_dir, "parameter_movements.png")
+    if not os.path.exists(file_path):
+        analysis.plot_parameter_movements(logger, file_path)
+
     ## Record the training result in mp4 format.
     settings.Robot.ARGMAX_SELECTION = True
     para = logger.get_min().min_ind
