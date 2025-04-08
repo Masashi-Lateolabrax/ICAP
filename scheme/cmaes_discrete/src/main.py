@@ -39,16 +39,26 @@ def main():
     if not os.path.exists(file_path):
         analysis.plot_parameter_movements(logger, file_path)
 
-    ## Record the training result in mp4 format.
+    ## Loop through the generations.
     settings.Robot.ARGMAX_SELECTION = True
-    para = logger.get_min().min_ind
-    dump = framework.entry_points.record(settings, save_dir, para, brain_builder, debug=True)
+    for gen in [logger.get_min_idx()]:
+        para = logger[gen].min_ind
+        if gen == logger.get_min_idx():
+            file_path = os.path.join(save_dir, f"gen{gen}(best).png")
+        else:
+            file_path = os.path.join(save_dir, f"gen{gen}.png")
 
-    analysis.plot_loss(settings, dump, os.path.join(save_dir, "loss.png"))
+        ## Record the simulation.
+        dump = framework.entry_points.record(
+            settings,
+            file_path,
+            para,
+            brain_builder,
+            debug=False
+        )
 
-    file_path = os.path.join(save_dir, "parameter_movement.png")
-    if not os.path.exists(file_path):
-        analysis.plot_parameter_movements(logger, file_path)
+        ## Plot the loss.
+        analysis.plot_loss(settings, dump, os.path.join(save_dir, f"loss_gen{gen}.png"))
 
 
 if __name__ == '__main__':
