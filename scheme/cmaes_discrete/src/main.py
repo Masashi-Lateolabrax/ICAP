@@ -1,5 +1,7 @@
 import os.path
+import datetime
 
+from libs import utils
 import framework
 
 from logger import Logger
@@ -10,7 +12,13 @@ import analysis
 
 
 def main():
-    save_dir = os.path.dirname(os.path.abspath(__file__))
+    git_hash = utils.get_head_hash()
+    save_dir = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        datetime.datetime.now().strftime("%Y%m%d_%H%M%S_") + git_hash
+    )
+    os.makedirs(save_dir, exist_ok=True)
+
     log_file_name = "result.pkl"
 
     settings = Settings()
