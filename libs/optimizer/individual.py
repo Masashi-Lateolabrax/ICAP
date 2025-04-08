@@ -1,7 +1,6 @@
 import copy
 
 from deap import base
-import array
 import numpy
 
 
