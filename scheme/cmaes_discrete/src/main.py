@@ -12,7 +12,7 @@ import analysis
 
 
 def main():
-    git_hash = utils.get_head_hash()
+    git_hash = utils.get_head_hash()[0:8]
     save_dir = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
         datetime.datetime.now().strftime("%Y%m%d_%H%M%S_") + git_hash
