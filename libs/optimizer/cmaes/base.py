@@ -77,7 +77,7 @@ class BaseCMAES:
 
         self._individuals: list[Individual] = self._strategy.generate(self._ind_type)
 
-    def _check_individuals(self) -> (int, float, (numpy.array, float), (numpy.array, float)):
+    def check(self) -> tuple[int, float, (numpy.array, float), (numpy.array, float), numpy.ndarray]:
         num_error = 0
         avg = 0.0
         min_score = float("inf")
@@ -160,11 +160,9 @@ class BaseCMAES:
         if not self._optimize(task_generator, proc):
             sys.exit()
 
-        num_error, avg, (min_score, min_idx), (max_score, max_idx), best_para = self.update()
-
-        self.log(
-            num_error, avg, min_idx, max_idx
-        )
+        num_error, avg, (min_score, min_idx), (max_score, max_idx), best_para = self.check()
+        self.log(num_error, avg, min_idx, max_idx)
+        self.update()
 
         finish_time = datetime.datetime.now()
         self._end_handler(
@@ -191,14 +189,9 @@ class BaseCMAES:
                     self._save_counter = self._save_count
 
     def update(self):
-        num_error, avg, (min_score, min_idx), (max_score, max_idx), best_para = self._check_individuals()
-
         self._strategy.update(self._individuals)
         self._individuals: list[Individual] = self._strategy.generate(self._ind_type)
-
         self._current_generation += 1
-
-        return num_error, avg, (min_score, min_idx), (max_score, max_idx), best_para
 
     def get_ind(self, index: int) -> Individual:
         if index >= self._strategy.lambda_:
