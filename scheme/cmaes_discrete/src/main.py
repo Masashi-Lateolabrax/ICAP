@@ -55,7 +55,7 @@ def main():
             file_path,
             para,
             brain_builder,
-            debug=False
+            debug=True
         )
 
         ## Plot the loss.
