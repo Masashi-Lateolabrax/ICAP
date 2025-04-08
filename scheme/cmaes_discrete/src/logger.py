@@ -120,8 +120,14 @@ class Logger(opt.Logger):
     def get_min(self) -> Queue:
         return self._logger.get_min()
 
+    def get_min_gen(self):
+        return self._logger.min_gen
+
     def get_max(self) -> Queue:
         return self._logger.get_max()
+
+    def get_max_gen(self):
+        return self._logger.max_gen
 
     def get_rangking_Nth(self, n: int) -> Queue:
         return self._logger.get_rangking_Nth(n)
