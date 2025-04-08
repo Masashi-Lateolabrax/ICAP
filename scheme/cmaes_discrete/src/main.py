@@ -13,10 +13,11 @@ import analysis
 
 def main():
     git_hash = utils.get_head_hash()
-    save_dir = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        datetime.datetime.now().strftime("%Y%m%d_%H%M%S_") + git_hash
-    )
+    # save_dir = os.path.join(
+    #     os.path.dirname(os.path.abspath(__file__)),
+    #     datetime.datetime.now().strftime("%Y%m%d_%H%M%S_") + git_hash
+    # )
+    save_dir = "20250408_050158_a3ae57fa"
     os.makedirs(save_dir, exist_ok=True)
 
     log_file_name = "result.pkl"
@@ -41,9 +42,9 @@ def main():
 
     ## Loop through the generations.
     settings.Robot.ARGMAX_SELECTION = True
-    for gen in [logger.get_min_idx()]:
+    for gen in [logger.get_min_gen()]:
         para = logger[gen].min_ind
-        if gen == logger.get_min_idx():
+        if gen == logger.get_min_gen():
             file_path = os.path.join(save_dir, f"gen{gen}(best).png")
         else:
             file_path = os.path.join(save_dir, f"gen{gen}.png")
