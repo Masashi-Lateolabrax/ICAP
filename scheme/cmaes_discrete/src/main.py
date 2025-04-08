@@ -30,10 +30,12 @@ def main():
         framework.entry_points.train(settings, logger, brain_builder)
         logger.save(log_file_name)
 
-    ## Record the training result in mp4 format.
-    settings.Robot.ARGMAX_SELECTION = True
+    ## Load the logger if it is empty.
     if logger.is_empty():
         logger = Logger.load(os.path.join(save_dir, log_file_name))
+
+    ## Record the training result in mp4 format.
+    settings.Robot.ARGMAX_SELECTION = True
     para = logger.get_min().min_ind
     dump = framework.entry_points.record(settings, save_dir, para, brain_builder, debug=True)
 
