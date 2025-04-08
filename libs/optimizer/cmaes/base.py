@@ -107,11 +107,11 @@ class BaseCMAES:
         if self._ind_type is MinimalizeIndividual:
             if self._best_score > min_score:
                 self._best_score = min_score
-                self._best_para = self._individuals[min_idx]
+                self._best_para = self._individuals[min_idx].view().copy()
         else:
             if self._best_score < max_score:
                 self._best_score = max_score
-                self._best_para = self._individuals[max_idx]
+                self._best_para = self._individuals[max_idx].view().copy()
 
         return num_error, avg, (min_score, min_idx), (max_score, max_idx), self._best_para
 
