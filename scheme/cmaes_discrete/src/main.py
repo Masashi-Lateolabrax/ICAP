@@ -42,12 +42,9 @@ def main():
 
     ## Loop through the generations.
     settings.Robot.ARGMAX_SELECTION = True
-    for gen in [logger.get_min_gen()]:
+    for gen in [0, 50, 100, 150, 200, 250, 299]:
         para = logger[gen].min_ind
-        if gen == logger.get_min_gen():
-            file_path = os.path.join(save_dir, f"gen{gen}(best).mp4")
-        else:
-            file_path = os.path.join(save_dir, f"gen{gen}.mp4")
+        file_path = os.path.join(save_dir, f"gen{gen}.mp4")
 
         ## Record the simulation.
         dump = framework.entry_points.record(
