@@ -13,11 +13,11 @@ import analysis
 
 def main():
     git_hash = utils.get_head_hash()
-    # save_dir = os.path.join(
-    #     os.path.dirname(os.path.abspath(__file__)),
-    #     datetime.datetime.now().strftime("%Y%m%d_%H%M%S_") + git_hash
-    # )
-    save_dir = "20250408_050158_a3ae57fa"
+    save_dir = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        datetime.datetime.now().strftime("%Y%m%d_%H%M%S_") + git_hash
+    )
+    # save_dir = "20250408_050158_a3ae57fa"
     os.makedirs(save_dir, exist_ok=True)
 
     log_file_name = "result.pkl"
