@@ -9,7 +9,7 @@ class Logger(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def log(
             self,
-            num_error, avg, min_score, min_idx, max_score, max_idx,
+            num_error, avg, min_idx, max_idx,
             individuals: list[Individual],
             strategy: Strategy
     ):
