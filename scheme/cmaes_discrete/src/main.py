@@ -30,7 +30,10 @@ def main():
     dump = framework.entry_points.record(settings, save_dir, para, brain_builder, debug=True)
 
     analysis.plot_loss(settings, dump, os.path.join(save_dir, "loss.png"))
-    analysis.plot_parameter_movements(logger, os.path.join(save_dir, "parameter_movement.png"))
+
+    file_path = os.path.join(save_dir, "parameter_movement.png")
+    if not os.path.exists(file_path):
+        analysis.plot_parameter_movements(logger, file_path)
 
 
 if __name__ == '__main__':
