@@ -77,7 +77,7 @@ class BaseCMAES:
 
         self._individuals: list[Individual] = self._strategy.generate(self._ind_type)
 
-    def _check_individuals(self) -> (int, float, (numpy.array, float), (numpy.array, float)):
+    def check(self) -> tuple[int, float, (numpy.array, float), (numpy.array, float), numpy.ndarray]:
         num_error = 0
         avg = 0.0
         min_score = float("inf")
@@ -189,7 +189,7 @@ class BaseCMAES:
                     self._save_counter = self._save_count
 
     def update(self):
-        num_error, avg, (min_score, min_idx), (max_score, max_idx), best_para = self._check_individuals()
+        num_error, avg, (min_score, min_idx), (max_score, max_idx), best_para = self.check()
 
         self._strategy.update(self._individuals)
         self._individuals: list[Individual] = self._strategy.generate(self._ind_type)
