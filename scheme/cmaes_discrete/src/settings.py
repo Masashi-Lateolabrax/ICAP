@@ -5,7 +5,7 @@ Settings.Simulation.RENDER_WIDTH = 800
 Settings.Simulation.RENDER_HEIGHT = 800
 Settings.Simulation.RENDER_ZOOM = 10
 
-Settings.CMAES.GENERATION = 300
+Settings.CMAES.GENERATION = 1000
 Settings.CMAES.POPULATION = 1000
 Settings.CMAES.MU = int(Settings.CMAES.POPULATION / 2)
 Settings.CMAES.SIGMA = 0.1
@@ -22,5 +22,5 @@ Settings.Robot.THINK_INTERVAL = 1
 Settings.Robot.ARGMAX_SELECTION = False
 Settings.Robot.FoodSensor.GAIN = 1
 
-Settings.Robot.NUM = 1
+Settings.Robot.NUM = 3
 Settings.Food.NUM = 1
