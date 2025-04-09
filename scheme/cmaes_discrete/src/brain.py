@@ -52,14 +52,13 @@ class NeuralNetwork(torch.nn.Module):
 
 
 class Brain(framework.interfaceis.BrainInterface):
-    def __init__(self, settings: framework.Settings, para: Individual):
+    def __init__(self, settings: framework.Settings, nn: NeuralNetwork):
         self.settings = settings
 
         self.timer = Timer(settings.Robot.THINK_INTERVAL / settings.Simulation.TIME_STEP)
         self.state = framework.BrainJudgement.STOP
 
-        self.neural_network = NeuralNetwork()
-        self.neural_network.set_para(para)
+        self.neural_network = nn
 
     def think(self, input_: framework.simulator.objects.RobotInput) -> framework.BrainJudgement:
         if self.timer.tick():
@@ -82,6 +81,8 @@ class BrainBuilder(framework.interfaceis.BrainBuilder):
 
     def __init__(self, settings):
         self.settings = settings
+        self.buf_net: NeuralNetwork = NeuralNetwork()
 
     def build(self, para: Individual) -> framework.interfaceis.BrainInterface:
-        return Brain(self.settings, para)
+        self.buf_net.set_para(para)
+        return Brain(self.settings, self.buf_net)
