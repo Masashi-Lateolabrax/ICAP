@@ -25,18 +25,16 @@ class TaskGenerator(optimizer.TaskGenerator):
         ]
 
     def generate(self, para: Individual, debug=False) -> Task:
-        brain = self.brain_builder.build(para)
-
-        if isinstance(brain, CBrainInterface):
-            robot_builders = [
-                CRobotBuilder(self.settings, i, brain, x) for i, x in enumerate(self.robot_positions)
-            ]
-        elif isinstance(brain, BrainInterface):
-            robot_builders = [
-                RobotBuilder(self.settings, i, brain, x) for i, x in enumerate(self.robot_positions)
-            ]
-        else:
-            raise TypeError("Invalid brain type")
+        robot_builders = []
+        for i, pos_and_angle in enumerate(self.robot_positions):
+            brain = self.brain_builder.build(para)
+            if isinstance(brain, CBrainInterface):
+                robot = CRobotBuilder(self.settings, i, brain, pos_and_angle)
+            elif isinstance(brain, BrainInterface):
+                robot = RobotBuilder(self.settings, i, brain, pos_and_angle)
+            else:
+                raise TypeError("Invalid brain type")
+            robot_builders.append(robot)
 
         food_builders = [
             FoodBuilder(i, pos) for i, pos in enumerate(self.food_positions)
