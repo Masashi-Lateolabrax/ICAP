@@ -22,5 +22,5 @@ Settings.Robot.THINK_INTERVAL = 1
 Settings.Robot.ARGMAX_SELECTION = False
 Settings.Robot.FoodSensor.GAIN = 1
 
-Settings.Robot.NUM = 1
+Settings.Robot.NUM = 3
 Settings.Food.NUM = 1
