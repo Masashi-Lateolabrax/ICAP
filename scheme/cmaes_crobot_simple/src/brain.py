@@ -28,7 +28,7 @@ class NeuralNetwork(torch.nn.Module):
             torch.nn.Linear(5, 4),
             torch.nn.GELU(),
             torch.nn.Linear(4, 2),
-            torch.nn.Softmax(dim=0)
+            torch.nn.Tanh(),
         )
 
     def forward(self, x: framework.simulator.objects.RobotInput):
