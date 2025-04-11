@@ -37,10 +37,10 @@ def plot_loss(settings: Settings, dump: framework.Dump, file_path):
     fig.savefig(file_path)
 
 
-def plot_parameter_movements(logger: Logger, file_path):
-    prev_para = logger[0].min_ind
+def plot_parameter_movements(logger: Logger, file_path, start=0, end=None):
+    prev_para = logger[start].min_ind
     movement = []
-    for queue in logger:
+    for queue in logger[start:end]:
         distance = np.linalg.norm(queue.min_ind - prev_para)
         movement.append(distance)
 
