@@ -42,9 +42,9 @@ def main():
 
     ## Loop through the generations.
     settings.Robot.ARGMAX_SELECTION = True
-    for gen in [0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 999]:
-        para = logger[gen].min_ind
-        file_path = os.path.join(save_dir, f"gen{gen}.mp4")
+    for g in set(list(range(0, len(logger), len(logger) // 10)) + [len(logger) - 1]):
+        para = logger[g].min_ind
+        file_path = os.path.join(save_dir, f"gen{g}.mp4")
 
         ## Record the simulation.
         dump = framework.entry_points.record(
@@ -56,7 +56,7 @@ def main():
         )
 
         ## Plot the loss.
-        analysis.plot_loss(settings, dump, os.path.join(save_dir, f"loss_gen{gen}.png"))
+        analysis.plot_loss(settings, dump, os.path.join(save_dir, f"loss_gen{g}.png"))
 
 
 if __name__ == '__main__':
