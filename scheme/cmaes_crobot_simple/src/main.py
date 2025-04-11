@@ -42,7 +42,7 @@ def main():
 
     ## Loop through the generations.
     settings.Robot.ARGMAX_SELECTION = True
-    for gen in [0, 50, 100, 150, 200, 250, 299]:
+    for gen in [0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 999]:
         para = logger[gen].min_ind
         file_path = os.path.join(save_dir, f"gen{gen}.mp4")
 
