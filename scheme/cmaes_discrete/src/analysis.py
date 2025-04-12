@@ -11,12 +11,14 @@ from logger import Logger
 def plot_loss(settings: Settings, dump: framework.Dump, file_path):
     loss = Loss()
 
-    loss_r = np.zeros(len(dump.robot_pos))
+    loss_r = np.zeros(len(dump))
     loss_n = np.zeros(loss_r.shape)
     nest_pos = np.array(settings.Nest.POSITION)
 
-    iter_ = zip(dump.robot_pos, dump.food_pos)
-    for i, (robot_pos, food_pos) in enumerate(iter_):
+    for i in range(len(dump)):
+        delta = dump[i]
+        food_pos = delta.food_pos
+        robot_pos = np.array(list(delta.robot_pos.values()))
         loss_r[i] = loss.calc_r_loss(robot_pos, food_pos)
         loss_n[i] = loss.calc_n_loss(nest_pos, food_pos)
 
