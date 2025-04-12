@@ -128,4 +128,4 @@ class RobotBuilder(WorldObjectBuilder):
             data.actuator(self.name_table.ACT_R),
         )
 
-        return Robot(self.brain, property_, input_, actuator_)
+        return Robot(f"robot{self.id}", self.brain, property_, input_, actuator_)
