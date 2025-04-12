@@ -140,3 +140,6 @@ class Logger(opt.Logger):
 
     def __getitem__(self, item):
         return self._logger.queues[item]
+
+    def __len__(self):
+        return len(self._logger.queues)
