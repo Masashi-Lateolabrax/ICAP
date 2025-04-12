@@ -45,7 +45,7 @@ def main():
 
 def record_in_mp4(settings: Settings, save_dir, logger: Logger, brain_builder: BrainBuilder):
     settings.Robot.ARGMAX_SELECTION = True
-    for g in set(list(range(0, len(logger), len(logger) // 10)) + [len(logger) - 1]):
+    for g in set(list(range(0, len(logger), max(len(logger) // 10, 1))) + [len(logger) - 1]):
         para = logger[g].min_ind
         file_path = os.path.join(save_dir, f"gen{g}.mp4")
 
