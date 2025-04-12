@@ -1,4 +1,4 @@
-from .const import ROBOT_SIZE
+from .const import *
 
 from .brain import BrainJudgement, BrainInterface, BrainBuilder, DiscreteOutput
 
