@@ -1,7 +1,7 @@
 import abc
 import enum
 
-import numpy as np
+import torch
 
 from libs.optimizer import Individual
 
@@ -19,7 +19,7 @@ class BrainJudgement(enum.Enum):
 
 class BrainInterface(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def think(self, input_: RobotInput) -> np.ndarray:
+    def think(self, input_: RobotInput) -> torch.Tensor:
         raise NotImplementedError
 
 
@@ -36,5 +36,5 @@ class BrainBuilder(metaclass=abc.ABCMeta):
 
 class DiscreteOutput(BrainInterface):
     @abc.abstractmethod
-    def convert(self, output: np.ndarray) -> BrainJudgement:
+    def convert(self, output: torch.Tensor) -> BrainJudgement:
         raise NotImplementedError
