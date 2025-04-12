@@ -6,6 +6,3 @@ from .const import ROBOT_SIZE
 
 from .robot import Robot
 from .robot_builder import RobotBuilder
-
-from .crobot import CRobot
-from .crobot_builder import CRobotBuilder

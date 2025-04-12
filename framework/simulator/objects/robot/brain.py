@@ -5,6 +5,8 @@ import numpy as np
 
 from libs.optimizer import Individual
 
+from .robot_input import RobotInput
+
 
 class BrainJudgement(enum.Enum):
     STOP = 0
@@ -16,7 +18,8 @@ class BrainJudgement(enum.Enum):
 
 
 class BrainInterface(metaclass=abc.ABCMeta):
-    def think(self, input_) -> BrainJudgement:
+    @abc.abstractmethod
+    def think(self, input_: RobotInput) -> np.ndarray:
         raise NotImplementedError
 
 
@@ -31,17 +34,7 @@ class BrainBuilder(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
 
-class CBrainInterface(metaclass=abc.ABCMeta):
-    def think(self, input_) -> np.ndarray:
-        raise NotImplementedError
-
-
-class CBrainBuilder(metaclass=abc.ABCMeta):
+class DiscreteOutput(BrainInterface):
     @abc.abstractmethod
-    def build(self, para: Individual) -> CBrainInterface:
-        raise NotImplementedError
-
-    @staticmethod
-    @abc.abstractmethod
-    def get_dim() -> int:
+    def convert(self, output: np.ndarray) -> BrainJudgement:
         raise NotImplementedError

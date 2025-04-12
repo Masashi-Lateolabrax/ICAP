@@ -4,7 +4,7 @@ from unittest.mock import Mock
 import mujoco
 import numpy as np
 
-from ....interfaceis import BrainInterface, BrainJudgement
+from ....interfaceis import BrainInterface, BrainJudgement, DiscreteOutput
 
 from .robot_property import RobotProperty
 from .robot_input import RobotInput
@@ -63,22 +63,39 @@ class Robot:
     def angle(self):
         return self.property.angle
 
-    def action(self, _input=None):
-        match self.brain.think(self.input):
-            case BrainJudgement.STOP:
-                self.actuator.stop()
-            case BrainJudgement.FORWARD:
-                self.actuator.forward()
-            case BrainJudgement.BACK:
-                self.actuator.back()
-            case BrainJudgement.TURN_RIGHT:
-                self.actuator.turn_right()
-            case BrainJudgement.TURN_LEFT:
-                self.actuator.turn_left()
-            case BrainJudgement.SECRETION:
-                self.actuator.secretion()
-            case _:  # pragma: no cover
-                raise ValueError("Invalid judge")
+    def think(self) -> np.ndarray | BrainJudgement:
+        output = self.brain.think(self.input)
+        if isinstance(self.brain, DiscreteOutput):
+            output = self.brain.convert(output)
+        return output
+
+    def action(self, output: np.ndarray | BrainJudgement):
+        if isinstance(output, np.ndarray):
+            self.actuator.execute(output)
+
+        elif isinstance(output, BrainJudgement):
+            match output:
+                case BrainJudgement.STOP:
+                    self.actuator.stop()
+                case BrainJudgement.FORWARD:
+                    self.actuator.forward()
+                case BrainJudgement.BACK:
+                    self.actuator.back()
+                case BrainJudgement.TURN_RIGHT:
+                    self.actuator.turn_right()
+                case BrainJudgement.TURN_LEFT:
+                    self.actuator.turn_left()
+                case BrainJudgement.SECRETION:
+                    self.actuator.secretion()
+                case _:
+                    raise ValueError("Invalid judge")
+
+        else:
+            raise TypeError("Invalid output type")
+
+    def exec(self):
+        output = self.think()
+        self.action(output)
 
 
 class _TestRobot(unittest.TestCase):

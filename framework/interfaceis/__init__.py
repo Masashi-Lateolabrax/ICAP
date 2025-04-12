@@ -1,2 +1,2 @@
-from .robot.brain import BrainJudgement, BrainInterface, BrainBuilder, CBrainInterface, CBrainBuilder
+from .robot import *
 from .loss import Loss
