@@ -1,6 +1,6 @@
 import numpy as np
 
-from .interfaceis import Loss
+from .optimization import Loss
 
 
 class Settings:

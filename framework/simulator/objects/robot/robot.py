@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 
 from .brain import BrainInterface, BrainJudgement, DiscreteOutput
 from .robot_property import RobotProperty
@@ -60,14 +61,14 @@ class Robot:
     def angle(self):
         return self.property.angle
 
-    def think(self) -> np.ndarray | BrainJudgement:
-        output = self.brain.think(self.input)
+    def think(self) -> torch.Tensor:
+        return self.brain.think(self.input)
+
+    def action(self, output: torch.Tensor):
         if isinstance(self.brain, DiscreteOutput):
             output = self.brain.convert(output)
-        return output
 
-    def action(self, output: np.ndarray | BrainJudgement):
-        if isinstance(output, np.ndarray):
+        if isinstance(output, torch.Tensor):
             self.actuator.execute(output)
 
         elif isinstance(output, BrainJudgement):
@@ -88,7 +89,7 @@ class Robot:
                     raise ValueError("Invalid judge")
 
         else:
-            raise TypeError("Invalid output type")
+            raise TypeError(f"Invalid output type. Type: {type(output)}")
 
     def exec(self):
         output = self.think()

@@ -3,11 +3,10 @@ from libs.optimizer import Individual
 import framework
 
 from .settings import Settings
-from .interfaceis import BrainBuilder, BrainInterface
 from .task import Task
 
 from .simulator.objects.utils import rand_robot_pos, rand_food_pos
-from .simulator.objects import NestBuilder, RobotBuilder, FoodBuilder
+from .simulator.objects import NestBuilder, RobotBuilder, FoodBuilder, BrainBuilder
 from .simulator.world import WorldBuilder
 
 

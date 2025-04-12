@@ -1,7 +1,7 @@
 from libs import optimizer
 
 from ..settings import Settings
-from ..interfaceis import BrainBuilder
+from ..simulator.objects import BrainBuilder
 from ..task_generator import TaskGenerator
 
 
