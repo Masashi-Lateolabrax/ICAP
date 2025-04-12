@@ -40,11 +40,14 @@ def main():
     if not os.path.exists(file_path):
         analysis.plot_parameter_movements(logger, file_path)
 
-    ## Loop through the generations.
+    record_in_mp4(settings, save_dir, logger, brain_builder)
+
+
+def record_in_mp4(settings: Settings, save_dir, logger: Logger, brain_builder: BrainBuilder):
     settings.Robot.ARGMAX_SELECTION = True
-    for gen in [0, 50, 100, 150, 200, 250, 299]:
-        para = logger[gen].min_ind
-        file_path = os.path.join(save_dir, f"gen{gen}.mp4")
+    for g in set(list(range(0, len(logger), len(logger) // 10)) + [len(logger) - 1]):
+        para = logger[g].min_ind
+        file_path = os.path.join(save_dir, f"gen{g}.mp4")
 
         ## Record the simulation.
         dump = framework.entry_points.record(
@@ -56,7 +59,7 @@ def main():
         )
 
         ## Plot the loss.
-        analysis.plot_loss(settings, dump, os.path.join(save_dir, f"loss_gen{gen}.png"))
+        analysis.plot_loss(settings, dump, os.path.join(save_dir, f"loss_gen{g}.png"))
 
 
 if __name__ == '__main__':
