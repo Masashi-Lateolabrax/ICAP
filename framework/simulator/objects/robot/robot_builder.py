@@ -6,9 +6,9 @@ from mujoco_xml_generator import common, body, actuator
 from mujoco_xml_generator.utils import DummyGeom
 
 from ....settings import Settings
-from ....interfaceis import BrainInterface
 from ...sensors import OmniSensor, DirectionSensor
 from ..name_table import RobotNameTable, FoodNameTable
+from .brain import BrainInterface
 from .actuator import Actuator as BotActuator
 from .robot_input import RobotInput
 from .robot_property import RobotProperty

@@ -1,10 +1,9 @@
 import numpy as np
 
 from ...settings import Settings
-from ...interfaceis import BrainInterface
 from ..utils import random_point_avoiding_invalid_areas
 
-from .robot import ROBOT_SIZE, RobotBuilder
+from .robot import ROBOT_SIZE, RobotBuilder, BrainInterface
 from framework.simulator.objects.food.food_builder import FOOD_SIZE, FoodBuilder
 
 
