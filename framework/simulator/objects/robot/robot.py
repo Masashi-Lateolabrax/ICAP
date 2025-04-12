@@ -1,7 +1,6 @@
 import numpy as np
 
-from ....interfaceis import BrainInterface, BrainJudgement, DiscreteOutput
-
+from .brain import BrainInterface, BrainJudgement, DiscreteOutput
 from .robot_property import RobotProperty
 from .robot_input import RobotInput
 from .actuator import Actuator
