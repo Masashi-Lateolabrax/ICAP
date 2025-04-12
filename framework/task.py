@@ -35,15 +35,21 @@ class Task(optimizer.MjcTaskInterface):
 
     def calc_step(self) -> float:
         for r in self.robots:
-            r.exec()
+            output = r.think()
+            r.action(output)
+            if self.dump:
+                self.dump.record_robot_outputs(r.name, output)
+
         self.world.calc_step()
 
         robot_pos = np.array([robot.position for robot in self.robots])
         food_pos = np.array([food.position for food in self.food])
         loss = self.settings.CMAES._loss(self.nest.position, robot_pos, food_pos)
 
-        if isinstance(self.dump, Dump):
-            self.dump.dump(robot_pos, food_pos)
+        if self.dump:
+            for robot in self.robots:
+                self.dump.record_robot_pos(robot.name, robot.position)
+            self.dump.record_food_pos(food_pos)
 
         return loss
 
