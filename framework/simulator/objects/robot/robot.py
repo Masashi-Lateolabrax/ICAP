@@ -10,11 +10,13 @@ from .actuator import Actuator
 class Robot:
     def __init__(
             self,
+            name: str,
             brain: BrainInterface,
             property_: RobotProperty,
             input_: RobotInput,
             actuator: Actuator,
     ):
+        self.name = name
         self.brain = brain
         self.property = property_
         self.input = input_
@@ -92,4 +94,3 @@ class Robot:
     def exec(self):
         output = self.think()
         self.action(output)
-
