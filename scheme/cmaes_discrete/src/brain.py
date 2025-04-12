@@ -53,7 +53,7 @@ class NeuralNetwork(torch.nn.Module):
         return res
 
 
-class Brain(framework.interfaceis.DiscreteOutput):
+class Brain(framework.interfaces.DiscreteOutput):
     def __init__(self, settings: framework.Settings, nn: NeuralNetwork):
         self.settings = settings
 
@@ -61,7 +61,7 @@ class Brain(framework.interfaceis.DiscreteOutput):
         self.state = framework.BrainJudgement.STOP
 
         self.neural_network = nn
-        self.output = torch.zeros(5, dtype=torch.float32)
+        self.output = torch.zeros(5, dtype=torch.float32, requires_grad=False)
         self.output_is_updated = False
 
     def think(self, input_: RobotInput) -> torch.Tensor:
@@ -73,6 +73,7 @@ class Brain(framework.interfaceis.DiscreteOutput):
     def convert(self, output: torch.Tensor) -> BrainJudgement:
         if not self.output_is_updated:
             return self.state
+        self.output_is_updated = False
 
         if self.settings.Robot.ARGMAX_SELECTION:
             r = torch.argmax(output).item()
@@ -83,7 +84,7 @@ class Brain(framework.interfaceis.DiscreteOutput):
         return self.state
 
 
-class BrainBuilder(framework.interfaceis.BrainBuilder):
+class BrainBuilder(framework.interfaces.BrainBuilder):
     @staticmethod
     def get_dim() -> int:
         return NeuralNetwork().num_dim()
@@ -92,6 +93,6 @@ class BrainBuilder(framework.interfaceis.BrainBuilder):
         self.settings = settings
         self.buf_net: NeuralNetwork = NeuralNetwork()
 
-    def build(self, para: Individual) -> framework.interfaceis.BrainInterface:
+    def build(self, para: Individual) -> framework.interfaces.BrainInterface:
         self.buf_net.set_para(para)
         return Brain(self.settings, self.buf_net)
