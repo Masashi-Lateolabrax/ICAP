@@ -89,7 +89,7 @@ class Robot:
                     raise ValueError("Invalid judge")
 
         else:
-            raise TypeError("Invalid output type")
+            raise TypeError(f"Invalid output type. Type: {type(output)}")
 
     def exec(self):
         output = self.think()
