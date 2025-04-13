@@ -14,11 +14,11 @@ class Loss(framework.interfaces.Loss):
     def __init__(self):
         self.offset_nest_and_food = NEST_SIZE + FOOD_SIZE
         self.sigma_nest_and_food = _calc_loss_sigma(4, 0.01)
-        self.gain_nest_and_food = 1
+        self.GAIN_NEST_AND_FOOD = 1
 
         self.offset_robot_and_food = ROBOT_SIZE + FOOD_SIZE
         self.sigma_robot_and_food = _calc_loss_sigma(1, 0.3)
-        self.gain_robot_and_food = 0.01
+        self.GAIN_ROBOT_AND_FOOD = 0.01
 
     def calc_r_loss(self, robot_pos: np.ndarray, food_pos: np.ndarray) -> float:
         distance = np.max(
@@ -26,7 +26,7 @@ class Loss(framework.interfaces.Loss):
             0
         )
         loss = -np.average(np.exp(-(distance ** 2) / self.sigma_robot_and_food))
-        return self.gain_robot_and_food * loss
+        return self.GAIN_ROBOT_AND_FOOD * loss
 
     def calc_n_loss(self, nest_pos: np.ndarray, food_pos: np.ndarray) -> float:
         distance = np.max(
@@ -34,7 +34,7 @@ class Loss(framework.interfaces.Loss):
             0
         )
         loss = -np.average(np.exp(-(distance ** 2) / self.sigma_nest_and_food))
-        return self.gain_nest_and_food * loss
+        return self.GAIN_NEST_AND_FOOD * loss
 
     def calc_loss(self, nest_pos: np.ndarray, robot_pos: np.ndarray, food_pos: np.ndarray) -> float:
         loss_r = self.calc_r_loss(robot_pos, food_pos)
