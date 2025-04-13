@@ -27,16 +27,14 @@ def plot_loss(settings: Settings, dump: framework.Dump, file_path):
         loss_n[i] = loss.calc_n_loss(nest_pos, food_pos)
 
     fig = plt.figure()
-    ax1 = fig.add_subplot(1, 1, 1)
-    ax2 = ax1.twinx()
+    ax = fig.add_subplot(1, 1, 1)
 
-    loss_line_r = ax1.plot(loss_r, label='robot loss', color='blue')
-    loss_line_n = ax2.plot(loss_n, label='nest loss', color='orange')
+    loss_line_r = ax.plot(loss_r, label='robot loss', color='blue')
+    loss_line_n = ax.plot(loss_n, label='nest loss', color='orange')
 
-    ax1.set_xlabel('iteration')
-    ax1.set_ylabel('robot loss')
-    ax2.set_ylabel('nest loss')
-    ax1.set_title('Loss')
+    ax.set_xlabel('iteration')
+    ax.set_ylabel('loss')
+    ax.set_title('Loss')
 
     fig.legend(handles=[loss_line_r[0], loss_line_n[0]], loc='lower center')
 
