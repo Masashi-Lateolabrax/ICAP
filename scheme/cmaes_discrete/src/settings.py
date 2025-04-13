@@ -18,7 +18,7 @@ Settings.CMAES.LOSS = Loss()
 Settings.Simulation.WORLD_WIDTH = 8
 Settings.Simulation.WORLD_HEIGHT = 8
 
-Settings.Robot.THINK_INTERVAL = 1
+Settings.Robot.THINK_INTERVAL = 0.5
 Settings.Robot.ARGMAX_SELECTION = False
 Settings.Robot.FoodSensor.GAIN = 1
 
