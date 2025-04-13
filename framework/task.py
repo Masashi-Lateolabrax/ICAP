@@ -34,22 +34,24 @@ class Task(optimizer.MjcTaskInterface):
         return self.world.data
 
     def calc_step(self) -> float:
+        delta = None if self.dump is None else self.dump.create_delta()
+
         for r in self.robots:
             output = r.think()
             r.action(output)
-            if self.dump:
-                self.dump.record_robot_outputs(r.name, output)
 
-        self.world.calc_step()
+            if delta is not None:
+                delta.robot_outputs[r.name] = output
+                delta.robot_pos[r.name] = r.position[:2]
+
+        if delta is not None:
+            delta.food_pos = self.food.position
 
         robot_pos = np.array([robot.position for robot in self.robots])
         food_pos = np.array([food.position for food in self.food])
         loss = self.settings.CMAES._loss(self.nest.position, robot_pos, food_pos)
 
-        if self.dump:
-            for robot in self.robots:
-                self.dump.record_robot_pos(robot.name, robot.position)
-            self.dump.record_food_pos(food_pos)
+        self.world.calc_step()
 
         return loss
 
