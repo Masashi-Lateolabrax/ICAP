@@ -14,6 +14,8 @@ Settings.Simulation.TIME_STEP = 0.01
 Settings.Simulation.TIME_LENGTH = int(30 / Settings.Simulation.TIME_STEP)
 
 Settings.CMAES.LOSS = Loss()
+Settings.CMAES.LOSS.GAIN_NEST_AND_FOOD = 1
+Settings.CMAES.LOSS.GAIN_ROBOT_AND_FOOD = 0.1
 
 Settings.Simulation.WORLD_WIDTH = 8
 Settings.Simulation.WORLD_HEIGHT = 8
