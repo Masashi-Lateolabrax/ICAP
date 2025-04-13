@@ -24,6 +24,16 @@ class BrainInterface(metaclass=abc.ABCMeta):
 
 
 class BrainBuilder(metaclass=abc.ABCMeta):
+    """
+    Interface for building a brain.
+    The BrainBuilder is responsible for creating a brain instance based on the given parameters.
+
+    The `build` method is called to create a new brain instance for each robot.
+    If a BrainBuilder has just one neural network instance, the brain will share the neural network.
+    Alternatively, a BrainBuilder constructs a neural network for `build` call,
+    the brain will have its own neural network.
+    """
+
     @abc.abstractmethod
     def build(self, para: Individual) -> BrainInterface:
         raise NotImplementedError
