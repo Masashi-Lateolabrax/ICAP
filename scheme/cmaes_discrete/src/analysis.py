@@ -74,3 +74,31 @@ def plot_parameter_movements(logger: Logger, file_path, start=0, end=None):
     ax = fig.add_subplot(1, 1, 1)
     ax.plot(xs, movement)
     fig.savefig(file_path)
+
+
+def test_suboptimal_individuals(
+        save_dir: str,
+        logger: Logger,
+        settings: Settings,
+        brain_builder: framework.interfaces.BrainBuilder
+):
+    settings.Robot.ARGMAX_SELECTION = True
+    task_generator = framework.TaskGenerator(settings, brain_builder)
+
+    losses = []
+
+    for i in range(len(logger)):
+        para = logger[i].min_ind
+        task = task_generator.generate(para, debug=True)
+        losses.append(
+            task.run()
+        )
+
+    xs = np.arange(len(losses))
+    file_path = os.path.join(save_dir, f"test_loss.png")
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+    ax.plot(xs, losses)
+    fig.savefig(file_path)
+
+    return losses
