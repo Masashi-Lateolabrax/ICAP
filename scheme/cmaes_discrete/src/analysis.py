@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -6,6 +8,7 @@ import framework
 from loss import Loss
 from settings import Settings
 from logger import Logger
+from brain import BrainBuilder
 
 
 def plot_loss(settings: Settings, dump: framework.Dump, file_path):
@@ -37,6 +40,25 @@ def plot_loss(settings: Settings, dump: framework.Dump, file_path):
     fig.legend(handles=[loss_line_r[0], loss_line_n[0]], loc='lower center')
 
     fig.savefig(file_path)
+
+
+def record_in_mp4(settings: Settings, save_dir, logger: Logger, brain_builder: BrainBuilder):
+    settings.Robot.ARGMAX_SELECTION = True
+    for g in set(list(range(0, len(logger), max(len(logger) // 10, 1))) + [len(logger) - 1]):
+        para = logger[g].min_ind
+        file_path = os.path.join(save_dir, f"gen{g}.mp4")
+
+        ## Record the simulation.
+        dump = framework.entry_points.record(
+            settings,
+            file_path,
+            para,
+            brain_builder,
+            debug=True
+        )
+
+        ## Plot the loss.
+        plot_loss(settings, dump, os.path.join(save_dir, f"loss_gen{g}.png"))
 
 
 def plot_parameter_movements(logger: Logger, file_path, start=0, end=None):
