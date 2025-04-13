@@ -42,6 +42,10 @@ def main():
 
     analysis.record_in_mp4(settings, save_dir, logger, brain_builder)
 
+    analysis.test_suboptimal_individuals(
+        save_dir, logger, settings, brain_builder
+    )
+
 
 if __name__ == '__main__':
     main()
