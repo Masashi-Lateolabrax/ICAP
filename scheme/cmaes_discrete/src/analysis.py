@@ -90,13 +90,18 @@ def test_suboptimal_individuals(
     for i in range(len(logger)):
         para = logger[i].min_ind
         task = task_generator.generate(para, debug=True)
+
         loss = 0
         for t in range(settings.Simulation.TIME_LENGTH):
             loss += task.calc_step()
 
             if datetime.datetime.now() - time > datetime.timedelta(seconds=1):
                 time = datetime.datetime.now()
-                print(f"Generation: {i}/{len(logger)}, Progress: {t / settings.Simulation.TIME_LENGTH * 100}%")
+                print(
+                    f"Generation: {i}/{len(logger)}, Progress: {t / settings.Simulation.TIME_LENGTH * 100}%, loss: {loss}"
+                )
+
+        losses.append(loss)
 
     xs = np.arange(len(losses))
     file_path = os.path.join(save_dir, f"test_loss.png")
