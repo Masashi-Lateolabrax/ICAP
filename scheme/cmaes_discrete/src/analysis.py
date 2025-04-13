@@ -1,4 +1,5 @@
 import os
+import datetime
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -86,13 +87,18 @@ def test_suboptimal_individuals(
     task_generator = framework.TaskGenerator(settings, brain_builder)
 
     losses = []
+    time = datetime.datetime.now()
 
     for i in range(len(logger)):
         para = logger[i].min_ind
         task = task_generator.generate(para, debug=True)
-        losses.append(
-            task.run()
-        )
+        loss = 0
+        for t in range(settings.Simulation.TIME_LENGTH):
+            loss += task.calc_step()
+
+            if datetime.datetime.now() - time > datetime.timedelta(seconds=1):
+                time = datetime.datetime.now()
+                print(f"Generation: {i}/{len(logger)}, Progress: {t / settings.Simulation.TIME_LENGTH * 100}%")
 
     xs = np.arange(len(losses))
     file_path = os.path.join(save_dir, f"test_loss.png")
