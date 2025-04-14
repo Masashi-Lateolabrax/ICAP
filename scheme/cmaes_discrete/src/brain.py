@@ -26,8 +26,8 @@ class NeuralNetwork(torch.nn.Module):
         self.sequence = torch.nn.Sequential(
             torch.nn.Linear(6, 6),
             torch.nn.Tanh(),
-            torch.nn.Linear(6, 6),
-            torch.nn.GELU(),
+            # torch.nn.Linear(6, 6),
+            # torch.nn.GELU(),
             torch.nn.Linear(6, 5),
             torch.nn.Softmax(dim=0)
         )
