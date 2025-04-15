@@ -62,7 +62,7 @@ class Brain(framework.interfaces.DiscreteOutput):
         self.state = framework.BrainJudgement.STOP
 
         self.neural_network = nn
-        self.output = torch.zeros(5, dtype=torch.float32, requires_grad=False)
+        self.output = torch.zeros(4, dtype=torch.float32, requires_grad=False)
         self.output_is_updated = False
 
     def think(self, input_: RobotInput) -> torch.Tensor:
