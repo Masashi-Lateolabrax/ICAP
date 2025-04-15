@@ -16,7 +16,7 @@ class RobotInput:
         self.robot_sensor = other_robot_sensor
         self.food_sensor = food_sensor
         self.nest_sensor = nest_sensor
-        self.touch = torch.zeros(6, dtype=torch.float32)
+        self.touch = torch.zeros(6, dtype=torch.float32, requires_grad=False)
 
     def get(self) -> torch.Tensor:
         self.touch[0:2] = torch.tensor(self.robot_sensor.get(self.property.global_direction, self.property.pos))
