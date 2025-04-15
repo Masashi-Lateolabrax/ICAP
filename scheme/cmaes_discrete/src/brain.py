@@ -24,11 +24,12 @@ class NeuralNetwork(torch.nn.Module):
         super().__init__()
 
         self.sequence = torch.nn.Sequential(
-            torch.nn.Linear(6, 3),
-            torch.nn.Tanh(),
+            torch.nn.Linear(6, 1),
+            torch.nn.Tanhshrink(),
+            # torch.nn.Tanh(),
             # torch.nn.Linear(6, 6),
             # torch.nn.GELU(),
-            torch.nn.Linear(3, 5),
+            torch.nn.Linear(1, 4),
             torch.nn.Softmax(dim=0)
         )
 
