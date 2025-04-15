@@ -9,12 +9,12 @@ from .robot_input import RobotInput
 
 
 class BrainJudgement(enum.Enum):
-    STOP = 0
-    FORWARD = 1
-    BACK = 2
-    TURN_RIGHT = 3
-    TURN_LEFT = 4
-    SECRETION = 5
+    FORWARD = 0
+    BACK = 1
+    TURN_RIGHT = 2
+    TURN_LEFT = 3
+    SECRETION = 4
+    STOP = 5
 
 
 class BrainInterface(metaclass=abc.ABCMeta):
