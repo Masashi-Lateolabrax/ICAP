@@ -1,7 +1,7 @@
-import numpy as np
 import torch
 
 import framework
+from framework.simulator.objects import RobotInput
 from libs.optimizer import Individual
 
 
@@ -23,12 +23,10 @@ class NeuralNetwork(torch.nn.Module):
         super().__init__()
 
         self.sequence = torch.nn.Sequential(
-            torch.nn.Linear(6, 5),
+            torch.nn.Linear(6, 4),
             torch.nn.Tanh(),
-            torch.nn.Linear(5, 4),
-            torch.nn.GELU(),
             torch.nn.Linear(4, 2),
-            torch.nn.Tanh(),
+            torch.nn.Softmax(dim=0)
         )
 
     def forward(self, x: framework.simulator.objects.RobotInput):
@@ -52,33 +50,33 @@ class NeuralNetwork(torch.nn.Module):
         return res
 
 
-class Brain(framework.interfaceis.CBrainInterface):
+class Brain(framework.interfaces.BrainInterface):
     def __init__(self, settings: framework.Settings, nn: NeuralNetwork):
         self.settings = settings
 
         self.timer = Timer(settings.Robot.THINK_INTERVAL / settings.Simulation.TIME_STEP)
+        self.state = framework.BrainJudgement.STOP
 
         self.neural_network = nn
+        self.output = torch.zeros(2, dtype=torch.float32, requires_grad=False)
+        self.output_is_updated = False
 
-        self._output_buf = np.zeros(2, dtype=np.float32)
-
-    def think(self, input_: framework.simulator.objects.RobotInput) -> np.ndarray:
+    def think(self, input_: RobotInput) -> torch.Tensor:
         if self.timer.tick():
-            output = self.neural_network(input_)
-            self._output_buf[:] = output[:2].cpu().detach().numpy()
+            self.output[:] = self.neural_network(input_)
+            self.output_is_updated = True
+        return self.output
 
-        return self._output_buf
 
-
-class BrainBuilder(framework.interfaceis.CBrainBuilder):
+class BrainBuilder(framework.interfaces.BrainBuilder):
     @staticmethod
     def get_dim() -> int:
         return NeuralNetwork().num_dim()
 
     def __init__(self, settings):
         self.settings = settings
-        self.nn = NeuralNetwork()
+        self.buf_net: NeuralNetwork = NeuralNetwork()
 
-    def build(self, para: Individual) -> framework.interfaceis.CBrainInterface:
-        self.nn.set_para(para)
-        return Brain(self.settings, self.nn)
+    def build(self, para: Individual) -> framework.interfaces.BrainInterface:
+        self.buf_net.set_para(para)
+        return Brain(self.settings, self.buf_net)
