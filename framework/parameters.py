@@ -1,4 +1,4 @@
-from .interfaceis import BrainInterface
+from .simulator.objects import BrainInterface
 
 
 class Parameters:

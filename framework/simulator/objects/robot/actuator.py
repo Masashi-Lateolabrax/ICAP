@@ -1,5 +1,6 @@
 import dataclasses
 
+import torch
 from mujoco._structs import _MjDataActuatorViews
 
 from .robot_property import RobotProperty
@@ -41,9 +42,9 @@ class Actuator:
         self.act_y.ctrl[0] = 0
         self.act_r.ctrl[0] = 0
 
-    def execute(self, out):
-        right_wheel_speed = out[0]
-        left_wheel_speed = out[1]
+    def execute(self, out: torch.Tensor):
+        right_wheel_speed = out[0].item()
+        left_wheel_speed = out[1].item()
 
         move_forward_speed = 0.5 * (right_wheel_speed + left_wheel_speed) * self.move_speed
         turn_speed = 0.5 * (right_wheel_speed - left_wheel_speed) * self.turn_speed

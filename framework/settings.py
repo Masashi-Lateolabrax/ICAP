@@ -1,6 +1,6 @@
 import numpy as np
 
-from .interfaceis import Loss
+from .optimization import Loss
 
 
 class Settings:
@@ -17,10 +17,10 @@ class Settings:
         WORLD_HEIGHT = 10
 
     class CMAES:
-        GENERATION = 1000  # Total number of generations
-        POPULATION = 100  # Population size per generation
+        GENERATION = 3  # Total number of generations
+        POPULATION = 4  # Population size per generation
         MU = 50  # Number of elite individuals (selected)
-        SIGMA = 0.5  # Initial standard deviation
+        SIGMA = 0.1  # Initial standard deviation
         LOSS: Loss = None
 
         @staticmethod

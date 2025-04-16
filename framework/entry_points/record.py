@@ -6,7 +6,7 @@ from libs import optimizer
 from libs.utils.data_collector import Recorder
 
 from ..settings import Settings
-from ..interfaceis import BrainBuilder
+from ..simulator.objects import BrainBuilder
 from ..task_generator import TaskGenerator
 
 
