@@ -15,28 +15,30 @@ from brain import BrainBuilder
 def plot_loss(settings: Settings, dump: framework.Dump, file_path):
     loss = Loss()
 
-    loss_r = np.zeros(len(dump))
-    loss_n = np.zeros(loss_r.shape)
     nest_pos = np.array(settings.Nest.POSITION)
+
+    loss_log = np.zeros(len(dump), loss.num_elements())
 
     for i in range(len(dump)):
         delta = dump[i]
         food_pos = delta.food_pos
         robot_pos = np.array(list(delta.robot_pos.values()))
-        loss_r[i] = loss.calc_r_loss(robot_pos, food_pos)
-        loss_n[i] = loss.calc_n_loss(nest_pos, food_pos)
+        loss_log[i, :] = loss.calc_elements(nest_pos, robot_pos, food_pos)
 
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
 
-    loss_line_r = ax.plot(loss_r, label='robot loss', color='blue')
-    loss_line_n = ax.plot(loss_n, label='nest loss', color='orange')
+    loss_lines = []
+    for loss, (label, c_name) in zip(loss_log.T, [("distance", "blue")]):
+        loss_lines.append(
+            ax.plot(loss, label=label, color=c_name)[0]
+        )
 
     ax.set_xlabel('iteration')
     ax.set_ylabel('loss')
     ax.set_title('Loss')
 
-    fig.legend(handles=[loss_line_r[0], loss_line_n[0]], loc='lower center')
+    fig.legend(handles=loss_lines, loc='lower center')
 
     fig.savefig(file_path)
 
