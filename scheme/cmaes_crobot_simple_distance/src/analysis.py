@@ -17,7 +17,7 @@ def plot_loss(settings: Settings, dump: framework.Dump, file_path):
 
     nest_pos = np.array(settings.Nest.POSITION)
 
-    loss_log = np.zeros(len(dump), loss.num_elements())
+    loss_log = np.zeros((len(dump), loss.num_elements()))
 
     for i in range(len(dump)):
         delta = dump[i]
