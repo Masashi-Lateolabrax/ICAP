@@ -1,4 +1,3 @@
-import numpy as np
 import torch
 
 import framework
@@ -52,7 +51,7 @@ class NeuralNetwork(torch.nn.Module):
         return res
 
 
-class Brain(framework.interfaceis.CBrainInterface):
+class Brain(framework.interfaces.BrainInterface):
     def __init__(self, settings: framework.Settings, nn: NeuralNetwork):
         self.settings = settings
 
@@ -60,17 +59,17 @@ class Brain(framework.interfaceis.CBrainInterface):
 
         self.neural_network = nn
 
-        self._output_buf = np.zeros(2, dtype=np.float32)
+        self._output_buf = torch.zeros(2, dtype=torch.float32, requires_grad=False)
 
-    def think(self, input_: framework.simulator.objects.RobotInput) -> np.ndarray:
+    def think(self, input_: framework.simulator.objects.RobotInput) -> torch.Tensor:
         if self.timer.tick():
             output = self.neural_network(input_)
-            self._output_buf[:] = output[:2].cpu().detach().numpy()
+            self._output_buf[:] = output[:2]
 
         return self._output_buf
 
 
-class BrainBuilder(framework.interfaceis.CBrainBuilder):
+class BrainBuilder(framework.interfaces.BrainBuilder):
     @staticmethod
     def get_dim() -> int:
         return NeuralNetwork().num_dim()
@@ -79,6 +78,6 @@ class BrainBuilder(framework.interfaceis.CBrainBuilder):
         self.settings = settings
         self.nn = NeuralNetwork()
 
-    def build(self, para: Individual) -> framework.interfaceis.CBrainInterface:
+    def build(self, para: Individual) -> framework.interfaces.BrainInterface:
         self.nn.set_para(para)
         return Brain(self.settings, self.nn)
