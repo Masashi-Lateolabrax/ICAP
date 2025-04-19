@@ -18,3 +18,13 @@ class Logger(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def save_tmp(self, gen):
         raise NotImplemented
+
+
+class EachGenLogger(Logger, metaclass=abc.ABCMeta):
+    @abc.abstractmethod
+    def __getitem__(self, item):
+        raise NotImplemented
+
+    @abc.abstractmethod
+    def __len__(self):
+        raise NotImplemented

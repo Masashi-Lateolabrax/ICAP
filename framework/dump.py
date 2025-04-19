@@ -1,22 +1,38 @@
+import dataclasses
+
 import numpy as np
 import pickle
 
+import torch
+
 
 class Dump:
-    def __init__(self):
-        self.robot_pos = []
-        self.food_pos = []
+    @dataclasses.dataclass
+    class Delta:
+        robot_outputs: dict[str, np.ndarray] = dataclasses.field(default_factory=dict)
+        robot_pos: dict[str, np.ndarray] = dataclasses.field(default_factory=dict)
+        food_pos: np.ndarray = dataclasses.field(default_factory=lambda: np.zeros((0, 2), dtype=np.float32))
 
-    def dump(self, robot_pos: np.ndarray, food_pos: np.ndarray):
-        self.robot_pos.append(robot_pos)
-        self.food_pos.append(food_pos)
+    def __init__(self, file_path: str = None):
+        self.deltas: list[Dump.Delta] = []
+        if file_path is not None:
+            with open(file_path, 'rb') as f:
+                self.deltas = pickle.load(f)
+
+    def create_delta(self):
+        delta = Dump.Delta()
+        self.deltas.append(delta)
+        return delta
 
     def save(self, file_path):
         with open(file_path, 'wb') as f:
-            pickle.dump(self, f)
+            pickle.dump(self.deltas, f)
 
-    @staticmethod
-    def load(file_path):
-        with open(file_path, 'rb') as f:
-            this = pickle.load(f)
-        return this
+    def __getitem__(self, item):
+        return self.deltas[item]
+
+    def __len__(self):
+        return len(self.deltas)
+
+    def __iter__(self):
+        return iter(self.deltas)
