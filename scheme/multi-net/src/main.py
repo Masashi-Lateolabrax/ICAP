@@ -7,6 +7,7 @@ import framework
 from logger import Logger
 from brain import BrainBuilder
 from settings import Settings
+from loss import Loss
 
 import analysis
 
@@ -38,12 +39,14 @@ def main():
     ## Plot the movements of the parameters.
     file_path = os.path.join(save_dir, "parameter_movement.png")
     if not os.path.exists(file_path):
-        analysis.plot_parameter_movements(logger, file_path)
+        analysis.plot_parameter_movements(file_path, logger)
 
-    analysis.record_in_mp4(settings, save_dir, logger, brain_builder)
+    analysis.record_in_mp4(
+        save_dir, settings, logger, Loss(), brain_builder
+    )
 
     analysis.test_suboptimal_individuals(
-        save_dir, logger, settings, brain_builder
+        save_dir, logger, brain_builder
     )
 
 
