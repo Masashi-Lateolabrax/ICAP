@@ -24,9 +24,9 @@ class NeuralNetwork(torch.nn.Module):
 
         self.sequence = torch.nn.Sequential(
             torch.nn.Linear(6, 5),
-            torch.nn.Tanh(),
+            torch.nn.Tanhshrink(),
             torch.nn.Linear(5, 4),
-            torch.nn.GELU(),
+            torch.nn.Tanhshrink(),
             torch.nn.Linear(4, 2),
             torch.nn.Tanh(),
         )
