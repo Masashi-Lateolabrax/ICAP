@@ -88,7 +88,7 @@ class _Logger:
         return len(self.queues) == 0
 
 
-class Logger(opt.Logger):
+class Logger(opt.EachGenLogger):
     def __init__(self, save_dir):
         self.save_dir = save_dir
         self._logger = _Logger()
