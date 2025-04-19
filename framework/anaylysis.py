@@ -12,7 +12,7 @@ from .settings import Settings
 from .simulator.objects import BrainBuilder
 from .task_generator import TaskGenerator
 
-import entry_points
+from . import entry_points
 
 
 def plot_loss(file_path: str, settings: Settings, dump: Dump, loss: Loss):
@@ -68,18 +68,27 @@ def record_in_mp4(save_dir: str, settings: Settings, logger: EachGenLogger, loss
 
 
 def plot_parameter_movements(file_path: str, logger: EachGenLogger, start=0, end=None):
-    prev_para = logger[start].min_ind
-    movement = []
-    for queue in logger[start + 1:end]:
-        distance = np.linalg.norm(queue.min_ind - prev_para)
-        movement.append(distance)
-        prev_para[:] = queue.min_ind[:]
+    dim = logger[start].min_ind.shape[0]
 
-    xs = np.arange(len(movement))
+    subs = np.array([logger[i + 1].min_ind - logger[i].min_ind for i in range(start, (end or len(logger)) - 1)])
+    movement = np.linalg.norm(subs, axis=1)
+
+    # direction[i] += a[i,j] * b[i,j]
+    direction = np.einsum(
+        "ij,ij->i",
+        subs[:-1, :] / movement[:-1, None],
+        subs[1:, :] / movement[1:, None]
+    )
 
     fig = plt.figure()
-    ax = fig.add_subplot(1, 1, 1)
-    ax.plot(xs, movement)
+    ax1 = fig.add_subplot(1, 1, 1)
+    ax2 = ax1.twinx()
+
+    ax1.plot(np.arange(movement.shape[0]) + 0.5, movement / dim, label="movement", color="blue")
+    ax2.plot(np.arange(direction.shape[0]) + 1, direction, label="direction", color="orange")
+
+    fig.legend(loc="lower center")
+
     fig.savefig(file_path)
 
 
