@@ -12,7 +12,7 @@ from .settings import Settings
 from .simulator.objects import BrainBuilder
 from .task_generator import TaskGenerator
 
-import entry_points
+from . import entry_points
 
 
 def plot_loss(file_path: str, settings: Settings, dump: Dump, loss: Loss):
