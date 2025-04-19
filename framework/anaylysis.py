@@ -18,7 +18,7 @@ import entry_points
 def plot_loss(file_path: str, settings: Settings, dump: Dump, loss: Loss):
     nest_pos = np.array(settings.Nest.POSITION)
 
-    loss_log = np.zeros(len(dump), loss.num_elements())
+    loss_log = np.zeros((len(dump), loss.num_elements()))
 
     for i in range(len(dump)):
         delta = dump[i]
