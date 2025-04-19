@@ -7,6 +7,7 @@ import framework
 from logger import Logger
 from brain import BrainBuilder
 from settings import Settings
+from loss import Loss
 
 import analysis
 
@@ -38,25 +39,15 @@ def main():
     ## Plot the movements of the parameters.
     file_path = os.path.join(save_dir, "parameter_movement.png")
     if not os.path.exists(file_path):
-        analysis.plot_parameter_movements(logger, file_path)
+        analysis.plot_parameter_movements(file_path, logger)
 
-    ## Loop through the generations.
-    settings.Robot.ARGMAX_SELECTION = True
-    for g in set(list(range(0, len(logger), len(logger) // 10)) + [len(logger) - 1]):
-        para = logger[g].min_ind
-        file_path = os.path.join(save_dir, f"gen{g}.mp4")
+    analysis.record_in_mp4(
+        save_dir, settings, logger, Loss(), brain_builder
+    )
 
-        ## Record the simulation.
-        dump = framework.entry_points.record(
-            settings,
-            file_path,
-            para,
-            brain_builder,
-            debug=True
-        )
-
-        ## Plot the loss.
-        analysis.plot_loss(settings, dump, os.path.join(save_dir, f"loss_gen{g}.png"))
+    analysis.test_suboptimal_individuals(
+        save_dir, logger, brain_builder
+    )
 
 
 if __name__ == '__main__':
