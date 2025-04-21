@@ -3,6 +3,7 @@ from .dump import Dump
 
 from . import interfaces
 from . import simulator
+from . import analysis
 
 from .parameters import Parameters
 
