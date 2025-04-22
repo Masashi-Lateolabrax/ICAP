@@ -37,20 +37,21 @@ class Task(optimizer.MjcTaskInterface):
     def calc_step(self) -> float:
         delta = None if self.dump is None else self.dump.create_delta()
 
+        if delta is not None:
+            delta.food_pos = self.food.position
+
         for r in self.robots:
             output = r.think()
-            if torch.any(torch.isnan(output) | torch.isinf(output)):
-                print("The output tensor from robots contains invalid values (NaN or Inf).")
-                return float("inf")
-
             r.action(output)
 
             if delta is not None:
                 delta.robot_outputs[r.name] = output
                 delta.robot_pos[r.name] = r.position[:2]
 
-        if delta is not None:
-            delta.food_pos = self.food.position
+        coned_output = torch.cat(list(delta.robot_outputs.values()), dim=0)
+        if torch.any(torch.isnan(coned_output) | torch.isinf(coned_output)):
+            print("The output tensor from robots contains invalid values (NaN or Inf).")
+            return float("inf")
 
         robot_pos = np.array([robot.position for robot in self.robots])
         food_pos = np.array([food.position for food in self.food])
