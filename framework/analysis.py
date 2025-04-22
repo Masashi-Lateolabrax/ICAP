@@ -63,30 +63,27 @@ def record_in_mp4(
         brain_builder: BrainBuilder,
         labels: dict[int, LabelAndColor] = None
 ):
-    settings.Robot.ARGMAX_SELECTION = True
-    for g in set(list(range(0, len(logger), max(len(logger) // 10, 1))) + [len(logger) - 1]):
-        if np.isinf(logger[g].min_ind.fitness.values):
-            with open(os.path.join(save_dir, "invalid_generation.txt"), "a") as f:
-                f.write(f"Generation {g} is invalid.\n")
-            print(f"Generation {g} is invalid, skipping...")
-            continue
+    os.makedirs(save_dir, exist_ok=True)
 
-        para = logger[g].min_ind
+    settings.Robot.ARGMAX_SELECTION = True
+    task_generator = TaskGenerator(settings, brain_builder)
+
+    for g in set(list(range(0, len(logger), max(len(logger) // 10, 1))) + [len(logger) - 1]):
+        ind = logger[g].min_ind
+        task = task_generator.generate(ind, debug=True)
 
         ## Record the simulation.
-        dump = entry_points.record(
+        ind.dump = entry_points.record(
             settings,
             os.path.join(save_dir, f"gen{g}.mp4"),
-            para,
-            brain_builder,
-            debug=True
+            task,
         )
 
         ## Plot the loss.
         plot_loss(
             os.path.join(save_dir, f"loss_gen{g}.png"),
             settings,
-            dump,
+            ind.dump,
             loss,
             labels
         )
