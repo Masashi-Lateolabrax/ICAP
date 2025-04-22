@@ -3,12 +3,11 @@ import dataclasses
 import numpy as np
 import pickle
 
-import torch
-
 
 class Dump:
     @dataclasses.dataclass
     class Delta:
+        robot_inputs: dict[str, np.ndarray] = dataclasses.field(default_factory=dict)
         robot_outputs: dict[str, np.ndarray] = dataclasses.field(default_factory=dict)
         robot_pos: dict[str, np.ndarray] = dataclasses.field(default_factory=dict)
         food_pos: np.ndarray = dataclasses.field(default_factory=lambda: np.zeros((0, 2), dtype=np.float32))
