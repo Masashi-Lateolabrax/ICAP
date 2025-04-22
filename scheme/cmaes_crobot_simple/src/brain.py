@@ -22,18 +22,23 @@ class NeuralNetwork(torch.nn.Module):
     def __init__(self):
         super().__init__()
 
-        self.sequence = torch.nn.Sequential(
-            torch.nn.Linear(6, 5),
-            torch.nn.Tanhshrink(),
-            torch.nn.Linear(5, 4),
-            torch.nn.Tanhshrink(),
-            torch.nn.Linear(4, 2),
-            torch.nn.Tanh(),
-        )
+        self.layer1 = torch.nn.Linear(6, 5)
+        self.activation1 = torch.nn.Tanhshrink()
 
-    def forward(self, x: framework.simulator.objects.RobotInput):
-        y = self.sequence(x)
-        return y
+        self.layer2 = torch.nn.Linear(5, 4)
+        self.activation2 = torch.nn.Tanhshrink()
+
+        self.layer3 = torch.nn.Linear(4, 2)
+        self.activation3 = torch.nn.Tanh()
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.layer1(x)
+        x = self.activation1(x)
+        x = self.layer2(x)
+        x = self.activation2(x)
+        x = self.layer3(x)
+        x = self.activation3(x)
+        return x
 
     def set_para(self, para):
         i = 0
