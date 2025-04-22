@@ -78,6 +78,12 @@ def record_in_mp4(
     settings.Robot.ARGMAX_SELECTION = True
     task_generator = TaskGenerator(settings, brain_builder)
 
+    with open(os.path.join(save_dir, "robot_food_pos.txt"), "w") as f:
+        for i, rp in enumerate(task_generator.robot_positions):
+            f.write(f"Robot{i}: {repr(rp[0])}, {repr(rp[1])}, {repr(rp[2])}\n")
+        for i, fp in enumerate(task_generator.food_positions):
+            f.write(f"Food{i}: {repr(fp[0])}, {repr(fp[1])}\n")
+
     for g in set(list(range(0, len(logger), max(len(logger) // 10, 1))) + [len(logger) - 1]):
         ind = logger[g].min_ind
         task = task_generator.generate(ind, debug=True)
