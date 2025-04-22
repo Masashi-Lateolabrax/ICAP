@@ -15,7 +15,10 @@ from .task_generator import TaskGenerator
 from . import entry_points
 
 
-def plot_loss(file_path: str, settings: Settings, dump: Dump, loss: Loss):
+def plot_loss(file_path: str, settings: Settings, dump: Dump, loss: Loss, labels: list[tuple[str, str]] = None):
+    if labels is None:
+        labels: list[tuple[str, str]] = []
+
     nest_pos = np.array(settings.Nest.POSITION)
 
     loss_log = np.zeros((len(dump), loss.num_elements()))
@@ -30,7 +33,7 @@ def plot_loss(file_path: str, settings: Settings, dump: Dump, loss: Loss):
     ax = fig.add_subplot(1, 1, 1)
 
     loss_lines = []
-    for loss, (label, c_name) in zip(loss_log.T, [("distance", "blue")]):
+    for loss, (label, c_name) in zip(loss_log.T, labels):
         loss_lines.append(
             ax.plot(loss, label=label, color=c_name)[0]
         )

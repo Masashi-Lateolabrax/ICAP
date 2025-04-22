@@ -1,5 +1,6 @@
 import mujoco
 import numpy as np
+import torch
 
 from libs import optimizer
 from libs.mujoco_builder import World
@@ -38,6 +39,10 @@ class Task(optimizer.MjcTaskInterface):
 
         for r in self.robots:
             output = r.think()
+            if torch.any(torch.isnan(output) | torch.isinf(output)):
+                print("The tensor contains invalid values (NaN or Inf).")
+                return float("inf")
+
             r.action(output)
 
             if delta is not None:
