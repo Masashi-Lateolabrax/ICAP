@@ -1,3 +1,5 @@
+from libs.optimizer import Individual
+
 import framework
 from framework.analysis import plot_parameter_movements, LabelAndColor
 
@@ -7,11 +9,11 @@ from brain import BrainBuilder
 from logger import Logger
 
 
-def plot_loss(file_path: str, dump: framework.Dump):
+def plot_loss(file_path: str, ind: Individual):
     framework.analysis.plot_loss(
         file_path,
         Settings(),
-        dump,
+        ind,
         Loss(),
         labels={
             0: LabelAndColor(label="robot and food", color="blue"),
@@ -38,7 +40,7 @@ def record_in_mp4(save_dir: str, logger: Logger, brain_builder: BrainBuilder):
 
 
 def test_suboptimal_individuals(
-        save_dir: str,
+        file_path: str,
         logger: Logger,
         brain_builder: BrainBuilder,
 ):
@@ -48,7 +50,7 @@ def test_suboptimal_individuals(
     task_generator = framework.TaskGenerator(settings, brain_builder)
 
     return framework.analysis.test_suboptimal_individuals(
-        save_dir,
+        file_path,
         Settings(),
         logger,
         task_generator

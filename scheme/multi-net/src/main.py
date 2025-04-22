@@ -40,13 +40,17 @@ def main():
     if not os.path.exists(file_path):
         analysis.plot_parameter_movements(file_path, logger)
 
-    analysis.record_in_mp4(
-        save_dir, logger, brain_builder
-    )
+    file_path = os.path.join(save_dir, "test_loss.png")
+    if not os.path.exists(file_path):
+        analysis.test_suboptimal_individuals(
+            file_path, logger, brain_builder
+        )
 
-    analysis.test_suboptimal_individuals(
-        save_dir, logger, brain_builder
-    )
+    file_path = os.path.join(save_dir, "videos")
+    if not os.path.exists(file_path):
+        analysis.record_in_mp4(
+            file_path, logger, brain_builder
+        )
 
 
 if __name__ == '__main__':
