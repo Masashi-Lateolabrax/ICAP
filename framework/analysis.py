@@ -125,7 +125,7 @@ def plot_parameter_movements(file_path: str, logger: EachGenLogger, start=0, end
 
 
 def test_suboptimal_individuals(
-        save_dir: str,
+        file_path: str,
         settings: Settings,
         logger: EachGenLogger,
         task_generator: TaskGenerator,
@@ -142,6 +142,10 @@ def test_suboptimal_individuals(
         loss = 0
         for t in range(settings.Simulation.TIME_LENGTH):
             loss += task.calc_step()
+            if np.isinf(loss):
+                print(f"generation {i} is invalid, skipping...")
+                loss = float("nan")
+                break
 
             if datetime.datetime.now() - time > datetime.timedelta(seconds=1):
                 time = datetime.datetime.now()
@@ -152,7 +156,6 @@ def test_suboptimal_individuals(
         losses.append(loss)
 
     xs = np.arange(len(losses))
-    file_path = os.path.join(save_dir, f"test_loss.png")
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
     ax.plot(xs, losses)
