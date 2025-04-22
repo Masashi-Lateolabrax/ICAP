@@ -55,3 +55,19 @@ def test_suboptimal_individuals(
         logger,
         task_generator
     )
+
+
+def plot_max_of_parameter(
+        file_path: str,
+        logger: Logger,
+):
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    max_values = [np.max(p) for p in logger]
+    generation = np.arange(len(max_values))
+
+    fig = plt.figure()
+    axis = fig.add_subplot(1, 1, 1)
+    axis.plot(generation, max_values, label="max of parameter")
+    plt.savefig(file_path)
