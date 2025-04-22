@@ -5,9 +5,8 @@ import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 
-from libs.optimizer import EachGenLogger
+from libs.optimizer import EachGenLogger, Individual
 
-from .dump import Dump
 from .optimization import Loss
 from .settings import Settings
 from .simulator.objects import BrainBuilder
@@ -22,9 +21,20 @@ class LabelAndColor:
     color: str = None
 
 
-def plot_loss(file_path: str, settings: Settings, dump: Dump, loss: Loss, labels: dict[int, LabelAndColor] = None):
+def plot_loss(
+        file_path: str,
+        settings: Settings,
+        ind: Individual,
+        loss: Loss,
+        labels: dict[int, LabelAndColor] = None
+):
     if labels is None:
         labels = {}
+    dump = ind.dump
+    score = ind.fitness.values[0]
+
+    if np.isinf(score):
+        print(f"Individual {ind} is invalid, skipping...")
 
     nest_pos = np.array(settings.Nest.POSITION)
 
@@ -83,7 +93,7 @@ def record_in_mp4(
         plot_loss(
             os.path.join(save_dir, f"loss_gen{g}.png"),
             settings,
-            ind.dump,
+            ind,
             loss,
             labels
         )
