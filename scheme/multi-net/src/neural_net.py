@@ -44,8 +44,8 @@ class NeuralNetwork(nn.Module):
         self.one_hot = one_hot
 
         super(NeuralNetwork, self).__init__()
-        self.subnets = nn.ModuleList([SubNetwork(6, 4, 2) for _ in range(num_subnets)])
-        self.gating_network = GatingNetwork(6, 6, num_subnets)
+        self.subnets = nn.ModuleList([SubNetwork(4, 4, 2) for _ in range(num_subnets)])
+        self.gating_network = GatingNetwork(4, 4, num_subnets)
 
     def forward(self, x: torch.Tensor):
         outputs = torch.stack([subnet(x) for subnet in self.subnets], dim=0)

@@ -34,7 +34,7 @@ class Brain(framework.interfaces.BrainInterface):
 
     def think(self, input_: RobotInput) -> torch.Tensor:
         if self.timer.tick():
-            x = input_.get()
+            x = input_.get()[2:6]
             if torch.any(torch.isnan(x) | torch.isinf(x)):
                 print("The input tensor for robots contains invalid values (NaN or Inf).")
             self.output[:] = self.neural_network(x)
