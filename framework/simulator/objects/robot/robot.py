@@ -15,12 +15,17 @@ class Robot:
             property_: RobotProperty,
             input_: RobotInput,
             actuator: Actuator,
+            center_site_rgba: np.ndarray,
     ):
         self.name = name
         self.brain = brain
         self.property = property_
         self.input = input_
         self.actuator = actuator
+        self.center_site_rgba = center_site_rgba
+
+    def set_color(self, r, g, b, a):
+        self.center_site_rgba[0:4] = [r, g, b, a]
 
     def calc_relative_position(self, target_pos):
         """

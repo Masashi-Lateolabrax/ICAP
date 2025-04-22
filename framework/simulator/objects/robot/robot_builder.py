@@ -1,4 +1,5 @@
 import mujoco
+from mujoco._structs import _MjDataSiteViews
 
 from libs.mujoco_builder import WorldObjectBuilder, WorldClock
 from mujoco_xml_generator import Body, Actuator, Sensor
@@ -45,7 +46,7 @@ class RobotBuilder(WorldObjectBuilder):
                 type_=common.GeomType.CYLINDER,
                 size=(ROBOT_SIZE, 0.05),
                 mass=ROBOT_WEIGHT,
-                rgba=(1, 1, 0, 0.5),
+                rgba=(1, 1, 0, 1),
                 condim=1
             ),
 
@@ -66,7 +67,7 @@ class RobotBuilder(WorldObjectBuilder):
             ),
             body.Site(
                 name=self.name_table.CENTER_SITE,
-                type_=common.GeomType.SPHERE, size=(0.04,)
+                type_=common.GeomType.SPHERE, size=(0.08,), pos=(0, 0, 0.051),
             ),
         ])
 
@@ -128,4 +129,7 @@ class RobotBuilder(WorldObjectBuilder):
             data.actuator(self.name_table.ACT_R),
         )
 
-        return Robot(f"robot{self.id}", self.brain, property_, input_, actuator_)
+        center_site: _MjDataSiteViews = data.site(self.name_table.CENTER_SITE)
+        center_site_rgba = model.site_rgba[center_site.id]
+
+        return Robot(f"robot{self.id}", self.brain, property_, input_, actuator_, center_site_rgba)
