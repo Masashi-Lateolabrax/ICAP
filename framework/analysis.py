@@ -1,3 +1,4 @@
+import dataclasses
 import os
 import datetime
 
@@ -15,9 +16,15 @@ from .task_generator import TaskGenerator
 from . import entry_points
 
 
-def plot_loss(file_path: str, settings: Settings, dump: Dump, loss: Loss, labels: list[tuple[str, str]] = None):
+@dataclasses.dataclass
+class LabelAndColor:
+    label: str = None
+    color: str = None
+
+
+def plot_loss(file_path: str, settings: Settings, dump: Dump, loss: Loss, labels: dict[int, LabelAndColor] = None):
     if labels is None:
-        labels: list[tuple[str, str]] = []
+        labels = {}
 
     nest_pos = np.array(settings.Nest.POSITION)
 
@@ -33,9 +40,10 @@ def plot_loss(file_path: str, settings: Settings, dump: Dump, loss: Loss, labels
     ax = fig.add_subplot(1, 1, 1)
 
     loss_lines = []
-    for loss, (label, c_name) in zip(loss_log.T, labels):
+    for i, loss in enumerate(loss_log.T):
+        label = labels.get(i, LabelAndColor())
         loss_lines.append(
-            ax.plot(loss, label=label, color=c_name)[0]
+            ax.plot(loss, label=label.label, color=label.color)[0]
         )
 
     ax.set_xlabel('iteration')
@@ -47,9 +55,22 @@ def plot_loss(file_path: str, settings: Settings, dump: Dump, loss: Loss, labels
     fig.savefig(file_path)
 
 
-def record_in_mp4(save_dir: str, settings: Settings, logger: EachGenLogger, loss: Loss, brain_builder: BrainBuilder):
+def record_in_mp4(
+        save_dir: str,
+        settings: Settings,
+        logger: EachGenLogger,
+        loss: Loss,
+        brain_builder: BrainBuilder,
+        labels: dict[int, LabelAndColor] = None
+):
     settings.Robot.ARGMAX_SELECTION = True
     for g in set(list(range(0, len(logger), max(len(logger) // 10, 1))) + [len(logger) - 1]):
+        if np.isinf(logger[g].min_ind.fitness.values):
+            with open(os.path.join(save_dir, "invalid_generation.txt"), "a") as f:
+                f.write(f"Generation {g} is invalid.\n")
+            print(f"Generation {g} is invalid, skipping...")
+            continue
+
         para = logger[g].min_ind
 
         ## Record the simulation.
@@ -66,7 +87,8 @@ def record_in_mp4(save_dir: str, settings: Settings, logger: EachGenLogger, loss
             os.path.join(save_dir, f"loss_gen{g}.png"),
             settings,
             dump,
-            loss
+            loss,
+            labels
         )
 
 

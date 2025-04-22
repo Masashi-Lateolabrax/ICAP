@@ -40,7 +40,7 @@ class Task(optimizer.MjcTaskInterface):
         for r in self.robots:
             output = r.think()
             if torch.any(torch.isnan(output) | torch.isinf(output)):
-                print("The tensor contains invalid values (NaN or Inf).")
+                print("The output tensor from robots contains invalid values (NaN or Inf).")
                 return float("inf")
 
             r.action(output)
