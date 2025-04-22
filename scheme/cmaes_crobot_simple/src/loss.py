@@ -11,7 +11,7 @@ def _calc_loss_sigma(point, value):
 
 
 class Loss(framework.interfaces.Loss):
-    offset_nest_and_food = NEST_SIZE + FOOD_SIZE
+    offset_nest_and_food = 0
     sigma_nest_and_food = _calc_loss_sigma(4, 0.01)
     GAIN_NEST_AND_FOOD = 1
 
