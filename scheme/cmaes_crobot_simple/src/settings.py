@@ -7,7 +7,7 @@ Settings.Simulation.RENDER_ZOOM = 10
 
 Settings.CMAES.GENERATION = 500
 Settings.CMAES.POPULATION = 1000
-Settings.CMAES.MU = 20
+Settings.CMAES.MU = 500
 Settings.CMAES.SIGMA = 0.1
 
 Settings.Simulation.TIME_STEP = 0.01
