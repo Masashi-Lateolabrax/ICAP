@@ -1,6 +1,7 @@
 import torch
 
 import framework
+from framework.simulator.objects import RobotInput
 from libs.optimizer import Individual
 
 
@@ -31,7 +32,6 @@ class NeuralNetwork(torch.nn.Module):
         )
 
     def forward(self, x: framework.simulator.objects.RobotInput):
-        x = x.get()
         y = self.sequence(x)
         return y
 
@@ -61,9 +61,12 @@ class Brain(framework.interfaces.BrainInterface):
 
         self._output_buf = torch.zeros(2, dtype=torch.float32, requires_grad=False)
 
-    def think(self, input_: framework.simulator.objects.RobotInput) -> torch.Tensor:
+    def think(self, input_: RobotInput) -> torch.Tensor:
         if self.timer.tick():
-            output = self.neural_network(input_)
+            x = input_.get()
+            if torch.any(torch.isnan(x) | torch.isinf(x)):
+                print("The input tensor for robots contains invalid values (NaN or Inf).")
+            output = self.neural_network(x)
             self._output_buf[:] = output[:2]
 
         return self._output_buf
