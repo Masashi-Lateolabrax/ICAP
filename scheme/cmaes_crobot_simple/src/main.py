@@ -52,6 +52,8 @@ def main():
             file_path, logger, brain_builder
         )
 
+    # analysis.plot_max_of_parameter(os.path.join(save_dir, "parameter_info.png"), logger, 0, 100)
+
 
 if __name__ == '__main__':
     main()
