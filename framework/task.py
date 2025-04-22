@@ -35,6 +35,7 @@ class Task(optimizer.MjcTaskInterface):
         return self.world.data
 
     def _exec_robots(self):
+        inputs = {}
         outputs = {}
         invalid_output = {}
         positions = {}
@@ -43,18 +44,20 @@ class Task(optimizer.MjcTaskInterface):
             r.set_color(0, 1, 0, 1)
             output = r.think()
             r.action(output)
-            outputs[r.name] = output
+            inputs[r.name] = r.input.touch.clone()
+            outputs[r.name] = output.clone().detach()
             invalid_output[r.name] = torch.any(torch.isnan(output) | torch.isinf(output))
             positions[r.name] = r.position[:2]
 
-        return outputs, invalid_output, positions
+        return inputs, outputs, invalid_output, positions
 
     def calc_step(self) -> float:
         delta = None if self.dump is None else self.dump.create_delta()
 
-        robot_outputs, robot_invalid_output, robot_positions = self._exec_robots()
+        robot_inputs, robot_outputs, robot_invalid_output, robot_positions = self._exec_robots()
 
         if delta is not None:
+            delta.robot_inputs = robot_inputs
             delta.robot_outputs = robot_outputs
             delta.robot_pos = robot_positions
             delta.food_pos = self.food.position
@@ -62,11 +65,7 @@ class Task(optimizer.MjcTaskInterface):
         if any(robot_invalid_output.values()):
             for robot_name in filter(lambda x: robot_invalid_output[x], robot_invalid_output.keys()):
                 self.robots[robot_name].set_color(1, 0, 0, 1)
-
-            for robot_name, invalid in robot_invalid_output.items():
-                if invalid:
-                    print(f"Robot {robot_name} has an invalid output (NaN or Inf).")
-            print("The output tensor from robots contains invalid values (NaN or Inf).")
+                print(f"Robot {robot_name} has an invalid output (NaN or Inf).")
             return float("inf")
 
         robot_pos = np.array([robot.position for robot in self.robots.values()])
