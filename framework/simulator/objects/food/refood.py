@@ -25,6 +25,8 @@ class VirtualFood:
         self.food.joint_y.qpos[0] = y - self.food.joint_y.xanchor[1]
 
     def set_velocity_to_zero(self):
+        if self.dummy:
+            return
         self.food.joint_x.qvel[0] = 0
         self.food.joint_x.qacc[0] = 0
         self.food.joint_y.qvel[0] = 0
@@ -69,7 +71,7 @@ class ReFood:
             self,
             width: float, height: float,
             wall_thickness: float,
-            food: list[Food], nest: list[Nest], robot: list[Robot]
+            food: list[Food], nest: Nest, robot: list[Robot]
     ):
         self.width = width
         self.height = height
@@ -85,26 +87,25 @@ class ReFood:
         return len(self._food)
 
     def update(self):
-        invalid_area = _calc_invalid_area(self._robot + self._nest)
+        invalid_area = _calc_invalid_area(self._robot + [self._nest])
         food_iter = self._food[0:len(self._food)]
         for vf in food_iter:
             if vf.dummy:
                 continue
 
-            for n in self._nest:
-                in_nest = np.linalg.norm(vf.position - n.position) < NEST_SIZE
-                if in_nest:
-                    new_vf = vf.copy()
-                    new_pos = _replace_food(
-                        self.width,
-                        self.height,
-                        invalid_area + _calc_invalid_area(self._raw_food),
-                        padding=self.padding
-                    )
+            in_nest = np.linalg.norm(vf.position - self._nest.position) < NEST_SIZE
+            if in_nest:
+                new_vf = vf.copy()
+                new_pos = _replace_food(
+                    self.width,
+                    self.height,
+                    invalid_area + _calc_invalid_area(self._raw_food),
+                    padding=self.padding
+                )
 
-                    new_vf.set_velocity_to_zero()
-                    new_vf.set_position(*new_pos)
-                    self._food.append(new_vf)
+                new_vf.set_velocity_to_zero()
+                new_vf.set_position(*new_pos)
+                self._food.append(new_vf)
 
     def __getitem__(self, item):
         return self._raw_food[item]

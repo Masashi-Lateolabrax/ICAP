@@ -1,7 +1,11 @@
 from mujoco._structs import _MjDataBodyViews, _MjDataSensorViews, _MjDataJointViews
 
+from .const import FOOD_SIZE
+
 
 class Food:
+    size = FOOD_SIZE
+
     def __init__(
             self,
             body_: _MjDataBodyViews,

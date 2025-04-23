@@ -26,6 +26,7 @@ class TaskGenerator(optimizer.TaskGenerator):
         self.robot_positions = [
             rand_robot_pos(self.settings, invalid_area) for _ in range(settings.Robot.NUM)
         ]
+        invalid_area.append((*settings.Nest.POSITION, framework.simulator.objects.nest.NEST_SIZE))
         self.food_positions = [
             rand_food_pos(self.settings, invalid_area) for _ in range(settings.Food.NUM)
         ]

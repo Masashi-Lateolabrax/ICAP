@@ -166,7 +166,7 @@ class BaseCMAES:
 
         finish_time = datetime.datetime.now()
         self._end_handler(
-            self.get_lambda(), self._current_generation, generation,
+            self.get_lambda(), self._current_generation - 1, generation,
             start_time, finish_time,
             num_error,
             avg, min_score, max_score, self._best_score

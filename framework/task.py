@@ -28,6 +28,8 @@ class Task(optimizer.MjcTaskInterface):
 
         self.dump = Dump() if debug else None
 
+        self.world.calc_step()
+
     def get_model(self) -> mujoco.MjModel:
         return self.world.model
 
@@ -55,6 +57,7 @@ class Task(optimizer.MjcTaskInterface):
         delta = None if self.dump is None else self.dump.create_delta()
 
         robot_inputs, robot_outputs, robot_invalid_output, robot_positions = self._exec_robots()
+        self.food.update()
 
         if delta is not None:
             delta.robot_inputs = robot_inputs
