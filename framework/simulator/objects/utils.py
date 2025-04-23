@@ -21,8 +21,8 @@ def rand_robot_pos(settings: Settings, invalid_area: list[np.ndarray] = None):
         tuple[float, float, float]: ロボットの位置と角度
     """
     pos = random_point_avoiding_invalid_areas(
-        (settings.Simulation.WORLD_WIDTH * -0.5, settings.Simulation.WORLD_WIDTH * 0.5),
-        (settings.Simulation.WORLD_WIDTH * 0.5, settings.Simulation.WORLD_WIDTH * -0.5),
+        (settings.Simulation.WORLD_WIDTH * -0.5, settings.Simulation.WORLD_HEIGHT * 0.5),
+        (settings.Simulation.WORLD_WIDTH * 0.5, settings.Simulation.WORLD_HEIGHT * -0.5),
         ROBOT_SIZE,
         invalid_area,
         padding=ROBOT_SIZE
