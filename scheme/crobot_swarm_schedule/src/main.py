@@ -39,7 +39,11 @@ def main():
         settings.CMAES.GENERATION = int(tmp_generation * 0.8)
         settings.Robot.POSITION = []
         settings.Food.POSITION = []
-        framework.entry_points.train(settings, logger2, brain_builder)
+        framework.entry_points.additional_train(
+            settings, logger2, brain_builder,
+            centroid=logger1.centroid,
+            cmatrix=logger1.cmatrix,
+        )
         logger2.save(log_file_name2)
 
         ## Load the logger if it is empty.
