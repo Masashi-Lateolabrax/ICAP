@@ -34,6 +34,7 @@ class Settings:
         THINK_INTERVAL = 0.3  # Unit is second
         MAX_SECRETION = 0.423 * 5
         ARGMAX_SELECTION = False
+        POSITION: list[tuple[float, float, float]] = []
 
         class OtherRobotSensor:
             GAIN = 2 / 0.7
@@ -45,6 +46,7 @@ class Settings:
 
     class Food:
         NUM = 1
+        POSITION: list[tuple[float, float]] = []
 
     class Nest:
         POSITION = (0, 0)
