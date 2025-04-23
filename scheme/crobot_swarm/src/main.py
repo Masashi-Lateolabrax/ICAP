@@ -17,7 +17,7 @@ def main():
         os.path.dirname(os.path.abspath(__file__)),
         datetime.datetime.now().strftime("%Y%m%d_%H%M%S-") + git_hash
     )
-    # save_dir = "20250408_050158_a3ae57fa"
+    # save_dir = "20250423_103010-7457c6a6"
     os.makedirs(save_dir, exist_ok=True)
 
     log_file_name = "result.pkl"

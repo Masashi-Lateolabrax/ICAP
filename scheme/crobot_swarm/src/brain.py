@@ -22,7 +22,7 @@ class NeuralNetwork(torch.nn.Module):
     def __init__(self):
         super().__init__()
 
-        self.layer1 = torch.nn.Linear(4, 4)
+        self.layer1 = torch.nn.Linear(6, 4)
         self.activation1 = torch.nn.Tanhshrink()
 
         self.layer2 = torch.nn.Linear(4, 2)
@@ -63,7 +63,7 @@ class Brain(framework.interfaces.BrainInterface):
 
     def think(self, input_: RobotInput) -> torch.Tensor:
         if self.timer.tick():
-            x = input_.get()[2:6]
+            x = input_.get()
             if torch.any(torch.isnan(x) | torch.isinf(x)):
                 print("The input tensor for robots contains invalid values (NaN or Inf).")
             output = self.neural_network(x)

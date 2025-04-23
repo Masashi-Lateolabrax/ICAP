@@ -20,8 +20,9 @@ class Loss(framework.interfaces.Loss):
     GAIN_ROBOT_AND_FOOD = 0.01
 
     def _calc_r_loss(self, robot_pos: np.ndarray, food_pos: np.ndarray) -> float:
+        subs = (robot_pos[:, None, :2] - food_pos[None, :, :]).reshape(-1, 2)
         distance = np.max(
-            np.linalg.norm(robot_pos[:, :2] - food_pos, axis=1) - self.offset_robot_and_food,
+            np.linalg.norm(subs, axis=1) - self.offset_robot_and_food,
             0
         )
         loss = -np.average(np.exp(-(distance ** 2) / self.sigma_robot_and_food))
