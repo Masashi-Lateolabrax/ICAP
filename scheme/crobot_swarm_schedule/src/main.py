@@ -57,6 +57,8 @@ def main():
 
 
 def analyze_results(logger, save_dir, brain_builder):
+    os.makedirs(save_dir, exist_ok=True)
+
     ## Plot the movements of the parameters.
     file_path = os.path.join(save_dir, "parameter_movement.png")
     if not os.path.exists(file_path):
