@@ -23,4 +23,4 @@ Settings.Robot.THINK_INTERVAL = 0.1
 Settings.Robot.FoodSensor.GAIN = 1
 
 Settings.Robot.NUM = 50
-Settings.Food.NUM = 1
+Settings.Food.NUM = 4
