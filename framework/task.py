@@ -28,6 +28,8 @@ class Task(optimizer.MjcTaskInterface):
 
         self.dump = Dump() if debug else None
 
+        self.world.calc_step()
+
     def get_model(self) -> mujoco.MjModel:
         return self.world.model
 
