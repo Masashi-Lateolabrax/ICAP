@@ -10,6 +10,7 @@ class Dump:
         robot_inputs: dict[str, np.ndarray] = dataclasses.field(default_factory=dict)
         robot_outputs: dict[str, np.ndarray] = dataclasses.field(default_factory=dict)
         robot_pos: dict[str, np.ndarray] = dataclasses.field(default_factory=dict)
+        robot_direction: dict[str, np.ndarray] = dataclasses.field(default_factory=dict)
         food_pos: np.ndarray = dataclasses.field(default_factory=lambda: np.zeros((0, 2), dtype=np.float32))
 
     def __init__(self, file_path: str = None):
