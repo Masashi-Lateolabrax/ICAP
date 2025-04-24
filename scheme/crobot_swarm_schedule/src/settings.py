@@ -27,16 +27,18 @@ Settings.Robot.THINK_INTERVAL = 0.1
 Settings.Robot.FoodSensor.GAIN = 1
 
 Settings.Robot.NUM = 40
-
-area = (np.sqrt(Settings.Robot.NUM) - 1) * (ROBOT_SIZE + 0.05)
-for x in np.linspace(-area, area, int(np.sqrt(Settings.Robot.NUM)), endpoint=True):
-    for y in np.linspace(area, -area, int(np.sqrt(Settings.Robot.NUM)), endpoint=True):
-        Settings.Robot.POSITION.append((x, y, 0))
-
 Settings.Food.NUM = 4
-Settings.Food.POSITION = [
-    (0, 3.5),
-    (3.5, 0),
-    (0, -3.5),
-    (-3.5, 0)
-]
+
+
+def set_positions(settings: Settings):
+    area = (np.sqrt(Settings.Robot.NUM) - 1) * (ROBOT_SIZE + 0.05)
+    for x in np.linspace(-area, area, int(np.sqrt(Settings.Robot.NUM)), endpoint=True):
+        for y in np.linspace(area, -area, int(np.sqrt(Settings.Robot.NUM)), endpoint=True):
+            Settings.Robot.POSITION.append((x, y, 0))
+
+    Settings.Food.POSITION = [
+        (0, 3.5),
+        (3.5, 0),
+        (0, -3.5),
+        (-3.5, 0)
+    ]

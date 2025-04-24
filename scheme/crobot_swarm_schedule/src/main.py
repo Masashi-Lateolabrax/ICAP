@@ -6,7 +6,7 @@ import framework
 
 from logger import Logger
 from brain import BrainBuilder
-from settings import Settings
+from settings import Settings, set_positions
 
 import analysis
 
@@ -33,6 +33,7 @@ def main():
         tmp_generation = settings.CMAES.GENERATION
 
         settings.CMAES.GENERATION = int(tmp_generation * 0.2)
+        set_positions(settings)
         framework.entry_points.train(settings, logger1, brain_builder)
         logger1.save(log_file_name1)
 
@@ -46,14 +47,18 @@ def main():
         )
         logger2.save(log_file_name2)
 
-        ## Load the logger if it is empty.
-        if logger1.is_empty():
-            logger1 = Logger.load(os.path.join(save_dir, log_file_name1))
-        if logger2.is_empty():
-            logger2 = Logger.load(os.path.join(save_dir, log_file_name2))
+    ## Load the logger if it is empty.
+    if logger1.is_empty():
+        logger1 = Logger.load(os.path.join(save_dir, log_file_name1))
+    if logger2.is_empty():
+        logger2 = Logger.load(os.path.join(save_dir, log_file_name2))
 
-        analyze_results(logger1, os.path.join(save_dir, "stage1"), brain_builder)
-        analyze_results(logger2, os.path.join(save_dir, "stage2"), brain_builder)
+    set_positions(settings)
+    analyze_results(logger1, os.path.join(save_dir, "stage1"), brain_builder)
+
+    settings.Robot.POSITION = []
+    settings.Food.POSITION = []
+    analyze_results(logger2, os.path.join(save_dir, "stage2"), brain_builder)
 
 
 def analyze_results(logger, save_dir, brain_builder):
