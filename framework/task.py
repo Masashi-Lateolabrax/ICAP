@@ -46,8 +46,8 @@ class Task(optimizer.MjcTaskInterface):
             r.set_color(0, 1, 0, 1)
             output = r.think()
             r.action(output)
-            inputs[r.name] = r.input.touch.clone()
-            outputs[r.name] = output.clone().detach()
+            inputs[r.name] = r.input.torch
+            outputs[r.name] = output
             invalid_output[r.name] = torch.any(torch.isnan(output) | torch.isinf(output))
             positions[r.name] = r.position[:2]
 
