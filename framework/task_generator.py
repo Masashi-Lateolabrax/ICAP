@@ -7,6 +7,9 @@ from .task import Task
 
 from .simulator.objects.utils import rand_robot_pos, rand_food_pos
 from .simulator.objects import NestBuilder, RobotBuilder, FoodBuilder, BrainBuilder
+from .simulator.objects.robot import ROBOT_SIZE
+from .simulator.objects.food import FOOD_SIZE
+from .simulator.objects.nest import NEST_SIZE
 from .simulator.world import WorldBuilder
 
 
@@ -22,14 +25,32 @@ class TaskGenerator(optimizer.TaskGenerator):
         self.settings = settings
         self.brain_builder = brain_builder
 
+        self.robot_positions = []
+        self.food_positions = []
         invalid_area = []
-        self.robot_positions = [
-            rand_robot_pos(self.settings, invalid_area) for _ in range(settings.Robot.NUM)
-        ]
-        invalid_area.append((*settings.Nest.POSITION, framework.simulator.objects.nest.NEST_SIZE))
-        self.food_positions = [
-            rand_food_pos(self.settings, invalid_area) for _ in range(settings.Food.NUM)
-        ]
+
+        # Generate static positions for robots
+        for pos_and_angle in settings.Robot.POSITION:
+            invalid_area.append((pos_and_angle[0], pos_and_angle[1], ROBOT_SIZE))
+            self.robot_positions.append(pos_and_angle)
+
+        # Generate static positions for food
+        for pos in settings.Food.POSITION:
+            invalid_area.append((*pos, FOOD_SIZE))
+            self.food_positions.append(pos)
+
+        # Generate random positions for robots
+        for _ in range(settings.Robot.NUM - len(settings.Robot.POSITION)):
+            self.robot_positions.append(
+                rand_robot_pos(self.settings, invalid_area)
+            )
+
+        # Generate random positions for food
+        invalid_area.append((*settings.Nest.POSITION, NEST_SIZE))
+        for _ in range(settings.Food.NUM - len(settings.Food.POSITION)):
+            self.food_positions.append(
+                rand_food_pos(self.settings, invalid_area)
+            )
 
     def generate(self, para: Individual, debug=False) -> Task:
         robot_builders = [
