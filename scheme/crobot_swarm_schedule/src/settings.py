@@ -26,7 +26,7 @@ Settings.Simulation.WORLD_HEIGHT = 15
 Settings.Robot.THINK_INTERVAL = 0.1
 Settings.Robot.FoodSensor.GAIN = 1
 
-Settings.Robot.NUM = 40
+Settings.Robot.NUM = 7 * 7
 Settings.Food.NUM = 4
 
 
