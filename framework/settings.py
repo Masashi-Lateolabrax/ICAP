@@ -39,11 +39,11 @@ class Settings:
         POSITION: list[tuple[float, float, float]] = []
 
         class OtherRobotSensor:
-            GAIN = 2 / 0.7
+            GAIN = (lambda d, v: (1 - v) / (v * d))(2, 0.1)
             OFFSET = ROBOT_SIZE * 2
 
         class FoodSensor:
-            GAIN = 2 / 0.7
+            GAIN = (lambda d, v: (1 - v) / (v * d))(4, 0.1)
             OFFSET = FOOD_SIZE + ROBOT_SIZE
 
     class Food:
