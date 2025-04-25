@@ -36,12 +36,12 @@ Settings.Food.NUM = 4
 
 
 def set_positions(settings: Settings):
-    area = (np.sqrt(Settings.Robot.NUM) - 1) * (ROBOT_SIZE + 0.05)
-    for x in np.linspace(-area, area, int(np.sqrt(Settings.Robot.NUM)), endpoint=True):
-        for y in np.linspace(area, -area, int(np.sqrt(Settings.Robot.NUM)), endpoint=True):
-            Settings.Robot.POSITION.append((x, y, 0))
+    area = (np.sqrt(settings.Robot.NUM) - 1) * (ROBOT_SIZE + 0.05)
+    for x in np.linspace(-area, area, int(np.sqrt(settings.Robot.NUM)), endpoint=True):
+        for y in np.linspace(area, -area, int(np.sqrt(settings.Robot.NUM)), endpoint=True):
+            settings.Robot.POSITION.append((x, y, 0))
 
-    Settings.Food.POSITION = [
+    settings.Food.POSITION = [
         (0, 3.5),
         (3.5, 0),
         (0, -3.5),
