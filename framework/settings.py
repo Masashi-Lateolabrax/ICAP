@@ -1,5 +1,7 @@
 import numpy as np
 
+from .simulator.objects.robot.const import ROBOT_SIZE
+from .simulator.objects.food.const import FOOD_SIZE
 from .optimization import Loss
 
 
@@ -37,12 +39,12 @@ class Settings:
         POSITION: list[tuple[float, float, float]] = []
 
         class OtherRobotSensor:
-            GAIN = 2 / 0.7
-            OFFSET = 2 / 5
+            GAIN = (lambda d, v: (1 - v) / (v * d))(2, 0.1)
+            OFFSET = ROBOT_SIZE * 2
 
         class FoodSensor:
-            GAIN = 2 / 0.7
-            OFFSET = 0.175 + 0.5
+            GAIN = (lambda d, v: (1 - v) / (v * d))(4, 0.1)
+            OFFSET = FOOD_SIZE + ROBOT_SIZE
 
     class Food:
         NUM = 1
