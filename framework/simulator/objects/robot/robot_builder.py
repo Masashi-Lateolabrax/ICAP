@@ -6,16 +6,16 @@ from mujoco_xml_generator import Body, Actuator, Sensor
 from mujoco_xml_generator import common, body, actuator
 from mujoco_xml_generator.utils import DummyGeom
 
-from ....settings import Settings
+from ...const import Settings, ROBOT_SIZE, ROBOT_WEIGHT, MOVE_SPEED, TURN_SPEED
 from ...sensors import OmniSensor, DirectionSensor
-from ..name_table import RobotNameTable, FoodNameTable
+from ..food.name_table import FoodNameTable
+from .name_table import RobotNameTable
 from .brain import BrainInterface
 from .actuator import Actuator as BotActuator
 from .robot_input import RobotInput
 from .robot_property import RobotProperty
 
 from .robot import Robot
-from .const import ROBOT_SIZE, ROBOT_WEIGHT, MOVE_SPEED, TURN_SPEED
 
 
 class RobotBuilder(WorldObjectBuilder):

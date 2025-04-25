@@ -2,8 +2,9 @@ import numpy as np
 
 from libs import optimizer
 
-from ..settings import Settings
-from ..simulator.objects import BrainBuilder
+from ..simulator.const import Settings
+from ..simulator.objects.robot import BrainBuilder
+
 from ..task_generator import TaskGenerator
 
 

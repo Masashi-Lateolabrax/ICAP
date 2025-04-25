@@ -30,7 +30,7 @@ class BrainBuilder(metaclass=abc.ABCMeta):
 
     The `build` method is called to create a new brain instance for each robot.
     If a BrainBuilder has just one neural network instance, the brain will share the neural network.
-    Alternatively, a BrainBuilder constructs a neural network for `build` call,
+    Alternatively, a BrainBuilder constructs a neural network for `build` calling, so
     the brain will have its own neural network.
     """
 

@@ -22,14 +22,14 @@ def random_point_avoiding_invalid_areas(
     Parameters
     ----------
     left_upper_point : tuple of float
-        The (x, y) coordinates of the upper-left corner of the rectangular area.
+        The (x, y) coordinates of the upper-left corner at the rectangular area.
     right_lower_point : tuple of float
-        The (x, y) coordinates of the lower-right corner of the rectangular area.
+        The (x, y) coordinates of the lower-right corner at the rectangular area.
     size : float
         The size of the object to be placed within the rectangular area.
     invalid_area : list of np.ndarray
         A list of NumPy arrays representing invalid regions. Each array should contain at least three elements:
-        the first two elements are the (x, y) coordinates of the center of the invalid area, and the third
+        the first two elements are the (x, y) coordinates of the center in the invalid area, and the third
         element is the radius of the invalid area.
     retry : int, optional
         The number of attempts to generate a valid point. If set to -1, the function will retry indefinitely

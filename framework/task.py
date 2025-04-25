@@ -5,8 +5,11 @@ import torch
 from libs import optimizer
 from libs.mujoco_builder import World
 
-from .simulator.objects import Nest, Robot, ReFood
-from .settings import Settings
+from .simulator.objects.robot import Robot
+from .simulator.objects.food import ReFood
+from .simulator.objects.nest import Nest
+from .simulator.const import Settings
+
 from .dump import Dump
 
 

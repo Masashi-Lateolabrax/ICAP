@@ -1,5 +1,3 @@
-from .const import *
-
 from .brain import BrainJudgement, BrainInterface, BrainBuilder, DiscreteOutput
 
 from .actuator import Actuator

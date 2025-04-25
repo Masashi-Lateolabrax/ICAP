@@ -3,7 +3,7 @@ from mujoco_xml_generator import common, visual, asset, body
 
 from libs.mujoco_builder import BaseWorldBuilder
 
-from ...settings import Settings
+from ..const import Settings
 from ..objects.wall import WallBuilder
 
 

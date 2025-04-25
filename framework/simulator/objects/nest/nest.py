@@ -1,6 +1,6 @@
 from mujoco._structs import _MjDataSiteViews
 
-from .const import NEST_SIZE
+from ...const import NEST_SIZE
 
 
 class Nest:
