@@ -1,8 +1,9 @@
 import numpy as np
 
-from .simulator.objects.robot.const import ROBOT_SIZE
-from .simulator.objects.food.const import FOOD_SIZE
-from .optimization import Loss
+from framework.optimization import Loss
+
+from .robot import ROBOT_SIZE
+from .food import FOOD_SIZE
 
 
 class Settings:

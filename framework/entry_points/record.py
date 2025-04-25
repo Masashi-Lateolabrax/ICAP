@@ -2,7 +2,7 @@ import mujoco
 
 from libs.utils.data_collector import Recorder
 
-from ..settings import Settings
+from ..simulator.const import Settings
 from ..task import Task
 from ..dump import Dump
 

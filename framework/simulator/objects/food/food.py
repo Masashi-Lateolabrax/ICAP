@@ -1,6 +1,6 @@
 from mujoco._structs import _MjDataBodyViews, _MjDataSensorViews, _MjDataJointViews
 
-from .const import FOOD_SIZE
+from ...const import FOOD_SIZE
 
 
 class Food:
