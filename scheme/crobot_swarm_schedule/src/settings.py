@@ -1,7 +1,6 @@
 import numpy as np
 
-from framework import Settings
-from framework.simulator.objects.robot import ROBOT_SIZE
+from framework.simulator.const import Settings, ROBOT_SIZE
 
 from loss import Loss, calc_loss_sigma
 
@@ -36,6 +35,7 @@ Settings.Food.NUM = 4
 
 
 def set_positions(settings: Settings):
+    settings.Robot.POSITION = []
     area = (np.sqrt(settings.Robot.NUM) - 1) * (ROBOT_SIZE + 0.05)
     for x in np.linspace(-area, area, int(np.sqrt(settings.Robot.NUM)), endpoint=True):
         for y in np.linspace(area, -area, int(np.sqrt(settings.Robot.NUM)), endpoint=True):

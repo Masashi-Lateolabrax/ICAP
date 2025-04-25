@@ -30,9 +30,6 @@ def main():
 
     ## Training.
     if not os.path.exists(os.path.join(save_dir, log_file_name)):
-        tmp_generation = settings.CMAES.GENERATION
-
-        set_positions(settings)
         framework.entry_points.train(settings, logger, brain_builder)
         logger.save(log_file_name)
 
@@ -40,7 +37,6 @@ def main():
     if logger.is_empty():
         logger = Logger.load(os.path.join(save_dir, log_file_name))
 
-    set_positions(settings)
     analyze_results(logger, os.path.join(save_dir, "stage1"), brain_builder)
 
 

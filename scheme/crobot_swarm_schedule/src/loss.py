@@ -1,8 +1,7 @@
 import numpy as np
 
 import framework
-from framework.simulator.objects.robot import ROBOT_SIZE
-from framework.simulator.objects.food import FOOD_SIZE
+from framework.simulator.const import ROBOT_SIZE, FOOD_SIZE
 
 
 def calc_loss_sigma(point, value):
