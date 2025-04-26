@@ -1,7 +1,6 @@
 import torch
 
 import framework
-from framework import BrainJudgement
 from framework.simulator.objects import RobotInput
 from libs.optimizer import Individual
 
@@ -25,11 +24,8 @@ class NeuralNetwork(torch.nn.Module):
 
         self.sequence = torch.nn.Sequential(
             torch.nn.Linear(6, 4),
-            # torch.nn.Tanhshrink(),
-            # torch.nn.Tanh(),
-            # torch.nn.Linear(6, 6),
-            # torch.nn.GELU(),
-            # torch.nn.Linear(1, 4),
+            torch.nn.Tanh(),
+            torch.nn.Linear(4, 2),
             torch.nn.Softmax(dim=0)
         )
 
@@ -54,7 +50,7 @@ class NeuralNetwork(torch.nn.Module):
         return res
 
 
-class Brain(framework.interfaces.DiscreteOutput):
+class Brain(framework.interfaces.BrainInterface):
     def __init__(self, settings: framework.Settings, nn: NeuralNetwork):
         self.settings = settings
 
@@ -62,7 +58,7 @@ class Brain(framework.interfaces.DiscreteOutput):
         self.state = framework.BrainJudgement.STOP
 
         self.neural_network = nn
-        self.output = torch.zeros(4, dtype=torch.float32, requires_grad=False)
+        self.output = torch.zeros(2, dtype=torch.float32, requires_grad=False)
         self.output_is_updated = False
 
     def think(self, input_: RobotInput) -> torch.Tensor:
@@ -70,19 +66,6 @@ class Brain(framework.interfaces.DiscreteOutput):
             self.output[:] = self.neural_network(input_)
             self.output_is_updated = True
         return self.output
-
-    def convert(self, output: torch.Tensor) -> BrainJudgement:
-        if not self.output_is_updated:
-            return self.state
-        self.output_is_updated = False
-
-        if self.settings.Robot.ARGMAX_SELECTION:
-            r = torch.argmax(output).item()
-        else:
-            r = torch.multinomial(output, 1).item()
-
-        self.state = framework.BrainJudgement(r)
-        return self.state
 
 
 class BrainBuilder(framework.interfaces.BrainBuilder):
