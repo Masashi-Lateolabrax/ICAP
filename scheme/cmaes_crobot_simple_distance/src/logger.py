@@ -88,7 +88,7 @@ class _Logger:
         return len(self.queues) == 0
 
 
-class Logger(opt.EachGenLogger):
+class Logger(opt.Logger):
     def __init__(self, save_dir):
         self.save_dir = save_dir
         self._logger = _Logger()
@@ -134,14 +134,6 @@ class Logger(opt.EachGenLogger):
 
     def is_empty(self):
         return self._logger.is_empty()
-
-    @property
-    def centroid(self):
-        return self._logger.queues[-1].centroid
-
-    @property
-    def cmatrix(self):
-        return self._logger.last_cmatrix
 
     def __iter__(self):
         return iter(self._logger.queues)
