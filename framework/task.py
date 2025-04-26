@@ -5,11 +5,8 @@ import torch
 from libs import optimizer
 from libs.mujoco_builder import World
 
-from .simulator.objects.robot import Robot
-from .simulator.objects.food import ReFood
-from .simulator.objects.nest import Nest
-from .simulator.const import Settings
-
+from .simulator.objects import Nest, Robot, ReFood
+from .settings import Settings
 from .dump import Dump
 
 
@@ -31,8 +28,6 @@ class Task(optimizer.MjcTaskInterface):
 
         self.dump = Dump() if debug else None
 
-        self.world.calc_step()
-
     def get_model(self) -> mujoco.MjModel:
         return self.world.model
 
@@ -42,7 +37,6 @@ class Task(optimizer.MjcTaskInterface):
     def _exec_robots(self):
         inputs = {}
         outputs = {}
-        direction = {}
         invalid_output = {}
         positions = {}
 
@@ -50,26 +44,23 @@ class Task(optimizer.MjcTaskInterface):
             r.set_color(0, 1, 0, 1)
             output = r.think()
             r.action(output)
-            inputs[r.name] = r.input.torch
-            outputs[r.name] = output
-            direction[r.name] = r.global_direction
+            inputs[r.name] = r.input.touch.clone()
+            outputs[r.name] = output.clone().detach()
             invalid_output[r.name] = torch.any(torch.isnan(output) | torch.isinf(output))
             positions[r.name] = r.position[:2]
 
-        return inputs, outputs, direction, invalid_output, positions
+        return inputs, outputs, invalid_output, positions
 
     def calc_step(self) -> float:
         delta = None if self.dump is None else self.dump.create_delta()
 
-        robot_inputs, robot_outputs, robot_direction, robot_invalid_output, robot_positions = self._exec_robots()
-        self.food.update()
+        robot_inputs, robot_outputs, robot_invalid_output, robot_positions = self._exec_robots()
 
         if delta is not None:
-            delta.robot_inputs = {k: v.detach().numpy().copy() for k, v in robot_inputs.items()}
-            delta.robot_outputs = {k: v.detach().numpy().copy() for k, v in robot_outputs.items()}
-            delta.robot_direction = {k: v.copy() for k, v in robot_direction.items()}
-            delta.robot_pos = {k: v.copy() for k, v in robot_positions.items()}
-            delta.food_pos = self.food.position.copy()
+            delta.robot_inputs = robot_inputs
+            delta.robot_outputs = robot_outputs
+            delta.robot_pos = robot_positions
+            delta.food_pos = self.food.position
 
         if any(robot_invalid_output.values()):
             for robot_name in filter(lambda x: robot_invalid_output[x], robot_invalid_output.keys()):

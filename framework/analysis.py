@@ -8,8 +8,8 @@ import matplotlib.pyplot as plt
 from libs.optimizer import EachGenLogger, Individual
 
 from .optimization import Loss
-from .simulator.const import Settings
-from .simulator.objects.robot import BrainBuilder
+from .settings import Settings
+from .simulator.objects import BrainBuilder
 from .task_generator import TaskGenerator
 
 from . import entry_points
@@ -78,7 +78,7 @@ def record_in_mp4(
     settings.Robot.ARGMAX_SELECTION = True
     task_generator = TaskGenerator(settings, brain_builder)
 
-    with open(os.path.join(save_dir, "robot_food_pos.log.txt"), "w") as f:
+    with open(os.path.join(save_dir, "robot_food_pos.txt"), "w") as f:
         for i, rp in enumerate(task_generator.robot_positions):
             f.write(f"Robot{i}: {repr(rp[0])}, {repr(rp[1])}, {repr(rp[2])}\n")
         for i, fp in enumerate(task_generator.food_positions):
