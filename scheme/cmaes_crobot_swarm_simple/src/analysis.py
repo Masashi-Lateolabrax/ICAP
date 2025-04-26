@@ -1,3 +1,5 @@
+import os
+
 from libs.optimizer import Individual
 
 import framework
@@ -26,17 +28,39 @@ def record_in_mp4(save_dir: str, logger: Logger, brain_builder: BrainBuilder):
     settings = Settings()
     settings.Robot.ARGMAX_SELECTION = True
 
-    framework.analysis.record_in_mp4(
-        save_dir,
-        settings,
-        logger,
-        Loss(),
-        brain_builder,
-        labels={
-            0: LabelAndColor(label="robot and food", color="blue"),
-            1: LabelAndColor(label="food and nest", color="orange"),
-        }
-    )
+    os.makedirs(save_dir, exist_ok=True)
+
+    settings.Robot.ARGMAX_SELECTION = True
+    task_generator = framework.TaskGenerator(settings, brain_builder)
+
+    with open(os.path.join(save_dir, "robot_food_pos.log.txt"), "w") as f:
+        for i, rp in enumerate(task_generator.robot_positions):
+            f.write(f"Robot{i}: {repr(rp[0])}, {repr(rp[1])}, {repr(rp[2])}\n")
+        for i, fp in enumerate(task_generator.food_positions):
+            f.write(f"Food{i}: {repr(fp[0])}, {repr(fp[1])}\n")
+
+    for g in set(list(range(0, len(logger), max(len(logger) // 10, 1))) + [len(logger) - 1]):
+        ind = logger[g].max_ind
+        task = task_generator.generate(ind, debug=True)
+
+        ## Record the simulation.
+        ind.dump = framework.entry_points.record(
+            settings,
+            os.path.join(save_dir, f"gen{g}.mp4"),
+            task,
+        )
+
+        ## Plot the loss.
+        framework.analysis.plot_loss(
+            os.path.join(save_dir, f"loss_gen{g}.png"),
+            settings,
+            ind,
+            Loss(),
+            labels={
+                0: LabelAndColor(label="robot and food", color="blue"),
+                1: LabelAndColor(label="food and nest", color="orange"),
+            }
+        )
 
 
 def test_suboptimal_individuals(
@@ -67,7 +91,7 @@ def plot_max_of_parameter(
     import matplotlib.pyplot as plt
 
     end = end if end is not None else len(logger)
-    individuals = [logger[i].min_ind for i in range(start, end)]
+    individuals = [logger[i].max_ind for i in range(start, end)]
 
     max_values = [np.max(ind) for ind in individuals]
     min_values = [np.min(ind) for ind in individuals]
