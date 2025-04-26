@@ -11,13 +11,19 @@ class Settings:
         TIME_STEP = 0.01
         TIME_LENGTH: int = int(60 / 0.01)  # Episode length (in steps)
 
-        RENDER_WIDTH = 300
-        RENDER_HEIGHT = 300
-        RENDER_ZOOM = 16
-        MAX_GEOM = 100  # Maximum number of geometries to render
-
         WORLD_WIDTH = 10  # World size
         WORLD_HEIGHT = 10
+
+        class Render:
+            RENDER_WIDTH = 300
+            RENDER_HEIGHT = 300
+            RENDER_ZOOM = 16
+
+            MAX_GEOM = 100  # Maximum number of geometries to render
+
+            LIGHT_AMBIENT = (0.1, 0.1, 0.1)
+            LIGHT_DIFFUSE = (0.4, 0.4, 0.4)
+            LIGHT_SPECULAR = (0.5, 0.5, 0.5)
 
     class CMAES:
         GENERATION = 3  # Total number of generations
