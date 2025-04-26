@@ -1,1 +1,0 @@
-from scheme.transportation_with_pheromone.examples.collect_food.settings import Settings
