@@ -1,0 +1,41 @@
+class _Settings:
+    CMAES_GENERATION = 1000
+    CMAES_POPULATION = 1000
+    CMAES_MU = 500
+    CMAES_SIGMA = 3
+
+    SIMULATION_TIMESTEP = 0.01
+    SIMULATION_TIME_LENGTH = 1000
+
+    LOSS_SIGMA_FN = 1
+    LOSS_SIGMA_FR = 1
+    LOSS_RATE_FN = 0.01
+    LOSS_RATE_FR = 0.01
+
+    RENDER_WIDTH = 500
+    RENDER_HEIGHT = 500
+    RENDER_ZOOM = 18
+    MAX_GEOM = 3000
+
+    WORLD_WIDTH = 10
+    WORLD_HEIGHT = 10
+
+    ROBOT_SIZE = 0.175
+    ROBOT_WEIGHT = 30  # kg
+    ROBOT_MOVE_SPEED = 0.8
+    ROBOT_TURN_SPEED = 3.14 / 2
+    ROBOT_THINK_INTERVAL = 100
+
+    FOOD_SIZE = 0.5
+    FOOD_DENSITY = 500
+    FOOD_FRICTIONLOSS = 2
+    FOOD_NUM = 1
+
+    SENSOR_GAIN = 1
+
+    @property
+    def SENSOR_OFFSET(self):
+        return self.ROBOT_SIZE + self.FOOD_SIZE
+
+
+Settings = _Settings()
