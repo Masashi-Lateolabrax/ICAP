@@ -5,9 +5,9 @@ Settings.Simulation.RENDER_WIDTH = 800
 Settings.Simulation.RENDER_HEIGHT = 800
 Settings.Simulation.RENDER_ZOOM = 10
 
-Settings.CMAES.GENERATION = 500
+Settings.CMAES.GENERATION = 1000
 Settings.CMAES.POPULATION = 1000
-Settings.CMAES.MU = 500
+Settings.CMAES.MU = int(Settings.CMAES.POPULATION / 2)
 Settings.CMAES.SIGMA = 0.001
 
 Settings.Simulation.TIME_STEP = 0.01

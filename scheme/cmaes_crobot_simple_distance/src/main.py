@@ -38,21 +38,13 @@ def main():
     ## Plot the movements of the parameters.
     file_path = os.path.join(save_dir, "parameter_movement.png")
     if not os.path.exists(file_path):
-        analysis.plot_parameter_movements(file_path, logger)
+        analysis.plot_parameter_movements(logger, file_path)
 
-    file_path = os.path.join(save_dir, "test_loss.png")
-    if not os.path.exists(file_path):
-        analysis.test_suboptimal_individuals(
-            file_path, logger, brain_builder
-        )
+    analysis.record_in_mp4(settings, save_dir, logger, brain_builder)
 
-    file_path = os.path.join(save_dir, "videos")
-    if not os.path.exists(file_path):
-        analysis.record_in_mp4(
-            file_path, logger, brain_builder
-        )
-
-    # analysis.plot_max_of_parameter(os.path.join(save_dir, "parameter_info.png"), logger, 0, 100)
+    analysis.test_suboptimal_individuals(
+        save_dir, logger, settings, brain_builder
+    )
 
 
 if __name__ == '__main__':

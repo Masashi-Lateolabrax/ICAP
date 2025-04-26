@@ -22,18 +22,17 @@ class NeuralNetwork(torch.nn.Module):
     def __init__(self):
         super().__init__()
 
-        self.layer1 = torch.nn.Linear(4, 4)
-        self.activation1 = torch.nn.Tanhshrink()
+        self.sequence = torch.nn.Sequential(
+            torch.nn.Linear(6, 4),
+            torch.nn.Tanh(),
+            torch.nn.Linear(4, 2),
+            torch.nn.Softmax(dim=0)
+        )
 
-        self.layer2 = torch.nn.Linear(4, 2)
-        self.activation2 = torch.nn.Tanh()
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.layer1(x)
-        x = self.activation1(x)
-        x = self.layer2(x)
-        x = self.activation2(x)
-        return x
+    def forward(self, x: framework.simulator.objects.RobotInput):
+        x = x.get()
+        y = self.sequence(x)
+        return y
 
     def set_para(self, para):
         i = 0
@@ -56,20 +55,17 @@ class Brain(framework.interfaces.BrainInterface):
         self.settings = settings
 
         self.timer = Timer(settings.Robot.THINK_INTERVAL / settings.Simulation.TIME_STEP)
+        self.state = framework.BrainJudgement.STOP
 
         self.neural_network = nn
-
-        self._output_buf = torch.zeros(2, dtype=torch.float32, requires_grad=False)
+        self.output = torch.zeros(2, dtype=torch.float32, requires_grad=False)
+        self.output_is_updated = False
 
     def think(self, input_: RobotInput) -> torch.Tensor:
         if self.timer.tick():
-            x = input_.get()[2:6]
-            if torch.any(torch.isnan(x) | torch.isinf(x)):
-                print("The input tensor for robots contains invalid values (NaN or Inf).")
-            output = self.neural_network(x)
-            self._output_buf[:] = output[:2]
-
-        return self._output_buf
+            self.output[:] = self.neural_network(input_)
+            self.output_is_updated = True
+        return self.output
 
 
 class BrainBuilder(framework.interfaces.BrainBuilder):
@@ -79,8 +75,8 @@ class BrainBuilder(framework.interfaces.BrainBuilder):
 
     def __init__(self, settings):
         self.settings = settings
-        self.nn = NeuralNetwork()
+        self.buf_net: NeuralNetwork = NeuralNetwork()
 
     def build(self, para: Individual) -> framework.interfaces.BrainInterface:
-        self.nn.set_para(para)
-        return Brain(self.settings, self.nn)
+        self.buf_net.set_para(para)
+        return Brain(self.settings, self.buf_net)
