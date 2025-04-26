@@ -1,11 +1,8 @@
 import torch
 
-from libs.optimizer import Individual
-
 import framework
-from framework.simulator.objects.robot import RobotInput
-
-from settings import Settings
+from framework.simulator.objects import RobotInput
+from libs.optimizer import Individual
 
 
 class Timer:
@@ -55,7 +52,7 @@ class NeuralNetwork(torch.nn.Module):
 
 
 class Brain(framework.interfaces.BrainInterface):
-    def __init__(self, settings: Settings, nn: NeuralNetwork):
+    def __init__(self, settings: framework.Settings, nn: NeuralNetwork):
         self.settings = settings
 
         self.timer = Timer(settings.Robot.THINK_INTERVAL / settings.Simulation.TIME_STEP)
