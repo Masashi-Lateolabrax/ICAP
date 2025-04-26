@@ -7,8 +7,8 @@ Settings.Simulation.RENDER_ZOOM = 10
 
 Settings.CMAES.GENERATION = 500
 Settings.CMAES.POPULATION = 1000
-Settings.CMAES.MU = int(Settings.CMAES.POPULATION / 2)
-Settings.CMAES.SIGMA = 0.1
+Settings.CMAES.MU = 500
+Settings.CMAES.SIGMA = 0.001
 
 Settings.Simulation.TIME_STEP = 0.01
 Settings.Simulation.TIME_LENGTH = int(30 / Settings.Simulation.TIME_STEP)
