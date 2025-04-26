@@ -6,7 +6,7 @@ import framework
 
 from logger import Logger
 from brain import BrainBuilder
-from settings import Settings
+from settings import Settings, set_positions
 
 import analysis
 
@@ -23,6 +23,8 @@ def main():
     log_file_name = "result.pkl"
 
     settings = Settings()
+    set_positions(settings)
+
     brain_builder = BrainBuilder(settings)
     logger = Logger(save_dir)
 
@@ -34,6 +36,12 @@ def main():
     ## Load the logger if it is empty.
     if logger.is_empty():
         logger = Logger.load(os.path.join(save_dir, log_file_name))
+
+    analyze_results(logger, os.path.join(save_dir, "stage1"), brain_builder)
+
+
+def analyze_results(logger, save_dir, brain_builder):
+    os.makedirs(save_dir, exist_ok=True)
 
     ## Plot the movements of the parameters.
     file_path = os.path.join(save_dir, "parameter_movement.png")
