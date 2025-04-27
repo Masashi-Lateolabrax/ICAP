@@ -31,10 +31,10 @@ Settings.Simulation.TIME_LENGTH = int(60 / Settings.Simulation.TIME_STEP)
 
 # Loss settings
 Settings.CMAES.LOSS = Loss()
-# Nest and Food
+## Nest and Food
 Settings.CMAES.LOSS.sigma_nest_and_food = 2
 Settings.CMAES.LOSS.GAIN_NEST_AND_FOOD = 7
-# Robot and Food
+## Robot and Food
 Settings.CMAES.LOSS.sigma_robot_and_food = 2
 Settings.CMAES.LOSS.GAIN_ROBOT_AND_FOOD = 1
 
@@ -42,6 +42,9 @@ Settings.CMAES.LOSS.GAIN_ROBOT_AND_FOOD = 1
 Settings.Robot.THINK_INTERVAL = 0.3
 Settings.Robot.OtherRobotSensor.GAIN = 2 / 0.7
 Settings.Robot.FoodSensor.GAIN = 2 / 5
+
+# Food Settings
+Settings.Food.REPLACEMENT = False
 
 # Number of Robots and Food
 Settings.Robot.NUM = 3 * 3
