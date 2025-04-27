@@ -87,7 +87,7 @@ class ReFood:
     def __len__(self):
         return len(self._food)
 
-    def update(self):
+    def might_replace(self):
         invalid_area = _calc_invalid_area(self._robot + [self._nest])
         food_iter = self._food[0:len(self._food)]
         for vf in food_iter:
