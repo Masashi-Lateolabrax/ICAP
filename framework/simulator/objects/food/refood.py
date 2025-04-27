@@ -111,8 +111,7 @@ class ReFood:
     def __getitem__(self, item):
         return self._raw_food[item]
 
-    @property
-    def position(self):
+    def all_positions(self):
         return np.array([f.position for f in self._food])
 
     def real_positions(self):
