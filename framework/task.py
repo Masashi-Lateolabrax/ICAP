@@ -80,7 +80,7 @@ class Task(optimizer.MjcTaskInterface):
             return float("inf")
 
         robot_pos = np.array([robot.position for robot in self.robots.values()])
-        food_pos = np.array([food.position for food in self.food])
+        food_pos = self.food.all_positions()
         loss = self.settings.CMAES._loss(self.nest.position, robot_pos, food_pos)
 
         self.world.calc_step()
