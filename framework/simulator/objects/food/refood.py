@@ -114,3 +114,9 @@ class ReFood:
     @property
     def position(self):
         return np.array([f.position for f in self._food])
+
+    def real_positions(self):
+        return np.array([f.position for f in self._raw_food])
+
+    def dummy_positions(self):
+        return np.array([f.position for f in self._food if f.dummy])
