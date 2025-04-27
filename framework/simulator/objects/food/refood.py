@@ -87,7 +87,7 @@ class ReFood:
     def __len__(self):
         return len(self._food)
 
-    def update(self):
+    def might_replace(self):
         invalid_area = _calc_invalid_area(self._robot + [self._nest])
         food_iter = self._food[0:len(self._food)]
         for vf in food_iter:
@@ -111,6 +111,11 @@ class ReFood:
     def __getitem__(self, item):
         return self._raw_food[item]
 
-    @property
-    def position(self):
+    def all_positions(self):
         return np.array([f.position for f in self._food])
+
+    def real_positions(self):
+        return np.array([f.position for f in self._raw_food])
+
+    def dummy_positions(self):
+        return np.array([f.position for f in self._food if f.dummy])
