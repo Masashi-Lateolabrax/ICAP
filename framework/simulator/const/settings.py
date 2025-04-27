@@ -56,6 +56,7 @@ class Settings:
     class Food:
         NUM = 1
         POSITION: list[tuple[float, float]] = []
+        REPLACEMENT = True
 
     class Nest:
         POSITION = (0, 0)
