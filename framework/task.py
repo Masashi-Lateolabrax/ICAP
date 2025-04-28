@@ -62,14 +62,16 @@ class Task(optimizer.MjcTaskInterface):
         delta = None if self.dump is None else self.dump.create_delta()
 
         robot_inputs, robot_outputs, robot_direction, robot_invalid_output, robot_positions = self._exec_robots()
-        self.food.update()
+
+        if self.settings.Food.REPLACEMENT:
+            self.food.might_replace()
 
         if delta is not None:
             delta.robot_inputs = {k: v.detach().numpy().copy() for k, v in robot_inputs.items()}
             delta.robot_outputs = {k: v.detach().numpy().copy() for k, v in robot_outputs.items()}
             delta.robot_direction = {k: v.copy() for k, v in robot_direction.items()}
             delta.robot_pos = {k: v.copy() for k, v in robot_positions.items()}
-            delta.food_pos = self.food.position.copy()
+            delta.food_pos = self.food.all_positions()
 
         if any(robot_invalid_output.values()):
             for robot_name in filter(lambda x: robot_invalid_output[x], robot_invalid_output.keys()):
@@ -77,8 +79,8 @@ class Task(optimizer.MjcTaskInterface):
                 print(f"Robot {robot_name} has an invalid output (NaN or Inf).")
             return float("inf")
 
-        robot_pos = np.array([robot.position for robot in self.robots.values()])
-        food_pos = np.array([food.position for food in self.food])
+        robot_pos = np.array([v for v in robot_positions.values()])
+        food_pos = self.food.all_positions()
         loss = self.settings.CMAES._loss(self.nest.position, robot_pos, food_pos)
 
         self.world.calc_step()
