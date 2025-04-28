@@ -2,7 +2,7 @@ import mujoco
 
 from libs.utils.data_collector import Recorder
 
-from ..settings import Settings
+from ..simulator.const import Settings
 from ..task import Task
 from ..dump import Dump
 
@@ -26,16 +26,16 @@ def record(
 
     camera = mujoco.MjvCamera()
     camera.elevation = -90
-    camera.distance = settings.Simulation.RENDER_ZOOM
+    camera.distance = settings.Simulation.Render.RENDER_ZOOM
 
     recorder = Recorder(
         file_path,
         settings.Simulation.TIME_STEP,
         settings.Simulation.TIME_LENGTH,
-        settings.Simulation.RENDER_WIDTH,
-        settings.Simulation.RENDER_HEIGHT,
+        settings.Simulation.Render.RENDER_WIDTH,
+        settings.Simulation.Render.RENDER_HEIGHT,
         camera,
-        Settings.Simulation.MAX_GEOM
+        Settings.Simulation.Render.MAX_GEOM
     )
 
     recorder.run(task)

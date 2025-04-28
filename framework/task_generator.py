@@ -1,15 +1,14 @@
 from libs import optimizer
 from libs.optimizer import Individual
-import framework
 
-from .settings import Settings
+from .simulator.const import Settings
 from .task import Task
 
-from .simulator.objects.utils import rand_robot_pos, rand_food_pos
-from .simulator.objects import NestBuilder, RobotBuilder, FoodBuilder, BrainBuilder
-from .simulator.objects.robot import ROBOT_SIZE
-from .simulator.objects.food import FOOD_SIZE
-from .simulator.objects.nest import NEST_SIZE
+from .simulator.utils import rand_robot_pos, rand_food_pos
+from .simulator.const import ROBOT_SIZE, FOOD_SIZE, NEST_SIZE
+from .simulator.objects.nest import NestBuilder
+from .simulator.objects.robot import RobotBuilder, BrainBuilder
+from .simulator.objects.food import FoodBuilder, ReFood
 from .simulator.world import WorldBuilder
 
 
@@ -73,7 +72,7 @@ class TaskGenerator(optimizer.TaskGenerator):
         food = [w_objs[food_builders[i].builder_name] for i in range(len(food_builders))]
         nest = w_objs[nest_builder.builder_name]
 
-        refood = framework.simulator.objects.ReFood(
+        refood = ReFood(
             Settings.Simulation.WORLD_WIDTH,
             Settings.Simulation.WORLD_HEIGHT,
             w_builder.thickness,

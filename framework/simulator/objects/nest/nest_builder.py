@@ -6,9 +6,8 @@ from mujoco_xml_generator.utils import DummyGeom
 
 from libs.mujoco_builder import WorldClock, WorldObjectBuilder
 
-from ....settings import Settings
+from ...const import Settings, NEST_SIZE, NEST_THICKNESS
 from .nest import Nest
-from .const import NEST_SIZE, NEST_THICKNESS
 
 
 class NestBuilder(WorldObjectBuilder):

@@ -8,8 +8,8 @@ import matplotlib.pyplot as plt
 from libs.optimizer import EachGenLogger, Individual
 
 from .optimization import Loss
-from .settings import Settings
-from .simulator.objects import BrainBuilder
+from .simulator.const import Settings
+from .simulator.objects.robot import BrainBuilder
 from .task_generator import TaskGenerator
 
 from . import entry_points

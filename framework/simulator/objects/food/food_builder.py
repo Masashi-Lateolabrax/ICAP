@@ -6,9 +6,10 @@ from mujoco_xml_generator.utils import DummyGeom
 
 from libs.mujoco_builder import WorldClock, WorldObjectBuilder
 
-from ..name_table import FoodNameTable
+from ...const import FOOD_SIZE, FOOD_DENSITY, FOOD_FRICTIONLOSS
+
+from .name_table import FoodNameTable
 from .food import Food
-from .const import FOOD_SIZE, FOOD_DENSITY, FOOD_FRICTIONLOSS
 
 
 class FoodBuilder(WorldObjectBuilder):

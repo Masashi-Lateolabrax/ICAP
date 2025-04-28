@@ -1,10 +1,11 @@
 import numpy as np
 
 from ...utils import random_point_avoiding_invalid_areas
-from ..nest import Nest, NEST_SIZE
+from ...const import FOOD_SIZE, NEST_SIZE
+
+from ..nest import Nest
 from ..robot import Robot
 from .food import Food
-from .const import FOOD_SIZE
 
 
 class VirtualFood:
@@ -64,7 +65,7 @@ def _replace_food(width: float, height: float, invalid_area: list[np.ndarray], p
 
 class ReFood:
     """
-    The ReFood is a food variant that is replaced in world when it is distributed to a nest.
+    The ReFood is a food variant is replaced in the world when it is transported to a nest.
     """
 
     def __init__(
@@ -86,7 +87,7 @@ class ReFood:
     def __len__(self):
         return len(self._food)
 
-    def update(self):
+    def might_replace(self):
         invalid_area = _calc_invalid_area(self._robot + [self._nest])
         food_iter = self._food[0:len(self._food)]
         for vf in food_iter:
@@ -110,6 +111,11 @@ class ReFood:
     def __getitem__(self, item):
         return self._raw_food[item]
 
-    @property
-    def position(self):
+    def all_positions(self):
         return np.array([f.position for f in self._food])
+
+    def real_positions(self):
+        return np.array([f.position for f in self._raw_food])
+
+    def dummy_positions(self):
+        return np.array([f.position for f in self._food if f.dummy])

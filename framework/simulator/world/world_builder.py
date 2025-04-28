@@ -3,7 +3,7 @@ from mujoco_xml_generator import common, visual, asset, body
 
 from libs.mujoco_builder import BaseWorldBuilder
 
-from ...settings import Settings
+from ..const import Settings
 from ..objects.wall import WallBuilder
 
 
@@ -27,8 +27,13 @@ class WorldBuilder(BaseWorldBuilder):
             ),
             Visual().add_children([
                 visual.Global(
-                    offwidth=settings.Simulation.RENDER_WIDTH,
-                    offheight=settings.Simulation.RENDER_HEIGHT
+                    offwidth=settings.Simulation.Render.RENDER_WIDTH,
+                    offheight=settings.Simulation.Render.RENDER_HEIGHT
+                ),
+                visual.HeadLight(
+                    ambient=settings.Simulation.Render.LIGHT_AMBIENT,
+                    diffuse=settings.Simulation.Render.LIGHT_DIFFUSE,
+                    specular=settings.Simulation.Render.LIGHT_SPECULAR
                 )
             ]),
         ])

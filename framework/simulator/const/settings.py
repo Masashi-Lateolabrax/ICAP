@@ -1,6 +1,9 @@
 import numpy as np
 
-from .optimization import Loss
+from framework.optimization import Loss
+
+from .robot import ROBOT_SIZE
+from .food import FOOD_SIZE
 
 
 class Settings:
@@ -8,13 +11,19 @@ class Settings:
         TIME_STEP = 0.01
         TIME_LENGTH: int = int(60 / 0.01)  # Episode length (in steps)
 
-        RENDER_WIDTH = 300
-        RENDER_HEIGHT = 300
-        RENDER_ZOOM = 16
-        MAX_GEOM = 100  # Maximum number of geometries to render
-
         WORLD_WIDTH = 10  # World size
         WORLD_HEIGHT = 10
+
+        class Render:
+            RENDER_WIDTH = 300
+            RENDER_HEIGHT = 300
+            RENDER_ZOOM = 16
+
+            MAX_GEOM = 100  # Maximum number of geometries to render
+
+            LIGHT_AMBIENT = (0.1, 0.1, 0.1)
+            LIGHT_DIFFUSE = (0.4, 0.4, 0.4)
+            LIGHT_SPECULAR = (0.5, 0.5, 0.5)
 
     class CMAES:
         GENERATION = 3  # Total number of generations
@@ -37,16 +46,17 @@ class Settings:
         POSITION: list[tuple[float, float, float]] = []
 
         class OtherRobotSensor:
-            GAIN = 2 / 0.7
-            OFFSET = 2 / 5
+            GAIN = (lambda d, v: (1 - v) / (v * d))(2, 0.1)
+            OFFSET = ROBOT_SIZE * 2
 
         class FoodSensor:
-            GAIN = 2 / 0.7
-            OFFSET = 0.175 + 0.5
+            GAIN = (lambda d, v: (1 - v) / (v * d))(4, 0.1)
+            OFFSET = FOOD_SIZE + ROBOT_SIZE
 
     class Food:
         NUM = 1
         POSITION: list[tuple[float, float]] = []
+        REPLACEMENT = True
 
     class Nest:
         POSITION = (0, 0)
