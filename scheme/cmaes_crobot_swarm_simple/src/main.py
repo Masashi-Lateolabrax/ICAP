@@ -41,8 +41,8 @@ def main():
         for gen in range(1, 1 + cmaes.get_generation()):
             ## Update settings related to robot and food.
             set_positions(settings)
-            # randomize_direction(settings, 0)
-            # randomize_food_position(settings)
+            randomize_direction(settings, 1)
+            randomize_food_position(settings)
 
             ## Optimization
             task_generator = framework.TaskGenerator(settings, brain_builder)
@@ -56,8 +56,8 @@ def main():
 
     ## Update settings related to robot and food for analysis.
     set_positions(settings)
-    # randomize_direction(settings, 0)
-    # randomize_food_position(settings)
+    randomize_direction(settings, 1)
+    randomize_food_position(settings)
 
     analyze_results(logger, os.path.join(save_dir, "stage1"), brain_builder)
 
