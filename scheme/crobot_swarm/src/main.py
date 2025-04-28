@@ -23,6 +23,7 @@ def main():
     log_file_name = "result.pkl"
 
     settings = Settings()
+
     brain_builder = BrainBuilder(settings)
     logger = Logger(save_dir)
 
@@ -35,17 +36,25 @@ def main():
     if logger.is_empty():
         logger = Logger.load(os.path.join(save_dir, log_file_name))
 
+    analyze_results(logger, os.path.join(save_dir, "stage1"), brain_builder)
+
+
+def analyze_results(logger, save_dir, brain_builder):
+    os.makedirs(save_dir, exist_ok=True)
+
     ## Plot the movements of the parameters.
     file_path = os.path.join(save_dir, "parameter_movement.png")
     if not os.path.exists(file_path):
         analysis.plot_parameter_movements(file_path, logger)
 
+    ## Plot the loss in test data.
     file_path = os.path.join(save_dir, "test_loss.png")
     if not os.path.exists(file_path):
         analysis.test_suboptimal_individuals(
             file_path, logger, brain_builder
         )
 
+    ## Record the videos
     file_path = os.path.join(save_dir, "videos")
     if not os.path.exists(file_path):
         analysis.record_in_mp4(
