@@ -27,7 +27,7 @@ def main():
     brain_builder = BrainBuilder(settings)
     logger = Logger(save_dir)
 
-    # Training.
+    ## Training.
     if not os.path.exists(os.path.join(save_dir, log_file_name)):
         cmaes = optimizer.CMAES(
             dim=brain_builder.get_dim(),
@@ -39,22 +39,22 @@ def main():
             minimalize=False,
         )
         for gen in range(1, 1 + cmaes.get_generation()):
-            # Update settings related to robot and food.
+            ## Update settings related to robot and food.
             set_positions(settings)
             # randomize_direction(settings, 0)
             # randomize_food_position(settings)
 
-            # Optimization
+            ## Optimization
             task_generator = framework.TaskGenerator(settings, brain_builder)
             cmaes.optimize_current_generation(task_generator, proc=optimizer.MultiThreadProc)
 
         logger.save(log_file_name)
 
-    # Load the logger if it is empty.
+    ## Load the logger if it is empty.
     if logger.is_empty():
         logger = Logger.load(os.path.join(save_dir, log_file_name))
 
-    # Update settings related to robot and food for analysis.
+    ## Update settings related to robot and food for analysis.
     set_positions(settings)
     # randomize_direction(settings, 0)
     # randomize_food_position(settings)
@@ -65,19 +65,19 @@ def main():
 def analyze_results(logger, save_dir, brain_builder):
     os.makedirs(save_dir, exist_ok=True)
 
-    # Plot the movements of the parameters.
+    ## Plot the movements of the parameters.
     file_path = os.path.join(save_dir, "parameter_movement.png")
     if not os.path.exists(file_path):
         analysis.plot_parameter_movements(file_path, logger)
 
-    # Plot the loss in test data.
+    ## Plot the loss in test data.
     file_path = os.path.join(save_dir, "test_loss.png")
     if not os.path.exists(file_path):
         analysis.test_suboptimal_individuals(
             file_path, logger, brain_builder
         )
 
-    # Record the videos
+    ## Record the videos
     file_path = os.path.join(save_dir, "videos")
     if not os.path.exists(file_path):
         analysis.record_in_mp4(
