@@ -11,10 +11,10 @@ from brain import BrainBuilder
 from logger import Logger
 
 
-def plot_loss(file_path: str, ind: Individual):
+def plot_loss(file_path: str, settings: Settings, ind: Individual):
     framework.analysis.plot_loss(
         file_path,
-        Settings(),
+        settings,
         ind,
         Loss(),
         labels={
@@ -24,10 +24,7 @@ def plot_loss(file_path: str, ind: Individual):
     )
 
 
-def record_in_mp4(save_dir: str, logger: Logger, brain_builder: BrainBuilder):
-    settings = Settings()
-    settings.Robot.ARGMAX_SELECTION = True
-
+def record_in_mp4(save_dir: str, settings: Settings, logger: Logger, brain_builder: BrainBuilder):
     os.makedirs(save_dir, exist_ok=True)
 
     settings.Robot.ARGMAX_SELECTION = True
@@ -65,10 +62,10 @@ def record_in_mp4(save_dir: str, logger: Logger, brain_builder: BrainBuilder):
 
 def test_suboptimal_individuals(
         file_path: str,
+        settings: Settings,
         logger: Logger,
         brain_builder: BrainBuilder,
 ):
-    settings = Settings()
     settings.Robot.ARGMAX_SELECTION = True
 
     task_generator = framework.TaskGenerator(settings, brain_builder)
