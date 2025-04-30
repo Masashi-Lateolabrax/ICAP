@@ -35,7 +35,7 @@ class Loss(framework.interfaces.Loss):
             a_max=None
         )
         loss = np.sum(np.exp(-(distance ** 2) / self.sigma_nest_and_food))
-        return self.GAIN_ROBOT_AND_FOOD * loss
+        return self.GAIN_NEST_AND_FOOD * loss
 
     def calc_elements(self, nest_pos: np.ndarray, robot_pos: np.ndarray, food_pos: np.ndarray) -> np.ndarray:
         return np.array([
