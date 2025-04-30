@@ -36,7 +36,7 @@ Settings.CMAES.LOSS.sigma_nest_and_food = calc_loss_sigma(3, 0.1)
 Settings.CMAES.LOSS.GAIN_NEST_AND_FOOD = 1
 ### Robot and Food
 Settings.CMAES.LOSS.sigma_robot_and_food = calc_loss_sigma(1, 0.3)
-Settings.CMAES.LOSS.GAIN_ROBOT_AND_FOOD = 1e-4
+Settings.CMAES.LOSS.GAIN_ROBOT_AND_FOOD = 1e-5
 
 ## Robot Settings
 Settings.Robot.THINK_INTERVAL = 0.3
