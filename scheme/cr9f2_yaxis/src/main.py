@@ -19,7 +19,7 @@ def setup(settings: Settings):
     randomize_food_position(settings)
 
 
-def analyze_results(logger, save_dir, brain_builder):
+def analyze_results(save_dir, settings, logger, brain_builder):
     os.makedirs(save_dir, exist_ok=True)
 
     ## Plot the movements of the parameters.
@@ -31,14 +31,14 @@ def analyze_results(logger, save_dir, brain_builder):
     file_path = os.path.join(save_dir, "test_loss.png")
     if not os.path.exists(file_path):
         analysis.test_suboptimal_individuals(
-            file_path, logger, brain_builder
+            file_path, settings, logger, brain_builder
         )
 
     ## Record the videos
     file_path = os.path.join(save_dir, "videos")
     if not os.path.exists(file_path):
         analysis.record_in_mp4(
-            file_path, logger, brain_builder
+            file_path, settings, logger, brain_builder
         )
 
     # analysis.plot_max_of_parameter(os.path.join(save_dir, "parameter_info.png"), logger, 0, 100)
@@ -82,10 +82,16 @@ def main():
     ## Training.
     if not os.path.exists(os.path.join(save_dir, log_file_name)):
         logger = train(save_dir, settings, brain_builder)
+        logger.save(os.path.join(save_dir, log_file_name))
     else:
         logger = Logger.load(os.path.join(save_dir, log_file_name))
 
-    analyze_results(logger, os.path.join(save_dir, "stage1"), brain_builder)
+    analyze_results(
+        os.path.join(save_dir, "stage1"),
+        settings,
+        logger,
+        brain_builder
+    )
 
 
 if __name__ == '__main__':
