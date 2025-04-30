@@ -21,6 +21,7 @@ def setup(settings: Settings):
 
 def analyze_results(save_dir, settings, logger, brain_builder):
     os.makedirs(save_dir, exist_ok=True)
+    setup(settings)
 
     ## Plot the movements of the parameters.
     file_path = os.path.join(save_dir, "parameter_movement.png")
@@ -67,12 +68,14 @@ def train(save_dir: str, settings: Settings, brain_builder: BrainBuilder):
 
 
 def main():
-    git_hash = utils.get_head_hash()[0:8]
-    save_dir = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        datetime.datetime.now().strftime("%Y%m%d_%H%M%S-") + git_hash
-    )
-    # save_dir = "20250423_103010-7457c6a6"
+    save_dir = ""
+    if save_dir is "":
+        git_hash = utils.get_head_hash()[0:8]
+        save_dir = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            datetime.datetime.now().strftime("%Y%m%d_%H%M%S-") + git_hash
+        )
+
     os.makedirs(save_dir, exist_ok=True)
     log_file_name = "result.pkl"
 
