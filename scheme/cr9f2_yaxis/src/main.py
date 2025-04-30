@@ -69,7 +69,7 @@ def train(save_dir: str, settings: Settings, brain_builder: BrainBuilder):
 
 def main():
     save_dir = ""
-    if save_dir is "":
+    if save_dir == "":
         git_hash = utils.get_head_hash()[0:8]
         save_dir = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
