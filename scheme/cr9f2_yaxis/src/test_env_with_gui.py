@@ -145,13 +145,6 @@ def main():
     settings.Robot.NUM = len(settings.Robot.POSITION)
     settings.Food.NUM = len(settings.Food.POSITION)
 
-    settings.Food.REPLACEMENT = True
-
-    settings.CMAES.LOSS.sigma_nest_and_food = 1
-    settings.CMAES.LOSS.GAIN_NEST_AND_FOOD = 1
-    settings.CMAES.LOSS.sigma_robot_and_food = 0.1
-    settings.CMAES.LOSS.GAIN_ROBOT_AND_FOOD = 1
-
     app = App(settings)
     app.mainloop()
 
