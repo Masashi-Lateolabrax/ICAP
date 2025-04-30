@@ -82,6 +82,7 @@ def main():
     ## Training.
     if not os.path.exists(os.path.join(save_dir, log_file_name)):
         logger = train(save_dir, settings, brain_builder)
+        logger.save(os.path.join(save_dir, log_file_name))
     else:
         logger = Logger.load(os.path.join(save_dir, log_file_name))
 
