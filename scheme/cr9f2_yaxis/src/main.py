@@ -21,6 +21,7 @@ def setup(settings: Settings):
 
 def analyze_results(save_dir, settings, logger, brain_builder):
     os.makedirs(save_dir, exist_ok=True)
+    setup(settings)
 
     ## Plot the movements of the parameters.
     file_path = os.path.join(save_dir, "parameter_movement.png")
