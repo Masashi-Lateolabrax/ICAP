@@ -21,8 +21,8 @@ Settings.Simulation.WORLD_HEIGHT = 18
 
 ## Optimization settings
 Settings.CMAES.GENERATION = 100
-Settings.CMAES.POPULATION = 500
-Settings.CMAES.MU = 250
+Settings.CMAES.POPULATION = 1000
+Settings.CMAES.MU = 500
 Settings.CMAES.SIGMA = 0.3
 
 ## Simulation settings
@@ -36,7 +36,7 @@ Settings.CMAES.LOSS.sigma_nest_and_food = calc_loss_sigma(3, 0.1)
 Settings.CMAES.LOSS.GAIN_NEST_AND_FOOD = 1
 ### Robot and Food
 Settings.CMAES.LOSS.sigma_robot_and_food = calc_loss_sigma(1, 0.3)
-Settings.CMAES.LOSS.GAIN_ROBOT_AND_FOOD = 1e-6
+Settings.CMAES.LOSS.GAIN_ROBOT_AND_FOOD = 1e-4
 
 ## Robot Settings
 Settings.Robot.THINK_INTERVAL = 0.3
