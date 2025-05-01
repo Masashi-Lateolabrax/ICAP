@@ -21,8 +21,8 @@ Settings.Simulation.WORLD_HEIGHT = 18
 
 ## Optimization settings
 Settings.CMAES.GENERATION = 100
-Settings.CMAES.POPULATION = 1500
-Settings.CMAES.MU = 750
+Settings.CMAES.POPULATION = 300
+Settings.CMAES.MU = 150
 Settings.CMAES.SIGMA = 0.3
 
 ## Simulation settings
