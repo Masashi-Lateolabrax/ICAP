@@ -24,6 +24,7 @@ class VirtualFood:
             return
         self.food.joint_x.qpos[0] = x - self.food.joint_x.xanchor[0]
         self.food.joint_y.qpos[0] = y - self.food.joint_y.xanchor[1]
+        self.food.position[0:2] = x, y
 
     def set_velocity_to_zero(self):
         if self.dummy:
