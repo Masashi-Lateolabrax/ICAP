@@ -33,10 +33,10 @@ class Settings:
         LOSS: Loss = None
 
         @staticmethod
-        def _loss(nest_pos: np.ndarray, robot_pos: np.ndarray, food_pos: np.ndarray) -> float:
+        def _loss(para: np.ndarray, nest_pos: np.ndarray, robot_pos: np.ndarray, food_pos: np.ndarray) -> float:
             if Settings.CMAES.LOSS is None:
                 raise NotImplementedError("Loss function is not implemented. Please set Settings.CMAES.LOSS.")
-            return Settings.CMAES.LOSS(nest_pos, robot_pos, food_pos)
+            return Settings.CMAES.LOSS(para, nest_pos, robot_pos, food_pos)
 
     class Robot:
         NUM = 1
