@@ -109,3 +109,25 @@ def plot_max_of_parameter(
         label="std of parameter"
     )
     plt.savefig(file_path)
+
+
+def plot_parameter_heatmap(
+        file_path: str,
+        logger,
+        start: int = 0,
+        end: int = None
+):
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    end = end if end is not None else len(logger)
+    parameter_matrix = np.array([logger[i].max_ind for i in range(start, end)])
+
+    plt.figure(figsize=(10, 6))
+    plt.imshow(parameter_matrix.T, aspect='auto', cmap='viridis', interpolation='nearest')
+    plt.colorbar(label='Parameter Value')
+    plt.xlabel('Generation')
+    plt.ylabel('Parameter Index')
+    plt.title('Parameter Heatmap Over Generations')
+    plt.savefig(file_path)
+    plt.close()
