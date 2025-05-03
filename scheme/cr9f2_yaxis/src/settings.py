@@ -23,7 +23,7 @@ Settings.Simulation.WORLD_HEIGHT = 18
 Settings.CMAES.GENERATION = 1000
 Settings.CMAES.POPULATION = 300
 Settings.CMAES.MU = 150
-Settings.CMAES.SIGMA = 0.001
+Settings.CMAES.SIGMA = 0.000001
 
 ## Simulation settings
 Settings.Simulation.TIME_STEP = 0.01
@@ -37,11 +37,13 @@ Settings.CMAES.LOSS.GAIN_NEST_AND_FOOD = 1
 ### Robot and Food
 Settings.CMAES.LOSS.sigma_robot_and_food = calc_loss_sigma(1, 0.3)
 Settings.CMAES.LOSS.GAIN_ROBOT_AND_FOOD = 1e-4
+### Regulation
+Settings.CMAES.LOSS.LP_GAIN = 0.1 / Settings.Simulation.TIME_LENGTH
 
 ## Robot Settings
 Settings.Robot.THINK_INTERVAL = 0.3
-Settings.Robot.OtherRobotSensor.GAIN = (lambda d, v: (1 - v) / (v * d))(2, 0.1)
-Settings.Robot.FoodSensor.GAIN = (lambda d, v: (1 - v) / (v * d))(4, 0.1)
+Settings.Robot.OtherRobotSensor.GAIN = (lambda d, v: (1 - v) / (v * d))(4, 0.1)
+Settings.Robot.FoodSensor.GAIN = (lambda d, v: (1 - v) / (v * d))(9, 0.1)
 
 ## Food Settings
 Settings.Food.REPLACEMENT = True

@@ -9,7 +9,7 @@ from matplotlib.animation import FFMpegWriter
 import framework
 
 from brain import BrainBuilder
-from settings import Settings
+from settings import Settings, set_positions, randomize_direction
 from logger import Logger
 
 
@@ -22,25 +22,22 @@ class RobotInfo:
 
 
 def main():
-    save_dir = "tmp_result"
+    save_dir = "tmp"
     os.makedirs(os.path.join(save_dir, "replay"), exist_ok=True)
 
     video_file_name = "replay.mp4"
     result_file_name = "result.pkl"
 
     logger = Logger.load(os.path.join(save_dir, result_file_name))
-    ind = logger[-1].min_ind
+    ind = logger[-1].max_ind
 
     settings = Settings()
+
+    set_positions(settings)
+    randomize_direction(settings, 1)
+
     brain_builder = BrainBuilder(settings)
     task_generator = framework.TaskGenerator(settings, brain_builder)
-
-    # task_generator.robot_positions = [
-    #     (1.1262106310606397, -1.6779491283906323, 214.50974959400716)
-    # ]
-    # task_generator.food_positions = [
-    #     (-1.810117866406546, 1.2444780212695203)
-    # ]
 
     task = task_generator.generate(ind, debug=True)
 
@@ -91,7 +88,7 @@ def main():
                 [rd.direction[0], rd.direction[1]]
             ]))
 
-            for j, info in zip(range(3), [rd.input[0:2], rd.input[2:4], rd.input[4:6]]):
+            for j, info in zip(range(1), [rd.input[0:2], rd.input[2:4], rd.input[4:6]]):
                 rotated_vector = rotation_matrix @ np.array([info[0], info[1]])
                 quiver[j].set_offsets([rd.position[0], rd.position[1]])
                 quiver[j].set_UVC(rotated_vector[0], rotated_vector[1])
