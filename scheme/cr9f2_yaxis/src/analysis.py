@@ -131,3 +131,35 @@ def plot_parameter_heatmap(
     plt.title('Parameter Heatmap Over Generations')
     plt.savefig(file_path)
     plt.close()
+
+
+def plot_loss_during_train(
+        file_path: str,
+        logger: Logger,
+        start: int = 0,
+        end: int = None
+):
+    from matplotlib import pyplot as plt
+
+    worst_values = []
+    best_values = []
+    average_values = []
+
+    for queue in logger[start:end]:
+        worst = queue.min_ind
+        best = queue.max_ind
+
+        worst_values.append(worst.fitness.values[0])
+        best_values.append(best.fitness.values[0])
+        average_values.append(queue.scores_avg)
+
+    fig = plt.figure()
+    axis = fig.add_subplot(1, 1, 1)
+    axis.plot(worst_values, label="worst")
+    axis.plot(best_values, label="best")
+    axis.plot(average_values, label="average")
+    plt.legend()
+    plt.xlabel("Generation")
+    plt.ylabel("Fitness")
+    plt.title("Fitness over Generations")
+    plt.savefig(file_path)
