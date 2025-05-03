@@ -17,6 +17,8 @@ class Loss(framework.interfaces.Loss):
     sigma_robot_and_food = calc_loss_sigma(1, 0.3)
     GAIN_ROBOT_AND_FOOD = 0.01
 
+    LP_GAIN = 0
+
     def _calc_r_loss(self, robot_pos: np.ndarray, food_pos: np.ndarray) -> float:
         subs = (robot_pos[:, None, :2] - food_pos[None, :, :]).reshape(-1, 2)
         distance = np.clip(
@@ -37,12 +39,15 @@ class Loss(framework.interfaces.Loss):
         loss = np.sum(np.exp(-(distance ** 2) / self.sigma_nest_and_food))
         return self.GAIN_NEST_AND_FOOD * loss
 
-    def calc_elements(self, nest_pos: np.ndarray, robot_pos: np.ndarray, food_pos: np.ndarray) -> np.ndarray:
+    def calc_elements(
+            self, para: np.ndarray, nest_pos: np.ndarray, robot_pos: np.ndarray, food_pos: np.ndarray
+    ) -> np.ndarray:
         return np.array([
             self._calc_r_loss(robot_pos, food_pos),
-            self._calc_n_loss(nest_pos, food_pos)
+            self._calc_n_loss(nest_pos, food_pos),
+            (-1 * np.linalg.norm(para) * self.LP_GAIN) if self.LP_GAIN != 0 else 0
         ])
 
     @staticmethod
     def num_elements():
-        return 2
+        return 3
