@@ -42,8 +42,8 @@ Settings.CMAES.LOSS.LP_GAIN = 0.1 / Settings.Simulation.TIME_LENGTH
 
 ## Robot Settings
 Settings.Robot.THINK_INTERVAL = 0.3
-Settings.Robot.FoodSensor.GAIN = (lambda d, v: (1 - v) / (v * d))(4, 0.1)
 Settings.Robot.OtherRobotSensor.GAIN = (lambda d, v: (1 - v) / (v * d))(4, 0.1)
+Settings.Robot.FoodSensor.GAIN = (lambda d, v: (1 - v) / (v * d))(9, 0.1)
 
 ## Food Settings
 Settings.Food.REPLACEMENT = True
