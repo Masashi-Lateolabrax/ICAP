@@ -38,7 +38,7 @@ Settings.CMAES.LOSS.GAIN_NEST_AND_FOOD = 1
 Settings.CMAES.LOSS.sigma_robot_and_food = calc_loss_sigma(1, 0.3)
 Settings.CMAES.LOSS.GAIN_ROBOT_AND_FOOD = 1e-4
 ### Regulation
-Settings.CMAES.LOSS.LP_GAIN = 0.1 / Settings.Simulation.TIME_LENGTH
+Settings.CMAES.LOSS.LP_GAIN = 0.0 / Settings.Simulation.TIME_LENGTH
 
 ## Robot Settings
 Settings.Robot.THINK_INTERVAL = 0.3
