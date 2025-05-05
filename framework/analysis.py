@@ -44,7 +44,7 @@ def plot_loss(
         delta = dump[i]
         food_pos = delta.food_pos
         robot_pos = np.array(list(delta.robot_pos.values()))
-        loss_log[i, :] = loss.calc_elements(nest_pos, robot_pos, food_pos)
+        loss_log[i, :] = loss.calc_elements(ind, nest_pos, robot_pos, food_pos)
 
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
