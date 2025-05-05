@@ -23,7 +23,7 @@ Settings.Simulation.WORLD_HEIGHT = 18
 Settings.CMAES.GENERATION = 1000
 Settings.CMAES.POPULATION = 500
 Settings.CMAES.MU = 250
-Settings.CMAES.SIGMA = 0.01
+Settings.CMAES.SIGMA = 0.1
 
 ## Simulation settings
 Settings.Simulation.TIME_STEP = 0.01
