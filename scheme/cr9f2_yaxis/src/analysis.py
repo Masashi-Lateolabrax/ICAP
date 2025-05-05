@@ -163,3 +163,53 @@ def plot_loss_during_train(
     plt.ylabel("Fitness")
     plt.title("Fitness over Generations")
     plt.savefig(file_path)
+
+
+def plot_inputs(
+        save_dir: str,
+        settings: Settings,
+        individual: Individual,
+):
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    brain_builder = BrainBuilder(settings)
+    task_generator = framework.TaskGenerator(settings, brain_builder)
+    task = task_generator.generate(individual, debug=True)
+    task.run()
+    dump: framework.Dump = task.get_dump_data()
+
+    inputs = np.array([list(q.robot_inputs.values()) for q in dump])
+
+    def plot_input_of_a_robot(idx):
+        xs = np.arange(0, len(inputs))
+        robot_x = inputs[:, idx, 0]
+        robot_y = inputs[:, idx, 1]
+        food_x = inputs[:, idx, 2]
+        food_y = inputs[:, idx, 3]
+        nest_x = inputs[:, idx, 4]
+        nest_y = inputs[:, idx, 5]
+
+        fig = plt.figure()
+        axis = fig.add_subplot(1, 1, 1)
+
+        axis.plot(xs, robot_x, label="robot_x")
+        axis.plot(xs, robot_y, label="robot_y")
+        axis.plot(xs, food_x, label="food_x")
+        axis.plot(xs, food_y, label="food_y")
+        axis.plot(xs, nest_x, label="nest_x")
+        axis.plot(xs, nest_y, label="nest_y")
+
+        axis.set_xlabel("Time")
+        axis.set_ylabel("Value")
+        axis.set_title(f"Robot {idx} Inputs")
+
+        axis.legend()
+
+        plt.savefig(
+            os.path.join(save_dir, f"robot_{idx}_inputs.png"),
+        )
+        plt.close()
+
+    for i in range(settings.Robot.NUM):
+        plot_input_of_a_robot(i)
