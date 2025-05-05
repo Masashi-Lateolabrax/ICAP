@@ -17,6 +17,7 @@ class Task(optimizer.MjcTaskInterface):
     def __init__(
             self,
             settings: Settings,
+            para: optimizer.Individual,
             world: World,
             nest: Nest,
             robots: list[Robot],
@@ -28,6 +29,8 @@ class Task(optimizer.MjcTaskInterface):
         self.nest: Nest = nest
         self.robots: dict[str, Robot] = {robot.name: robot for robot in robots}
         self.food: ReFood = refood
+
+        self.brain_para = para.view()
 
         self.dump = Dump() if debug else None
 
@@ -81,7 +84,7 @@ class Task(optimizer.MjcTaskInterface):
 
         robot_pos = np.array([v for v in robot_positions.values()])
         food_pos = self.food.all_positions()
-        loss = self.settings.CMAES._loss(self.nest.position, robot_pos, food_pos)
+        loss = self.settings.CMAES._loss(self.brain_para, self.nest.position, robot_pos, food_pos)
 
         self.world.calc_step()
 
