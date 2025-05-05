@@ -20,10 +20,10 @@ Settings.Simulation.WORLD_WIDTH = 16
 Settings.Simulation.WORLD_HEIGHT = 18
 
 ## Optimization settings
-Settings.CMAES.GENERATION = 1000
-Settings.CMAES.POPULATION = 300
-Settings.CMAES.MU = 150
-Settings.CMAES.SIGMA = 0.000001
+Settings.CMAES.GENERATION = 300
+Settings.CMAES.POPULATION = 500
+Settings.CMAES.MU = 250
+Settings.CMAES.SIGMA = 0.01
 
 ## Simulation settings
 Settings.Simulation.TIME_STEP = 0.01
@@ -38,12 +38,12 @@ Settings.CMAES.LOSS.GAIN_NEST_AND_FOOD = 1
 Settings.CMAES.LOSS.sigma_robot_and_food = calc_loss_sigma(1, 0.3)
 Settings.CMAES.LOSS.GAIN_ROBOT_AND_FOOD = 1e-4
 ### Regulation
-Settings.CMAES.LOSS.LP_GAIN = 0.1 / Settings.Simulation.TIME_LENGTH
+Settings.CMAES.LOSS.LP_GAIN = 0.0 / Settings.Simulation.TIME_LENGTH
 
 ## Robot Settings
 Settings.Robot.THINK_INTERVAL = 0.3
 Settings.Robot.OtherRobotSensor.GAIN = (lambda d, v: (1 - v) / (v * d))(4, 0.1)
-Settings.Robot.FoodSensor.GAIN = (lambda d, v: (1 - v) / (v * d))(9, 0.1)
+Settings.Robot.FoodSensor.GAIN = (lambda d, v: (1 - v) / (v * d))(7, 0.1)
 
 ## Food Settings
 Settings.Food.REPLACEMENT = True
@@ -58,7 +58,7 @@ def set_positions(settings: Settings):
     area = (np.sqrt(settings.Robot.NUM) - 1) * (ROBOT_SIZE + 0.05)
     for x in np.linspace(-area, area, int(np.sqrt(settings.Robot.NUM)), endpoint=True):
         for y in np.linspace(area, -area, int(np.sqrt(settings.Robot.NUM)), endpoint=True):
-            settings.Robot.POSITION.append((x, y, 0))
+            settings.Robot.POSITION.append((x, y, 90))
 
     settings.Food.POSITION = [
         (0, -6),
