@@ -58,7 +58,7 @@ def set_positions(settings: Settings):
     area = (np.sqrt(settings.Robot.NUM) - 1) * (ROBOT_SIZE + 0.05)
     for x in np.linspace(-area, area, int(np.sqrt(settings.Robot.NUM)), endpoint=True):
         for y in np.linspace(area, -area, int(np.sqrt(settings.Robot.NUM)), endpoint=True):
-            settings.Robot.POSITION.append((x, y, 0))
+            settings.Robot.POSITION.append((x, y, 90))
 
     settings.Food.POSITION = [
         (0, -6),
