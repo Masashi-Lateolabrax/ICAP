@@ -15,8 +15,8 @@ def setup(settings: Settings):
     from settings import set_positions, randomize_direction, randomize_food_position
 
     set_positions(settings)
-    randomize_direction(settings, 1)
-    randomize_food_position(settings)
+    # randomize_direction(settings, 1)
+    # randomize_food_position(settings)
 
 
 def analyze_results(save_dir, settings, logger, brain_builder):
