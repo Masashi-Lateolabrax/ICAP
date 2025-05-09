@@ -66,7 +66,6 @@ class OmniSensor:
             trigono_components,
             np.reciprocal(scaled_distance + 1),
         )
-        res /= self.target_positions.shape[0]
 
         return res
 
