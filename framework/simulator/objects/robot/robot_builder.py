@@ -7,7 +7,7 @@ from mujoco_xml_generator import common, body, actuator
 from mujoco_xml_generator.utils import DummyGeom
 
 from ...const import Settings, ROBOT_SIZE, ROBOT_WEIGHT, MOVE_SPEED, TURN_SPEED
-from ...sensors import OmniSensor, DirectionSensor
+from ...sensors import TanhOmniSensor, DirectionSensor
 from ..food.name_table import FoodNameTable
 from .name_table import RobotNameTable
 from .brain import BrainInterface
@@ -104,15 +104,17 @@ class RobotBuilder(WorldObjectBuilder):
         n_food = self.settings.Food.NUM
         input_ = RobotInput(
             property_,
-            other_robot_sensor=OmniSensor(
+            other_robot_sensor=TanhOmniSensor(
                 self.settings.Robot.OtherRobotSensor.GAIN,
                 self.settings.Robot.OtherRobotSensor.OFFSET,
                 [data.site(RobotNameTable(i).CENTER_SITE) for i in range(n_robot) if i is not self.id],
+                tanh_gain=self.settings.Robot.OtherRobotSensor.TANH_GAIN
             ),
-            food_sensor=OmniSensor(
+            food_sensor=TanhOmniSensor(
                 self.settings.Robot.FoodSensor.GAIN,
                 self.settings.Robot.FoodSensor.OFFSET,
-                [data.site(FoodNameTable(i).CENTER_SITE) for i in range(n_food)]
+                [data.site(FoodNameTable(i).CENTER_SITE) for i in range(n_food)],
+                tanh_gain=self.settings.Robot.OtherRobotSensor.TANH_GAIN
             ),
             nest_sensor=DirectionSensor(
                 r=model.site("nest").size[0],

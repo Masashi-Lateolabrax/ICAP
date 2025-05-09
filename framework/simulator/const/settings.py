@@ -48,10 +48,12 @@ class Settings:
         class OtherRobotSensor:
             GAIN = (lambda d, v: (1 - v) / (v * d))(2, 0.1)
             OFFSET = ROBOT_SIZE * 2
+            TANH_GAIN = 0.3
 
         class FoodSensor:
             GAIN = (lambda d, v: (1 - v) / (v * d))(4, 0.1)
             OFFSET = FOOD_SIZE + ROBOT_SIZE
+            TANH_GAIN = 0.3
 
     class Food:
         NUM = 1
