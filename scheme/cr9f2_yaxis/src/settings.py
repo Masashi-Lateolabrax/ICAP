@@ -6,8 +6,8 @@ from loss import Loss, calc_loss_sigma
 
 ## Rendering settings
 Settings.Simulation.Render.RENDER_WIDTH = 800
-Settings.Simulation.Render.RENDER_HEIGHT = 900
-Settings.Simulation.Render.RENDER_ZOOM = 25
+Settings.Simulation.Render.RENDER_HEIGHT = 800
+Settings.Simulation.Render.RENDER_ZOOM = 13
 Settings.Simulation.Render.MAX_GEOM = 1000
 
 ## Light settings
@@ -16,8 +16,8 @@ Settings.Simulation.Render.LIGHT_DIFFUSE = (1, 1, 1)
 Settings.Simulation.Render.LIGHT_SPECULAR = (1, 1, 1)
 
 ## World Size
-Settings.Simulation.WORLD_WIDTH = 16
-Settings.Simulation.WORLD_HEIGHT = 18
+Settings.Simulation.WORLD_WIDTH = 10
+Settings.Simulation.WORLD_HEIGHT = 10
 
 ## Optimization settings
 Settings.CMAES.GENERATION = 1000
@@ -26,8 +26,8 @@ Settings.CMAES.MU = 250
 Settings.CMAES.SIGMA = 0.1
 
 ## Simulation settings
-Settings.Simulation.TIME_STEP = 0.01
-Settings.Simulation.TIME_LENGTH = int(90 / Settings.Simulation.TIME_STEP)
+Settings.Simulation.TIME_STEP = 0.03
+Settings.Simulation.TIME_LENGTH = int(30 / Settings.Simulation.TIME_STEP)
 
 ## Loss settings
 Settings.CMAES.LOSS = Loss()
@@ -63,8 +63,8 @@ def set_positions(settings: Settings):
             settings.Robot.POSITION.append((x, y, 90))
 
     settings.Food.POSITION = [
-        (0, -6),
-        (0, 6)
+        (0, -2),
+        (0, 2)
     ]
 
 
