@@ -26,7 +26,7 @@ Settings.CMAES.MU = 250
 Settings.CMAES.SIGMA = 0.1
 
 ## Simulation settings
-Settings.Simulation.TIME_STEP = 0.03
+Settings.Simulation.TIME_STEP = 0.01
 Settings.Simulation.TIME_LENGTH = int(30 / Settings.Simulation.TIME_STEP)
 
 ## Loss settings
