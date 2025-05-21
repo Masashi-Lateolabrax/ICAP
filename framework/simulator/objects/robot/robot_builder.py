@@ -7,7 +7,7 @@ from mujoco_xml_generator import common, body, actuator
 from mujoco_xml_generator.utils import DummyGeom
 
 from ...const import Settings, ROBOT_SIZE, ROBOT_WEIGHT, MOVE_SPEED, TURN_SPEED
-from ...sensors import AveOmniSensor, DirectionSensor
+from ...sensors import OmniSensor, DirectionSensor
 from ..food.name_table import FoodNameTable
 from .name_table import RobotNameTable
 from .brain import BrainInterface
@@ -104,12 +104,12 @@ class RobotBuilder(WorldObjectBuilder):
         n_food = self.settings.Food.NUM
         input_ = RobotInput(
             property_,
-            other_robot_sensor=AveOmniSensor(
+            other_robot_sensor=OmniSensor(
                 self.settings.Robot.OtherRobotSensor.GAIN,
                 self.settings.Robot.OtherRobotSensor.OFFSET,
                 [data.site(RobotNameTable(i).CENTER_SITE) for i in range(n_robot) if i is not self.id],
             ),
-            food_sensor=AveOmniSensor(
+            food_sensor=OmniSensor(
                 self.settings.Robot.FoodSensor.GAIN,
                 self.settings.Robot.FoodSensor.OFFSET,
                 [data.site(FoodNameTable(i).CENTER_SITE) for i in range(n_food)],
