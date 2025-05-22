@@ -123,7 +123,7 @@ def plot_parameter_movements(file_path: str, logger: EachGenLogger, start=0, end
     ax2 = ax1.twinx()
 
     ax1.plot(np.arange(movement.shape[0]) + 0.5, movement / dim, label="movement", color="blue")
-    ax2.plot(np.arange(direction.shape[0]) + 1, direction, label="direction", color="orange")
+    # ax2.plot(np.arange(direction.shape[0]) + 1, direction, label="direction", color="orange")
 
     fig.legend(loc="lower center")
 
