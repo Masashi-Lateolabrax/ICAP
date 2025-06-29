@@ -18,22 +18,20 @@ class SimulationRunningMode(enum.Enum):
     ONE_STEP = "one_step"
 
 
-@dataclasses.dataclass
 class _SimulationState:
-    rgb_buffer: np.ndarray
-    buffer_update_timestamp: Optional[float] = time.time()
+    def __init__(self, rgb_buffer: np.ndarray):
+        self.rgb_buffer: np.ndarray = rgb_buffer
+        self.buffer_update_timestamp: Optional[float] = time.time()
 
-    running_mode: SimulationRunningMode = SimulationRunningMode.RUNNING
-    mode_change_event: threading.Event = dataclasses.field(default_factory=threading.Event)
+        self.running_mode: SimulationRunningMode = SimulationRunningMode.RUNNING
+        self.mode_change_event: threading.Event = dataclasses.field(default_factory=threading.Event)
 
-    camera_position: Position3d = dataclasses.field(
-        default_factory=lambda: Position3d(DEFAULT_CAMERA_X, DEFAULT_CAMERA_Y, DEFAULT_CAMERA_Z))
-    lookat_position: Position3d = dataclasses.field(
-        default_factory=lambda: Position3d(DEFAULT_LOOKAT_X, DEFAULT_LOOKAT_Y, DEFAULT_LOOKAT_Z))
-    fps: float = 0.0
+        self.camera_position: Position3d = Position3d(DEFAULT_CAMERA_X, DEFAULT_CAMERA_Y, DEFAULT_CAMERA_Z)
+        self.lookat_position: Position3d = Position3d(DEFAULT_LOOKAT_X, DEFAULT_LOOKAT_Y, DEFAULT_LOOKAT_Z)
+        self.fps: float = 0.0
 
-    error_message: Optional[str] = None
-    error_timestamp: Optional[float] = None
+        self.error_message: Optional[str] = None
+        self.error_timestamp: Optional[float] = None
 
     def update_running_mode_by_external(self, order: SimulationRunningMode):
         if self.running_mode != order:
@@ -380,7 +378,7 @@ class GenericTkinterViewer:
         self.logger = logging.getLogger(__name__)
 
         self.state = _SimulationState(
-            np.zeros((height, width, 3), dtype=np.uint8)
+            rgb_buffer=np.zeros((height, width, 3), dtype=np.uint8)
         )
 
         self.simulation = _Simulation(backend, self.state)
