@@ -1,0 +1,21 @@
+def genesis_example():
+    from framework.backends.init_genesis import example_run
+    example_run()
+
+
+def mujoco_example():
+    from framework.backends.init_mujoco import example_run
+    example_run()
+
+
+def print_environment():
+    from framework.mujoco_utils import create_environment
+    from framework.config.settings import Settings
+
+    settings = Settings()
+    spec = create_environment(settings)
+    print(spec.to_xml())
+
+
+if __name__ == '__main__':
+    mujoco_example()

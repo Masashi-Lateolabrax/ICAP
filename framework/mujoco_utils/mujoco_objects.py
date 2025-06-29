@@ -1,0 +1,185 @@
+"""Object creation functions for MuJoCo simulation."""
+
+import mujoco
+
+from .mujoco_core import (
+    add_body, add_geom, add_joint, add_site, add_velocity_actuator, add_velocimeter
+)
+from .mujoco_constants import (
+    FOOD_COLLISION_CONDIM, ROBOT_FRONT_POSITION_FACTOR,
+    ROBOT_FRONT_SIZE_FACTOR, ROBOT_FRONT_COLOR
+)
+from ..config.settings import Settings, RobotLocation, Position
+
+
+def add_food_object(spec: mujoco.MjSpec, settings: Settings, id_: int, position: Position) -> None:
+    """Add a food object to the simulation environment.
+    
+    Creates a cylindrical food object with physics properties, joints for
+    movement, and velocity sensors for tracking.
+    
+    Args:
+        spec: MuJoCo simulation specification
+        settings: Settings object containing food properties
+        id_: Unique identifier for the food object
+        position: Position to place the food object
+        
+    Raises:
+        ValueError: If any required parameter is None or invalid
+        TypeError: If id_ is not an integer
+    """
+    if spec is None:
+        raise ValueError("MuJoCo specification cannot be None")
+    if settings is None:
+        raise ValueError("Settings cannot be None")
+    if position is None:
+        raise ValueError("Position cannot be None")
+    if not isinstance(id_, int):
+        raise TypeError("Food ID must be an integer")
+    if id_ < 0:
+        raise ValueError("Food ID must be non-negative")
+    food_body = add_body(
+        spec.worldbody,
+        pos=(position.x, position.y, settings.Food.HEIGHT * 0.5),
+    )
+    add_geom(
+        food_body,
+        geom_type=mujoco.mjtGeom.mjGEOM_CYLINDER,
+        size=(settings.Food.RADIUS, settings.Food.HEIGHT * 0.5, 0),
+        rgba=settings.Food.COLOR,
+        condim=FOOD_COLLISION_CONDIM,
+        density=settings.Food.DENSITY
+    )
+
+    add_joint(
+        food_body,
+        name=f"food{id_}_free",
+        joint_type=mujoco.mjtJoint.mjJNT_FREE,
+    )
+
+    center_site = add_site(
+        food_body,
+        name=f"food{id_}_center",
+    )
+
+    add_velocimeter(
+        spec,
+        name=f"food{id_}_vel",
+        site=center_site
+    )
+
+
+def add_robot(
+        spec: mujoco.MjSpec,
+        settings: Settings,
+        id_: int,
+        robot_location: RobotLocation,
+) -> mujoco._specs.MjsBody:
+    """Add a robot to the simulation environment.
+    
+    Creates a cylindrical robot with sliding and rotational joints,
+    velocity actuators for movement control, and visual markers.
+    
+    Args:
+        spec: MuJoCo simulation specification
+        settings: Settings object containing robot properties
+        id_: Unique identifier for the robot
+        robot_location: Initial location and orientation of the robot
+        
+    Returns:
+        Created robot body specification object
+        
+    Raises:
+        ValueError: If any required parameter is None or invalid
+        TypeError: If id_ is not an integer
+        
+    Note:
+        Actuator velocity gain (kv) is taken from settings.Robot.ACTUATOR_KV
+        if available, otherwise defaults to DEFAULT_ACTUATOR_KV.
+    """
+    if spec is None:
+        raise ValueError("MuJoCo specification cannot be None")
+    if settings is None:
+        raise ValueError("Settings cannot be None")
+    if robot_location is None:
+        raise ValueError("Robot location cannot be None")
+    if not isinstance(id_, int):
+        raise TypeError("Robot ID must be an integer")
+    if id_ < 0:
+        raise ValueError("Robot ID must be non-negative")
+    robot_body = add_body(
+        spec.worldbody,
+        name=f"robot{id_}",
+        pos=(robot_location.x, robot_location.y, settings.Robot.HEIGHT * 0.5),
+    )
+
+    add_geom(
+        robot_body,
+        geom_type=mujoco.mjtGeom.mjGEOM_CYLINDER,
+        size=(settings.Robot.RADIUS, settings.Robot.HEIGHT * 0.5, 0),
+        rgba=settings.Robot.COLOR,
+        condim=FOOD_COLLISION_CONDIM,
+        mass=settings.Robot.MASS
+    )
+
+    slide_x_joint = add_joint(
+        robot_body,
+        name=f"robot{id_}_slide_x",
+        joint_type=mujoco.mjtJoint.mjJNT_SLIDE,
+        axis=(1, 0, 0),
+    )
+
+    slide_y_joint = add_joint(
+        robot_body,
+        name=f"robot{id_}_slide_y",
+        joint_type=mujoco.mjtJoint.mjJNT_SLIDE,
+        axis=(0, 1, 0),
+    )
+
+    hinge_joint = add_joint(
+        robot_body,
+        name=f"robot{id_}_hinge",
+        joint_type=mujoco.mjtJoint.mjJNT_HINGE,
+        axis=(0, 0, 1),
+    )
+
+    add_site(
+        robot_body,
+        name=f"robot{id_}_center",
+        pos=(0, 0, 0),
+    )
+
+    # Calculate front site size based on robot radius
+    front_site_size = settings.Robot.RADIUS * ROBOT_FRONT_SIZE_FACTOR
+
+    add_site(
+        robot_body,
+        name=f"robot{id_}_front",
+        pos=(settings.Robot.RADIUS * ROBOT_FRONT_POSITION_FACTOR, 0, 0),
+        size=[front_site_size, front_site_size, front_site_size],
+        rgba=ROBOT_FRONT_COLOR,
+        type_=mujoco.mjtGeom.mjGEOM_SPHERE
+    )
+
+    add_velocity_actuator(
+        spec,
+        name=f"robot{id_}_slide_x_act",
+        joint=slide_x_joint,
+        kv=settings.Robot.ACTUATOR_KV
+    )
+
+    add_velocity_actuator(
+        spec,
+        name=f"robot{id_}_slide_y_act",
+        joint=slide_y_joint,
+        kv=settings.Robot.ACTUATOR_KV
+    )
+
+    add_velocity_actuator(
+        spec,
+        name=f"robot{id_}_hinge_act",
+        joint=hinge_joint,
+        kv=settings.Robot.ACTUATOR_KV
+    )
+
+    return robot_body

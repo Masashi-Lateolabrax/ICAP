@@ -1,6 +1,6 @@
 import numpy as np
 
-from ..const import Settings, ROBOT_SIZE, FOOD_SIZE
+from framework.config.settings import Settings, Position, RobotLocation
 
 
 def random_point_avoiding_invalid_areas(
@@ -63,7 +63,7 @@ def random_point_avoiding_invalid_areas(
     return pos if retry != 0 else None
 
 
-def rand_robot_pos(settings: Settings, invalid_area: list[np.ndarray] = None):
+def rand_robot_pos(settings: Settings, invalid_area: list[tuple[Position, float]] = None) -> RobotLocation:
     """
     ロボットのランダムな位置を生成する関数。
 
@@ -79,20 +79,15 @@ def rand_robot_pos(settings: Settings, invalid_area: list[np.ndarray] = None):
     pos = random_point_avoiding_invalid_areas(
         (settings.Simulation.WORLD_WIDTH * -0.5, settings.Simulation.WORLD_HEIGHT * 0.5),
         (settings.Simulation.WORLD_WIDTH * 0.5, settings.Simulation.WORLD_HEIGHT * -0.5),
-        ROBOT_SIZE,
-        invalid_area,
-        padding=ROBOT_SIZE
+        settings.Robot.RADIUS,
+        invalid_area if invalid_area is not None else [],
+        padding=settings.Robot.RADIUS
     )
     angle = np.random.uniform(0, 360)
-
-    invalid_area.append(
-        np.array([pos[0], pos[1], ROBOT_SIZE])
-    )
-
-    return pos[0], pos[1], angle
+    return RobotLocation(pos[0], pos[1], angle)
 
 
-def rand_food_pos(settings: Settings, invalid_area: list[np.ndarray] = None):
+def rand_food_pos(settings: Settings, invalid_area: list[tuple[Position, float]] = None) -> Position:
     """
     フードのランダムな位置を生成する関数。
 
@@ -108,11 +103,8 @@ def rand_food_pos(settings: Settings, invalid_area: list[np.ndarray] = None):
     pos = random_point_avoiding_invalid_areas(
         (settings.Simulation.WORLD_WIDTH * -0.5, settings.Simulation.WORLD_HEIGHT * 0.5),
         (settings.Simulation.WORLD_WIDTH * 0.5, settings.Simulation.WORLD_HEIGHT * -0.5),
-        FOOD_SIZE,
-        invalid_area,
-        padding=FOOD_SIZE
+        settings.Food.RADIUS,
+        invalid_area if invalid_area is not None else [],
+        padding=settings.Food.RADIUS
     )
-    invalid_area.append(
-        np.array([pos[0], pos[1], FOOD_SIZE])
-    )
-    return pos
+    return Position(pos[0], pos[1])

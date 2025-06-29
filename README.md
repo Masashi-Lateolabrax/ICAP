@@ -1,123 +1,122 @@
-# Study Note
+# Self-Organized Robotic Behavior with Pheromones
 
-## Theme
+Experimental code for training robots to learn self-organized behavior using pheromone mechanisms in simulation environments.
 
-Training robots to learn self-organized behavior using pheromones.
+## Environment Setup
 
-## Motivation
+This project uses [uv](https://github.com/astral-sh/uv) as the Python package manager. Run the following commands to set up the environment for running experiments:
 
-The study of self-organized behaviors in robots is crucial for developing autonomous systems that
-can operate efficiently in complex environments.
-By understanding the role pheromones play in behavior regulation,
-we can design systems that mimic natural swarm intelligence,
-leading to advancements in robotics, logistics, and communication.
+### CUDA Support
+```bash
+uv sync --extra cu128
+# or 
+uv sync --extra cu124
+```
 
-## Contribution
+### CPU Only
+```bash
+uv sync --extra cpu
+```
 
-- Developing a framework for training robots to achieve self-organized behavior.
-- Evaluating the impact of pheromone mechanisms on robotic behavior.
-- Providing insights into how environmental and systemic variables influence collective behavior in robotic systems.
+Note: The extras are mutually exclusive due to UV conflict resolution.
 
-## Objective
+## Overview
 
-- Train robots to learn self-organised behavior.
-- Evaluate how much pheromone contributes to the behavior.
+This project explores how robots can develop self-organized behaviors through pheromone-based communication, mimicking natural swarm intelligence patterns found in biological systems.
 
-## Road Map
+### Objectives
+- Train robots to learn self-organized behavior through collective intelligence
+- Evaluate the contribution of pheromone mechanisms to robotic behavior
+- Analyze the relationship between environmental parameters and emergent behaviors
 
-1. Create simulation program.
-2. Find settings for successful training.
-3. Collect trained behaviors with various settings.
-    - Test difference: sensor sensitivity, number of robots, number of food sources, environment size, loss function,
-      hyperparameters of optimizer, robot's controller.
-4. Define the index that represents how well robots are organized.
-5. Analyze the relationship between settings and the organized indexes.
-6. Convert the trained models into explainable models.
-7. Analyze the effect of pheromones.
+### Key Contributions
+- Experimental platform for training self-organized robotic behavior
+- Evaluation of pheromone impact on collective behavior
+- Analysis of environmental and systemic variables in robotic swarms
+
+## Project Structure
+
+- **`bin/`**: Experiment execution files, including preliminary and control experiments
+- **`framework/`**: Shared utilities and common code used across experiments
+- **`libs/`**: Supporting libraries (optimizer, pheromone, sensors, etc.)
+- **`scheme/`**: Experiment results organized by name and timestamp
 
 ## Method
 
-### Simulation
+### Simulation Environment
+The simulation uses MuJoCo with the following robot specifications:
+- **Sensors**: Two omni-sensors (for robots and food detection)
+- **Actuators**: Two wheels for movement
+- **Communication**: Pheromone secretion organ
+- **Control**: Artificial neural network controller
 
-Use MuJoCo simulator.
-
-Robots have two omni-sensors, pheromone secretion organ, two wheels, artificial neural network controller.
-
-The omni-sensor is defined by the following formula.
+#### Omni-Sensor Formula
+The omni-sensor aggregates positional information using:
 
 $$
-\mathrm{OmniSensor} = \frac{1}{N_\mathrm{O}} \sum^{}_{o \in \mathrm{Objects}}
+\mathrm{OmniSensor} = \frac{1}{N_\mathrm{O}} \sum_{o \in \mathrm{Objects}}
 \frac{1}{d_o + 1}
 \begin{bmatrix}
 \cos \theta_o \\
 \sin \theta_o
-\end{bmatrix} \,.
+\end{bmatrix}
 $$
 
-Here,
-*Objects* denote a set of sensing targets,
-$N_\mathrm{O}$ denote the number of *Objects*,
-$d_o$ denote a distance between the robot and $o$, and
-$\theta_o$ denote a relative angle from the robot to $o$.
+Where:
+- *Objects*: Set of sensing targets
+- $N_\mathrm{O}$: Number of objects
+- $d_o$: Distance between robot and object $o$
+- $\theta_o$: Relative angle from robot to object $o$
 
-Note that I mean above *the robot* is observer.
+### Task Description
+Robots operate in a rectangular field environment where:
+- Food items are randomly distributed
+- A nest is positioned at the field center
+- Food respawns randomly when collected
+- **Goal**: Transport food to the nest efficiently
 
-Each robot has two omni-sensors because of allowing robots to observe the positions of other robots and food.
-Namely, a robot has one with a set of robots and one with a set of food.
+### Optimization
+The system uses CMA-ES (Covariance Matrix Adaptation Evolution Strategy) for neural network parameter optimization.
 
-### Task
+## Roadmap
 
-Robots work in the rectangle area, referred to as the field.
+1. **Simulation Development**
+   - [x] Core framework implementation
+   - [x] Basic environment setup
+   - [ ] Framework refactoring for debugging
+   - [ ] Loss function recording
+   - [ ] Discrete action CMA-ES evaluation
 
-When create the field, Food are placed on the field randomly and
-the nest is set at center of the field.
+2. **Training Optimization**
+   - [ ] Identify successful training configurations
+   - [ ] Parameter sensitivity analysis
 
-When food enters the nest, it is replaced randomly.
+3. **Behavioral Analysis**
+   - [ ] Multi-parameter behavior collection
+   - [ ] Organization index definition
+   - [ ] Setting-behavior relationship analysis
 
-Robots are trained to transport food to the nest.
+4. **Model Interpretation**
+   - [ ] Explainable model conversion
+   - [ ] Pheromone effect analysis
 
-### Optimization Method
+## Development Guidelines
 
-Use CMA-ES.
+### Git Commit Prefixes
+| Prefix | Description |
+|--------|-------------|
+| `add` | New files, directories, or functions |
+| `exp` | Experimental setup |
+| `mod` | Interface modifications |
+| `doc` | Documentation changes |
 
-### Explainable Model
+### Branch Strategy
+| Branch | Purpose | Source | Merge Target |
+|--------|---------|---------|--------------|
+| `main` | Production code | - | - |
+| `develop` | Shared development | `main` | `main`, `scheme/*` |
+| `scheme/*` | Experiment-specific | `develop` | `main` |
 
-TODO
+## References
 
-# Progress
-
-1. Create simulation program.
-    - [x] Create framework.
-    - [x] Create the simplest environment example.
-    - [ ] Refactor the framework for debugging.
-    - [ ] Implement a function to record the loss function output.
-    - [ ] Examine CMA-ES applying to robots which take discrete actions.
-2. Find settings for successful training.
-3. Collect trained behaviors with various settings.
-4. Define the index that represents how well robots are organized.
-5. Analyze the relationship between settings and the organized indexes.
-6. Convert the trained models into explainable models.
-7. Analyze the effect of pheromones.
-
-# For developers
-
-## Git prefix
-
-| Prefix | Definition                                                                                 |
-|--------|--------------------------------------------------------------------------------------------|
-| add    | Indicates that something has been added, such as files, directories, functions, and so on. |
-| exp    | Indicates setup done for experiments.                                                      |
-| mod    | Indicates changes with alternation of interfaces.                                          |
-| doc    | Indicates that documentation has been added or modified.                                   |
-
-## Branching strategy
-
-| Name     | Description                                         | source       | merge to       |
-|----------|-----------------------------------------------------|--------------|----------------|
-| main     | Main branch                                         | -            | -              |
-| develop  | Manage shared codes in scheme branches              | initial main | main, scheme/* |
-| scheme/* | Manage codes of experiments for specific conditions | develop      | main           |
-
-# Reference
-
-Nothing yet.
+To be added as research progresses.

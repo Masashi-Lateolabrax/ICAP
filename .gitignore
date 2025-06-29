@@ -3,6 +3,8 @@
 
 /report.md
 /poetry.toml
+/.claude/settings.local.json
+*/CLAUDE.md
 
 *.TXT
 *.mp4
