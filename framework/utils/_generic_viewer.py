@@ -300,8 +300,11 @@ class _SimulationFrame(tk.Frame):
         self.canvas = tk.Canvas(self, width=self.width, height=self.height, bg='black')
         self.canvas.pack(fill=tk.BOTH, expand=True)
 
-        self._cached_img = Image.fromarray(self.state.rgb_buffer)
-        self._cached_photo = None
+        self._cached_photo = ImageTk.PhotoImage(
+            Image.fromarray(
+                np.swapaxes(self.state.rgb_buffer, 0, 1)
+            )
+        )
         self.buffer_update_timestamp = state.buffer_update_timestamp
 
     def display_image(self):
@@ -311,12 +314,9 @@ class _SimulationFrame(tk.Frame):
                 self.buffer_update_timestamp = current_timestamp
 
                 img = np.swapaxes(self.state.rgb_buffer, 0, 1)
-                if self._cached_img.size == (img.shape[1], img.shape[0]):
-                    self._cached_img = self._cached_img._new(Image.fromarray(img).im)
-                else:
-                    self._cached_img = Image.fromarray(img)
-
-                self._cached_photo = ImageTk.PhotoImage(self._cached_img)
+                self._cached_photo.paste(
+                    Image.fromarray(img)
+                )
 
                 self.canvas.delete("all")
                 self.canvas.create_image(self.width // 2, self.height // 2, image=self._cached_photo)
