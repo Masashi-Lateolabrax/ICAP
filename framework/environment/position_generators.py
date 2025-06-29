@@ -1,6 +1,7 @@
 import numpy as np
 
-from framework.config.settings import Settings, Position, RobotLocation
+from ..types import Position, RobotLocation
+from ..config import Settings
 
 
 def random_point_avoiding_invalid_areas(

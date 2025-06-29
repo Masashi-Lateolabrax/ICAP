@@ -1,40 +1,16 @@
-import dataclasses
 import enum
 import tkinter as tk
 from tkinter import ttk
 import numpy as np
-from typing import Tuple, Optional
+from typing import Optional
 import time
 import threading
 import logging
-
-from framework.interfaces.backend import SimulatorBackend
-
 from PIL import Image, ImageTk
 
-# Constants
-# UIのデフォルト値であるためハードコーディングでよい．
-DEFAULT_WIDTH = 800
-DEFAULT_HEIGHT = 600
-DEFAULT_CAMERA_X = 3.0
-DEFAULT_CAMERA_Y = 3.0
-DEFAULT_CAMERA_Z = 2.0
-DEFAULT_LOOKAT_X = 0.0
-DEFAULT_LOOKAT_Y = 0.0
-DEFAULT_LOOKAT_Z = 0.0
-TARGET_FPS = 30.0
-UI_REFRESH_INTERVAL_MS = 16
-THREAD_JOIN_TIMEOUT = 1.0
-
-
-@dataclasses.dataclass
-class Position3d:
-    x: float
-    y: float
-    z: float
-
-    def to_tuple(self) -> Tuple[float, float, float]:
-        return self.x, self.y, self.z
+from ..types import *
+from ..interfaces import SimulatorBackend
+from ..config import *
 
 
 class SimulationRunningMode(enum.Enum):

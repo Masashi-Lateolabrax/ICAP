@@ -9,7 +9,7 @@ def mujoco_example():
 
 
 def print_environment():
-    from framework.mujoco_utils import create_environment
+    from framework.environment import create_environment
     from framework.config.settings import Settings
 
     settings = Settings()

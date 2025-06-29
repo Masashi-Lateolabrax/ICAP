@@ -1,5 +1,3 @@
-"""Core MuJoCo operations and basic building blocks."""
-
 import mujoco
 
 

@@ -1,24 +1,4 @@
-import dataclasses
-
-
-@dataclasses.dataclass
-class Position:
-    x: float
-    y: float
-
-
-class RobotLocation:
-    def __init__(self, x: float, y: float, theta: float):
-        self.position = Position(x, y)
-        self.theta = theta  # Unit is degree
-
-    @property
-    def x(self) -> float:
-        return self.position.x
-
-    @property
-    def y(self) -> float:
-        return self.position.y
+from ..types import RobotLocation, Position
 
 
 class Settings:

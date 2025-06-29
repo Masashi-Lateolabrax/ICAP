@@ -1,15 +1,58 @@
-"""Object creation functions for MuJoCo simulation."""
-
 import mujoco
 
-from .mujoco_core import (
+from .mujoco_utils import (
     add_body, add_geom, add_joint, add_site, add_velocity_actuator, add_velocimeter
 )
-from .mujoco_constants import (
-    FOOD_COLLISION_CONDIM, ROBOT_FRONT_POSITION_FACTOR,
-    ROBOT_FRONT_SIZE_FACTOR, ROBOT_FRONT_COLOR
-)
-from ..config.settings import Settings, RobotLocation, Position
+from ..types import *
+from ..config import *
+
+
+def add_wall(spec: mujoco.MjSpec, settings: Settings) -> None:
+    """Setup boundary walls around the simulation area.
+
+    Creates four box-shaped walls (North, South, East, West) that form
+    a rectangular boundary around the simulation area.
+
+    Args:
+        spec: MuJoCo simulation specification
+        settings: Settings object containing area and wall dimensions
+    """
+    # Calculate total dimensions including wall thickness
+    w = settings.Simulation.WORLD_WIDTH + settings.Simulation.WALL_THICKNESS
+    h = settings.Simulation.WORLD_HEIGHT + settings.Simulation.WALL_THICKNESS
+
+    # Wall thickness for convenience
+    t = settings.Simulation.WALL_THICKNESS * 0.5
+
+    for name, pos_x, pos_y, size_x, size_y in [
+        ("wallN", 0, h * 0.5, w * 0.5, t),
+        ("wallS", 0, h * -0.5, w * 0.5, t),
+        ("wallW", w * 0.5, 0, t, h * 0.5),
+        ("wallE", w * -0.5, 0, t, h * 0.5),
+    ]:
+        add_geom(
+            spec.worldbody,
+            name=name,
+            geom_type=mujoco.mjtGeom.mjGEOM_BOX,
+            pos=(pos_x, pos_y, settings.Simulation.WALL_HEIGHT * 0.5),
+            size=(size_x, size_y, settings.Simulation.WALL_HEIGHT * 0.5),
+            condim=WALL_COLLISION_CONDIM
+        )
+
+
+def add_nest(spec: mujoco.MjSpec, settings: Settings) -> None:
+    add_site(
+        spec.worldbody,
+        name="nest",
+        pos=(
+            settings.Nest.POSITION.x,
+            settings.Nest.POSITION.y,
+            -settings.Nest.HEIGHT * 0.5
+        ),
+        size=[settings.Nest.RADIUS, settings.Nest.HEIGHT * 0.5, 0],
+        rgba=settings.Nest.COLOR,  # green
+        type_=mujoco.mjtGeom.mjGEOM_CYLINDER
+    )
 
 
 def add_food_object(spec: mujoco.MjSpec, settings: Settings, id_: int, position: Position) -> None:
