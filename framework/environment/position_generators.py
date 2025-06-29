@@ -1,7 +1,6 @@
 import numpy as np
 
-from ..types import Position, RobotLocation
-from ..config import Settings
+from ..prelude import *
 
 
 def random_point_avoiding_invalid_areas(

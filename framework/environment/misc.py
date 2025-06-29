@@ -3,11 +3,7 @@ import mujoco
 from .mujoco_utils import (
     add_texture, add_material
 )
-
-from ..config import (
-    Settings,
-    CHECKER_TEXTURE_SIZE, CHECKER_RGB_WHITE, CHECKER_RGB_GRAY
-)
+from ..prelude import *
 
 
 def setup_option(spec: mujoco.MjSpec, settings: Settings) -> None:

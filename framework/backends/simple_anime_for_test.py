@@ -2,7 +2,7 @@ import math
 
 import numpy as np
 
-from framework.interfaces import SimulatorBackend
+from ..prelude import *
 
 
 class SimpleAnimatedBackend(SimulatorBackend):

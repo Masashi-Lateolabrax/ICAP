@@ -8,9 +8,7 @@ import threading
 import logging
 from PIL import Image, ImageTk
 
-from ..types import *
-from ..interfaces import SimulatorBackend
-from ..config import *
+from ..prelude import *
 
 
 class SimulationRunningMode(enum.Enum):

@@ -3,8 +3,7 @@ import mujoco
 from .mujoco_utils import (
     add_body, add_geom, add_joint, add_site, add_velocity_actuator, add_velocimeter
 )
-from ..types import *
-from ..config import *
+from ..prelude import *
 
 
 def add_wall(spec: mujoco.MjSpec, settings: Settings) -> None:
