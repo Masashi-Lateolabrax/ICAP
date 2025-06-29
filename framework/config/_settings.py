@@ -15,12 +15,12 @@ class Settings:
         WALL_THICKNESS: float = 1
         WALL_HEIGHT: float = 1
 
-        class Render:
-            RENDER_WIDTH = 100
-            RENDER_HEIGHT = 100
-            LIGHT_AMBIENT = 1.0
-            LIGHT_DIFFUSE = 1.0
-            LIGHT_SPECULAR = 1.0
+    class Render:
+        RENDER_WIDTH = 100
+        RENDER_HEIGHT = 100
+        LIGHT_AMBIENT = 1.0
+        LIGHT_DIFFUSE = 1.0
+        LIGHT_SPECULAR = 1.0
 
     class Robot:
         NUM = 1
