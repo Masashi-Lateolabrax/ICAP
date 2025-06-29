@@ -1,4 +1,0 @@
-ROBOT_SIZE = 0.175  # radius
-ROBOT_WEIGHT = 30  # kg
-MOVE_SPEED = 0.8
-TURN_SPEED = 3.14 / 2
