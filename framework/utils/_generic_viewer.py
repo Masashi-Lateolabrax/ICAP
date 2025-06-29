@@ -304,19 +304,17 @@ class _SimulationFrame(tk.Frame):
         self._cached_photo = None
         self.buffer_update_timestamp = state.buffer_update_timestamp
 
-        self.update_idletasks()
-        self.pack(fill=tk.BOTH, expand=True)
-
     def display_image(self):
         try:
             current_timestamp = self.state.buffer_update_timestamp
             if current_timestamp and self.buffer_update_timestamp != current_timestamp:
                 self.buffer_update_timestamp = current_timestamp
 
-                if self._cached_img.size == (self.state.rgb_buffer.shape[1], self.state.rgb_buffer.shape[0]):
-                    self._cached_img = self._cached_img._new(Image.fromarray(self.state.rgb_buffer).im)
+                img = np.swapaxes(self.state.rgb_buffer, 0, 1)
+                if self._cached_img.size == (img.shape[1], img.shape[0]):
+                    self._cached_img = self._cached_img._new(Image.fromarray(img).im)
                 else:
-                    self._cached_img = Image.fromarray(self.state.rgb_buffer)
+                    self._cached_img = Image.fromarray(img)
 
                 self._cached_photo = ImageTk.PhotoImage(self._cached_img)
 
@@ -378,7 +376,7 @@ class GenericTkinterViewer:
         self.logger = logging.getLogger(__name__)
 
         self.state = _SimulationState(
-            rgb_buffer=np.zeros((height, width, 3), dtype=np.uint8)
+            rgb_buffer=np.zeros((width, height, 3), dtype=np.uint8)
         )
 
         self.simulation = _Simulation(backend, self.state)

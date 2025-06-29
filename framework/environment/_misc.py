@@ -1,7 +1,7 @@
 import mujoco
 
-from .mujoco_utils import (
-    add_texture, add_material
+from ._mujoco_utils import (
+    add_texture, add_material,
 )
 from ..prelude import *
 
@@ -56,3 +56,9 @@ def setup_textures(spec: mujoco.MjSpec, settings: Settings) -> None:
             settings.Simulation.WORLD_HEIGHT * 0.5
         )
     )
+
+
+def setup_visual(spec: mujoco.MjSpec, settings: Settings) -> None:
+    visual: mujoco._specs.MjVisual = spec.visual
+    visual.global_.offwidth = settings.Render.RENDER_WIDTH
+    visual.global_.offheight = settings.Render.RENDER_HEIGHT

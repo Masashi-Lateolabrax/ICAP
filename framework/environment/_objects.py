@@ -1,6 +1,6 @@
 import mujoco
 
-from .mujoco_utils import (
+from ._mujoco_utils import (
     add_body, add_geom, add_joint, add_site, add_velocity_actuator, add_velocimeter
 )
 from ..prelude import *
