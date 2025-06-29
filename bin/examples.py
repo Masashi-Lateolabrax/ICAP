@@ -17,5 +17,14 @@ def print_environment():
     print(spec.to_xml())
 
 
+def viewer_example():
+    from framework.backends import SimpleAnimatedBackend
+    from framework.utils.generic_viewer import GenericTkinterViewer
+
+    backend = SimpleAnimatedBackend(width=480, height=320)
+    viewer = GenericTkinterViewer(backend, width=480, height=320)
+    viewer.run()
+
+
 if __name__ == '__main__':
-    mujoco_example()
+    viewer_example()
