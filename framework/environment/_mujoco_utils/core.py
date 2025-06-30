@@ -26,21 +26,22 @@ def add_texture(
     Returns:
         Created MuJoCo texture specification object
     """
-    texture: mujoco._specs.MjsTexture = spec.add_texture()
-    texture.name = name
-    texture.type = type_
-    texture.builtin = builtin
-    texture.width = width
-    texture.height = height
-    texture.rgb1 = rgb1
-    texture.rgb2 = rgb2
+    texture = spec.add_texture(
+        name=name,
+        type=type_,
+        builtin=builtin,
+        width=width,
+        height=height,
+        rgb1=rgb1,
+        rgb2=rgb2,
+    )
     return texture
 
 
 def add_material(
         spec: mujoco.MjSpec,
         name: str,
-        texture: list[str],
+        texture: str,
         texrepeat: tuple[float, float],
 ) -> mujoco._specs.MjsMaterial:
     """Add a material to the MuJoCo simulation specification.
@@ -54,10 +55,8 @@ def add_material(
     Returns:
         Created MuJoCo material specification object
     """
-    material: mujoco._specs.MjsMaterial = spec.add_material()
-    material.name = name
-    material.textures = texture
-    material.texrepeat = texrepeat
+    material: mujoco._specs.MjsMaterial = spec.add_material(name=name, texrepeat=texrepeat)
+    material.textures[mujoco.mjtTextureRole.mjTEXROLE_RGB] = texture
     return material
 
 

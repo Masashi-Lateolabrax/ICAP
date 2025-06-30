@@ -50,7 +50,7 @@ def setup_textures(spec: mujoco.MjSpec, settings: Settings) -> None:
     add_material(
         spec,
         name="ground",
-        texture=["simple_checker"],
+        texture="simple_checker",
         texrepeat=(
             settings.Simulation.WORLD_WIDTH * 0.5,
             settings.Simulation.WORLD_HEIGHT * 0.5
