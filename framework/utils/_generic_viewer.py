@@ -297,14 +297,16 @@ class _SimulationFrame(tk.Frame):
         self.height = height
 
         self.state = state
+
+        img = Image.fromarray(
+            np.zeros((self.state.rgb_buffer.shape[1], self.state.rgb_buffer.shape[0], 3), dtype=np.uint8)
+        )
+        self._cached_photo = ImageTk.PhotoImage(image=img)
+
         self.canvas = tk.Canvas(self, width=self.width, height=self.height, bg='black')
+        self.canvas.create_image(self.width // 2, self.height // 2, image=self._cached_photo)
         self.canvas.pack(fill=tk.BOTH, expand=True)
 
-        self._cached_photo = ImageTk.PhotoImage(
-            Image.fromarray(
-                np.swapaxes(self.state.rgb_buffer, 0, 1)
-            )
-        )
         self.buffer_update_timestamp = state.buffer_update_timestamp
 
     def display_image(self):
@@ -318,8 +320,6 @@ class _SimulationFrame(tk.Frame):
                     Image.fromarray(img)
                 )
 
-                self.canvas.delete("all")
-                self.canvas.create_image(self.width // 2, self.height // 2, image=self._cached_photo)
                 self.canvas.update_idletasks()
         except Exception as e:
             logging.getLogger(__name__).error(f"Display image error: {e}")
