@@ -85,6 +85,7 @@ class _Simulation:
         if self._running:
             self.should_stop = True
             if self.thread:
+                self.logger.info("Stopping simulation thread")
                 self.thread.join(timeout=THREAD_JOIN_TIMEOUT)
                 if self.thread.is_alive():
                     self.logger.warning("Simulation thread did not stop gracefully")
@@ -396,3 +397,4 @@ class GenericTkinterViewer:
             self.logger.info("Interrupted by user")
         except Exception as e:
             self.logger.error(f"Runtime error: {e}")
+        self.simulation.stop()
