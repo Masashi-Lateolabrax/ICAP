@@ -1,5 +1,5 @@
 from ._position_generators import (
-    rand_food_pos, rand_robot_pos
+    check_collision, rand_food_pos, rand_robot_pos
 )
 from ._mujoco_utils import (
     add_body, add_geom, add_site, add_velocity_actuator, add_velocimeter, add_texture, add_material, add_sensor,

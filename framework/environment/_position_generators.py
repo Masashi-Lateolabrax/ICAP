@@ -3,6 +3,14 @@ import numpy as np
 from ..prelude import *
 
 
+def check_collision(
+        pos: np.ndarray,
+        size: float,
+        invalid_area: list[np.ndarray],
+) -> bool:
+    return np.any([np.linalg.norm(area[:2] - pos) <= area[2] + size for area in invalid_area])
+
+
 def random_point_avoiding_invalid_areas(
         left_upper_point: tuple[float, float],
         right_lower_point: tuple[float, float],
@@ -54,7 +62,7 @@ def random_point_avoiding_invalid_areas(
             right_lower_point[1] + size + padding, left_upper_point[1] - size - padding
         )
 
-        if np.any([np.linalg.norm(area[:2] - pos) <= area[2] + size for area in invalid_area]):
+        if check_collision(pos, size, invalid_area):
             if retry > 0:
                 retry -= 1
             continue
