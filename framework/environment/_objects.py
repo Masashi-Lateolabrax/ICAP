@@ -149,6 +149,7 @@ def add_robot(
         raise TypeError("Robot ID must be an integer")
     if id_ < 0:
         raise ValueError("Robot ID must be non-negative")
+
     robot_body = add_body(
         spec.worldbody,
         name=f"robot{id_}",
@@ -164,64 +165,47 @@ def add_robot(
         mass=settings.Robot.MASS
     )
 
-    slide_x_joint = add_joint(
-        robot_body,
-        name=f"robot{id_}_slide_x",
-        joint_type=mujoco.mjtJoint.mjJNT_SLIDE,
-        axis=(1, 0, 0),
-    )
-
-    slide_y_joint = add_joint(
-        robot_body,
-        name=f"robot{id_}_slide_y",
-        joint_type=mujoco.mjtJoint.mjJNT_SLIDE,
-        axis=(0, 1, 0),
-    )
-
-    hinge_joint = add_joint(
-        robot_body,
-        name=f"robot{id_}_hinge",
-        joint_type=mujoco.mjtJoint.mjJNT_HINGE,
-        axis=(0, 0, 1),
-    )
-
     add_site(
         robot_body,
         name=f"robot{id_}_center",
         pos=(0, 0, 0),
     )
 
-    # Calculate front site size based on robot radius
     front_site_size = settings.Robot.RADIUS * ROBOT_FRONT_SIZE_FACTOR
-
     add_site(
         robot_body,
         name=f"robot{id_}_front",
-        pos=(settings.Robot.RADIUS * ROBOT_FRONT_POSITION_FACTOR, 0, 0),
+        pos=(0, settings.Robot.RADIUS * ROBOT_FRONT_POSITION_FACTOR, front_site_size),
         size=[front_site_size, front_site_size, front_site_size],
         rgba=ROBOT_FRONT_COLOR,
         type_=mujoco.mjtGeom.mjGEOM_SPHERE
     )
 
-    add_velocity_actuator(
-        spec,
-        name=f"robot{id_}_slide_x_act",
-        joint=slide_x_joint,
-        kv=settings.Robot.ACTUATOR_KV
+    free_join = add_joint(
+        robot_body,
+        name=f"robot{id_}_joint",
+        joint_type=mujoco.mjtJoint.mjJNT_FREE,
     )
 
     add_velocity_actuator(
         spec,
-        name=f"robot{id_}_slide_y_act",
-        joint=slide_y_joint,
-        kv=settings.Robot.ACTUATOR_KV
+        name=f"robot{id_}_x_act",
+        joint=free_join,
+        kv=settings.Robot.ACTUATOR_MOVE_KV
     )
 
     add_velocity_actuator(
         spec,
-        name=f"robot{id_}_hinge_act",
-        joint=hinge_joint,
-        kv=settings.Robot.ACTUATOR_KV
+        name=f"robot{id_}_y_act",
+        joint=free_join,
+        kv=settings.Robot.ACTUATOR_MOVE_KV
+    )
+
+    add_velocity_actuator(
+        spec,
+        name=f"robot{id_}_r_act",
+        joint=free_join,
+        kv=settings.Robot.ACTUATOR_ROT_KV
     )
 
     return robot_body

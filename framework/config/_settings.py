@@ -29,7 +29,8 @@ class Settings:
         RADIUS = 0.175
         COLOR = (1, 1, 0, 1)
         MASS = 10
-        ACTUATOR_KV = 0.5
+        ACTUATOR_MOVE_KV = 0.5
+        ACTUATOR_ROT_KV = 0.5
 
     class Food:
         NUM: int = 1
