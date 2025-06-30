@@ -41,9 +41,9 @@ def _generate_mjspec(settings: Settings) -> mujoco.MjSpec:
             position: Position = settings.Food.INITIAL_POSITION[i]
         else:
             position: Position = rand_food_pos(settings, invalid_area)
-            invalid_area.append(
-                (position, settings.Food.RADIUS)
-            )
+        invalid_area.append(
+            (position, settings.Food.RADIUS)
+        )
         add_food_object(spec, settings, i, position)
 
     # Create robots
@@ -52,10 +52,9 @@ def _generate_mjspec(settings: Settings) -> mujoco.MjSpec:
             position: RobotLocation = settings.Robot.INITIAL_POSITION[i]
         else:
             position: RobotLocation = rand_robot_pos(settings, invalid_area)
-            invalid_area.append(
-                (position.position, settings.Robot.RADIUS)
-            )
-
+        invalid_area.append(
+            (position.position, settings.Robot.RADIUS)
+        )
         add_robot(spec, settings, i, position)
 
     return spec
