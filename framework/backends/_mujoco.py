@@ -1,3 +1,5 @@
+import abc
+
 import mujoco
 import numpy as np
 
@@ -64,7 +66,7 @@ def _generate_mjspec(settings: Settings) -> mujoco.MjSpec:
     return spec, robot_specs
 
 
-class MujocoBackend(SimulatorBackend):
+class MujocoBackend(SimulatorBackend, abc.ABC):
     def __init__(self, settings: Settings, render: bool = False):
         self.settings = settings
         self.do_render = render
@@ -80,8 +82,8 @@ class MujocoBackend(SimulatorBackend):
         # Initialize renderer if needed
         self.camera = mujoco.MjvCamera()
 
-    def step(self):
-        mujoco.mj_step(self.model, self.data)
+    def reset(self):
+        mujoco.mj_resetData(self.model, self.data)
 
     def render(self, img_buf: np.ndarray, pos: tuple[float, float, float], lookat: tuple[float, float, float]):
         if img_buf is None:
