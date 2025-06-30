@@ -200,7 +200,7 @@ class SimulationControlPanel(tk.Frame):
 
 
 class CameraControlPanel(ttk.Frame):
-    def __init__(self, parent_frame: ttk.Frame, state: _SimulationState):
+    def __init__(self, parent_frame: ttk.Frame, settings: Settings, state: _SimulationState):
         super().__init__(parent_frame)
         self.state = state
 
@@ -209,7 +209,6 @@ class CameraControlPanel(ttk.Frame):
         self.cam_z_var = tk.DoubleVar(value=DEFAULT_CAMERA_Z)
         self.lookat_x_var = tk.DoubleVar(value=DEFAULT_LOOKAT_X)
         self.lookat_y_var = tk.DoubleVar(value=DEFAULT_LOOKAT_Y)
-        self.lookat_z_var = tk.DoubleVar(value=DEFAULT_LOOKAT_Z)
 
         # Panel title
         ttk.Label(self, text="Camera Control", font=('Arial', 12, 'bold')).pack(pady=(0, 10))
@@ -218,8 +217,8 @@ class CameraControlPanel(ttk.Frame):
         ttk.Label(self, text="Camera Position:", font=('Arial', 10, 'bold')).pack(pady=(10, 5))
 
         for label, var, range_min, range_max in [
-            ("X:", self.cam_x_var, -10.0, 10.0),
-            ("Y:", self.cam_y_var, -10.0, 10.0),
+            ("X:", self.cam_x_var, -settings.Simulation.WORLD_WIDTH * 0.5, settings.Simulation.WORLD_WIDTH * 0.5),
+            ("Y:", self.cam_y_var, -settings.Simulation.WORLD_HEIGHT * 0.5, settings.Simulation.WORLD_HEIGHT * 0.5),
             ("Z:", self.cam_z_var, 0.1, 10.0)
         ]:
             ttk.Label(self, text=label).pack()
@@ -233,9 +232,8 @@ class CameraControlPanel(ttk.Frame):
         ttk.Label(self, text="Look At:", font=('Arial', 10, 'bold')).pack(pady=(15, 5))
 
         for label, var, range_min, range_max in [
-            ("X:", self.lookat_x_var, -5.0, 5.0),
-            ("Y:", self.lookat_y_var, -5.0, 5.0),
-            ("Z:", self.lookat_z_var, -2.0, 2.0)
+            ("X:", self.lookat_x_var, -settings.Simulation.WORLD_WIDTH * 0.5, settings.Simulation.WORLD_WIDTH * 0.5),
+            ("Y:", self.lookat_y_var, -settings.Simulation.WORLD_HEIGHT * 0.5, settings.Simulation.WORLD_HEIGHT * 0.5),
         ]:
             ttk.Label(self, text=label).pack()
             scale = ttk.Scale(
@@ -253,7 +251,7 @@ class CameraControlPanel(ttk.Frame):
         self.state.lookat_position = Position3d(
             self.lookat_x_var.get(),
             self.lookat_y_var.get(),
-            self.lookat_z_var.get()
+            DEFAULT_LOOKAT_Z
         )
 
 
@@ -272,14 +270,14 @@ class SimulationInfoPanel(ttk.LabelFrame):
 
 
 class ControlPanel(ttk.Frame):
-    def __init__(self, parent, state: _SimulationState, backend_name: str = "Unknown"):
+    def __init__(self, parent, settings: Settings, state: _SimulationState, backend_name: str = "Unknown"):
         super().__init__(parent)
         self.state = state
 
         self.simulation_panel = SimulationControlPanel(self, state)
         self.simulation_panel.pack(fill=tk.X, pady=(0, 10))
 
-        self.camera_panel = CameraControlPanel(self, state)
+        self.camera_panel = CameraControlPanel(self, settings, state)
         self.camera_panel.pack(fill=tk.X, pady=(0, 10))
 
         self.info_panel = SimulationInfoPanel(self, state, backend_name)
@@ -343,22 +341,24 @@ class _SimulationFrame(tk.Frame):
 
 
 class _TopWindow(tk.Tk):
-    def __init__(self, state: _SimulationState, width, height, backend_name: str = "Unknown"):
+    def __init__(self, state: _SimulationState, settings: Settings, backend_name: str = "Unknown"):
         super().__init__()
 
         self.state = state
         self.logger = logging.getLogger(__name__)
 
-        self._setup_ui(width, height, backend_name)
+        self._setup_ui(settings, backend_name)
         self._schedule_ui_update()
 
-    def _setup_ui(self, width, height, backend_name: str):
+    def _setup_ui(self, settings: Settings, backend_name: str):
         self.title("Generic Simulator Viewer")
 
-        self.simulation_frame = _SimulationFrame(self, width, height, self.state)
+        self.simulation_frame = _SimulationFrame(
+            self, settings.Render.RENDER_WIDTH, settings.Render.RENDER_HEIGHT, self.state
+        )
         self.simulation_frame.pack(side=tk.LEFT, padx=10, pady=10)
 
-        self.control_panel = ControlPanel(self, self.state, backend_name)
+        self.control_panel = ControlPanel(self, settings, self.state, backend_name)
         self.control_panel.pack(side=tk.RIGHT, fill=tk.Y, padx=(0, 10), pady=10)
 
     def _schedule_ui_update(self):
@@ -371,16 +371,18 @@ class _TopWindow(tk.Tk):
 
 
 class GenericTkinterViewer:
-    def __init__(self, backend: SimulatorBackend, width: int = DEFAULT_WIDTH, height: int = DEFAULT_HEIGHT):
+    def __init__(self, settings: Settings, backend: SimulatorBackend):
         self.backend = backend
         self.logger = logging.getLogger(__name__)
 
-        self.state = _SimulationState(width, height)
+        self.state = _SimulationState(
+            settings.Render.RENDER_WIDTH, settings.Render.RENDER_HEIGHT
+        )
 
         self.simulation = _Simulation(backend, self.state)
 
         backend_name = getattr(backend, '__class__', type(backend)).__name__
-        self._viewer = _TopWindow(self.state, width, height, backend_name)
+        self._viewer = _TopWindow(self.state, settings, backend_name)
 
         # Configure logging
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')

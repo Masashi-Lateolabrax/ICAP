@@ -6,9 +6,9 @@ from ..prelude import *
 
 
 class SimpleAnimatedBackend(SimulatorBackend):
-    def __init__(self, width=800, height=600):
-        self.width = width
-        self.height = height
+    def __init__(self, settings: Settings):
+        self.width = settings.Render.RENDER_WIDTH
+        self.height = settings.Render.RENDER_HEIGHT
         self.time = 0.0
 
     def step(self):
