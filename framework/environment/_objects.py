@@ -116,7 +116,7 @@ def add_robot(
         settings: Settings,
         id_: int,
         robot_location: RobotLocation,
-) -> mujoco._specs.MjsBody:
+) -> RobotSpec:
     """Add a robot to the simulation environment.
     
     Creates a cylindrical robot with sliding and rotational joints,
@@ -165,14 +165,14 @@ def add_robot(
         mass=settings.Robot.MASS
     )
 
-    add_site(
+    center_site = add_site(
         robot_body,
         name=f"robot{id_}_center",
         pos=(0, 0, 0),
     )
 
     front_site_size = settings.Robot.RADIUS * ROBOT_FRONT_SIZE_FACTOR
-    add_site(
+    front_site = add_site(
         robot_body,
         name=f"robot{id_}_front",
         pos=(0, settings.Robot.RADIUS * ROBOT_FRONT_POSITION_FACTOR, front_site_size),
@@ -187,25 +187,32 @@ def add_robot(
         joint_type=mujoco.mjtJoint.mjJNT_FREE,
     )
 
-    add_velocity_actuator(
+    x_act = add_velocity_actuator(
         spec,
         name=f"robot{id_}_x_act",
         joint=free_join,
         kv=settings.Robot.ACTUATOR_MOVE_KV
     )
 
-    add_velocity_actuator(
+    y_act = add_velocity_actuator(
         spec,
         name=f"robot{id_}_y_act",
         joint=free_join,
         kv=settings.Robot.ACTUATOR_MOVE_KV
     )
 
-    add_velocity_actuator(
+    r_act = add_velocity_actuator(
         spec,
         name=f"robot{id_}_r_act",
         joint=free_join,
         kv=settings.Robot.ACTUATOR_ROT_KV
     )
 
-    return robot_body
+    return RobotSpec(
+        center_site=center_site,
+        front_site=front_site,
+        free_join=free_join,
+        x_act=x_act,
+        y_act=y_act,
+        r_act=r_act
+    )
