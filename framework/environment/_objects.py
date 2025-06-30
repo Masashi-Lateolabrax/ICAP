@@ -46,7 +46,7 @@ def add_nest(spec: mujoco.MjSpec, settings: Settings) -> None:
         pos=(
             settings.Nest.POSITION.x,
             settings.Nest.POSITION.y,
-            -settings.Nest.HEIGHT * 0.5
+            -settings.Nest.HEIGHT * 0.5 - 0.001
         ),
         size=[settings.Nest.RADIUS, settings.Nest.HEIGHT * 0.5, 0],
         rgba=settings.Nest.COLOR,  # green

@@ -29,6 +29,7 @@ def _generate_mjspec(settings: Settings) -> mujoco.MjSpec:
             1
         ),
         material="ground",
+        rgba=GROUND_COLOR
     )
 
     add_nest(spec, settings)
