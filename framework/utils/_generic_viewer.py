@@ -19,8 +19,8 @@ class SimulationRunningMode(enum.Enum):
 
 
 class _SimulationState:
-    def __init__(self, rgb_buffer: np.ndarray):
-        self.rgb_buffer: np.ndarray = rgb_buffer
+    def __init__(self, width: int, height: int):
+        self.rgb_buffer: np.ndarray = np.zeros((height, width, 3), dtype=np.uint8)
         self.buffer_update_timestamp: Optional[float] = time.time()
 
         self.running_mode: SimulationRunningMode = SimulationRunningMode.RUNNING
@@ -300,7 +300,7 @@ class _SimulationFrame(tk.Frame):
         self.state = state
 
         img = Image.fromarray(
-            np.zeros((self.state.rgb_buffer.shape[1], self.state.rgb_buffer.shape[0], 3), dtype=np.uint8)
+            np.zeros_like(self.state.rgb_buffer, dtype=np.uint8)
         )
         self._cached_photo = ImageTk.PhotoImage(image=img)
 
@@ -316,9 +316,8 @@ class _SimulationFrame(tk.Frame):
             if current_timestamp and self.buffer_update_timestamp != current_timestamp:
                 self.buffer_update_timestamp = current_timestamp
 
-                img = np.swapaxes(self.state.rgb_buffer, 0, 1)
                 self._cached_photo.paste(
-                    Image.fromarray(img)
+                    Image.fromarray(self.state.rgb_buffer)
                 )
 
                 self.canvas.update_idletasks()
@@ -376,9 +375,7 @@ class GenericTkinterViewer:
         self.backend = backend
         self.logger = logging.getLogger(__name__)
 
-        self.state = _SimulationState(
-            rgb_buffer=np.zeros((width, height, 3), dtype=np.uint8)
-        )
+        self.state = _SimulationState(width, height)
 
         self.simulation = _Simulation(backend, self.state)
 
