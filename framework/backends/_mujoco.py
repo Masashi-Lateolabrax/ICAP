@@ -48,6 +48,7 @@ def _generate_mjspec(settings: Settings) -> mujoco.MjSpec:
         add_food_object(spec, settings, i, position)
 
     # Create robots
+    robot_specs = []
     for i in range(settings.Robot.NUM):
         if i < len(settings.Robot.INITIAL_POSITION):
             position: RobotLocation = settings.Robot.INITIAL_POSITION[i]
@@ -56,9 +57,11 @@ def _generate_mjspec(settings: Settings) -> mujoco.MjSpec:
         invalid_area.append(
             (position.position, settings.Robot.RADIUS)
         )
-        add_robot(spec, settings, i, position)
+        robot_specs.append(
+            add_robot(spec, settings, i, position)
+        )
 
-    return spec
+    return spec, robot_specs
 
 
 class MujocoBackend(SimulatorBackend):
@@ -67,10 +70,12 @@ class MujocoBackend(SimulatorBackend):
         self.do_render = render
         self.render_shape = self.settings.Render.RENDER_WIDTH, self.settings.Render.RENDER_HEIGHT
 
-        self.spec = _generate_mjspec(self.settings)
+        self.spec, robot_specs = _generate_mjspec(self.settings)
         self.model: mujoco.MjModel = self.spec.compile()
         # self.model: mujoco.MjModel = mujoco.MjModel.from_xml_string(self.spec.to_xml())
         self.data: mujoco.MjData = mujoco.MjData(self.model)
+
+        self.robot_values = [RobotValues(self.data, s) for s in robot_specs]
 
         # Initialize renderer if needed
         self.camera = mujoco.MjvCamera()
