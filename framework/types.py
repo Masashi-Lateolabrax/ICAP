@@ -22,7 +22,7 @@ class Position3d:
 class RobotLocation:
     def __init__(self, x: float, y: float, theta: float):
         self.position = Position(x, y)
-        self.theta = theta  # Unit is degree
+        self.theta = theta  # Unit is radian
 
     @property
     def x(self) -> float:
