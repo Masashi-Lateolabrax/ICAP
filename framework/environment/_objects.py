@@ -1,6 +1,7 @@
 import mujoco
 
 from ._mujoco_utils import (
+    axisangle_to_quat,
     add_body, add_geom, add_joint, add_site, add_velocity_actuator, add_velocimeter
 )
 from ..prelude import *
@@ -154,6 +155,7 @@ def add_robot(
         spec.worldbody,
         name=f"robot{id_}",
         pos=(robot_location.x, robot_location.y, settings.Robot.HEIGHT * 0.5),
+        quat=axisangle_to_quat((0, 0, 1), robot_location.theta),
     )
 
     add_geom(
@@ -162,7 +164,7 @@ def add_robot(
         size=(settings.Robot.RADIUS, settings.Robot.HEIGHT * 0.5, 0),
         rgba=settings.Robot.COLOR,
         condim=FOOD_COLLISION_CONDIM,
-        mass=settings.Robot.MASS
+        mass=settings.Robot.MASS,
     )
 
     center_site = add_site(

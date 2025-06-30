@@ -1,4 +1,5 @@
 import mujoco
+import numpy as np
 
 
 def add_texture(
@@ -71,6 +72,7 @@ def add_geom(
         condim: int = None,
         density: float = None,
         mass: float = None,
+        quat: np.ndarray = None,
 ) -> mujoco._specs.MjsGeom:
     """Add a geometry to a MuJoCo body.
     
@@ -97,6 +99,8 @@ def add_geom(
     geom.pos = pos
     geom.size = size
 
+    if quat is not None:
+        geom.quat = quat
     if name is not None:
         geom.name = name
     if material is not None:
