@@ -26,8 +26,9 @@ class _SimulationState:
         self.running_mode: SimulationRunningMode = SimulationRunningMode.RUNNING
         self.mode_change_event: threading.Event = dataclasses.field(default_factory=threading.Event)
 
-        self.camera_position: Position3d = Position3d(DEFAULT_CAMERA_X, DEFAULT_CAMERA_Y, DEFAULT_CAMERA_Z)
         self.lookat_position: Position3d = Position3d(DEFAULT_LOOKAT_X, DEFAULT_LOOKAT_Y, DEFAULT_LOOKAT_Z)
+        self.camera_position: Position3d = Position3d(0, 0, 0)
+        self.set_camera_position_from_angles(DEFAULT_CAMERA_DISTANCE, DEFAULT_CAMERA_AZIMUTH, DEFAULT_CAMERA_ELEVATION)
         self.fps: float = 0.0
 
         self.error_message: Optional[str] = None
@@ -55,6 +56,20 @@ class _SimulationState:
     def clear_error(self):
         self.error_message = None
         self.error_timestamp = None
+
+    def set_camera_position_from_angles(self, distance: float, azimuth_deg: float, elevation_deg: float):
+        azimuth_rad = np.radians(azimuth_deg)
+        elevation_rad = np.radians(elevation_deg)
+
+        x_offset = distance * np.cos(elevation_rad) * np.cos(azimuth_rad)
+        y_offset = distance * np.cos(elevation_rad) * np.sin(azimuth_rad)
+        z_offset = distance * np.sin(elevation_rad)
+
+        self.camera_position = Position3d(
+            self.lookat_position.x + x_offset,
+            self.lookat_position.y + y_offset,
+            self.lookat_position.z + z_offset
+        )
 
     @property
     def has_recent_error(self) -> bool:
@@ -204,54 +219,55 @@ class CameraControlPanel(ttk.Frame):
         super().__init__(parent_frame)
         self.state = state
 
-        self.cam_x_var = tk.DoubleVar(value=DEFAULT_CAMERA_X)
-        self.cam_y_var = tk.DoubleVar(value=DEFAULT_CAMERA_Y)
-        self.cam_z_var = tk.DoubleVar(value=DEFAULT_CAMERA_Z)
         self.lookat_x_var = tk.DoubleVar(value=DEFAULT_LOOKAT_X)
         self.lookat_y_var = tk.DoubleVar(value=DEFAULT_LOOKAT_Y)
+
+        # Spherical coordinates for camera control
+        self.distance_var = tk.DoubleVar(value=DEFAULT_CAMERA_DISTANCE)
+        self.azimuth_var = tk.DoubleVar(value=DEFAULT_CAMERA_AZIMUTH)
+        self.elevation_var = tk.DoubleVar(value=DEFAULT_CAMERA_ELEVATION)
 
         # Panel title
         ttk.Label(self, text="Camera Control", font=('Arial', 12, 'bold')).pack(pady=(0, 10))
 
-        # Camera position controls
-        ttk.Label(self, text="Camera Position:", font=('Arial', 10, 'bold')).pack(pady=(10, 5))
+        # LookAt controls
+        ttk.Label(self, text="Look At Position:", font=('Arial', 10, 'bold')).pack(pady=(10, 5))
 
-        for label, var, range_min, range_max in [
-            ("X:", self.cam_x_var, -settings.Simulation.WORLD_WIDTH * 0.5, settings.Simulation.WORLD_WIDTH * 0.5),
-            ("Y:", self.cam_y_var, -settings.Simulation.WORLD_HEIGHT * 0.5, settings.Simulation.WORLD_HEIGHT * 0.5),
-            ("Z:", self.cam_z_var, 0.1, 10.0)
-        ]:
-            ttk.Label(self, text=label).pack()
+        def _install_scale_helper(var_, range_min_, range_max_, label_):
+            ttk.Label(self, text=label_).pack()
             pos_scale = ttk.Scale(
-                self, from_=range_min, to=range_max, variable=var, orient=tk.HORIZONTAL,
+                self, from_=range_min_, to=range_max_, variable=var_, orient=tk.HORIZONTAL,
                 command=self._handle_camera_change
             )
             pos_scale.pack(fill=tk.X, pady=2)
-
-        # LookAt controls
-        ttk.Label(self, text="Look At:", font=('Arial', 10, 'bold')).pack(pady=(15, 5))
 
         for label, var, range_min, range_max in [
             ("X:", self.lookat_x_var, -settings.Simulation.WORLD_WIDTH * 0.5, settings.Simulation.WORLD_WIDTH * 0.5),
             ("Y:", self.lookat_y_var, -settings.Simulation.WORLD_HEIGHT * 0.5, settings.Simulation.WORLD_HEIGHT * 0.5),
         ]:
-            ttk.Label(self, text=label).pack()
-            scale = ttk.Scale(
-                self, from_=range_min, to=range_max, variable=var, orient=tk.HORIZONTAL,
-                command=self._handle_camera_change
-            )
-            scale.pack(fill=tk.X, pady=2)
+            _install_scale_helper(var, range_min, range_max, label)
+
+        # Spherical camera controls
+        ttk.Label(self, text="Camera Position (Spherical):", font=('Arial', 10, 'bold')).pack(pady=(15, 5))
+
+        for label, var, range_min, range_max in [
+            ("Distance:", self.distance_var, 1.0, 20.0),
+            ("Azimuth (°):", self.azimuth_var, -90.0, 270.0),
+            ("Elevation (°):", self.elevation_var, 0.0, 90.0)
+        ]:
+            _install_scale_helper(var, range_min, range_max, label)
 
     def _handle_camera_change(self, value=None):
-        self.state.camera_position = Position3d(
-            self.cam_x_var.get(),
-            self.cam_y_var.get(),
-            self.cam_z_var.get()
-        )
         self.state.lookat_position = Position3d(
             self.lookat_x_var.get(),
             self.lookat_y_var.get(),
             DEFAULT_LOOKAT_Z
+        )
+
+        self.state.set_camera_position_from_angles(
+            self.distance_var.get(),
+            self.azimuth_var.get(),
+            self.elevation_var.get()
         )
 
 
