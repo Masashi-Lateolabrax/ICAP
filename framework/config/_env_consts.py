@@ -1,3 +1,5 @@
+GROUND_COLLISION_CONDIM = 1
+ROBOT_COLLISION_CONDIM = 1
 FOOD_COLLISION_CONDIM = 6  # Contact dimensionality for food objects
 WALL_COLLISION_CONDIM = 1  # Contact dimensionality for walls
 
