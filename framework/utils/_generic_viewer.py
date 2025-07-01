@@ -24,7 +24,7 @@ class _SimulationState:
         self.buffer_update_timestamp: Optional[float] = time.time()
 
         self.running_mode: SimulationRunningMode = SimulationRunningMode.RUNNING
-        self.mode_change_event: threading.Event = dataclasses.field(default_factory=threading.Event)
+        self.mode_change_event: threading.Event = threading.Event()
 
         self.lookat_position: Position3d = Position3d(DEFAULT_LOOKAT_X, DEFAULT_LOOKAT_Y, DEFAULT_LOOKAT_Z)
         self.camera_position: Position3d = Position3d(0, 0, 0)
