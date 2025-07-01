@@ -127,13 +127,6 @@ class RobotValues:
         self._y_act.ctrl[0] = power[1]
         self._z_act.ctrl[0] = RobotValues._z
         self._r_act.ctrl[0] = power_and_torque[1]
-        print(
-            self._x_act.ctrl[0],
-            self._y_act.ctrl[0],
-            self._z_act.ctrl[0],
-            self._r_act.ctrl[0],
-            self._free_join.qpos
-        )
 
 
 class FoodSpec:
