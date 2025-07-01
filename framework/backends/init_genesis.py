@@ -1,5 +1,6 @@
 import genesis as gs
 import torch
+import numpy as np
 
 from ..interfaces import SimulatorBackend
 
@@ -21,6 +22,22 @@ class GenesisBackend(SimulatorBackend):
 
     def step(self):
         self.scene.step()
+
+    def render(self, img_buf: np.ndarray, pos: tuple[float, float, float], lookat: tuple[float, float, float]):
+        try:
+            rendered_img = self.scene.render(camera_pos=pos, camera_lookat=lookat)
+            if rendered_img is not None and img_buf is not None:
+                h, w = img_buf.shape[:2]
+                if rendered_img.shape[:2] == (h, w):
+                    img_buf[:] = rendered_img
+                else:
+                    import cv2
+                    resized = cv2.resize(rendered_img, (w, h))
+                    img_buf[:] = resized
+        except Exception as e:
+            print(f"Genesis render error: {e}")
+            if img_buf is not None:
+                img_buf.fill(0)
 
 
 def example_run():

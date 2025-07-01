@@ -40,8 +40,8 @@ def add_wall(spec: mujoco.MjSpec, settings: Settings) -> None:
         )
 
 
-def add_nest(spec: mujoco.MjSpec, settings: Settings) -> None:
-    add_site(
+def add_nest(spec: mujoco.MjSpec, settings: Settings) -> mujoco._specs.MjsSite:
+    return add_site(
         spec.worldbody,
         name="nest",
         pos=(
@@ -55,7 +55,7 @@ def add_nest(spec: mujoco.MjSpec, settings: Settings) -> None:
     )
 
 
-def add_food_object(spec: mujoco.MjSpec, settings: Settings, id_: int, position: Position) -> None:
+def add_food_object(spec: mujoco.MjSpec, settings: Settings, id_: int, position: Position) -> FoodSpec:
     """Add a food object to the simulation environment.
     
     Creates a cylindrical food object with physics properties, joints for
@@ -94,7 +94,7 @@ def add_food_object(spec: mujoco.MjSpec, settings: Settings, id_: int, position:
         density=settings.Food.DENSITY
     )
 
-    add_joint(
+    free_joint = add_joint(
         food_body,
         name=f"food{id_}_free",
         joint_type=mujoco.mjtJoint.mjJNT_FREE,
@@ -105,10 +105,16 @@ def add_food_object(spec: mujoco.MjSpec, settings: Settings, id_: int, position:
         name=f"food{id_}_center",
     )
 
-    add_velocimeter(
+    velocimeter = add_velocimeter(
         spec,
         name=f"food{id_}_vel",
         site=center_site
+    )
+
+    return FoodSpec(
+        center_site=center_site,
+        free_join=free_joint,
+        velocimeter=velocimeter
     )
 
 

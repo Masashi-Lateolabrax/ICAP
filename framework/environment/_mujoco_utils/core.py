@@ -366,7 +366,7 @@ def add_velocimeter(
         site: mujoco._specs.MjsSite,
         noise: float = None,
         cutoff: float = None,
-) -> None:
+) -> mujoco._specs.MjsSensor:
     """Add a velocimeter sensor to measure velocity at a site.
     
     Args:
@@ -376,7 +376,7 @@ def add_velocimeter(
         noise: Optional noise level for velocity readings
         cutoff: Optional cutoff frequency for velocity filtering
     """
-    add_sensor(
+    return add_sensor(
         spec,
         name=name,
         noise=noise,

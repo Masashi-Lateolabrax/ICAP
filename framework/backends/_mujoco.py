@@ -12,7 +12,9 @@ from ..environment import (
 )
 
 
-def _generate_mjspec(settings: Settings) -> mujoco.MjSpec:
+def _generate_mjspec(
+        settings: Settings
+) -> tuple[mujoco.MjSpec, mujoco._specs.MjsSite, list[RobotSpec], list[FoodSpec]]:
     spec = mujoco.MjSpec()
 
     setup_option(spec, settings)
@@ -34,11 +36,12 @@ def _generate_mjspec(settings: Settings) -> mujoco.MjSpec:
         rgba=GROUND_COLOR
     )
 
-    add_nest(spec, settings)
+    nest_spec = add_nest(spec, settings)
 
     invalid_area: list[tuple[Position, float]] = []
 
     # Create food objects
+    food_specs = []
     for i in range(settings.Food.NUM):
         if i < len(settings.Food.INITIAL_POSITION):
             position: Position = settings.Food.INITIAL_POSITION[i]
@@ -47,7 +50,9 @@ def _generate_mjspec(settings: Settings) -> mujoco.MjSpec:
         invalid_area.append(
             (position, settings.Food.RADIUS)
         )
-        add_food_object(spec, settings, i, position)
+        food_specs.append(
+            add_food_object(spec, settings, i, position)
+        )
 
     # Create robots
     robot_specs = []
@@ -63,7 +68,7 @@ def _generate_mjspec(settings: Settings) -> mujoco.MjSpec:
             add_robot(spec, settings, i, position)
         )
 
-    return spec, robot_specs
+    return spec, nest_spec, robot_specs, food_specs
 
 
 class MujocoBackend(SimulatorBackend, abc.ABC):
@@ -72,12 +77,15 @@ class MujocoBackend(SimulatorBackend, abc.ABC):
         self.do_render = render
         self.render_shape = self.settings.Render.RENDER_WIDTH, self.settings.Render.RENDER_HEIGHT
 
-        self.spec, robot_specs = _generate_mjspec(self.settings)
+        self.spec, nest_spec, robot_specs, food_specs = _generate_mjspec(self.settings)
+
         self.model: mujoco.MjModel = self.spec.compile()
         # self.model: mujoco.MjModel = mujoco.MjModel.from_xml_string(self.spec.to_xml())
         self.data: mujoco.MjData = mujoco.MjData(self.model)
 
+        self.nest_site = self.data.site(nest_spec.name)
         self.robot_values = [RobotValues(self.data, s) for s in robot_specs]
+        self.food_values = [FoodValues(self.data, s) for s in food_specs]
 
         # Initialize renderer if needed
         self.camera = mujoco.MjvCamera()
