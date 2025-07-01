@@ -5,8 +5,7 @@ import torch
 from framework.backends import MujocoBackend
 from framework.utils import GenericTkinterViewer
 from framework.sensor import PreprocessedOmniSensor, DirectionSensor
-from framework.controller import Controller
-from framework.prelude import Settings, RobotLocation, Position, SensorInterface
+from framework.prelude import Settings, RobotLocation, Position, SensorInterface, RobotValues
 
 
 class RobotNeuralNetwork(torch.nn.Module):
@@ -30,45 +29,57 @@ class SampleMujocoBackend(MujocoBackend):
     def __init__(self, settings: Settings, render: bool = False):
         super().__init__(settings, render)
         self.scores = []
-        self.controller = Controller(settings, 32, RobotNeuralNetwork())
+        self.sensors: list[tuple[SensorInterface]] = self._create_sensors()
 
-        self.sensors: list[tuple[SensorInterface]] = [
-            (
+        self.controller = RobotNeuralNetwork()
+        self.input_ndarray = np.zeros((settings.Robot.NUM, 3 * 2), dtype=np.float32)
+        self.input_tensor = torch.from_numpy(self.input_ndarray)
+
+        mujoco.mj_step(self.model, self.data)
+
+    def _create_sensors(self) -> list[tuple[SensorInterface]]:
+        sensors = []
+        for i, robot in enumerate(self.robot_values):
+            sensor_tuple = (
                 PreprocessedOmniSensor(
                     robot,
-                    settings.Robot.ROBOT_SENSOR_GAIN,
-                    settings.Robot.RADIUS * 2,
+                    self.settings.Robot.ROBOT_SENSOR_GAIN,
+                    self.settings.Robot.RADIUS * 2,
                     [other.site for j, other in enumerate(self.robot_values) if j != i]
                 ),
                 PreprocessedOmniSensor(
                     robot,
-                    settings.Robot.FOOD_SENSOR_GAIN,
-                    settings.Robot.RADIUS + settings.Food.RADIUS,
+                    self.settings.Robot.FOOD_SENSOR_GAIN,
+                    self.settings.Robot.RADIUS + self.settings.Food.RADIUS,
                     [food.site for food in self.food_values]
                 ),
                 DirectionSensor(
-                    robot, self.nest_site, settings.Nest.RADIUS
+                    robot, self.nest_site, self.settings.Nest.RADIUS
                 )
             )
-            for i, robot in enumerate(self.robot_values)
-        ]
+            sensors.append(sensor_tuple)
+        return sensors
 
-        self._pairs = [self.controller.register(r, f, n) for r, f, n in self.sensors]
-
-    def __del__(self):
-        for p in self._pairs:
-            p.finished = True
+    def _create_input_for_controller(self):
+        for i, sensors in enumerate(self.sensors):
+            self.input_ndarray[i, 0:2] = sensors[0].get()
+            self.input_ndarray[i, 2:4] = sensors[1].get()
+            self.input_ndarray[i, 4:6] = sensors[2].get()
+        return self.input_tensor
 
     def step(self):
-        for pair in self._pairs:
-            pair.need_calculation = True
+        with torch.no_grad():
+            input_ = self._create_input_for_controller()
+            output = self.controller.forward(input_)
+            output_ndarray = output.numpy()
 
-        self.controller.calculate()
-
-        for r, p in zip(self.robot_values, self._pairs):
-            right_wheel = p.output_buf[0]
-            left_wheel = p.output_buf[1]
-            r.act(right_wheel, left_wheel)
+        for i, robot in enumerate(self.robot_values):
+            robot.act(
+                # right_wheel=output_ndarray[i, 0],
+                right_wheel=1,
+                # left_wheel=output_ndarray[i, 1]
+                left_wheel=0
+            )
 
         mujoco.mj_step(self.model, self.data)
 
@@ -88,10 +99,13 @@ def mujoco_example():
         Position(0, 2),
     ]
 
-    backend = SampleMujocoBackend(settings, render=True)
+    RobotValues.set_max_speed(settings.Robot.MAX_SPEED)
+    RobotValues.set_distance_between_wheels(settings.Robot.DISTANCE_BETWEEN_WHEELS)
+    RobotValues.set_robot_height(settings.Robot.HEIGHT)
+
     viewer = GenericTkinterViewer(
         settings,
-        backend,
+        SampleMujocoBackend(settings, render=True),
     )
     viewer.run()
 
