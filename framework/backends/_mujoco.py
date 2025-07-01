@@ -33,7 +33,8 @@ def _generate_mjspec(
             1
         ),
         material="ground",
-        rgba=GROUND_COLOR
+        rgba=GROUND_COLOR,
+        condim=GROUND_COLLISION_CONDIM
     )
 
     nest_spec = add_nest(spec, settings)

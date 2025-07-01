@@ -169,7 +169,7 @@ def add_robot(
         geom_type=mujoco.mjtGeom.mjGEOM_CYLINDER,
         size=(settings.Robot.RADIUS, settings.Robot.HEIGHT * 0.5, 0),
         rgba=settings.Robot.COLOR,
-        condim=FOOD_COLLISION_CONDIM,
+        condim=ROBOT_COLLISION_CONDIM,
         mass=settings.Robot.MASS,
     )
 
