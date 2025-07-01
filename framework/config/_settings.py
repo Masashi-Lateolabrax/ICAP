@@ -22,12 +22,19 @@ class Render:
 class Robot:
     NUM = 1
     INITIAL_POSITION: list[RobotLocation] = []
-    HEIGHT = 0.05
+
+    HEIGHT = 0.1
     RADIUS = 0.175
+    DISTANCE_BETWEEN_WHEELS = 0.175 * 2 * 0.8
+
+    MAX_SPEED = 0.8
+
     COLOR = (1, 1, 0, 1)
     MASS = 10
-    ACTUATOR_MOVE_KV = 0.5
-    ACTUATOR_ROT_KV = 0.5
+
+    ACTUATOR_MOVE_KV = 100
+    ACTUATOR_ROT_KV = 10
+
     ROBOT_SENSOR_GAIN = 1.0
     FOOD_SENSOR_GAIN = 1.0
 
