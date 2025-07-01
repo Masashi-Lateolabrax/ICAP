@@ -240,6 +240,7 @@ def _create_base_general_actuator(
         biastype: mujoco.mjtBias,
         biasprm: tuple[float, float, float],
         name: str = None,
+        gear: tuple[float, float, float, float, float, float] = None
 ) -> mujoco._specs.MjsActuator:
     """Create a base general actuator with specified dynamics, gain, and bias.
     
@@ -272,6 +273,8 @@ def _create_base_general_actuator(
 
     if name is not None:
         actuator.name = name
+    if gear is not None:
+        actuator.gear = gear
 
     return actuator
 
@@ -281,6 +284,7 @@ def add_velocity_actuator(
         joint: mujoco._specs.MjsJoint,
         kv: float,
         name: str = None,
+        gear: tuple[float, float, float, float, float, float, float] = None
 ) -> mujoco._specs.MjsActuator:
     """Add a velocity actuator to control a joint.
     
@@ -316,7 +320,36 @@ def add_velocity_actuator(
         gainprm=(kv, 0, 0),
         biastype=mujoco.mjtBias.mjBIAS_AFFINE,
         biasprm=(0, 0, -kv),
-        name=name
+        name=name,
+        gear=gear
+    )
+    actuator.trntype = mujoco.mjtTrn.mjTRN_JOINT
+    actuator.target = joint.name
+    return actuator
+
+
+def add_position_actuator(
+        spec: mujoco.MjSpec,
+        joint: mujoco._specs.MjsJoint,
+        kp: float,
+        kv: float,
+        name: str = None,
+        gear: tuple[float, float, float, float, float, float, float] = None
+) -> mujoco._specs.MjsActuator:
+    if spec is None:
+        raise ValueError("MuJoCo specification cannot be None")
+    if joint is None:
+        raise ValueError("Joint cannot be None")
+    actuator = _create_base_general_actuator(
+        spec,
+        dyntype=mujoco.mjtDyn.mjDYN_NONE,
+        dynprm=(0, 0, 0),
+        gaintype=mujoco.mjtGain.mjGAIN_FIXED,
+        gainprm=(kp, 0, 0),
+        biastype=mujoco.mjtBias.mjBIAS_AFFINE,
+        biasprm=(0, -kp, -kv),
+        name=name,
+        gear=gear
     )
     actuator.trntype = mujoco.mjtTrn.mjTRN_JOINT
     actuator.target = joint.name
