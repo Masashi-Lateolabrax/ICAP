@@ -1,8 +1,10 @@
 import abc
+from abc import ABC
 
 import numpy as np
 
 
-class SensorInterface(metaclass=abc.ABC):
+class SensorInterface(ABC):
+    @abc.abstractmethod
     def get(self) -> np.ndarray:
         raise NotImplementedError
