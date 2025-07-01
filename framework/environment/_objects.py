@@ -1,8 +1,6 @@
-import mujoco
-
 from ._mujoco_utils import (
     axisangle_to_quat,
-    add_body, add_geom, add_joint, add_site, add_velocity_actuator, add_velocimeter
+    add_body, add_geom, add_joint, add_site, add_velocity_actuator, add_velocimeter, add_position_actuator
 )
 from ..prelude import *
 
@@ -199,21 +197,33 @@ def add_robot(
         spec,
         name=f"robot{id_}_x_act",
         joint=free_join,
-        kv=settings.Robot.ACTUATOR_MOVE_KV
+        kv=settings.Robot.ACTUATOR_MOVE_KV,
+        gear=(1, 0, 0, 0, 0, 0)
     )
 
     y_act = add_velocity_actuator(
         spec,
         name=f"robot{id_}_y_act",
         joint=free_join,
-        kv=settings.Robot.ACTUATOR_MOVE_KV
+        kv=settings.Robot.ACTUATOR_MOVE_KV,
+        gear=(0, 1, 0, 0, 0, 0)
+    )
+
+    z_act = add_position_actuator(
+        spec,
+        joint=free_join,
+        kp=50,
+        kv=1,
+        name=f"robot{id_}_z_act",
+        gear=(0, 0, 1, 0, 0, 0)
     )
 
     r_act = add_velocity_actuator(
         spec,
         name=f"robot{id_}_r_act",
         joint=free_join,
-        kv=settings.Robot.ACTUATOR_ROT_KV
+        kv=settings.Robot.ACTUATOR_ROT_KV,
+        gear=(0, 0, 0, 0, 0, 1)
     )
 
     return RobotSpec(
@@ -222,5 +232,6 @@ def add_robot(
         free_join=free_join,
         x_act=x_act,
         y_act=y_act,
+        z_act=z_act,
         r_act=r_act
     )
