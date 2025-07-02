@@ -63,7 +63,7 @@ class RobotValues:
     @staticmethod
     def _update_matrix():
         RobotValues._matrix = np.array([
-            [RobotValues._v, RobotValues._v, ],
+            [RobotValues._v * 0.5, RobotValues._v * 0.5],
             [- RobotValues._v / RobotValues._d, RobotValues._v / RobotValues._d]
         ])
 
@@ -74,7 +74,7 @@ class RobotValues:
 
     @staticmethod
     def set_max_speed(v: float):
-        RobotValues._v = v * 0.5
+        RobotValues._v = v
         RobotValues._update_matrix()
 
     @staticmethod
