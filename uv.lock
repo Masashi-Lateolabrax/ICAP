@@ -62,6 +62,18 @@ wheels = [
 ]
 
 [[package]]
+name = "cmaes"
+version = "0.11.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/8f/29/86dc7d673dee33bb67b6d40d9809a6804658a2764ecd30bba201782c59d6/cmaes-0.11.1.tar.gz", hash = "sha256:cf71fa3679814723be771f2c9edd85f465b1bc1e409e1ad6d8a9e481efcd5160", size = 31439, upload-time = "2024-08-13T06:46:34.728Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/06/c9/124823c5391ad69cf336fe482cd920fe485d96841ca43089c7316682fffc/cmaes-0.11.1-py3-none-any.whl", hash = "sha256:1de77d2175045389680619c1e9b6d59d90e7888524d9e440e1704ba001de9fcc", size = 35549, upload-time = "2024-08-13T06:46:33.169Z" },
+]
+
+[[package]]
 name = "coacd"
 version = "1.0.7"
 source = { registry = "https://pypi.org/simple" }
@@ -279,6 +291,7 @@ name = "icap"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "cmaes" },
     { name = "genesis-world" },
     { name = "glfw" },
     { name = "mujoco" },
@@ -299,6 +312,7 @@ cu128 = [
 
 [package.metadata]
 requires-dist = [
+    { name = "cmaes", specifier = ">=0.11.1" },
     { name = "genesis-world", git = "https://github.com/Genesis-Embodied-AI/Genesis.git?rev=7cf9efe7b32ae76df602475ed6cb580c1477f89f" },
     { name = "glfw", specifier = "==2.9.0" },
     { name = "mujoco", specifier = "==3.3.3" },
