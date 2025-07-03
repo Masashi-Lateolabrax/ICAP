@@ -1,6 +1,20 @@
 from ..types import RobotLocation, Position
 
 
+class Server:
+    HOST: str = 'localhost'
+    PORT: int = 5000
+    MAX_CONNECTIONS: int = 10
+    TIMEOUT: float = 5.0  # seconds
+
+
+class Optimization:
+    dimension: int = 10
+    population_size: int = 20
+    generations: int = 1000
+    sigma: float = 0.5
+
+
 class Simulation:
     TIME_STEP: float = 0.01
     TIME_LENGTH: int = 60  # Unit is Seconds
@@ -60,6 +74,8 @@ class Settings:
     Basically, the attributes' unit is meter.
     """
 
+    Server = Server
+    Optimization = Optimization
     Simulation = Simulation
     Render = Render
     Robot = Robot
