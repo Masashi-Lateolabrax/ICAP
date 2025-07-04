@@ -78,6 +78,9 @@ def server_thread(settings: Settings, conn_queue, stop_event):
                     if ind is not None:
                         conn.assign(ind)
                         logging.debug(f"Assigned individual to connection {i}")
+                    else:
+                        logging.debug(f"No individual available to assign to connection {i}")
+                        continue
 
                 fitness = conn.update()
                 if fitness is not None:
