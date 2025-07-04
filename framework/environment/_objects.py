@@ -1,8 +1,10 @@
+import mujoco
+
+from ..prelude import *
 from ._mujoco_utils import (
     axisangle_to_quat,
     add_body, add_geom, add_joint, add_site, add_velocity_actuator, add_velocimeter, add_position_actuator
 )
-from ..prelude import *
 
 
 def add_wall(spec: mujoco.MjSpec, settings: Settings) -> None:
