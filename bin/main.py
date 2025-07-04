@@ -17,7 +17,7 @@ class RobotNeuralNetwork(torch.nn.Module):
         super(RobotNeuralNetwork, self).__init__()
 
         self.sequential = torch.nn.Sequential(
-            torch.nn.Linear(6, 3),
+            torch.nn.Linear(5, 3),
             torch.nn.Tanhshrink(),
             torch.nn.Linear(3, 2),
             torch.nn.Tanh()
@@ -110,7 +110,7 @@ class Simulation(MujocoBackend):
         for i, sensors in enumerate(self.sensors):
             self.input_ndarray[i, 0:2] = sensors[0].get()
             self.input_ndarray[i, 2:4] = sensors[1].get()
-            self.input_ndarray[i, 4:6] = sensors[2].get()
+            self.input_ndarray[i, 4:5] = sensors[2].get()
         return self.input_tensor
 
     def evaluation(self) -> Loss:
