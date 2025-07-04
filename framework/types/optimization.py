@@ -71,6 +71,10 @@ class Individual(np.ndarray):
     def is_corrupted(self) -> bool:
         return self._calculation_state == CalculationState.CORRUPTED
 
+    @property
+    def norm(self):
+        return np.linalg.norm(self)
+
     def to_ndarray(self) -> np.ndarray:
         return self.view(np.ndarray)
 
