@@ -47,6 +47,8 @@ def server_thread(settings: Settings, conn_queue, stop_event):
                 logging.error(f"Error handling connection {i}: {e}")
                 conn.close_by_fatal_error()
                 connections.pop(i)
+        else:
+            threading.Event().wait(1)
 
         if cmaes.ready_to_update():
             try:
@@ -85,7 +87,7 @@ class OptimizationServer:
         try:
             server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            server_socket.settimeout(10.0)
+            server_socket.settimeout(1.0)
             server_socket.bind((
                 self.settings.Server.HOST,
                 self.settings.Server.PORT
@@ -116,6 +118,7 @@ class OptimizationServer:
                     logging.info(f"Client connected: {client_address}")
 
                 except socket.timeout:
+                    threading.Event().wait(4)
                     continue  # Check stop_event and try again
 
                 except socket.error as e:
