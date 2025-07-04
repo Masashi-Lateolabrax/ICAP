@@ -63,13 +63,16 @@ class Loss:
     def as_float(self) -> float:
         return self.r_loss + self.n_loss
 
-class SampleMujocoBackend(MujocoBackend):
-    def __init__(self, settings: Settings, render: bool = False):
+
+class Simulation(MujocoBackend):
+    def __init__(self, settings: Settings, parameters: Individual, render: bool = False):
         super().__init__(settings, render)
-        self.scores = []
+
+        self.parameters = parameters
+        self.scores: list[Loss] = []
         self.sensors: list[tuple[SensorInterface]] = self._create_sensors()
 
-        self.controller = RobotNeuralNetwork()
+        self.controller = RobotNeuralNetwork(parameters)
         self.input_ndarray = np.zeros((settings.Robot.NUM, 3 * 2), dtype=np.float32)
         self.input_tensor = torch.from_numpy(self.input_ndarray)
 
@@ -105,6 +108,17 @@ class SampleMujocoBackend(MujocoBackend):
             self.input_ndarray[i, 4:6] = sensors[2].get()
         return self.input_tensor
 
+    def evaluation(self) -> Loss:
+        robot_positions = [r.xpos for r in self.robot_values]
+        food_positions = [f.xpos for f in self.food_values]
+        nest_position = self.nest_site.xpos
+        return Loss(
+            self.settings,
+            robot_positions=robot_positions,
+            food_positions=food_positions,
+            nest_position=nest_position
+        )
+
     def step(self):
         with torch.no_grad():
             input_ = self._create_input_for_controller()
@@ -119,8 +133,15 @@ class SampleMujocoBackend(MujocoBackend):
 
         mujoco.mj_step(self.model, self.data)
 
-    def score(self) -> list[float]:
-        return self.scores
+        loss = self.evaluation()
+        self.scores.append(loss)
+
+    def scores(self) -> list[float]:
+        return [s.as_float() for s in self.scores]
+
+    def total_score(self) -> float:
+        regularization_loss = self.settings.Optimization.REGULARIZATION_LOSS * self.parameters.norm
+        return sum(s.as_float() for s in self.scores) + regularization_loss
 
     Returns:
         float: objective function value
