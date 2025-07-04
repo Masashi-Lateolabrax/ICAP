@@ -122,6 +122,7 @@ class OptimizationServer:
                 try:
                     client_socket, client_address = server_socket.accept()
                     logging.info(f"Client connected: {client_address}")
+                    print(f"CONNECTION ESTABLISHED: {client_address}")
 
                 except socket.timeout:
                     threading.Event().wait(4)
