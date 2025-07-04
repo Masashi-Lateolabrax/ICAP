@@ -86,5 +86,5 @@ class Simulator(MujocoBackend):
         return [s.as_float() for s in self.scores]
 
     def total_score(self) -> float:
-        regularization_loss = self.settings.Optimization.REGULARIZATIONl_LOSS * self.parameters.norm
+        regularization_loss = self.settings.Loss.REGULARIZATION_COEFFICIENT * self.parameters.norm
         return sum(s.as_float() for s in self.scores) + regularization_loss

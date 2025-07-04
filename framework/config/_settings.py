@@ -66,7 +66,7 @@ class Loss:
     SIGMA_ROBOT_AND_FOOD = calc_loss_sigma(1, 0.3)
     GAIN_ROBOT_AND_FOOD = 0.01
 
-    LP_GAIN = 0
+    REGULARIZATION_COEFFICIENT = 0
 
 
 class Simulation:
