@@ -27,6 +27,14 @@ def server_thread(settings: Settings, conn_queue, stop_event):
             except queue.Empty:
                 break
 
+        if len(connections) == 0:
+            if stop_event.is_set():
+                break
+            logging.debug("No connections available, waiting for clients...")
+            print("DEBUG: No connections available, waiting for clients...")
+            threading.Event().wait(1)
+            continue
+
         for i in range(len(connections) - 1, -1, -1):
             conn = connections[i]
 
@@ -47,8 +55,6 @@ def server_thread(settings: Settings, conn_queue, stop_event):
                 logging.error(f"Error handling connection {i}: {e}")
                 conn.close_by_fatal_error()
                 connections.pop(i)
-        else:
-            threading.Event().wait(1)
 
         if cmaes.ready_to_update():
             try:
