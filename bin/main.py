@@ -143,13 +143,25 @@ class Simulation(MujocoBackend):
         regularization_loss = self.settings.Optimization.REGULARIZATION_LOSS * self.parameters.norm
         return sum(s.as_float() for s in self.scores) + regularization_loss
 
-    Returns:
-        float: objective function value
-    """
-    total = 0.0
-    for i in range(individual.shape[0] - 1):
-        total += 100.0 * (individual[i + 1] - individual[i] ** 2) ** 2 + (1 - individual[i]) ** 2
-    return total
+
+def evaluation_function(individual: Individual):
+    settings = Settings()
+    settings.Render.RENDER_WIDTH = 480
+    settings.Render.RENDER_HEIGHT = 320
+
+    settings.Robot.INITIAL_POSITION = [
+        RobotLocation(0, 0, np.pi / 2),
+    ]
+    settings.Food.INITIAL_POSITION = [
+        Position(0, 2),
+    ]
+
+    RobotValues.set_max_speed(settings.Robot.MAX_SPEED)
+    RobotValues.set_distance_between_wheels(settings.Robot.DISTANCE_BETWEEN_WHEELS)
+    RobotValues.set_robot_height(settings.Robot.HEIGHT)
+
+    backend = Simulation(settings, render=True)
+    backend.run()
 
 
 def main():
