@@ -1,3 +1,5 @@
+import numpy as np
+
 from mujoco._structs import _MjDataSiteViews
 
 from ._omni_sensor import OmniSensor
