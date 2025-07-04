@@ -11,6 +11,32 @@ from ._cmaes import CMAES
 from ..prelude import *
 
 
+class FitnessReporter:
+    def __init__(self):
+        self.fitness_buffer: list[str] = []
+        self.last_output_time = time.time()
+
+    def add_fitness(self, fitness: float, address: str) -> None:
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        self.fitness_buffer.append(f"[{timestamp}] [{address}] FITNESS: {fitness}")
+
+    def should_output(self) -> bool:
+        current_time = time.time()
+        return current_time - self.last_output_time >= 1.0 and self.fitness_buffer
+
+    def output_and_clear(self) -> None:
+        for message in self.fitness_buffer:
+            print(message)
+        self.fitness_buffer.clear()
+        self.last_output_time = time.time()
+
+    def force_output(self) -> None:
+        if self.fitness_buffer:
+            for message in self.fitness_buffer:
+                print(message)
+            self.fitness_buffer.clear()
+
+
 def server_thread(settings: Settings, conn_queue, stop_event):
     cmaes = CMAES(
         dimension=settings.Optimization.dimension,
@@ -19,8 +45,7 @@ def server_thread(settings: Settings, conn_queue, stop_event):
         population_size=settings.Optimization.population_size,
     )
     connections: list[Connection] = []
-    fitness_buffer: list[str] = []
-    last_output_time = time.time()
+    fitness_reporter = FitnessReporter()
 
     while not stop_event.is_set():
         while not conn_queue.empty():
@@ -56,8 +81,7 @@ def server_thread(settings: Settings, conn_queue, stop_event):
 
                 fitness = conn.update()
                 if fitness is not None:
-                    timestamp = datetime.now().strftime("%H:%M:%S")
-                    fitness_buffer.append(f"[{timestamp}] [{conn.address}] FITNESS: {fitness}")
+                    fitness_reporter.add_fitness(fitness, conn.address)
 
             except Exception as e:
                 logging.error(f"Error handling connection {i}: {e}")
@@ -84,17 +108,10 @@ def server_thread(settings: Settings, conn_queue, stop_event):
             except Exception as e:
                 logging.error(f"Error updating CMAES: {e}")
 
-        current_time = time.time()
-        if current_time - last_output_time >= 1.0 and fitness_buffer:
-            for message in fitness_buffer:
-                print(message)
-            fitness_buffer.clear()
-            last_output_time = current_time
+        if fitness_reporter.should_output():
+            fitness_reporter.output_and_clear()
 
-    if fitness_buffer:
-        for message in fitness_buffer:
-            print(message)
-        fitness_buffer.clear()
+    fitness_reporter.force_output()
 
     for conn in connections:
         if conn.is_alive:
