@@ -85,7 +85,7 @@ class OptimizationServer:
         try:
             server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            server_socket.settimeout(1.0)
+            server_socket.settimeout(10.0)
             server_socket.bind((
                 self.settings.Server.HOST,
                 self.settings.Server.PORT
