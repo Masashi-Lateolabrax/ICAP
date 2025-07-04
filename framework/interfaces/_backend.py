@@ -13,5 +13,8 @@ class SimulatorBackend(metaclass=abc.ABCMeta):
     def reset(self):
         raise NotImplementedError
 
-    def score(self) -> list[float]:
+    def scores(self) -> list[float]:
+        raise NotImplementedError
+
+    def total_score(self) -> float:
         raise NotImplementedError
