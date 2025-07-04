@@ -1,3 +1,5 @@
+import math
+
 import mujoco
 import numpy as np
 import torch
@@ -140,7 +142,7 @@ class Simulation(MujocoBackend):
         return [s.as_float() for s in self.scores]
 
     def total_score(self) -> float:
-        regularization_loss = self.settings.Optimization.REGULARIZATION_LOSS * self.parameters.norm
+        regularization_loss = self.settings.Optimization.REGULARIZATIONl_LOSS * self.parameters.norm
         return sum(s.as_float() for s in self.scores) + regularization_loss
 
 
@@ -160,8 +162,11 @@ def evaluation_function(individual: Individual):
     RobotValues.set_distance_between_wheels(settings.Robot.DISTANCE_BETWEEN_WHEELS)
     RobotValues.set_robot_height(settings.Robot.HEIGHT)
 
-    backend = Simulation(settings, render=True)
-    backend.run()
+    backend = Simulation(settings, individual)
+    for _ in range(math.ceil(settings.Simulation.TIME_LENGTH / settings.Simulation.TIME_STEP)):
+        backend.step()
+
+    return backend.total_score()
 
 
 def main():
