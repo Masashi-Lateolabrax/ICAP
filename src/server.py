@@ -8,11 +8,16 @@ tasks to connected clients.
 from framework.optimization import OptimizationServer
 from framework.prelude import *
 
+from controller import RobotNeuralNetwork
+
 
 def main():
+    dim = RobotNeuralNetwork().dim
+
     settings = Settings()
 
     settings.Server.HOST = "0.0.0.0"
+    settings.Optimization.dimension = dim
 
     print("=" * 50)
     print("OPTIMIZATION SERVER")
