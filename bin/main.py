@@ -45,10 +45,58 @@ class SampleMujocoBackend(MujocoBackend):
         self.scores = []
         self.sensors: list[tuple[SensorInterface]] = self._create_sensors()
 
-    Global minimum: f(1, 1, ..., 1) = 0
+        self.controller = RobotNeuralNetwork()
+        self.input_ndarray = np.zeros((settings.Robot.NUM, 3 * 2), dtype=np.float32)
+        self.input_tensor = torch.from_numpy(self.input_ndarray)
 
-    Args:
-        individual: numpy array representing the solution vector
+        mujoco.mj_step(self.model, self.data)
+
+    def _create_sensors(self) -> list[tuple[SensorInterface]]:
+        sensors = []
+        for i, robot in enumerate(self.robot_values):
+            sensor_tuple = (
+                PreprocessedOmniSensor(
+                    robot,
+                    self.settings.Robot.ROBOT_SENSOR_GAIN,
+                    self.settings.Robot.RADIUS * 2,
+                    [other.site for j, other in enumerate(self.robot_values) if j != i]
+                ),
+                PreprocessedOmniSensor(
+                    robot,
+                    self.settings.Robot.FOOD_SENSOR_GAIN,
+                    self.settings.Robot.RADIUS + self.settings.Food.RADIUS,
+                    [food.site for food in self.food_values]
+                ),
+                DirectionSensor(
+                    robot, self.nest_site, self.settings.Nest.RADIUS
+                )
+            )
+            sensors.append(sensor_tuple)
+        return sensors
+
+    def _create_input_for_controller(self):
+        for i, sensors in enumerate(self.sensors):
+            self.input_ndarray[i, 0:2] = sensors[0].get()
+            self.input_ndarray[i, 2:4] = sensors[1].get()
+            self.input_ndarray[i, 4:6] = sensors[2].get()
+        return self.input_tensor
+
+    def step(self):
+        with torch.no_grad():
+            input_ = self._create_input_for_controller()
+            output = self.controller.forward(input_)
+            output_ndarray = output.numpy()
+
+        for i, robot in enumerate(self.robot_values):
+            robot.act(
+                right_wheel=output_ndarray[i, 0],
+                left_wheel=output_ndarray[i, 1]
+            )
+
+        mujoco.mj_step(self.model, self.data)
+
+    def score(self) -> list[float]:
+        return self.scores
 
     Returns:
         float: objective function value
