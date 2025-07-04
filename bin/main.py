@@ -4,7 +4,6 @@ import torch
 
 from framework.optimization import connect_to_server
 from framework.backends import MujocoBackend
-from framework.utils import GenericTkinterViewer
 from framework.sensor import PreprocessedOmniSensor, DirectionSensor
 from framework.prelude import Settings, RobotLocation, Position, SensorInterface, RobotValues, Individual
 
