@@ -179,7 +179,7 @@ def main():
     connect_to_server(
         settings.Server.HOST,
         settings.Server.PORT,
-        evaluation_function=rosenbrock_function,
+        evaluation_function=evaluation_function,
     )
 
 
