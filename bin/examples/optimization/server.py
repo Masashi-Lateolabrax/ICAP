@@ -12,6 +12,8 @@ from framework.prelude import *
 def main():
     settings = Settings()
 
+    settings.Server.HOST = "0.0.0.0"
+
     print("=" * 50)
     print("OPTIMIZATION SERVER")
     print("=" * 50)

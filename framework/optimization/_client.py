@@ -2,7 +2,7 @@ import socket
 import logging
 from typing import Optional
 
-from ._types import EvaluationFunction
+from ..prelude import *
 from ._connection_utils import send_individual, receive_individual
 
 

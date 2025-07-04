@@ -5,9 +5,7 @@ import logging
 from typing import Optional
 import enum
 
-from ._types import ATTEMPT_COUNT
-from ._types import Individual
-
+from ..prelude import *
 
 class _CommunicationResult(enum.Enum):
     SUCCESS = 0
