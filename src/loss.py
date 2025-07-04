@@ -19,7 +19,7 @@ class Loss:
             a_min=0,
             a_max=None
         )
-        loss = np.sum(np.exp(-(distance ** 2) / self.settings.Loss.SIGMA_ROBOT_AND_FOOD))
+        loss = -np.sum(np.exp(-(distance ** 2) / self.settings.Loss.SIGMA_ROBOT_AND_FOOD))
         return self.settings.Loss.GAIN_ROBOT_AND_FOOD * loss
 
     def _calc_n_loss(self, nest_pos: np.ndarray, food_pos: np.ndarray) -> float:
@@ -29,7 +29,7 @@ class Loss:
             a_min=0,
             a_max=None
         )
-        loss = np.sum(np.exp(-(distance ** 2) / self.settings.Loss.SIGMA_NEST_AND_FOOD))
+        loss = -np.sum(np.exp(-(distance ** 2) / self.settings.Loss.SIGMA_NEST_AND_FOOD))
         return self.settings.Loss.GAIN_NEST_AND_FOOD * loss
 
     def as_float(self) -> float:
