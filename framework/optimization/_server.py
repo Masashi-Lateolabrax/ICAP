@@ -52,7 +52,7 @@ def server_thread(settings: Settings, conn_queue, stop_event):
 
                 fitness = conn.update()
                 if fitness is not None:
-                    print(f"FITNESS: {fitness}")
+                    print(f"[{conn.address}] FITNESS: {fitness}")
 
             except Exception as e:
                 logging.error(f"Error handling connection {i}: {e}")

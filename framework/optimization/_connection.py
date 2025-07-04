@@ -13,6 +13,10 @@ class Connection:
         self._assigned_individual: Optional[Individual] = None
 
     @property
+    def address(self) -> str:
+        return f"{self._socket.getpeername()[0]}:{self._socket.getpeername()[1]}"
+
+    @property
     def has_assigned_individual(self) -> bool:
         return self._assigned_individual is not None
 
