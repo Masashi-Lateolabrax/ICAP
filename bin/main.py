@@ -12,8 +12,6 @@ from framework.prelude import Settings, RobotLocation, Position, SensorInterface
 
 class RobotNeuralNetwork(torch.nn.Module):
     def __init__(self, parameters: Individual):
-        assert len(parameters) == self.dim, "Parameter length does not match the network's parameter count."
-
         super(RobotNeuralNetwork, self).__init__()
 
         self.sequential = torch.nn.Sequential(
@@ -23,6 +21,7 @@ class RobotNeuralNetwork(torch.nn.Module):
             torch.nn.Tanh()
         )
 
+        assert len(parameters) == self.dim, "Parameter length does not match the network's parameter count."
         torch.nn.utils.vector_to_parameters(
             torch.tensor(parameters, dtype=torch.float32),
             self.parameters()
