@@ -10,20 +10,29 @@ from framework.prelude import Settings, RobotLocation, Position, SensorInterface
 
 
 class RobotNeuralNetwork(torch.nn.Module):
-    def __init__(self):
-        super(RobotNeuralNetwork, self).__init__()
-        self.linear1 = torch.nn.Linear(6, 3)
-        self.activation1 = torch.nn.Tanhshrink()
+    def __init__(self, parameters: Individual):
+        assert len(parameters) == self.dim, "Parameter length does not match the network's parameter count."
 
-        self.linear2 = torch.nn.Linear(3, 2)
-        self.activation2 = torch.nn.Tanh()
+        super(RobotNeuralNetwork, self).__init__()
+
+        self.sequential = torch.nn.Sequential(
+            torch.nn.Linear(6, 3),
+            torch.nn.Tanhshrink(),
+            torch.nn.Linear(3, 2),
+            torch.nn.Tanh()
+        )
+
+        torch.nn.utils.vector_to_parameters(
+            torch.tensor(parameters, dtype=torch.float32),
+            self.parameters()
+        )
+
+    @property
+    def dim(self):
+        return sum(p.numel() for p in self.parameters())
 
     def forward(self, input_):
-        x = self.linear1.forward(input_)
-        x = self.activation1.forward(x)
-        x = self.linear2.forward(x)
-        x = self.activation2.forward(x)
-        return x
+        return self.sequential(input_)
 
     @property
     def dim(self):
