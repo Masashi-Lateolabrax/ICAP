@@ -33,19 +33,35 @@ class RobotNeuralNetwork(torch.nn.Module):
     def forward(self, input_):
         return self.sequential(input_)
 
-    @property
-    def dim(self):
-        return sum(p.numel() for p in self.parameters())
 
-    def set_parameters(self, parameters: Individual):
-        assert len(parameters) == self.dim, \
-            "Parameter length does not match the network's parameter count."
+class Loss:
+    def __init__(self, settings: Settings, robot_positions, food_positions, nest_position):
+        self.settings = settings
+        self.r_loss = self._calc_r_loss(robot_positions, food_positions)
+        self.n_loss = self._calc_n_loss(nest_position, food_positions)
 
-        torch.nn.utils.vector_to_parameters(
-            torch.tensor(parameters, dtype=torch.float32),
-            self.parameters()
+    def _calc_r_loss(self, robot_pos: np.ndarray, food_pos: np.ndarray) -> float:
+        subs = (robot_pos[:, None, :2] - food_pos[None, :, :]).reshape(-1, 2)
+        distance = np.clip(
+            np.linalg.norm(subs, axis=1) - self.settings.Loss.OFFSET_ROBOT_AND_FOOD,
+            a_min=0,
+            a_max=None
         )
+        loss = np.sum(np.exp(-(distance ** 2) / self.settings.Loss.SIGMA_ROBOT_AND_FOOD))
+        return self.settings.Loss.GAIN_ROBOT_AND_FOOD * loss
 
+    def _calc_n_loss(self, nest_pos: np.ndarray, food_pos: np.ndarray) -> float:
+        subs = food_pos - nest_pos
+        distance = np.clip(
+            np.linalg.norm(subs, axis=1) - self.settings.Loss.OFFSET_NEST_AND_FOOD,
+            a_min=0,
+            a_max=None
+        )
+        loss = np.sum(np.exp(-(distance ** 2) / self.settings.Loss.OFFSET_NEST_AND_FOOD))
+        return self.settings.Loss.GAIN_NEST_AND_FOOD * loss
+
+    def as_float(self) -> float:
+        return self.r_loss + self.n_loss
 
 class SampleMujocoBackend(MujocoBackend):
     def __init__(self, settings: Settings, render: bool = False):
