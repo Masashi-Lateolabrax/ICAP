@@ -59,6 +59,59 @@ This issue is known to occur with uv when it auto-installs python-build-standalo
 
 This ensures full Pillow functionality, including `ImageTk`.
 
+## Usage
+
+This project implements a distributed optimization system using CMA-ES (Covariance Matrix Adaptation Evolution Strategy) with a client-server architecture for training robotic behaviors.
+
+### Architecture Overview
+
+- **Server**: Runs the CMA-ES optimization algorithm and distributes individual solutions to connected clients
+- **Clients**: Evaluate solutions by running robot simulations and return fitness scores to the server
+- **Communication**: TCP socket-based communication between server and clients for distributed computing
+
+### Running the Optimization System
+
+**Important**: All commands must be executed from the project root directory (`/path/to/ICAP/`).
+
+#### 1. Start the Optimization Server
+
+The server manages the CMA-ES optimization process and coordinates multiple client connections:
+
+```bash
+# Navigate to project root directory first
+cd /path/to/ICAP
+
+# For CUDA 12.8 support
+PYTHONPATH=. uv run src/server.py --extra cu128
+
+# For CUDA 12.4 support  
+PYTHONPATH=. uv run src/server.py --extra cu124
+
+# For CPU-only execution
+PYTHONPATH=. uv run src/server.py --extra cpu
+```
+
+#### 2. Connect Optimization Clients
+
+Clients perform the actual robot simulation evaluations. You can run multiple clients for parallel processing:
+
+```bash
+# Navigate to project root directory first
+cd /path/to/ICAP
+
+# Primary client for robot behavior evaluation
+PYTHONPATH=. uv run src/main.py --extra cu128
+
+# Example client for testing (uses simple Rosenbrock function)
+PYTHONPATH=. uv run examples/optimization/client.py --extra cu128
+```
+
+Replace `cu128` with `cu124` or `cpu` depending on your environment setup.
+
+#### 3. Monitoring
+
+The server provides real-time fitness updates and convergence information during optimization.
+
 ## Overview
 
 This project explores how robots can develop self-organized behaviors through pheromone-based communication, mimicking
