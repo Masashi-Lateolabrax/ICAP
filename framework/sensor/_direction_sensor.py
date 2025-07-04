@@ -34,4 +34,4 @@ class DirectionSensor(SensorInterface):
 
         result = np.dot(direction_matrix, normalized_sub)
 
-        return result
+        return np.arctan2(result[1], result[0]) / (np.pi * 0.5)
