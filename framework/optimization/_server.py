@@ -50,7 +50,10 @@ def server_thread(settings: Settings, conn_queue, stop_event):
                         conn.assign(ind)
                         logging.debug(f"Assigned individual to connection {i}")
 
-                conn.update()
+                fitness = conn.update()
+                if fitness is not None:
+                    print(f"FITNESS: {fitness}")
+
             except Exception as e:
                 logging.error(f"Error handling connection {i}: {e}")
                 conn.close_by_fatal_error()
