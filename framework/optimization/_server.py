@@ -2,6 +2,8 @@ import queue
 import socket
 import threading
 import logging
+import time
+from datetime import datetime
 from queue import Queue
 
 from ._connection import Connection
@@ -17,6 +19,8 @@ def server_thread(settings: Settings, conn_queue, stop_event):
         population_size=settings.Optimization.population_size,
     )
     connections: list[Connection] = []
+    fitness_buffer: list[str] = []
+    last_output_time = time.time()
 
     while not stop_event.is_set():
         while not conn_queue.empty():
@@ -52,7 +56,8 @@ def server_thread(settings: Settings, conn_queue, stop_event):
 
                 fitness = conn.update()
                 if fitness is not None:
-                    print(f"[{conn.address}] FITNESS: {fitness}")
+                    timestamp = datetime.now().strftime("%H:%M:%S")
+                    fitness_buffer.append(f"[{timestamp}] [{conn.address}] FITNESS: {fitness}")
 
             except Exception as e:
                 logging.error(f"Error handling connection {i}: {e}")
@@ -78,6 +83,18 @@ def server_thread(settings: Settings, conn_queue, stop_event):
 
             except Exception as e:
                 logging.error(f"Error updating CMAES: {e}")
+
+        current_time = time.time()
+        if current_time - last_output_time >= 1.0 and fitness_buffer:
+            for message in fitness_buffer:
+                print(message)
+            fitness_buffer.clear()
+            last_output_time = current_time
+
+    if fitness_buffer:
+        for message in fitness_buffer:
+            print(message)
+        fitness_buffer.clear()
 
     for conn in connections:
         if conn.is_alive:
