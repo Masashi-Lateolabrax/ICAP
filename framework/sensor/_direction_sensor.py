@@ -1,3 +1,5 @@
+import numpy as np
+
 from mujoco._structs import _MjDataSiteViews
 
 from ..prelude import *
@@ -20,11 +22,16 @@ class DirectionSensor(SensorInterface):
         ])
 
         sub = target - center
+        distance = np.linalg.norm(sub)
 
-        # distance = np.linalg.norm(sub)
+        if distance <= 1e-6:
+            return np.zeros(2)
+
+        normalized_sub = sub / distance
+
         # k = 1 / max(distance, self.target_radius)
         # result = np.dot(direction_matrix, sub * k)
 
-        result = np.dot(direction_matrix, sub)
+        result = np.dot(direction_matrix, normalized_sub)
 
         return result
