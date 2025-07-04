@@ -45,7 +45,7 @@ class Individual(np.ndarray):
         self._calculation_state = other._calculation_state
 
     def __reduce__(self):
-        return (Individual, (self.view(np.ndarray),), (self._fitness, self._calculation_state))
+        return (Individual, (self.to_ndarray(),), (self._fitness, self._calculation_state))
 
     def __setstate__(self, state):
         self._fitness = state[0]
@@ -70,6 +70,9 @@ class Individual(np.ndarray):
     @property
     def is_corrupted(self) -> bool:
         return self._calculation_state == CalculationState.CORRUPTED
+
+    def to_ndarray(self) -> np.ndarray:
+        return self.view(np.ndarray)
 
 
 EvaluationFunction = Callable[[Individual], float]

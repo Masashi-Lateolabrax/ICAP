@@ -63,7 +63,7 @@ class _IndividualManager:
 
         for individual in self._assigned_individuals:
             if individual.is_finished:
-                solutions.append((individual.view(np.ndarray), individual.get_fitness()))
+                solutions.append((individual.to_ndarray(), individual.get_fitness()))
                 finished_count += 1
 
         logging.debug(f"Retrieved {len(solutions)} solutions ({finished_count} finished)")
