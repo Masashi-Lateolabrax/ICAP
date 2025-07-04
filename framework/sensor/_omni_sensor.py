@@ -1,4 +1,7 @@
+import numpy as np
+
 from mujoco._structs import _MjDataSiteViews
+
 from ..prelude import *
 
 
