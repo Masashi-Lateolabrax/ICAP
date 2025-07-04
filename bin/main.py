@@ -151,8 +151,6 @@ class Simulation(MujocoBackend):
 
 def evaluation_function(individual: Individual):
     settings = Settings()
-    settings.Render.RENDER_WIDTH = 480
-    settings.Render.RENDER_HEIGHT = 320
 
     settings.Robot.INITIAL_POSITION = [
         RobotLocation(0, 0, np.pi / 2),
