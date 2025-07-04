@@ -1,9 +1,8 @@
 import socket
-import datetime
 import logging
 from typing import Optional
 
-from ._types import Individual, CalculationState
+from ..prelude import *
 from ._connection_utils import send_individual, receive_individual
 
 
@@ -36,9 +35,9 @@ class Connection:
         if self._assigned_individual is None:
             logging.warning("Connection update called with no assigned individual")
             return
-            
+
         logging.debug(f"Updating connection with individual state: {self._assigned_individual.get_calculation_state()}")
-        
+
         success = send_individual(self._socket, self._assigned_individual)
         if not success:
             logging.error("Connection closed while sending individual")

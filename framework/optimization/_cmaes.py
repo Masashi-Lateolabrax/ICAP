@@ -1,10 +1,11 @@
 from typing import Optional, List, Tuple
-import numpy as np
-from cmaes import CMA
 import logging
 from collections import deque
 
-from ._types import Individual, CalculationState
+import numpy as np
+from cmaes import CMA
+
+from ..prelude import *
 
 
 class _IndividualManager:
