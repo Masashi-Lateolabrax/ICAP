@@ -46,7 +46,7 @@ class Nest:
 class Server:
     HOST: str = 'localhost'
     PORT: int = 5000
-    MAX_CONNECTIONS: int = 10
+    SOCKET_BACKLOG: int = 10
     TIMEOUT: float = 5.0  # seconds
 
 

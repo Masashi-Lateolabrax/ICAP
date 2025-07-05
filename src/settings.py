@@ -15,7 +15,7 @@ class MySettings(Settings):
 ###################################################################################
 MySettings.Server.HOST = "localhost"
 MySettings.Server.PORT = 5000
-MySettings.Server.MAX_CONNECTIONS = 10
+MySettings.Server.SOCKET_BACKLOG = 10
 MySettings.Server.TIMEOUT = 5.0
 ###################################################################################
 

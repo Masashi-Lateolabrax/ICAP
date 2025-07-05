@@ -138,9 +138,9 @@ class OptimizationServer:
                 self.settings.Server.HOST,
                 self.settings.Server.PORT
             ))
-            server_socket.listen(self.settings.Server.MAX_CONNECTIONS)
+            server_socket.listen(self.settings.Server.SOCKET_BACKLOG)
             logging.info(
-                f"Server socket bound to {self.settings.Server.HOST}:{self.settings.Server.PORT} with max connections: {self.settings.Server.MAX_CONNECTIONS}")
+                f"Server socket bound to {self.settings.Server.HOST}:{self.settings.Server.PORT} with max connections: {self.settings.Server.SOCKET_BACKLOG}")
             return server_socket
         except socket.error as e:
             logging.error(f"Failed to setup server socket: {e}")

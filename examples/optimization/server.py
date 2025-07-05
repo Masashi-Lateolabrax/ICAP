@@ -19,7 +19,7 @@ def main():
     print("=" * 50)
     print(f"Host: {settings.Server.HOST}")
     print(f"Port: {settings.Server.PORT}")
-    print(f"Max connections: {settings.Server.MAX_CONNECTIONS}")
+    print(f"Socket Backlog: {settings.Server.SOCKET_BACKLOG}")
     print("-" * 30)
     print(f"Problem dimension: {settings.Optimization.dimension}")
     print(f"Initial sigma: {settings.Optimization.sigma}")
