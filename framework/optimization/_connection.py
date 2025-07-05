@@ -1,5 +1,6 @@
 import socket
 import logging
+import time
 from typing import Optional
 
 from ..prelude import *
@@ -32,10 +33,6 @@ class Connection:
         return self._assigned_individuals is not None
 
     @property
-    def is_alive(self) -> bool:
-        return self._socket is not None
-
-    @property
     def is_healthy(self) -> bool:
         """Check if the connection is healthy by attempting to get socket information"""
         if self._socket is None:
@@ -46,6 +43,12 @@ class Connection:
             return True
         except (socket.error, OSError):
             return False
+
+    @property
+    def throughput(self) -> Optional[float]:
+        if not self._performance_history:
+            return None
+        return sum(metric.throughput for metric in self._performance_history) / len(self._performance_history)
 
     def assign_individuals(self, individuals: list[Individual]) -> None:
         if self._assigned_individuals is not None:
@@ -59,13 +62,15 @@ class Connection:
             individual.set_calculation_state(CalculationState.NOT_STARTED)
         logging.debug(f"Assigned batch of {len(individuals)} individuals to connection")
 
-    def update(self) -> Optional[list[float]]:
+    def update(self) -> Optional[tuple[list[float], float]]:
         if self._assigned_individuals is None:
             logging.warning("Connection batch update called with no assigned batch")
             return None
 
-        logging.debug(f"Updating connection with batch of {len(self._assigned_individuals)} individuals")
+        batch_size = len(self._assigned_individuals)
+        logging.debug(f"Updating connection with batch of {batch_size} individuals")
 
+        calculation_start = time.time()
         success = send_individuals(self._socket, self._assigned_individuals)
         if not success:
             logging.error("Connection closed while sending individual batch")
@@ -77,6 +82,8 @@ class Connection:
         logging.debug("Individual batch sent to client, state set to CALCULATING")
 
         success, individuals = receive_individuals(self._socket)
+        calculation_finished = time.time()
+
         if not success:
             logging.error("Connection closed while receiving individual batch")
             self.close_by_fatal_error()
@@ -98,9 +105,22 @@ class Connection:
             fitness = individual.get_fitness()
             fitness_values.append(fitness)
 
-        logging.debug(f"Received batch with fitness values: {fitness_values}")
+        # Calculate and record performance metrics
+        metrics = ConnectionPerformanceMetrics(
+            calculation_start=calculation_start,
+            calculation_finished=calculation_finished,
+            batch_size=batch_size,
+        )
+        self._performance_history.append(metrics)
+
+        # Keep only last 100 measurements to avoid memory growth
+        if len(self._performance_history) > 10:
+            self._performance_history = self._performance_history[-10:]
+
+        logging.debug(
+            f"Received batch with fitness values: {fitness_values}, throughput: {metrics.throughput:.2f} individuals/sec")
         self._assigned_individuals = None
-        return fitness_values
+        return fitness_values, metrics.throughput
 
     def close_by_fatal_error(self) -> None:
         logging.info("Closing connection due to fatal error")

@@ -153,19 +153,20 @@ class CMAES:
         Returns:
             List of individuals (may be empty if none available)
         """
+        if batch_size is None or batch_size <= 0:
+            logging.debug("Batch size is None or non-positive, using default population size")
+            return []
+
         self._individual_manager.arrange_individuals()
-        
-        if batch_size is None:
-            batch_size = len(self._individual_manager._ready_individuals)
-            
+
         batch = []
-        for _ in range(min(batch_size, len(self._individual_manager._ready_individuals))):
+        for _ in range(batch_size):
             individual = self._individual_manager.get_individual()
             if individual is not None:
                 batch.append(individual)
             else:
                 break
-                
+
         logging.debug(f"Retrieved batch of {len(batch)} individuals")
         return batch
 

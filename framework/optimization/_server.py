@@ -8,33 +8,37 @@ from queue import Queue
 
 from ._connection import Connection
 from ._cmaes import CMAES
+from ._distribution import Distribution
 from ..prelude import *
 
 
-class FitnessReporter:
-    def __init__(self):
-        self.fitness_buffer: list[str] = []
+class Reporter:
+    def __init__(self, interval: float = 1.0):
+        self.interval = interval
+        self.buffer: list[str] = []
         self.last_output_time = time.time()
 
-    def add_fitness(self, fitness: float, address: str) -> None:
+    def add(self, address: str, fitness_values: list[float], throughput: float) -> None:
         timestamp = datetime.now().strftime("%H:%M:%S")
-        self.fitness_buffer.append(f"[{timestamp}] [{address}] FITNESS: {fitness}")
+
+        average_fitness = sum(fitness_values) / len(fitness_values)
+        variance_fitness = sum((f - average_fitness) ** 2 for f in fitness_values) / len(fitness_values)
+        error_count = sum(1 for f in fitness_values if f == float("inf"))
+
+        self.buffer.append(
+            f"[{timestamp}] [{address}] AveFitness:{average_fitness}, Variance:{variance_fitness}, Error:{error_count}, Throughput:{throughput:.1f} ind/sec"
+        )
 
     def should_output(self) -> bool:
         current_time = time.time()
-        return current_time - self.last_output_time >= 1.0 and self.fitness_buffer
+        return current_time - self.last_output_time >= self.interval
 
-    def output_and_clear(self) -> None:
-        for message in self.fitness_buffer:
-            print(message)
-        self.fitness_buffer.clear()
-        self.last_output_time = time.time()
-
-    def force_output(self) -> None:
-        if self.fitness_buffer:
-            for message in self.fitness_buffer:
+    def output(self) -> None:
+        if self.buffer:
+            for message in self.buffer:
                 print(message)
-            self.fitness_buffer.clear()
+            self.buffer.clear()
+            self.last_output_time = time.time()
 
 
 def server_thread(settings: Settings, conn_queue, stop_event):
@@ -44,8 +48,9 @@ def server_thread(settings: Settings, conn_queue, stop_event):
         sigma=settings.Optimization.sigma,
         population_size=settings.Optimization.population_size,
     )
+    distribution = Distribution(cmaes)
     connections: list[Connection] = []
-    fitness_reporter = FitnessReporter()
+    reporter = Reporter(1.0)
 
     while not stop_event.is_set():
         while not conn_queue.empty():
@@ -68,13 +73,14 @@ def server_thread(settings: Settings, conn_queue, stop_event):
             conn = connections[i]
 
             try:
-                if not conn.is_alive:
-                    conn.close_by_fatal_error()
+                if not conn.is_healthy:
+                    conn.close_gracefully()
                     connections.pop(i)
                     continue
 
                 if not conn.has_assigned_individuals:
-                    batch = cmaes.get_individuals(settings.Optimization.batch_size)
+                    batch_size = distribution.get_batch_size(conn)
+                    batch = cmaes.get_individuals(batch_size)
                     if batch:
                         conn.assign_individuals(batch)
                         logging.debug(f"Assigned batch of {len(batch)} individuals to connection {i}")
@@ -82,18 +88,23 @@ def server_thread(settings: Settings, conn_queue, stop_event):
                         logging.debug(f"No individuals available to assign to connection {i}")
                         continue
 
-                fitness_values = conn.update()
+                fitness_values, throughput = conn.update()
                 if fitness_values is not None:
-                    for fitness in fitness_values:
-                        fitness_reporter.add_fitness(fitness, conn.address)
+                    reporter.add(
+                        address=conn.address,
+                        fitness_values=fitness_values,
+                        throughput=throughput
+                    )
+                    distribution.register_performance(conn)
 
             except Exception as e:
                 logging.error(f"Error handling connection {i}: {e}")
-                conn.close_by_fatal_error()
+                conn.close_gracefully()
                 connections.pop(i)
 
         if cmaes.ready_to_update():
             try:
+                distribution.update()  # The distribution update don't depend on the cmaes state.
                 solutions = cmaes.update()
 
                 if cmaes.should_stop():
@@ -112,14 +123,14 @@ def server_thread(settings: Settings, conn_queue, stop_event):
             except Exception as e:
                 logging.error(f"Error updating CMAES: {e}")
 
-        if fitness_reporter.should_output():
-            fitness_reporter.output_and_clear()
+        if reporter.should_output():
+            reporter.output()
 
-    fitness_reporter.force_output()
+    reporter.output()
 
     for conn in connections:
-        if conn.is_alive:
-            conn.close_by_fatal_error()
+        if conn.is_healthy:
+            conn.close_gracefully()
 
 
 class OptimizationServer:
