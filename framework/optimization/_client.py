@@ -68,8 +68,11 @@ class OptimizationClient:
                 logging.debug(f"Received {len(individuals)} individuals")
                 for individual in individuals:
                     try:
+                        individual.timer_start()
                         fitness = evaluation_function(individual)
+                        individual.timer_end()
                         individual.set_fitness(fitness)
+                        individual.set_calculation_state(CalculationState.FINISHED)
                         logging.debug(f"Evaluated individual with fitness: {fitness}")
                     except Exception as e:
                         logging.error(f"Error during evaluation function execution: {e}")
