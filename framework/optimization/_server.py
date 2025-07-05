@@ -1,10 +1,11 @@
-import queue
 import socket
 import threading
 import logging
 import time
 from datetime import datetime
 from queue import Queue
+
+import numpy as np
 
 from ._connection import Connection
 from ._cmaes import CMAES
@@ -73,6 +74,7 @@ def server_thread(settings: Settings, conn_queue, stop_event):
             threading.Event().wait(1)
             continue
 
+        np.random.shuffle(connections)
         for i in range(len(connections) - 1, -1, -1):
             conn = connections[i]
 
