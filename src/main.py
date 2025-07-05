@@ -1,7 +1,5 @@
 import math
 
-import numpy as np
-
 from framework.prelude import *
 from framework.optimization import connect_to_server
 
@@ -24,7 +22,7 @@ def evaluation_function(individual: Individual):
 
 
 def main():
-    settings = Settings()
+    settings = MySettings()
 
     print("=" * 50)
     print("OPTIMIZATION CLIENT")
