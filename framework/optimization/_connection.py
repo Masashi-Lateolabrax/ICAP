@@ -24,10 +24,11 @@ class Connection:
         self._socket.settimeout(1.0)
         self._assigned_individuals: Optional[list[Individual]] = None
         self._performance_history: list[ConnectionPerformanceMetrics] = []
+        self._name = f"{self._socket.getsockname()[0]}:{self._socket.getsockname()[1]}"
 
     @property
     def address(self) -> str:
-        return f"{self._socket.getpeername()[0]}:{self._socket.getpeername()[1]}"
+        return f"{self._name}{'(healthy)' if self.is_healthy else '(unhealthy)'}"
 
     @property
     def has_assigned_individuals(self) -> bool:
