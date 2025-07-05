@@ -22,23 +22,17 @@ class Distribution:
 
     def _update_performance(self, connections: list[Connection]) -> None:
         for conn in connections:
-            if conn.address not in self.performance:
-                raise ValueError(
-                    f"Connection {conn.address} not found in performance tracking. This should not happen."
-                )
-
             if not conn.is_healthy:
-                logging.warning(f"Connection {conn.address} is unhealthy, removing from performance tracking.")
-                # Remove unhealthy connection from performance tracking
-                del self.performance[conn.address]
+                if conn.address in self.performance:
+                    logging.warning(f"Connection {conn.address} is unhealthy, removing from performance tracking.")
+                    # Remove unhealthy connection from performance tracking
+                    del self.performance[conn.address]
                 continue
 
-            throughput = conn.throughput
-            if throughput is not None:
-                if self.performance[conn.address] is None:
-                    self.performance[conn.address] = throughput
-                else:
-                    self.performance[conn.address] = 0.8 * self.performance[conn.address] + 0.2 * conn.throughput
+            if self.performance[conn.address] is None:
+                self.performance[conn.address] = conn.throughput
+            else:
+                self.performance[conn.address] = 0.8 * self.performance[conn.address] + 0.2 * conn.throughput
 
     def _update_batch_size(self, num_ready_individuals: int) -> None:
         keys = list(self.performance.keys())
