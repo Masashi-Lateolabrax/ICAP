@@ -33,12 +33,10 @@ class Distribution:
                 del self.performance[conn.address]
                 continue
 
-            throughput = conn.throughput
-            if throughput is not None:
-                if self.performance[conn.address] is None:
-                    self.performance[conn.address] = throughput
-                else:
-                    self.performance[conn.address] = 0.8 * self.performance[conn.address] + 0.2 * conn.throughput
+            if self.performance[conn.address] is None:
+                self.performance[conn.address] = conn.throughput
+            else:
+                self.performance[conn.address] = 0.8 * self.performance[conn.address] + 0.2 * conn.throughput
 
     def _update_batch_size(self, num_ready_individuals: int) -> None:
         keys = list(self.performance.keys())
