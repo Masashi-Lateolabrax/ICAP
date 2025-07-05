@@ -12,7 +12,7 @@ class Connection:
         self._socket = socket_
         self._socket.settimeout(1.0)
         self._assigned_individuals: Optional[list[Individual]] = None
-        self._name = f"{self._socket.getsockname()[0]}:{self._socket.getsockname()[1]}"
+        self._name = f"{self._socket.getpeername()[0]}:{self._socket.getpeername()[1]}"
         self._throughput = 0
 
     @property
