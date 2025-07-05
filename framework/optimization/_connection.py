@@ -7,22 +7,11 @@ from ..prelude import *
 from ._connection_utils import send_individuals, receive_individuals
 
 
-class ConnectionPerformanceMetrics:
-    def __init__(self, calculation_start: float, calculation_finished: float, batch_size: int):
-        self.calculation_start = calculation_start
-        self.calculation_finished = calculation_finished
-        self.batch_size = batch_size
-
-        total_time = calculation_finished - calculation_start
-        self.throughput = (batch_size / total_time) if total_time > 0 else batch_size
-
-
 class Connection:
     def __init__(self, socket_: socket.socket):
         self._socket = socket_
         self._socket.settimeout(1.0)
         self._assigned_individuals: Optional[list[Individual]] = None
-        self._performance_history: list[ConnectionPerformanceMetrics] = []
         self._name = f"{self._socket.getsockname()[0]}:{self._socket.getsockname()[1]}"
         self._throughput = 0
 
@@ -48,20 +37,22 @@ class Connection:
 
     @property
     def throughput(self) -> Optional[float]:
-        if not self._performance_history:
-            return None
-        return sum(metric.throughput for metric in self._performance_history) / len(self._performance_history)
+        return self._throughput
 
     def assign_individuals(self, individuals: list[Individual]) -> None:
         if self._assigned_individuals is not None:
             logging.error("Attempted to assign batch to connection that already has one")
             raise ValueError("Batch is already assigned to this connection.")
+
         if not isinstance(individuals, list) or not all(isinstance(ind, Individual) for ind in individuals):
             logging.error(f"Attempted to assign non-Individual batch: {type(individuals)}")
             raise TypeError("Can only assign list of Individual objects")
+
         self._assigned_individuals = individuals
+
         for individual in self._assigned_individuals:
             individual.set_calculation_state(CalculationState.NOT_STARTED)
+
         logging.debug(f"Assigned batch of {len(individuals)} individuals to connection")
 
     def update(self) -> Optional[tuple[list[float], float]]:
@@ -79,7 +70,6 @@ class Connection:
                 logging.error("Connection closed while sending individual batch")
                 self.close_by_fatal_error()
                 return None
-            self.calculation_start = time.time()
 
             for individual in self._assigned_individuals:
                 individual.set_calculation_state(CalculationState.CALCULATING)
@@ -103,8 +93,6 @@ class Connection:
             )
             return None
 
-        calculation_finished = time.time()
-
         # Process received individuals
         fitness_values = []
         throughput = 0
@@ -118,14 +106,11 @@ class Connection:
 
         self._throughput = 0.8 * self._throughput + 0.2 * throughput
 
-        # Keep only last 100 measurements to avoid memory growth
-        if len(self._performance_history) > 10:
-            self._performance_history = self._performance_history[-10:]
-
         logging.debug(
             f"Received batch with fitness values: {fitness_values}, throughput: {self.throughput:.2f} individuals/sec"
         )
         self._assigned_individuals = None
+
         return fitness_values, self.throughput
 
     def close_by_fatal_error(self) -> None:
@@ -159,6 +144,3 @@ class Connection:
                 logging.error(f"Error closing socket: {e}")
             finally:
                 self._socket = None
-
-        # Clear performance history to free memory
-        self._performance_history.clear()
