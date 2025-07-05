@@ -1,5 +1,6 @@
 import socket
 import logging
+import threading
 from typing import Optional
 
 from ..prelude import *
@@ -11,6 +12,7 @@ class OptimizationClient:
         self.host = host
         self.port = port
         self._socket: Optional[socket.socket] = None
+        self._stop_event = threading.Event()
 
     def connect(self) -> bool:
         try:
@@ -40,7 +42,7 @@ class OptimizationClient:
 
         try:
             assert self._socket is not None  # connect() succeeded
-            while True:
+            while not self._stop_event.is_set():
                 success, individuals = receive_individuals(self._socket)
                 if not success:
                     logging.error("Fatal error receiving data from server, disconnecting")
@@ -52,14 +54,15 @@ class OptimizationClient:
                     self.disconnect()
                     break
 
-                elif not isinstance(individuals, list):
+                if not isinstance(individuals, list):
                     logging.error(f"Received invalid data type: {type(individuals)}")
                     self.disconnect()
                     break
 
-                elif len(individuals) == 0:
+                if len(individuals) == 0:
                     logging.info("Received empty list of individuals, continuing...")
-                    # TODO: NEED SLEEP HERE! This sleep improves performance by reducing CPU usage and prevents disconnecting
+                    if self._stop_event.wait(0.01):
+                        break
                     continue
 
                 logging.debug(f"Received {len(individuals)} individuals")
@@ -79,6 +82,7 @@ class OptimizationClient:
 
         except KeyboardInterrupt:
             logging.info("Client shutting down...")
+            self._stop_event.set()
 
         finally:
             self.disconnect()
