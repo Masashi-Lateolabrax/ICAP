@@ -107,11 +107,13 @@ class Connection:
 
         # Process received individuals
         fitness_values = []
+        performance = 0
         for i, individual in enumerate(individuals):
             self._assigned_individuals[i].copy_from(individual)
-            self._assigned_individuals[i].set_calculation_state(CalculationState.FINISHED)
-            fitness = individual.get_fitness()
-            fitness_values.append(fitness)
+            if individual.is_finished:
+                fitness = individual.get_fitness()
+                fitness_values.append(fitness)
+                performance += individual.get_performance()
 
         # Calculate and record performance metrics
         metrics = ConnectionPerformanceMetrics(
