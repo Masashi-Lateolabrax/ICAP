@@ -19,12 +19,12 @@ class ConnectionPerformanceMetrics:
 
 class Connection:
     def __init__(self, socket_: socket.socket):
-        self.calculation_start = 0
         self._socket = socket_
         self._socket.settimeout(1.0)
         self._assigned_individuals: Optional[list[Individual]] = None
         self._performance_history: list[ConnectionPerformanceMetrics] = []
         self._name = f"{self._socket.getsockname()[0]}:{self._socket.getsockname()[1]}"
+        self._throughput = 0
 
     @property
     def address(self) -> str:
@@ -107,30 +107,26 @@ class Connection:
 
         # Process received individuals
         fitness_values = []
-        performance = 0
+        throughput = 0
         for i, individual in enumerate(individuals):
             self._assigned_individuals[i].copy_from(individual)
             if individual.is_finished:
                 fitness = individual.get_fitness()
                 fitness_values.append(fitness)
-                performance += individual.get_performance()
+                throughput += 1 / individual.get_elapse()
+        throughput /= len(fitness_values)
 
-        # Calculate and record performance metrics
-        metrics = ConnectionPerformanceMetrics(
-            calculation_start=self.calculation_start,
-            calculation_finished=calculation_finished,
-            batch_size=len(self._assigned_individuals),
-        )
-        self._performance_history.append(metrics)
+        self._throughput = 0.8 * self._throughput + 0.2 * throughput
 
         # Keep only last 100 measurements to avoid memory growth
         if len(self._performance_history) > 10:
             self._performance_history = self._performance_history[-10:]
 
         logging.debug(
-            f"Received batch with fitness values: {fitness_values}, throughput: {metrics.throughput:.2f} individuals/sec")
+            f"Received batch with fitness values: {fitness_values}, throughput: {self.throughput:.2f} individuals/sec"
+        )
         self._assigned_individuals = None
-        return fitness_values, metrics.throughput
+        return fitness_values, self.throughput
 
     def close_by_fatal_error(self) -> None:
         logging.info("Closing connection due to fatal error")
