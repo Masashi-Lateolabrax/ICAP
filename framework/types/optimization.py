@@ -106,5 +106,10 @@ class Individual(np.ndarray):
     def to_ndarray(self) -> np.ndarray:
         return self.view(np.ndarray)
 
+    def get_elapse(self):
+        if self._calculation_start == -1 or self._calculation_end == -1:
+            raise RuntimeError("Calculation start or end time not set")
+        return self._calculation_end - self._calculation_start
+
 
 EvaluationFunction = Callable[[Individual], float]
