@@ -6,12 +6,22 @@ from ..prelude import *
 from ._connection_utils import send_individuals, receive_individuals
 
 
+class ConnectionPerformanceMetrics:
+    def __init__(self, calculation_start: float, calculation_finished: float, batch_size: int):
+        self.calculation_start = calculation_start
+        self.calculation_finished = calculation_finished
+        self.batch_size = batch_size
+
+        total_time = calculation_finished - calculation_start
+        self.throughput = (batch_size / total_time) if total_time > 0 else batch_size
+
+
 class Connection:
     def __init__(self, socket_: socket.socket):
         self._socket = socket_
         self._socket.settimeout(1.0)
         self._assigned_individuals: Optional[list[Individual]] = None
-        self._performance_history = []
+        self._performance_history: list[ConnectionPerformanceMetrics] = []
 
     @property
     def address(self) -> str:
