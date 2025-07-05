@@ -66,6 +66,12 @@ class Distribution:
         for key, num in zip(probabilities.keys(), task_distribution):
             self.batch_size[key] = num
 
+    def register_throughput(self, conn, throughput: float) -> None:
+        if self.performance[conn.address] is None:
+            self.performance[conn.address] = throughput
+        else:
+            self.performance[conn.address] = 0.8 * self.performance[conn.address] + 0.2 * throughput
+
     def update(self, num_ready_individuals: int, connections: list[Connection]) -> None:
         self._remove_unhealthy_connection_info(connections)
         self._update_batch_size(num_ready_individuals)
