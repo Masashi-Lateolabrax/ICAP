@@ -107,8 +107,6 @@ def server_thread(settings: Settings, conn_queue, stop_event):
                 conn.close_gracefully()
                 connections.pop(i)
 
-        distribution.update(cmaes.num_ready_individuals, connections)
-
         if cmaes.ready_to_update():
             try:
                 solutions = cmaes.update()
@@ -128,6 +126,8 @@ def server_thread(settings: Settings, conn_queue, stop_event):
 
             except Exception as e:
                 logging.error(f"Error updating CMAES: {e}")
+
+        distribution.update(cmaes.num_ready_individuals, connections)
 
         if reporter.should_output():
             reporter.output()

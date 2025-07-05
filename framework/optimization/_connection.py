@@ -40,7 +40,7 @@ class Connection:
         return self._throughput
 
     def assign_individuals(self, individuals: list[Individual]) -> None:
-        if self._assigned_individuals is not None:
+        if self.has_assigned_individuals:
             logging.error("Attempted to assign batch to connection that already has one")
             raise ValueError("Batch is already assigned to this connection.")
 
