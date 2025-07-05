@@ -21,7 +21,7 @@ class Connection:
 
     @property
     def has_assigned_individuals(self) -> bool:
-        return self._assigned_individuals is not None
+        return bool(self._assigned_individuals)
 
     @property
     def is_healthy(self) -> bool:
