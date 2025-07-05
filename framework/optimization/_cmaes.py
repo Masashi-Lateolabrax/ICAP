@@ -162,7 +162,6 @@ class CMAES:
             List of individuals (may be empty if none available)
         """
         if batch_size is None or batch_size <= 0:
-            logging.debug("Batch size is None or non-positive, using default population size")
             return []
 
         self._individual_manager.arrange_individuals()
