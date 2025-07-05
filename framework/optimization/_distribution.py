@@ -4,31 +4,48 @@ import logging
 from typing import Optional
 
 from ._connection import Connection
-from ._cmaes import CMAES
 
 
 class Distribution:
-    def __init__(self, cmaes: CMAES):
-        self.population_size = cmaes.population_size
+    def __init__(self):
+        self.probabilities: dict[str, Optional[float]] = {}
         self.batch_size: dict[str, int] = {}
         self.performance: dict[str, Optional[float]] = {}
 
-    def register_performance(self, conn: Connection) -> None:
-        if not conn.is_healthy:
-            logging.warning(f"Connection {conn.address} is unhealthy, skipping performance registration.")
+    def add_new_connection(self, conn: Connection) -> None:
+        if conn.address in self.performance:
+            logging.warning(f"Connection {conn.address} already exists in performance tracking.")
             return
 
-        throughput = self.performance[conn.address] = conn.throughput
+        self.performance[conn.address] = None
+        self.batch_size[conn.address] = 1
 
-        logging.debug(f"Registered performance for {conn.address}: {throughput:.2f} ind/sec")
+    def _update_performance(self, connections: list[Connection]) -> None:
+        for conn in connections:
+            if conn not in self.performance:
+                # TODO: ここに来ることはないはず. エラーを出して､raiseすべき
+                pass
 
-    def update(self) -> None:
-        self.batch_size = {}
+            if not conn.is_healthy:
+                logging.warning(f"Connection {conn.address} is unhealthy, removing from performance tracking.")
+                # Remove unhealthy connection from performance tracking
+                del self.performance[conn.address]
+                continue
+
+            throughput = conn.throughput
+            if throughput is not None:
+                if self.performance[conn.address] is None:
+                    self.performance[conn.address] = throughput
+                else:
+                    self.performance[conn.address] = 0.8 * self.performance[conn.address] + 0.2 * conn.throughput
+
+    def _update_batch_size(self, num_ready_individuals: int) -> None:
         keys = list(self.performance.keys())
-
         if not keys:
             logging.warning("No connections available for distribution update")
             return
+
+        self.batch_size = {}
 
         probabilities: dict[str, Optional[float]] = {}
         for k in keys:
@@ -39,7 +56,7 @@ class Distribution:
                 # Set batch size to 1 at least for connections with no performance or zero throughput
                 self.batch_size[k] = 1
 
-        population_size = self.population_size - len(self.batch_size)
+        population_size = num_ready_individuals - len(self.batch_size)
         if not probabilities or population_size <= 0:
             return
 
@@ -59,10 +76,9 @@ class Distribution:
         for key, num in zip(probabilities.keys(), task_distribution):
             self.batch_size[key] = num
 
-        # We need to reset performance because of dropping disconnected connections.
-        # Connection performance values are registered when Server receives fitness values.
-        # So, this reset is no problem.
-        self.performance = {}
+    def update(self, num_ready_individuals: int, connections: list[Connection]) -> None:
+        self._update_performance(connections)
+        self._update_batch_size(num_ready_individuals)
 
     def get_batch_size(self, conn: Connection) -> Optional[int]:
         if not conn.is_healthy:

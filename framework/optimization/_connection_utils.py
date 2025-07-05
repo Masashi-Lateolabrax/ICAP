@@ -37,7 +37,7 @@ def _send_message(sock: socket.socket, data: bytes) -> _CommunicationResult:
     return _CommunicationResult.OVER_ATTEMPT_COUNT
 
 
-def _receive_bytes(sock: socket.socket, size: int) -> tuple[_CommunicationResult, Optional[bytes]]:
+def _receive_bytes(sock: socket.socket, size: int, blocking=True) -> tuple[_CommunicationResult, Optional[bytes]]:
     attempt = 0
     data = b''
     while len(data) < size:
@@ -49,11 +49,16 @@ def _receive_bytes(sock: socket.socket, size: int) -> tuple[_CommunicationResult
             data += chunk
 
         except socket.timeout:
+            if not blocking:
+                logging.info("Socket timeout while receiving data, returning None")
+                return _CommunicationResult.OVER_ATTEMPT_COUNT, None
+
             attempt += 1
             logging.warning(f"Socket timeout on attempt {attempt} while receiving data")
             if attempt >= ATTEMPT_COUNT:
                 logging.error("Exceeded maximum attempt count while receiving data")
                 return _CommunicationResult.OVER_ATTEMPT_COUNT, None
+
             continue
 
         except (socket.error, struct.error, ConnectionResetError, ConnectionAbortedError) as e:
@@ -77,7 +82,7 @@ def send_individuals(sock: socket.socket, individuals: list[Individual]) -> bool
         return False
 
 
-def receive_individuals(sock: socket.socket) -> tuple[bool, Optional[list[Individual]]]:
+def receive_individuals(sock: socket.socket, blocking=True) -> tuple[bool, Optional[list[Individual]]]:
     """Receive a list of Individual objects from socket with proper error handling.
     
     Returns:
@@ -87,7 +92,7 @@ def receive_individuals(sock: socket.socket) -> tuple[bool, Optional[list[Indivi
             - (False, None): Fatal error occurred (connection, protocol, or deserialization error)
     """
     # First, receive the size
-    result, raw = _receive_bytes(sock, 4)
+    result, raw = _receive_bytes(sock, 4, blocking=blocking)
     if result == _CommunicationResult.OVER_ATTEMPT_COUNT:
         return True, None
     elif result != _CommunicationResult.SUCCESS:
@@ -101,7 +106,7 @@ def receive_individuals(sock: socket.socket) -> tuple[bool, Optional[list[Indivi
         return False, None
 
     # Receive the actual data
-    result, raw = _receive_bytes(sock, size_data)
+    result, raw = _receive_bytes(sock, size_data, blocking=blocking)
     if result == _CommunicationResult.OVER_ATTEMPT_COUNT:
         return True, None
     elif result != _CommunicationResult.SUCCESS:

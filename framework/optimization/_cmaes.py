@@ -13,6 +13,10 @@ class _IndividualManager:
         self._ready_individuals: deque = deque()
         self._assigned_individuals: List[Individual] = []
 
+    @property
+    def num_ready_individuals(self) -> int:
+        return len(self._ready_individuals)
+
     def init(self, cmaes: CMA):
         self._ready_individuals.clear()
         self._assigned_individuals.clear()
@@ -118,6 +122,10 @@ class CMAES:
     @property
     def generation(self) -> int:
         return self._optimizer.generation
+
+    @property
+    def num_ready_individuals(self) -> Optional[int]:
+        return self._individual_manager.num_ready_individuals
 
     def ready_to_update(self) -> bool:
         return self._individual_manager.all_individuals_finished()

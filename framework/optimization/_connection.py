@@ -19,6 +19,7 @@ class ConnectionPerformanceMetrics:
 
 class Connection:
     def __init__(self, socket_: socket.socket):
+        self.calculation_start = 0
         self._socket = socket_
         self._socket.settimeout(1.0)
         self._assigned_individuals: Optional[list[Individual]] = None
@@ -67,22 +68,24 @@ class Connection:
             logging.warning("Connection batch update called with no assigned batch")
             return None
 
-        batch_size = len(self._assigned_individuals)
-        logging.debug(f"Updating connection with batch of {batch_size} individuals")
+        # Sending
+        if not all(i.is_calculating for i in self._assigned_individuals):
+            batch_size = len(self._assigned_individuals)
+            logging.debug(f"Updating connection with batch of {batch_size} individuals")
 
-        calculation_start = time.time()
-        success = send_individuals(self._socket, self._assigned_individuals)
-        if not success:
-            logging.error("Connection closed while sending individual batch")
-            self.close_by_fatal_error()
-            return None
+            success = send_individuals(self._socket, self._assigned_individuals)
+            if not success:
+                logging.error("Connection closed while sending individual batch")
+                self.close_by_fatal_error()
+                return None
+            self.calculation_start = time.time()
 
-        for individual in self._assigned_individuals:
-            individual.set_calculation_state(CalculationState.CALCULATING)
-        logging.debug("Individual batch sent to client, state set to CALCULATING")
+            for individual in self._assigned_individuals:
+                individual.set_calculation_state(CalculationState.CALCULATING)
+            logging.debug("Individual batch sent to client, state set to CALCULATING")
 
-        success, individuals = receive_individuals(self._socket)
-        calculation_finished = time.time()
+        # Receiving
+        success, individuals = receive_individuals(self._socket, blocking=False)
 
         if not success:
             logging.error("Connection closed while receiving individual batch")
@@ -90,14 +93,18 @@ class Connection:
             return None
 
         if individuals is None:
-            logging.error("Received None individual batch from client")
+            logging.info("The calculation in the client is still in progress, no individuals received")
             return None
 
         if len(individuals) != len(self._assigned_individuals):
             logging.error(
-                f"Received batch size {len(individuals)} != sent batch size {len(self._assigned_individuals)}")
+                f"Received batch size {len(individuals)} != sent batch size {len(self._assigned_individuals)}"
+            )
             return None
 
+        calculation_finished = time.time()
+
+        # Process received individuals
         fitness_values = []
         for i, individual in enumerate(individuals):
             self._assigned_individuals[i].copy_from(individual)
@@ -107,9 +114,9 @@ class Connection:
 
         # Calculate and record performance metrics
         metrics = ConnectionPerformanceMetrics(
-            calculation_start=calculation_start,
+            calculation_start=self.calculation_start,
             calculation_finished=calculation_finished,
-            batch_size=batch_size,
+            batch_size=len(self._assigned_individuals),
         )
         self._performance_history.append(metrics)
 

@@ -25,9 +25,14 @@ class Reporter:
         variance_fitness = sum((f - average_fitness) ** 2 for f in fitness_values) / len(fitness_values)
         error_count = sum(1 for f in fitness_values if f == float("inf"))
 
-        self.buffer.append(
-            f"[{timestamp}] [{address}] AveFitness:{average_fitness}, Variance:{variance_fitness}, Error:{error_count}, Throughput:{throughput:.1f} ind/sec"
-        )
+        self.buffer.append("".join(
+            f"[{timestamp}] [{address}] "
+            f"Num:{len(fitness_values)}, "
+            f"AveFitness:{average_fitness:.2f}, "
+            f"Variance:{variance_fitness:.2f}, "
+            f"Error:{error_count}, "
+            f"Throughput:{throughput:.1f} ind/sec"
+        ))
 
     def should_output(self) -> bool:
         current_time = time.time()
@@ -48,18 +53,17 @@ def server_thread(settings: Settings, conn_queue, stop_event):
         sigma=settings.Optimization.sigma,
         population_size=settings.Optimization.population_size,
     )
-    distribution = Distribution(cmaes)
+    distribution = Distribution()
     connections: list[Connection] = []
     reporter = Reporter(1.0)
 
     while not stop_event.is_set():
-        while not conn_queue.empty():
-            try:
+        if not conn_queue.empty():
+            while not conn_queue.empty():
                 conn = conn_queue.get()
                 if isinstance(conn, Connection):
                     connections.append(conn)
-            except queue.Empty:
-                break
+                    distribution.add_new_connection(conn)
 
         if len(connections) == 0:
             if stop_event.is_set():
@@ -88,23 +92,24 @@ def server_thread(settings: Settings, conn_queue, stop_event):
                         logging.debug(f"No individuals available to assign to connection {i}")
                         continue
 
-                fitness_values, throughput = conn.update()
-                if fitness_values is not None:
+                reply = conn.update()
+                if reply is not None:
+                    fitness_values, throughput = reply
                     reporter.add(
                         address=conn.address,
                         fitness_values=fitness_values,
                         throughput=throughput
                     )
-                    distribution.register_performance(conn)
 
             except Exception as e:
                 logging.error(f"Error handling connection {i}: {e}")
                 conn.close_gracefully()
                 connections.pop(i)
 
+        distribution.update(cmaes.num_ready_individuals, connections)
+
         if cmaes.ready_to_update():
             try:
-                distribution.update()  # The distribution update don't depend on the cmaes state.
                 solutions = cmaes.update()
 
                 if cmaes.should_stop():
