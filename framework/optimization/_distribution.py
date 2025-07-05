@@ -22,9 +22,10 @@ class Distribution:
 
     def _update_performance(self, connections: list[Connection]) -> None:
         for conn in connections:
-            if conn not in self.performance:
-                # TODO: ここに来ることはないはず. エラーを出して､raiseすべき
-                pass
+            if conn.address not in self.performance:
+                raise ValueError(
+                    f"Connection {conn.address} not found in performance tracking. This should not happen."
+                )
 
             if not conn.is_healthy:
                 logging.warning(f"Connection {conn.address} is unhealthy, removing from performance tracking.")
