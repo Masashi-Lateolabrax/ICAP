@@ -62,6 +62,7 @@ class OptimizationClient:
 
                 if len(individuals) == 0:
                     logging.info("Received empty list of individuals, continuing...")
+                    print(f"[{self._socket.getsockname()[1]}] Received empty list of individuals, continuing...")
                     if self._stop_event.wait(0.01):
                         break
                     continue
