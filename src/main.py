@@ -1,22 +1,14 @@
 import math
 
-import numpy as np
-
 from framework.prelude import *
 from framework.optimization import connect_to_server
 
+from settings import MySettings
 from simulator import Simulator
 
 
 def evaluation_function(individual: Individual):
-    settings = Settings()
-
-    settings.Robot.INITIAL_POSITION = [
-        RobotLocation(0, 0, np.pi / 2),
-    ]
-    settings.Food.INITIAL_POSITION = [
-        Position(0, 2),
-    ]
+    settings = MySettings()
 
     RobotValues.set_max_speed(settings.Robot.MAX_SPEED)
     RobotValues.set_distance_between_wheels(settings.Robot.DISTANCE_BETWEEN_WHEELS)
@@ -30,7 +22,7 @@ def evaluation_function(individual: Individual):
 
 
 def main():
-    settings = Settings()
+    settings = MySettings()
 
     print("=" * 50)
     print("OPTIMIZATION CLIENT")

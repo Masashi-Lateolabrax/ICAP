@@ -13,6 +13,10 @@ class _IndividualManager:
         self._ready_individuals: deque = deque()
         self._assigned_individuals: List[Individual] = []
 
+    @property
+    def num_ready_individuals(self) -> int:
+        return len(self._ready_individuals)
+
     def init(self, cmaes: CMA):
         self._ready_individuals.clear()
         self._assigned_individuals.clear()
@@ -119,6 +123,10 @@ class CMAES:
     def generation(self) -> int:
         return self._optimizer.generation
 
+    @property
+    def num_ready_individuals(self) -> Optional[int]:
+        return self._individual_manager.num_ready_individuals
+
     def ready_to_update(self) -> bool:
         return self._individual_manager.all_individuals_finished()
 
@@ -144,14 +152,31 @@ class CMAES:
 
         return solutions
 
-    def get_individual(self) -> Optional[Individual]:
+    def get_individuals(self, batch_size: Optional[int] = None) -> list[Individual]:
+        """Get a batch of individuals for processing.
+        
+        Args:
+            batch_size: Number of individuals to retrieve. If None, returns all available individuals.
+            
+        Returns:
+            List of individuals (may be empty if none available)
+        """
+        if batch_size is None or batch_size <= 0:
+            logging.debug("Batch size is None or non-positive, using default population size")
+            return []
+
         self._individual_manager.arrange_individuals()
-        individual = self._individual_manager.get_individual()
-        if individual is not None:
-            logging.debug(f"Retrieved individual with shape {individual.shape}")
-        else:
-            logging.debug("No individual available")
-        return individual
+
+        batch = []
+        for _ in range(batch_size):
+            individual = self._individual_manager.get_individual()
+            if individual is not None:
+                batch.append(individual)
+            else:
+                break
+
+        logging.debug(f"Retrieved batch of {len(batch)} individuals")
+        return batch
 
     def should_stop(self) -> bool:
         should_stop = self._optimizer.should_stop()

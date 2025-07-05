@@ -1,9 +1,10 @@
 import socket
 import logging
+import threading
 from typing import Optional
 
 from ..prelude import *
-from ._connection_utils import send_individual, receive_individual
+from ._connection_utils import send_individuals, receive_individuals
 
 
 class OptimizationClient:
@@ -11,6 +12,7 @@ class OptimizationClient:
         self.host = host
         self.port = port
         self._socket: Optional[socket.socket] = None
+        self._stop_event = threading.Event()
 
     def connect(self) -> bool:
         try:
@@ -40,33 +42,50 @@ class OptimizationClient:
 
         try:
             assert self._socket is not None  # connect() succeeded
-            while True:
-                success, individual = receive_individual(self._socket)
+            while not self._stop_event.is_set():
+                success, individuals = receive_individuals(self._socket)
                 if not success:
-                    logging.error("Fatal error receiving individual from server, disconnecting")
+                    logging.error("Fatal error receiving data from server, disconnecting")
                     self.disconnect()
                     break
 
-                if individual is None:
-                    logging.info("Connection is healthy but no individual received.")
+                if individuals is None:
+                    logging.info("Connection is healthy but no data received.")
                     self.disconnect()
                     break
 
-                try:
-                    fitness = evaluation_function(individual)
-                    individual.set_fitness(fitness)
-                    logging.debug(f"Evaluated individual with fitness: {fitness}")
-                except Exception as e:
-                    logging.error(f"Error during evaluation function execution: {e}")
-                    individual.set_fitness(float('inf'))
+                if not isinstance(individuals, list):
+                    logging.error(f"Received invalid data type: {type(individuals)}")
+                    self.disconnect()
+                    break
 
-                if not send_individual(self._socket, individual):
-                    logging.error("Failed to send individual result to server")
+                if len(individuals) == 0:
+                    logging.info("Received empty list of individuals, continuing...")
+                    if self._stop_event.wait(0.01):
+                        break
+                    continue
+
+                logging.debug(f"Received {len(individuals)} individuals")
+                for individual in individuals:
+                    try:
+                        individual.timer_start()
+                        fitness = evaluation_function(individual)
+                        individual.timer_end()
+                        individual.set_fitness(fitness)
+                        individual.set_calculation_state(CalculationState.FINISHED)
+                        logging.debug(f"Evaluated individual with fitness: {fitness}")
+                    except Exception as e:
+                        logging.error(f"Error during evaluation function execution: {e}")
+                        individual.set_fitness(float('inf'))
+
+                if not send_individuals(self._socket, individuals):
+                    logging.error("Failed to send result to server")
                     self.disconnect()
                     break
 
         except KeyboardInterrupt:
             logging.info("Client shutting down...")
+            self._stop_event.set()
 
         finally:
             self.disconnect()
