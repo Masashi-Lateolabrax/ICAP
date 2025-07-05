@@ -73,18 +73,19 @@ def server_thread(settings: Settings, conn_queue, stop_event):
                     connections.pop(i)
                     continue
 
-                if not conn.has_assigned_individual:
-                    ind = cmaes.get_individual()
-                    if ind is not None:
-                        conn.assign(ind)
-                        logging.debug(f"Assigned individual to connection {i}")
+                if not conn.has_assigned_individuals:
+                    batch = cmaes.get_individuals(settings.Optimization.batch_size)
+                    if batch:
+                        conn.assign_individuals(batch)
+                        logging.debug(f"Assigned batch of {len(batch)} individuals to connection {i}")
                     else:
-                        logging.debug(f"No individual available to assign to connection {i}")
+                        logging.debug(f"No individuals available to assign to connection {i}")
                         continue
 
-                fitness = conn.update()
-                if fitness is not None:
-                    fitness_reporter.add_fitness(fitness, conn.address)
+                fitness_values = conn.update()
+                if fitness_values is not None:
+                    for fitness in fitness_values:
+                        fitness_reporter.add_fitness(fitness, conn.address)
 
             except Exception as e:
                 logging.error(f"Error handling connection {i}: {e}")

@@ -144,14 +144,30 @@ class CMAES:
 
         return solutions
 
-    def get_individual(self) -> Optional[Individual]:
+    def get_individuals(self, batch_size: Optional[int] = None) -> list[Individual]:
+        """Get a batch of individuals for processing.
+        
+        Args:
+            batch_size: Number of individuals to retrieve. If None, returns all available individuals.
+            
+        Returns:
+            List of individuals (may be empty if none available)
+        """
         self._individual_manager.arrange_individuals()
-        individual = self._individual_manager.get_individual()
-        if individual is not None:
-            logging.debug(f"Retrieved individual with shape {individual.shape}")
-        else:
-            logging.debug("No individual available")
-        return individual
+        
+        if batch_size is None:
+            batch_size = len(self._individual_manager._ready_individuals)
+            
+        batch = []
+        for _ in range(min(batch_size, len(self._individual_manager._ready_individuals))):
+            individual = self._individual_manager.get_individual()
+            if individual is not None:
+                batch.append(individual)
+            else:
+                break
+                
+        logging.debug(f"Retrieved batch of {len(batch)} individuals")
+        return batch
 
     def should_stop(self) -> bool:
         should_stop = self._optimizer.should_stop()

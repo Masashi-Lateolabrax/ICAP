@@ -3,83 +3,90 @@ import logging
 from typing import Optional
 
 from ..prelude import *
-from ._connection_utils import send_individual, receive_individual
+from ._connection_utils import send_individuals, receive_individuals
 
 
 class Connection:
     def __init__(self, socket_: socket.socket):
         self._socket = socket_
         self._socket.settimeout(1.0)
-        self._assigned_individual: Optional[Individual] = None
+        self._assigned_individuals: Optional[list[Individual]] = None
 
     @property
     def address(self) -> str:
         return f"{self._socket.getpeername()[0]}:{self._socket.getpeername()[1]}"
 
     @property
-    def has_assigned_individual(self) -> bool:
-        return self._assigned_individual is not None
+    def has_assigned_individuals(self) -> bool:
+        return self._assigned_individuals is not None
 
     @property
     def is_alive(self) -> bool:
         return self._socket is not None
 
-    def assign(self, individual: Individual) -> None:
-        if self._assigned_individual is not None:
-            logging.error("Attempted to assign individual to connection that already has one")
-            raise ValueError("Individual is already assigned to this connection.")
-        if not isinstance(individual, Individual):
-            logging.error(f"Attempted to assign non-Individual object: {type(individual)}")
-            raise TypeError("Can only assign Individual objects")
-        self._assigned_individual = individual
-        self._assigned_individual.set_calculation_state(CalculationState.NOT_STARTED)
-        logging.debug(f"Assigned individual with shape {individual.shape} to connection")
+    def assign_individuals(self, individuals: list[Individual]) -> None:
+        if self._assigned_individuals is not None:
+            logging.error("Attempted to assign batch to connection that already has one")
+            raise ValueError("Batch is already assigned to this connection.")
+        if not isinstance(individuals, list) or not all(isinstance(ind, Individual) for ind in individuals):
+            logging.error(f"Attempted to assign non-Individual batch: {type(individuals)}")
+            raise TypeError("Can only assign list of Individual objects")
+        self._assigned_individuals = individuals
+        for individual in self._assigned_individuals:
+            individual.set_calculation_state(CalculationState.NOT_STARTED)
+        logging.debug(f"Assigned batch of {len(individuals)} individuals to connection")
 
-    def update(self) -> Optional[float]:
-        if self._assigned_individual is None:
-            logging.warning("Connection update called with no assigned individual")
+    def update(self) -> Optional[list[float]]:
+        if self._assigned_individuals is None:
+            logging.warning("Connection batch update called with no assigned batch")
             return None
 
-        logging.debug(f"Updating connection with individual state: {self._assigned_individual.get_calculation_state()}")
+        logging.debug(f"Updating connection with batch of {len(self._assigned_individuals)} individuals")
 
-        success = send_individual(self._socket, self._assigned_individual)
+        success = send_individuals(self._socket, self._assigned_individuals)
         if not success:
-            logging.error("Connection closed while sending individual")
+            logging.error("Connection closed while sending individual batch")
             self.close_by_fatal_error()
             return None
 
-        self._assigned_individual.set_calculation_state(CalculationState.CALCULATING)
-        logging.debug("Individual sent to client, state set to CALCULATING")
+        for individual in self._assigned_individuals:
+            individual.set_calculation_state(CalculationState.CALCULATING)
+        logging.debug("Individual batch sent to client, state set to CALCULATING")
 
-        success, individual = receive_individual(self._socket)
+        success, individuals = receive_individuals(self._socket)
         if not success:
-            logging.error("Connection closed while receiving individual")
+            logging.error("Connection closed while receiving individual batch")
             self.close_by_fatal_error()
             return None
 
-        if individual is None:
-            logging.error("Received None individual from client")
+        if individuals is None:
+            logging.error("Received None individual batch from client")
             return None
 
-        self._assigned_individual.copy_from(individual)
-        self._assigned_individual.set_calculation_state(
-            CalculationState.FINISHED
-        )
-        fitness = individual.get_fitness()
-        logging.debug(f"Received individual with fitness: {fitness}")
-        self._assigned_individual = None
-        return fitness
+        if len(individuals) != len(self._assigned_individuals):
+            logging.error(f"Received batch size {len(individuals)} != sent batch size {len(self._assigned_individuals)}")
+            return None
+
+        fitness_values = []
+        for i, individual in enumerate(individuals):
+            self._assigned_individuals[i].copy_from(individual)
+            self._assigned_individuals[i].set_calculation_state(CalculationState.FINISHED)
+            fitness = individual.get_fitness()
+            fitness_values.append(fitness)
+
+        logging.debug(f"Received batch with fitness values: {fitness_values}")
+        self._assigned_individuals = None
+        return fitness_values
 
     def close_by_fatal_error(self) -> None:
         logging.info("Closing connection due to fatal error")
         print("CONNECTION DISCONNECTED: Connection closed due to fatal error")
-        if self._assigned_individual is not None:
-            if not self._assigned_individual.is_corrupted:
-                self._assigned_individual.set_calculation_state(
-                    CalculationState.CORRUPTED
-                )
-                logging.debug(f"Marked individual as corrupted (fitness: {self._assigned_individual.get_fitness()})")
-            self._assigned_individual = None
+        if self._assigned_individuals is not None:
+            for individual in self._assigned_individuals:
+                if not individual.is_corrupted:
+                    individual.set_calculation_state(CalculationState.CORRUPTED)
+            logging.debug(f"Marked batch of {len(self._assigned_individuals)} individuals as corrupted")
+            self._assigned_individuals = None
         if self._socket is not None:
             try:
                 self._socket.close()
