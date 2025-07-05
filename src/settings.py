@@ -32,8 +32,8 @@ MySettings.Render.LIGHT_SPECULAR = 1.0
 # Optimization settings
 ###################################################################################
 MySettings.Optimization.dimension = None  # Will be set later based on the neural network dimension
-MySettings.Optimization.population_size = 20
-MySettings.Optimization.generations = 1000
+MySettings.Optimization.population_size = 1000
+MySettings.Optimization.generations = 100
 MySettings.Optimization.sigma = 0.5
 ###################################################################################
 

@@ -2,6 +2,7 @@ import socket
 import logging
 import threading
 from typing import Optional
+import time
 
 from ..prelude import *
 from ._connection_utils import send_individuals, receive_individuals
@@ -61,22 +62,37 @@ class OptimizationClient:
 
                 if len(individuals) == 0:
                     logging.info("Received empty list of individuals, continuing...")
+                    print(f"[{self._socket.getsockname()[1]}] Received empty list of individuals, continuing...")
                     if self._stop_event.wait(0.01):
                         break
                     continue
 
                 logging.debug(f"Received {len(individuals)} individuals")
+                ave_fitness = 0
+                start_time = time.time()
                 for individual in individuals:
                     try:
                         individual.timer_start()
                         fitness = evaluation_function(individual)
                         individual.timer_end()
+
+                        ave_fitness += fitness
                         individual.set_fitness(fitness)
                         individual.set_calculation_state(CalculationState.FINISHED)
+
                         logging.debug(f"Evaluated individual with fitness: {fitness}")
                     except Exception as e:
                         logging.error(f"Error during evaluation function execution: {e}")
                         individual.set_fitness(float('inf'))
+
+                ave_fitness /= len(individuals)
+                speed = len(individuals) / (max(1e-6, time.time() - start_time))
+                logging.info(
+                    f"[{self._socket.getsockname()[1]}] Num: {len(individuals)}, Speed: {speed:.2f}, AveFitness: {ave_fitness:.2f}"
+                )
+                print(
+                    f"[{self._socket.getsockname()[1]}] Num: {len(individuals)}, Speed: {speed:.2f}, AveFitness: {ave_fitness:.2f}"
+                )
 
                 if not send_individuals(self._socket, individuals):
                     logging.error("Failed to send result to server")

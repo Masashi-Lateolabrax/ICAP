@@ -125,6 +125,7 @@ class CMAES:
 
     @property
     def num_ready_individuals(self) -> Optional[int]:
+        self._individual_manager.arrange_individuals()
         return self._individual_manager.num_ready_individuals
 
     def ready_to_update(self) -> bool:

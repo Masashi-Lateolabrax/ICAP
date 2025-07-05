@@ -21,7 +21,7 @@ class Connection:
 
     @property
     def has_assigned_individuals(self) -> bool:
-        return self._assigned_individuals is not None
+        return bool(self._assigned_individuals)
 
     @property
     def is_healthy(self) -> bool:
@@ -40,7 +40,7 @@ class Connection:
         return self._throughput
 
     def assign_individuals(self, individuals: list[Individual]) -> None:
-        if self._assigned_individuals is not None:
+        if self.has_assigned_individuals:
             logging.error("Attempted to assign batch to connection that already has one")
             raise ValueError("Batch is already assigned to this connection.")
 
@@ -61,7 +61,7 @@ class Connection:
             return None
 
         # Sending
-        if not all(i.is_calculating for i in self._assigned_individuals):
+        if not bool(self._assigned_individuals) or not all([i.is_calculating for i in self._assigned_individuals]):
             batch_size = len(self._assigned_individuals)
             logging.debug(f"Updating connection with batch of {batch_size} individuals")
 

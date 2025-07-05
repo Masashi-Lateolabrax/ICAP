@@ -52,8 +52,8 @@ class Server:
 
 class Optimization:
     dimension: int = 10
-    population_size: int = 20
-    generations: int = 1000
+    population_size: int = 1000
+    generations: int = 100
     sigma: float = 0.5
 
 

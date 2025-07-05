@@ -100,13 +100,12 @@ def server_thread(settings: Settings, conn_queue, stop_event):
                         fitness_values=fitness_values,
                         throughput=throughput
                     )
+                    distribution.register_throughput(conn, throughput)
 
             except Exception as e:
                 logging.error(f"Error handling connection {i}: {e}")
                 conn.close_gracefully()
                 connections.pop(i)
-
-        distribution.update(cmaes.num_ready_individuals, connections)
 
         if cmaes.ready_to_update():
             try:
@@ -127,6 +126,8 @@ def server_thread(settings: Settings, conn_queue, stop_event):
 
             except Exception as e:
                 logging.error(f"Error updating CMAES: {e}")
+
+        distribution.update(cmaes.num_ready_individuals, connections)
 
         if reporter.should_output():
             reporter.output()
