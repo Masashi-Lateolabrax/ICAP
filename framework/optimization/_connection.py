@@ -35,6 +35,18 @@ class Connection:
     def is_alive(self) -> bool:
         return self._socket is not None
 
+    @property
+    def is_healthy(self) -> bool:
+        """Check if the connection is healthy by attempting to get socket information"""
+        if self._socket is None:
+            return False
+        try:
+            # Try to get peer address - this will fail if connection is broken
+            self._socket.getpeername()
+            return True
+        except (socket.error, OSError):
+            return False
+
     def assign_individuals(self, individuals: list[Individual]) -> None:
         if self._assigned_individuals is not None:
             logging.error("Attempted to assign batch to connection that already has one")
@@ -75,7 +87,8 @@ class Connection:
             return None
 
         if len(individuals) != len(self._assigned_individuals):
-            logging.error(f"Received batch size {len(individuals)} != sent batch size {len(self._assigned_individuals)}")
+            logging.error(
+                f"Received batch size {len(individuals)} != sent batch size {len(self._assigned_individuals)}")
             return None
 
         fitness_values = []
