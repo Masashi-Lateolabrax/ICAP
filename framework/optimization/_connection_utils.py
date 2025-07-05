@@ -29,7 +29,7 @@ def _send_message(sock: socket.socket, data: bytes) -> _CommunicationResult:
             logging.warning(f"Socket timeout on attempt {attempt + 1} while sending message")
             continue
 
-        except (socket.error, struct.error, BrokenPipeError) as e:
+        except (socket.error, struct.error, BrokenPipeError, ConnectionResetError, ConnectionAbortedError) as e:
             logging.error(f"Error sending message: {e}")
             return _CommunicationResult.CONNECTION_ERROR
 
@@ -56,7 +56,7 @@ def _receive_bytes(sock: socket.socket, size: int) -> tuple[_CommunicationResult
                 return _CommunicationResult.OVER_ATTEMPT_COUNT, None
             continue
 
-        except (socket.error, struct.error) as e:
+        except (socket.error, struct.error, ConnectionResetError, ConnectionAbortedError) as e:
             logging.error(f"Connection error while receiving data: {e}")
             return _CommunicationResult.CONNECTION_ERROR, None
 
