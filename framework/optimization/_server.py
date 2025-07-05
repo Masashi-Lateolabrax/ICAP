@@ -100,6 +100,7 @@ def server_thread(settings: Settings, conn_queue, stop_event):
                         fitness_values=fitness_values,
                         throughput=throughput
                     )
+                    distribution.register_throughput(conn, throughput)
 
             except Exception as e:
                 logging.error(f"Error handling connection {i}: {e}")
