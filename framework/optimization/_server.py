@@ -85,7 +85,7 @@ def server_thread(settings: Settings, conn_queue, stop_event):
                 if not conn.has_assigned_individuals:
                     batch_size = distribution.get_batch_size(conn)
                     batch = cmaes.get_individuals(batch_size)
-                    if batch:
+                    if batch is not None:
                         conn.assign_individuals(batch)
                         logging.debug(f"Assigned batch of {len(batch)} individuals to connection {i}")
                     else:
