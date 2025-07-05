@@ -61,7 +61,7 @@ class Connection:
             return None
 
         # Sending
-        if not all(i.is_calculating for i in self._assigned_individuals):
+        if not bool(self._assigned_individuals) or not all([i.is_calculating for i in self._assigned_individuals]):
             batch_size = len(self._assigned_individuals)
             logging.debug(f"Updating connection with batch of {batch_size} individuals")
 
