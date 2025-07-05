@@ -11,6 +11,7 @@ class Connection:
         self._socket = socket_
         self._socket.settimeout(1.0)
         self._assigned_individuals: Optional[list[Individual]] = None
+        self._performance_history = []
 
     @property
     def address(self) -> str:
@@ -81,16 +82,34 @@ class Connection:
     def close_by_fatal_error(self) -> None:
         logging.info("Closing connection due to fatal error")
         print("CONNECTION DISCONNECTED: Connection closed due to fatal error")
+        self._cleanup_resources()
+
+    def close_gracefully(self) -> None:
+        logging.info("Closing connection gracefully")
+        print("CONNECTION DISCONNECTED: Connection closed gracefully")
+        self._cleanup_resources()
+
+    def _cleanup_resources(self) -> None:
+        """Clean up all resources associated with this connection"""
+        # Clean up assigned individuals
         if self._assigned_individuals is not None:
             for individual in self._assigned_individuals:
                 if not individual.is_corrupted:
                     individual.set_calculation_state(CalculationState.CORRUPTED)
             logging.debug(f"Marked batch of {len(self._assigned_individuals)} individuals as corrupted")
             self._assigned_individuals = None
+
+        # Clean up socket
         if self._socket is not None:
             try:
+                # Try to shutdown socket gracefully first
+                self._socket.shutdown(socket.SHUT_RDWR)
                 self._socket.close()
                 logging.debug("Socket closed successfully")
             except Exception as e:
                 logging.error(f"Error closing socket: {e}")
-            self._socket = None
+            finally:
+                self._socket = None
+
+        # Clear performance history to free memory
+        self._performance_history.clear()
