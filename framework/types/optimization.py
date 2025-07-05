@@ -58,6 +58,8 @@ class Individual(np.ndarray):
         self[:] = other[:]
         self._fitness = other._fitness
         self._calculation_state = other._calculation_state
+        self._calculation_start = other._calculation_start
+        self._calculation_end = other._calculation_end
 
     def __reduce__(self):
         return (
