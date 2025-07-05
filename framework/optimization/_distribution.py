@@ -20,7 +20,7 @@ class Distribution:
         self.performance[conn.address] = None
         self.batch_size[conn.address] = 1
 
-    def _update_performance(self, connections: list[Connection]) -> None:
+    def _remove_unhealthy_connection_info(self, connections: list[Connection]) -> None:
         for conn in connections:
             if not conn.is_healthy:
                 if conn.address in self.performance:
@@ -28,11 +28,6 @@ class Distribution:
                     # Remove unhealthy connection from performance tracking
                     del self.performance[conn.address]
                 continue
-
-            if self.performance[conn.address] is None:
-                self.performance[conn.address] = conn.throughput
-            else:
-                self.performance[conn.address] = 0.8 * self.performance[conn.address] + 0.2 * conn.throughput
 
     def _update_batch_size(self, num_ready_individuals: int) -> None:
         keys = list(self.performance.keys())
@@ -72,7 +67,7 @@ class Distribution:
             self.batch_size[key] = num
 
     def update(self, num_ready_individuals: int, connections: list[Connection]) -> None:
-        self._update_performance(connections)
+        self._remove_unhealthy_connection_info(connections)
         self._update_batch_size(num_ready_individuals)
 
     def get_batch_size(self, conn: Connection) -> Optional[int]:
