@@ -109,12 +109,13 @@ class ProcessInfo:
 
 
 class ProcessManager:
+    MIN_PROCESS = 1
+
     def __init__(self, host: str, port: int):
         self.host = host
         self.port = port
         self.processes: List[ProcessInfo] = []
         self.max_processes = multiprocessing.cpu_count()
-        self.min_processes = 1
 
     def get_total_throughput(self) -> float:
         total = 0.0
@@ -150,7 +151,7 @@ class ProcessManager:
         )
 
     def adjust_process_count(self, target_count: int, evaluation_function: Callable):
-        target_count = max(self.min_processes, min(self.max_processes, target_count))
+        target_count = max(self.MIN_PROCESS, min(self.max_processes, target_count))
 
         self.processes = [p for p in self.processes if p.is_alive]
         current_count = len(self.processes)
