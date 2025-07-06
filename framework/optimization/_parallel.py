@@ -1,3 +1,4 @@
+import dataclasses
 import multiprocessing
 import time
 import signal
@@ -70,6 +71,21 @@ class ThroughputModel:
                 break
 
         return best_count
+
+
+@dataclasses.dataclass
+class ProcessInfo:
+    process: multiprocessing.Process
+    throughput: Optional[float]
+    update_time: Optional[float]
+
+    @property
+    def pid(self) -> int:
+        return self.process.pid if self.process else None
+
+    @property
+    def is_alive(self) -> bool:
+        return self.process.is_alive() if self.process else False
 
 
 class ProcessManager:
