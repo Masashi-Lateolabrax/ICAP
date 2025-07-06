@@ -196,7 +196,10 @@ def run_adaptive_client_manager(
     print("Press Ctrl+C to stop")
     print("=" * 50)
 
-    manager.set_process_count(initial_processes, evaluation_function)
+    collect_throughput_observations(
+        manager, model, evaluation_function, 
+        min_processes, max_processes, adjustment_interval
+    )
 
     try:
         while running:
