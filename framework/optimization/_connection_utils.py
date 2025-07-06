@@ -42,6 +42,12 @@ def _receive_bytes(sock: socket.socket, size: int, blocking=True) -> tuple[_Comm
     data = b''
     while len(data) < size:
         try:
+            try:
+                sock.getpeername()
+            except (socket.error, OSError):
+                logging.info("Socket disconnected (peer unreachable)")
+                return _CommunicationResult.DISCONNECTED, None
+            
             chunk = sock.recv(size - len(data))
             if not chunk:
                 logging.info("Server disconnected")
