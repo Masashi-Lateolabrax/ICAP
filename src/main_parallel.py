@@ -179,11 +179,13 @@ class PerformanceMonitor:
         self.history: List[float] = []
         self.last_adjustment = time.time()
         self.adjustment_interval = 30.0  # seconds
-        
+        self.status_display_interval = 10.0  # seconds
+        self.last_status_display = time.time()
+
     def add_metrics(self, metrics: ProcessMetrics):
         """Add performance metrics from a client process"""
         self.metrics_queue.put(metrics)
-        
+
     def update_metrics(self):
         """Update internal metrics from queue"""
         try:
@@ -192,28 +194,37 @@ class PerformanceMonitor:
                 self.process_metrics[metrics.process_id] = metrics
         except Empty:
             pass
-            
+
     def get_average_speed(self) -> float:
         """Calculate average speed across all processes"""
         if not self.process_metrics:
             return 0.0
-            
+
         # Only consider recent metrics
         recent_metrics = [
             m for m in self.process_metrics.values()
             if m.is_recent()
         ]
-        
+
         if not recent_metrics:
             return 0.0
-            
+
         return sum(m.speed for m in recent_metrics) / len(recent_metrics)
-        
+
     def should_adjust(self) -> bool:
         """Check if we should adjust process count"""
         current_time = time.time()
         return current_time - self.last_adjustment >= self.adjustment_interval
-        
+
+    def should_display_status(self) -> bool:
+        """Check if we should display status"""
+        current_time = time.time()
+        return current_time - self.last_status_display >= self.status_display_interval
+
+    def record_status_display(self):
+        """Record that status was displayed"""
+        self.last_status_display = time.time()
+
     def record_adjustment(self, avg_speed: float):
         """Record an adjustment for history"""
         self.history.append(avg_speed)
@@ -221,27 +232,40 @@ class PerformanceMonitor:
         # Keep only last 10 measurements
         if len(self.history) > 10:
             self.history.pop(0)
-            
+
     def get_cpu_usage(self) -> float:
         """Get current CPU usage percentage"""
-        return psutil.cpu_percent(interval=1)
-        
+        return psutil.cpu_percent(interval=0.1)  # Reduced interval for faster response
+
     def get_memory_usage(self) -> float:
         """Get current memory usage percentage"""
         return psutil.virtual_memory().percent
-        
-    def display_status(self, num_processes: int):
-        """Display current status"""
+
+    def display_status(self, num_processes: int, k: float = None, alpha: float = None,
+                       predicted_throughput: float = None, actual_throughput: float = None):
+        """Display current status with enhanced metrics"""
         avg_speed = self.get_average_speed()
         cpu_usage = self.get_cpu_usage()
         memory_usage = self.get_memory_usage()
-        
+
         print(f"\n=== Performance Monitor ===")
         print(f"Active Processes: {num_processes}")
         print(f"Average Speed: {avg_speed:.2f} ind/sec")
         print(f"CPU Usage: {cpu_usage:.1f}%")
         print(f"Memory Usage: {memory_usage:.1f}%")
         print(f"Active Clients: {len(self.process_metrics)}")
+
+        if actual_throughput is not None:
+            print(f"Actual Throughput: {actual_throughput:.2f} ind/sec")
+        if predicted_throughput is not None:
+            print(f"Predicted Throughput: {predicted_throughput:.2f} ind/sec")
+            if actual_throughput is not None:
+                error = abs(actual_throughput - predicted_throughput)
+                error_pct = (error / max(actual_throughput, 0.001)) * 100
+                print(f"Prediction Error: {error:.2f} ({error_pct:.1f}%)")
+
+        if k is not None and alpha is not None:
+            print(f"Model: k={k:.3f}, α={alpha:.3f}")
         print("=" * 30)
 
 
@@ -249,134 +273,98 @@ class AdaptiveProcessManager:
     def __init__(self, settings: MySettings):
         self.settings = settings
         self.monitor = PerformanceMonitor()
-        self.processes: List[multiprocessing.Process] = []
+        self.process_manager = ProcessManager(settings)
+        self.throughput_model = ThroughputModel()
         self.running = True
-        
+
         # Starting configuration
         self.max_processes = multiprocessing.cpu_count()
         self.min_processes = 2
         self.initial_processes = max(2, self.max_processes // 4)
-        self.current_processes = self.initial_processes
-        
+
         # Performance thresholds
         self.cpu_threshold_high = 85.0
         self.cpu_threshold_low = 60.0
+        self.memory_threshold_high = 85.0
+        self.memory_threshold_low = 70.0
         self.speed_improvement_threshold = 0.1  # 10% improvement
-        
+
         # Setup signal handlers
         signal.signal(signal.SIGINT, self._signal_handler)
         signal.signal(signal.SIGTERM, self._signal_handler)
-        
+
     def _signal_handler(self, signum, frame):
         """Handle shutdown signals"""
         print("\nShutting down adaptive process manager...")
         self.running = False
-        
-    def evaluation_function(self, individual: Individual):
-        """Same evaluation function as main.py"""
-        RobotValues.set_max_speed(self.settings.Robot.MAX_SPEED)
-        RobotValues.set_distance_between_wheels(self.settings.Robot.DISTANCE_BETWEEN_WHEELS)
-        RobotValues.set_robot_height(self.settings.Robot.HEIGHT)
 
-        backend = Simulator(self.settings, individual)
-        for _ in range(math.ceil(self.settings.Simulation.TIME_LENGTH / self.settings.Simulation.TIME_STEP)):
-            backend.step()
-
-        return backend.total_score()
-        
-    def create_client_process(self) -> multiprocessing.Process:
-        """Create a new client process"""
-        def client_worker():
-            try:
-                connect_to_server(
-                    self.settings.Server.HOST,
-                    self.settings.Server.PORT,
-                    evaluation_function=self.evaluation_function,
-                    handler=self.monitor.add_metrics
-                )
-            except Exception as e:
-                print(f"Client process error: {e}")
-                
-        process = multiprocessing.Process(target=client_worker)
-        return process
-        
-    def start_processes(self, count: int):
-        """Start specified number of processes"""
-        for _ in range(count):
-            if len(self.processes) < self.max_processes:
-                process = self.create_client_process()
-                process.start()
-                self.processes.append(process)
-                
-    def stop_processes(self, count: int):
-        """Stop specified number of processes"""
-        stopped = 0
-        for i in range(len(self.processes) - 1, -1, -1):
-            if stopped >= count:
-                break
-                
-            process = self.processes[i]
-            if process.is_alive():
-                process.terminate()
-                process.join(timeout=5)
-                if process.is_alive():
-                    process.kill()
-                    process.join()
-                self.processes.pop(i)
-                stopped += 1
-                
-    def cleanup_dead_processes(self):
-        """Remove dead processes from the list"""
-        self.processes = [p for p in self.processes if p.is_alive()]
-        
     def adjust_process_count(self):
         """Adjust process count based on performance"""
         if not self.monitor.should_adjust():
             return
-            
+
         self.monitor.update_metrics()
         avg_speed = self.monitor.get_average_speed()
         cpu_usage = self.monitor.get_cpu_usage()
         memory_usage = self.monitor.get_memory_usage()
-        
+
         # Record current performance
         self.monitor.record_adjustment(avg_speed)
-        
-        # Decision logic
-        current_count = len(self.processes)
+
+        # Decision logic with throughput model
+        current_count = self.process_manager.get_process_count()
         new_count = current_count
-        
-        # Check if we should increase processes
-        if (cpu_usage < self.cpu_threshold_low and 
-            memory_usage < 80.0 and 
-            current_count < self.max_processes):
-            new_count = min(current_count + 1, self.max_processes)
-            print(f"Increasing processes: {current_count} -> {new_count} (CPU: {cpu_usage:.1f}%)")
-            
-        # Check if we should decrease processes
-        elif (cpu_usage > self.cpu_threshold_high or 
-              memory_usage > 90.0 or
-              self._performance_degraded()):
-            new_count = max(current_count - 1, self.min_processes)
-            print(f"Decreasing processes: {current_count} -> {new_count} (CPU: {cpu_usage:.1f}%)")
-            
-        # Apply changes
-        if new_count > current_count:
-            self.start_processes(new_count - current_count)
-        elif new_count < current_count:
-            self.stop_processes(current_count - new_count)
-            
+
+        # Use model-based optimization if we have enough data
+        if self.throughput_model.has_sufficient_data():
+            optimal_count = self.throughput_model.find_optimal_process_count(
+                self.min_processes, self.max_processes
+            )
+
+            # Gradually move towards optimal count with resource constraints
+            if optimal_count > current_count and cpu_usage < self.cpu_threshold_low and memory_usage < self.memory_threshold_low:
+                new_count = min(current_count + 1, optimal_count, self.max_processes)
+                print(
+                    f"Model-based increase: {current_count} -> {new_count} (optimal: {optimal_count}, CPU: {cpu_usage:.1f}%, Mem: {memory_usage:.1f}%)")
+            elif optimal_count < current_count and (
+                    cpu_usage > self.cpu_threshold_high or memory_usage > self.memory_threshold_high):
+                new_count = max(current_count - 1, optimal_count, self.min_processes)
+                print(
+                    f"Model-based decrease: {current_count} -> {new_count} (optimal: {optimal_count}, CPU: {cpu_usage:.1f}%, Mem: {memory_usage:.1f}%)")
+        else:
+            # Fall back to original heuristic-based approach
+            if (cpu_usage < self.cpu_threshold_low and
+                    memory_usage < self.memory_threshold_low and
+                    current_count < self.max_processes):
+                new_count = min(current_count + 1, self.max_processes)
+                print(
+                    f"Heuristic increase: {current_count} -> {new_count} (CPU: {cpu_usage:.1f}%, Mem: {memory_usage:.1f}%)")
+
+            elif (cpu_usage > self.cpu_threshold_high or
+                  memory_usage > self.memory_threshold_high or
+                  self._performance_degraded()):
+                new_count = max(current_count - 1, self.min_processes)
+                reason = "CPU" if cpu_usage > self.cpu_threshold_high else "Memory" if memory_usage > self.memory_threshold_high else "Performance"
+                print(
+                    f"Heuristic decrease: {current_count} -> {new_count} ({reason}: {cpu_usage:.1f}% CPU, {memory_usage:.1f}% Mem)")
+
+        # Apply changes using ProcessManager
+        if new_count != current_count:
+            from src.simulator import evaluate_individual
+            self.process_manager.set_num_process(new_count, evaluate_individual)
+            print(f"Process count adjusted: {current_count} -> {new_count}")
+
     def _performance_degraded(self) -> bool:
         """Check if performance has degraded"""
         if len(self.monitor.history) < 3:
             return False
-            
+
         # Compare recent performance with previous
         recent_avg = sum(self.monitor.history[-2:]) / 2
         older_avg = sum(self.monitor.history[-4:-2]) / 2
-        
+
         return recent_avg < older_avg * (1 - self.speed_improvement_threshold)
-        
+
     def run(self):
         """Main execution loop"""
         print("=" * 60)
@@ -390,25 +378,49 @@ class AdaptiveProcessManager:
         print("Starting initial processes...")
         print("Press Ctrl+C to stop")
         print("=" * 60)
-        
+
         # Start initial processes
-        self.start_processes(self.initial_processes)
-        
+        from src.simulator import evaluate_individual
+        self.process_manager.set_num_process(self.initial_processes, evaluate_individual)
+
         try:
             while self.running:
-                self.cleanup_dead_processes()
                 self.adjust_process_count()
                 self.monitor.update_metrics()
-                self.monitor.display_status(len(self.processes))
-                
+
+                # Update monitor with throughput metrics
+                total_throughput = self.process_manager.throughput
+                current_processes = self.process_manager.get_process_count()
+                if current_processes > 0:
+                    # Record throughput data for model estimation
+                    self.throughput_model.add_observation(current_processes, total_throughput)
+
+                    # Create a single metric representing overall performance
+                    metrics = ProcessMetrics(0, 0, total_throughput, 0.0, time.time())
+                    self.monitor.add_metrics(metrics)
+
+                # Display status with model parameters (less frequently)
+                if self.monitor.should_display_status():
+                    current_processes = self.process_manager.get_process_count()
+                    predicted_throughput = self.throughput_model.predict(current_processes)
+                    k, alpha = self.throughput_model.k, self.throughput_model.alpha
+                    self.monitor.display_status(
+                        current_processes,
+                        k=k,
+                        alpha=alpha,
+                        predicted_throughput=predicted_throughput,
+                        actual_throughput=total_throughput
+                    )
+                    self.monitor.record_status_display()
+
                 time.sleep(5)  # Check every 5 seconds
-                
+
         except KeyboardInterrupt:
             print("\nReceived interrupt signal")
-            
+
         finally:
             print("Stopping all processes...")
-            self.stop_processes(len(self.processes))
+            self.process_manager.stop_all_processes()
             print("All processes stopped.")
 
 
