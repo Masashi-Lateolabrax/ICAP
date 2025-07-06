@@ -1,7 +1,7 @@
 import socket
 import logging
 import threading
-from typing import Optional
+from typing import Optional, Callable
 import time
 
 from ..prelude import *
@@ -34,7 +34,7 @@ class OptimizationClient:
                 logging.error(f"Error closing socket: {e}")
             self._socket = None
 
-    def run_evaluation_loop(self, evaluation_function: EvaluationFunction) -> None:
+    def run_evaluation_loop(self, evaluation_function: EvaluationFunction, handler: Optional[Callable] = None) -> None:
         if self._socket is not None:
             raise RuntimeError("Client is already connected.")
 
@@ -87,12 +87,20 @@ class OptimizationClient:
 
                 ave_fitness /= len(individuals)
                 speed = len(individuals) / (max(1e-6, time.time() - start_time))
-                logging.info(
-                    f"[{self._socket.getsockname()[1]}] Num: {len(individuals)}, Speed: {speed:.2f}, AveFitness: {ave_fitness:.2f}"
+
+                metrics = ProcessMetrics(
+                    process_id=self._socket.getsockname()[1],
+                    num_individuals=len(individuals),
+                    speed=speed,
+                    average_fitness=ave_fitness,
+                    timestamp=time.time()
                 )
-                print(
-                    f"[{self._socket.getsockname()[1]}] Num: {len(individuals)}, Speed: {speed:.2f}, AveFitness: {ave_fitness:.2f}"
-                )
+                logging.info(metrics.format_log_message())
+
+                if handler:
+                    handler(metrics)
+                else:
+                    print(metrics.format_log_message())
 
                 if not send_individuals(self._socket, individuals):
                     logging.error("Failed to send result to server")
@@ -107,6 +115,11 @@ class OptimizationClient:
             self.disconnect()
 
 
-def connect_to_server(server_address: str, port: int, evaluation_function: EvaluationFunction) -> None:
+def connect_to_server(
+        server_address: str,
+        port: int,
+        evaluation_function: EvaluationFunction,
+        handler: Optional[Callable] = None
+) -> None:
     client = OptimizationClient(server_address, port)
-    client.run_evaluation_loop(evaluation_function)
+    client.run_evaluation_loop(evaluation_function, handler)
