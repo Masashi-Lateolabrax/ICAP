@@ -25,10 +25,7 @@ class ThroughputModel:
         return self._model(num_processes, self.k, self.alpha)
 
     def add_observation(self, num_processes: int, throughput: float):
-        if num_processes in self.observations:
-            self.observations[num_processes] = 0.8 * self.observations[num_processes] + 0.2 * throughput
-        else:
-            self.observations[num_processes] = throughput
+        self.observations[num_processes] = throughput
         self._update_parameters()
 
     def _update_parameters(self):
@@ -143,12 +140,11 @@ class ProcessManager:
 
 
 def run_adaptive_client_manager(
-    host: str,
-    port: int,
-    evaluation_function: Callable,
-    min_processes: int = 2,
-    max_processes: Optional[int] = None,
-    adjustment_interval: float = 30.0
+        host: str,
+        port: int,
+        evaluation_function: Callable,
+        max_processes: Optional[int] = None,
+        adjustment_interval: float = 60.0
 ):
     """
     Run an adaptive client manager that automatically adjusts the number of processes
@@ -156,23 +152,23 @@ def run_adaptive_client_manager(
     """
     if max_processes is None:
         max_processes = multiprocessing.cpu_count()
-    
+
     initial_processes = max(2, max_processes // 4)
-    
+
     model = ThroughputModel()
     manager = ProcessManager(host, port)
-    
+
     running = True
     last_adjustment = time.time()
-    
+
     def signal_handler(signum, frame):
         nonlocal running
         print("\nShutting down...")
         running = False
-    
+
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
-    
+
     print("=" * 50)
     print("ADAPTIVE MULTIPROCESSING CLIENT MANAGER")
     print("=" * 50)
@@ -182,33 +178,33 @@ def run_adaptive_client_manager(
     print(f"Process Range: {min_processes}-{max_processes}")
     print("Press Ctrl+C to stop")
     print("=" * 50)
-    
+
     manager.set_process_count(initial_processes, evaluation_function)
-    
+
     try:
         while running:
             current_time = time.time()
-            
+
             if current_time - last_adjustment >= adjustment_interval:
                 current_count = manager.get_process_count()
                 throughput = manager.get_total_throughput()
-                
+
                 model.add_observation(current_count, throughput)
                 optimal_count = model.find_optimal_count(min_processes, max_processes)
-                
+
                 if optimal_count != current_count:
                     manager.set_process_count(optimal_count, evaluation_function)
                     print(f"Adjusted: {current_count} -> {optimal_count} processes")
-                
+
                 print(
                     f"Processes: {manager.get_process_count()}, Throughput: {throughput:.2f}, Model: k={model.k:.3f}, α={model.alpha:.3f}")
                 last_adjustment = current_time
-            
+
             time.sleep(5)
-    
+
     except KeyboardInterrupt:
         print("\nReceived interrupt signal")
-    
+
     finally:
         print("Stopping all processes...")
         manager.stop_all()
