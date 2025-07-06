@@ -2,7 +2,7 @@ import dataclasses
 import multiprocessing
 import time
 import signal
-from typing import Dict, List, Callable, Optional
+from typing import List, Callable, Optional
 
 import numpy as np
 from scipy.optimize import curve_fit
@@ -112,13 +112,16 @@ class ProcessManager:
     def __init__(self, host: str, port: int):
         self.host = host
         self.port = port
-        self.processes: List[multiprocessing.Process] = []
-        self.process_throughput: Dict[int, float] = {}
+        self.processes: List[ProcessInfo] = []
         self.max_processes = multiprocessing.cpu_count()
         self.min_processes = 1
 
     def get_total_throughput(self) -> float:
-        return sum(self.process_throughput.values())
+        total = 0.0
+        for process_info in self.processes:
+            if process_info.is_alive and process_info.throughput.throughput is not None:
+                total += process_info.throughput.throughput
+        return total
 
     def _create_client_process(self, evaluation_function: Callable) -> ProcessInfo:
         throughput = Throughput(throughput=None, update_time=None)
@@ -149,37 +152,27 @@ class ProcessManager:
     def adjust_process_count(self, target_count: int, evaluation_function: Callable):
         target_count = max(self.min_processes, min(self.max_processes, target_count))
 
-        self.processes = [p for p in self.processes if p.is_alive()]
+        self.processes = [p for p in self.processes if p.is_alive]
         current_count = len(self.processes)
 
         if target_count > current_count:
             for _ in range(target_count - current_count):
-                process = self._create_client_process(evaluation_function)
-                process.start()
-                self.processes.append(process)
-                self.process_throughput[process.pid] = 0.0
+                process_info = self._create_client_process(evaluation_function)
+                process_info.start()
+                self.processes.append(process_info)
+                print(f"Registered new process: {process_info.pid}")
         elif target_count < current_count:
             for _ in range(current_count - target_count):
                 if self.processes:
-                    process = self.processes.pop()
-                    pid = process.pid
-                    process.terminate()
-                    process.join(timeout=5)
-                    if process.is_alive():
-                        process.kill()
-                    if pid in self.process_throughput:
-                        del self.process_throughput[pid]
+                    process_info = self.processes.pop()
+                    process_info.terminate()
 
     def get_process_count(self) -> int:
-        return len([p for p in self.processes if p.is_alive()])
+        return len([p for p in self.processes if p.is_alive])
 
     def stop_all(self):
-        for process in self.processes:
-            if process.is_alive():
-                process.terminate()
-                process.join(timeout=5)
-                if process.is_alive():
-                    process.kill()
+        for process_info in self.processes:
+            process_info.terminate()
         self.processes.clear()
 
 
