@@ -34,7 +34,7 @@ class ThroughputModel:
         self._update_parameters()
 
     def _update_parameters(self):
-        if len(self.distribution) < 2:
+        if len(self.distribution) < 3:
             return
 
         n_values = np.array(list(self.distribution.keys()))
@@ -68,14 +68,24 @@ class ThroughputModel:
         except (RuntimeError, ValueError):
             pass
 
+    def has_sufficient_data(self) -> bool:
+        """Check if we have enough data points for model-based optimization"""
+        return len(self.distribution) >= 3
+
     def find_optimal_process_count(self, min_processes: int, max_processes: int) -> int:
-        if len(self.distribution) < 2:
+        """Find optimal process count based on saturation model"""
+        if not self.has_sufficient_data():
             return min_processes
 
-        best_count = 0
-        for n in range(min_processes, max_processes):
-            if self.predict(n) >= self.predict(n + 1):
+        best_count = min_processes
+        best_throughput = 0.0
+
+        for n in range(min_processes, max_processes + 1):
+            predicted_throughput = self.predict(n)
+            if predicted_throughput > best_throughput:
+                best_throughput = predicted_throughput
                 best_count = n
+            elif predicted_throughput < best_throughput * 0.95:  # 5% tolerance
                 break
 
         return best_count
