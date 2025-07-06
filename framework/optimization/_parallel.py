@@ -139,6 +139,24 @@ class ProcessManager:
         self.processes.clear()
 
 
+def collect_throughput_observations(
+        manager: ProcessManager,
+        model: ThroughputModel,
+        evaluation_function: Callable,
+        min_processes: int,
+        max_processes: int,
+        adjustment_interval: float
+) -> None:
+    print("Collecting throughput observations...")
+    for count in range(min_processes, max_processes + 1):
+        manager.adjust_process_count(count, evaluation_function)
+        time.sleep(adjustment_interval)
+        throughput = manager.get_total_throughput()
+        model.add_observation(count, throughput)
+        print(f"Processes: {count}, throughput: {throughput:.2f}")
+    print("Throughput observation collection completed.")
+
+
 def run_adaptive_client_manager(
         host: str,
         port: int,
