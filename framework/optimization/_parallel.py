@@ -162,7 +162,8 @@ def run_adaptive_client_manager(
         port: int,
         evaluation_function: Callable,
         max_processes: Optional[int] = None,
-        adjustment_interval: float = 60.0
+        adjustment_interval: float = 10.0,
+        observation_interval: float = 60.0
 ):
     """
     Run an adaptive client manager that automatically adjusts the number of processes
@@ -197,27 +198,30 @@ def run_adaptive_client_manager(
     print("=" * 50)
 
     collect_throughput_observations(
-        manager, model, evaluation_function, 
+        manager, model, evaluation_function,
         min_processes, max_processes, adjustment_interval
     )
+    last_observation = time.time()
 
     try:
         while running:
             current_time = time.time()
 
-            if current_time - last_adjustment >= adjustment_interval:
-                current_count = manager.get_process_count()
-                throughput = manager.get_total_throughput()
+            if current_time - last_observation >= observation_interval * 60:
+                collect_throughput_observations(
+                    manager, model, evaluation_function,
+                    min_processes, max_processes, adjustment_interval
+                )
+                last_observation = current_time
 
-                model.add_observation(current_count, throughput)
+            if current_time - last_adjustment >= adjustment_interval * 60:
+                current_count = manager.get_process_count()
                 optimal_count = model.find_optimal_count(min_processes, max_processes)
 
                 if optimal_count != current_count:
-                    manager.set_process_count(optimal_count, evaluation_function)
+                    manager.adjust_process_count(optimal_count, evaluation_function)
                     print(f"Adjusted: {current_count} -> {optimal_count} processes")
 
-                print(
-                    f"Processes: {manager.get_process_count()}, Throughput: {throughput:.2f}, Model: k={model.k:.3f}, α={model.alpha:.3f}")
                 last_adjustment = current_time
 
             time.sleep(5)
