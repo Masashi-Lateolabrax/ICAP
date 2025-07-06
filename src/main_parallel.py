@@ -1,8 +1,6 @@
 import multiprocessing
-import psutil
 import time
 import signal
-from queue import Queue, Empty
 from typing import Dict, List
 
 import numpy as np
@@ -14,10 +12,10 @@ from settings import MySettings
 
 
 class ThroughputModel:
-    def __init__(self, initial_k: float = 1.0, initial_alpha: float = 0.0):
-        self.k = initial_k
-        self.alpha = initial_alpha
-        self.distribution: dict[int, float] = {}
+    def __init__(self):
+        self.k = 1.0
+        self.alpha = 0.0
+        self.observations = {}
 
     @staticmethod
     def _model(n, k, alpha):
@@ -26,21 +24,22 @@ class ThroughputModel:
     def predict(self, num_processes: int) -> float:
         if num_processes <= 0:
             return 0.0
-        return ThroughputModel._model(num_processes, self.k, self.alpha)
+        return self._model(num_processes, self.k, self.alpha)
 
     def add_observation(self, num_processes: int, throughput: float):
-        a = self.distribution[num_processes] if num_processes in self.distribution else 0.0
-        self.distribution[num_processes] = 0.8 * a + 0.2 * throughput
+        if num_processes in self.observations:
+            self.observations[num_processes] = 0.8 * self.observations[num_processes] + 0.2 * throughput
+        else:
+            self.observations[num_processes] = throughput
         self._update_parameters()
 
     def _update_parameters(self):
-        if len(self.distribution) < 3:
+        if len(self.observations) < 3:
             return
 
-        n_values = np.array(list(self.distribution.keys()))
-        t_values = np.array(list(self.distribution.values()))
+        n_values = np.array(list(self.observations.keys()))
+        t_values = np.array(list(self.observations.values()))
 
-        # Filter out invalid data points
         valid_mask = t_values > 0
         n_valid = n_values[valid_mask]
         t_valid = t_values[valid_mask]
@@ -49,43 +48,29 @@ class ThroughputModel:
             return
 
         try:
-            fit_result = curve_fit(
-                ThroughputModel._model,
-                n_valid,
-                t_valid,
-                p0=np.array([self.k, self.alpha]),
-                bounds=([0.1, 0.0], [10.0, 1.0]),  # k > 0.1, 0 <= alpha <= 1
-                method='trf'  # Trust Region Reflective algorithm supports bounds
+            params, _ = curve_fit(
+                self._model, n_valid, t_valid,
+                p0=[self.k, self.alpha],
+                bounds=([0.1, 0.0], [10.0, 1.0])
             )
-
-            params_array = np.asarray(fit_result[0])
-            new_k = float(params_array[0])
-            new_alpha = float(params_array[1])
-
-            self.k = 0.7 * self.k + 0.3 * new_k
-            self.alpha = 0.7 * self.alpha + 0.3 * new_alpha
-
+            self.k = 0.7 * self.k + 0.3 * params[0]
+            self.alpha = 0.7 * self.alpha + 0.3 * params[1]
         except (RuntimeError, ValueError):
             pass
 
-    def has_sufficient_data(self) -> bool:
-        """Check if we have enough data points for model-based optimization"""
-        return len(self.distribution) >= 3
+    def find_optimal_count(self, min_count: int, max_count: int) -> int:
+        if len(self.observations) < 3:
+            return min_count
 
-    def find_optimal_process_count(self, min_processes: int, max_processes: int) -> int:
-        """Find optimal process count based on saturation model"""
-        if not self.has_sufficient_data():
-            return min_processes
-
-        best_count = min_processes
+        best_count = min_count
         best_throughput = 0.0
 
-        for n in range(min_processes, max_processes + 1):
-            predicted_throughput = self.predict(n)
-            if predicted_throughput > best_throughput:
-                best_throughput = predicted_throughput
+        for n in range(min_count, max_count + 1):
+            predicted = self.predict(n)
+            if predicted > best_throughput:
+                best_throughput = predicted
                 best_count = n
-            elif predicted_throughput < best_throughput * 0.95:  # 5% tolerance
+            elif predicted < best_throughput * 0.95:
                 break
 
         return best_count
