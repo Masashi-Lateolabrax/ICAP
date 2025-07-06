@@ -1,7 +1,8 @@
-import numpy as np
-
+import math
 import logging
-from typing import Optional
+from typing import Optional, Iterable
+
+import numpy as np
 
 from ._connection import Connection
 
@@ -20,7 +21,7 @@ class Distribution:
         self.performance[conn.address] = None
         self.batch_size[conn.address] = 1
 
-    def _remove_unhealthy_connection_info(self, connections: list[Connection]) -> None:
+    def _remove_unhealthy_connection_info(self, connections: Iterable[Connection]) -> None:
         for conn in connections:
             if not conn.is_healthy:
                 if conn.address in self.performance:
@@ -72,7 +73,7 @@ class Distribution:
         else:
             self.performance[conn.address] = 0.8 * self.performance[conn.address] + 0.2 * throughput
 
-    def update(self, num_ready_individuals: int, connections: list[Connection]) -> None:
+    def update(self, num_ready_individuals: int, connections: Iterable[Connection]) -> None:
         self._remove_unhealthy_connection_info(connections)
         self._update_batch_size(num_ready_individuals)
 
@@ -80,5 +81,11 @@ class Distribution:
         if not conn.is_healthy:
             logging.warning(f"Connection {conn.address} is unhealthy, returning None for batch size.")
             return None
+        elif conn.address not in self.batch_size:
+            logging.warning(f"Connection {conn.address} not found in batch size tracking, returning None.")
+            return None
 
-        return self.batch_size.get(conn.address, None)
+        batch_size = self.batch_size[conn.address]
+        n = math.floor(max(conn.throughput * 10, 1))
+
+        return min(batch_size, n)
