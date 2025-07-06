@@ -76,15 +76,23 @@ class ThroughputModel:
 
 
 @dataclasses.dataclass
-class Throughput:
-    throughput: Optional[float]
-    update_time: Optional[float]
-
-
-@dataclasses.dataclass
 class ProcessInfo:
     process: multiprocessing.Process
-    throughput: Throughput
+    throughput_queue: multiprocessing.Queue
+    latest_throughput: float = 0.0
+
+    def get_throughput(self) -> tuple[float, bool]:
+        if self.throughput_queue.empty():
+            return self.latest_throughput, False
+
+        try:
+            metrics = self.throughput_queue.get_nowait()
+            if metrics and 'throughput' in metrics:
+                self.latest_throughput = metrics['throughput']
+        except Exception as e:
+            print(f"Error retrieving throughput: {e}")
+
+        return self.latest_throughput, True
 
     @property
     def pid(self) -> int:
