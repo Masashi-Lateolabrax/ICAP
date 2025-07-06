@@ -6,6 +6,7 @@ from typing import Dict, List, Callable, Optional
 import numpy as np
 from scipy.optimize import curve_fit
 
+from ..prelude import *
 from ._client import connect_to_server
 
 
@@ -83,10 +84,12 @@ class ProcessManager:
     def get_total_throughput(self) -> float:
         return sum(self.process_throughput.values())
 
-    def update_throughput(self, process_id: int, throughput: float):
-        if not process_id in self.process_throughput:
-            raise RuntimeError(f"Process ID {process_id} not found in registered processes")
-        self.process_throughput[process_id] = 0.8 * self.process_throughput[process_id] + 0.2 * throughput
+    def update_throughput(self, metrics: ProcessMetrics):
+        if not metrics.process_id in self.process_throughput:
+            raise RuntimeError(f"Process ID {metrics.process_id} not found in registered processes")
+        self.process_throughput[metrics.process_id] = metrics.speed
+
+        print(metrics.format_log_message())
 
     def _create_client_process(self, evaluation_function: Callable) -> multiprocessing.Process:
         def client_worker():
@@ -95,7 +98,7 @@ class ProcessManager:
                     self.host,
                     self.port,
                     evaluation_function=evaluation_function,
-                    handler=lambda metrics: self.update_throughput(metrics.process_id, metrics.speed)
+                    handler=self.update_throughput
                 )
             except Exception as e:
                 print(f"Client process error: {e}")
