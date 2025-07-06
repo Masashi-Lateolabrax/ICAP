@@ -3,6 +3,7 @@ import logging
 import threading
 from typing import Optional, Callable
 import time
+import os
 
 from ..prelude import *
 from ._connection_utils import send_individuals, receive_individuals
@@ -89,7 +90,7 @@ class OptimizationClient:
                 speed = len(individuals) / (max(1e-6, time.time() - start_time))
 
                 metrics = ProcessMetrics(
-                    process_id=self._socket.getsockname()[1],
+                    process_id=os.getpid(),
                     num_individuals=len(individuals),
                     speed=speed,
                     average_fitness=ave_fitness,
