@@ -189,10 +189,15 @@ def collect_throughput_observations(
         manager.adjust_process_count(count, evaluation_function)
         current_time = time.time()
 
-        while not all([
-            p.throughput.update_time is not None and p.throughput.update_time >= current_time
-            for p in manager.processes if p.is_alive
-        ]):
+        while True:
+            for p in manager.processes:
+                if p.is_alive and p.throughput.update_time is not None:
+                    if p.throughput.update_time < current_time:
+                        break
+                else:
+                    break
+            else:
+                break
             time.sleep(interval)
 
         throughput = manager.get_total_throughput()
