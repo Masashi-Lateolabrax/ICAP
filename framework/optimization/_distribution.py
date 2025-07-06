@@ -42,15 +42,17 @@ class Distribution:
         self.batch_size = {}
 
         probabilities: dict[str, Optional[float]] = {}
+        num_newbies = 0
         for k in keys:
             p = self.performance[k]
             if p is not None and p > 0:
                 probabilities[k] = p
+                self.batch_size[k] = 0
             else:
-                # Set batch size to 1 at least for connections with no performance or zero throughput
                 self.batch_size[k] = 1
+                num_newbies += 1
 
-        population_size = num_ready_individuals - len(self.batch_size)
+        population_size = num_ready_individuals - num_newbies
         if not probabilities or population_size <= 0:
             return
 
