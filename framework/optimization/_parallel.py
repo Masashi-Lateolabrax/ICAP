@@ -44,13 +44,13 @@ class ThroughputModel:
             return
 
         try:
-            params, _ = curve_fit(
+            popt, _ = curve_fit(
                 self._model, n_valid, t_valid,
                 p0=[self.k, self.alpha],
                 bounds=([0.1, 0.0], [10.0, 1.0])
             )
-            self.k = 0.7 * self.k + 0.3 * params[0]
-            self.alpha = 0.7 * self.alpha + 0.3 * params[1]
+            self.k = 0.7 * self.k + 0.3 * popt[0]
+            self.alpha = 0.7 * self.alpha + 0.3 * popt[1]
         except (RuntimeError, ValueError):
             pass
 
@@ -183,7 +183,7 @@ def run_adaptive_client_manager(
     running = True
     last_adjustment = time.time()
 
-    def signal_handler(signum, frame):
+    def signal_handler(_signum, _frame):
         nonlocal running
         print("\nShutting down...")
         running = False
