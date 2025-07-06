@@ -121,10 +121,13 @@ class ProcessManager:
             for _ in range(current_count - target_count):
                 if self.processes:
                     process = self.processes.pop()
+                    pid = process.pid
                     process.terminate()
                     process.join(timeout=5)
                     if process.is_alive():
                         process.kill()
+                    if pid in self.process_throughput:
+                        del self.process_throughput[pid]
 
     def get_process_count(self) -> int:
         return len([p for p in self.processes if p.is_alive()])
