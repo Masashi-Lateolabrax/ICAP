@@ -74,10 +74,15 @@ class ThroughputModel:
 
 
 @dataclasses.dataclass
-class ProcessInfo:
-    process: multiprocessing.Process
+class Throughput:
     throughput: Optional[float]
     update_time: Optional[float]
+
+
+@dataclasses.dataclass
+class ProcessInfo:
+    process: multiprocessing.Process
+    throughput: Throughput
 
     @property
     def pid(self) -> int:
