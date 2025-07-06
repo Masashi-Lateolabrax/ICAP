@@ -86,9 +86,9 @@ class ProcessInfo:
             return self.latest_throughput, False
 
         try:
-            metrics = self.throughput_queue.get_nowait()
-            if metrics and 'throughput' in metrics:
-                self.latest_throughput = metrics['throughput']
+            speed = self.throughput_queue.get_nowait()
+            if speed:
+                self.latest_throughput = speed
         except Exception as e:
             print(f"Error retrieving throughput: {e}")
 
