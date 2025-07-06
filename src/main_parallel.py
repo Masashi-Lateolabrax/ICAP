@@ -1,20 +1,87 @@
-#!/usr/bin/env python3
-
-import math
 import multiprocessing
 import psutil
 import time
 import signal
-import sys
 from queue import Queue, Empty
 from typing import Dict, List
-from dataclasses import dataclass
-from threading import Thread
 
 from framework.prelude import *
 from framework.optimization import connect_to_server
 from settings import MySettings
-from simulator import Simulator
+
+
+class ProcessManager:
+    def __init__(self, settings: MySettings):
+        self.settings = settings
+        self.processes: List[multiprocessing.Process] = []
+        self.process_throughput: Dict[int, float] = {}
+
+        self.max_processes = multiprocessing.cpu_count()
+        self.min_processes = 1
+
+    @property
+    def throughput(self) -> float:
+        return sum(self.process_throughput.values())
+
+    def update_process_metrics(self, metrics: ProcessMetrics):
+        a = self.process_throughput[metrics.process_id]
+        self.process_throughput[metrics.process_id] = 0.8 * a + 0.2 * metrics.speed
+
+    def _create_client_process(self, evaluation_function) -> multiprocessing.Process:
+        def client_worker():
+            try:
+                connect_to_server(
+                    self.settings.Server.HOST,
+                    self.settings.Server.PORT,
+                    evaluation_function=evaluation_function,
+                    handler=self.update_process_metrics
+                )
+            except Exception as e:
+                print(f"Client process error: {e}")
+
+        process = multiprocessing.Process(target=client_worker)
+        return process
+
+    def _start_processes(self, count: int, evaluation_function):
+        for _ in range(count):
+            if len(self.processes) < self.max_processes:
+                process = self._create_client_process(evaluation_function)
+                process.start()
+                self.processes.append(process)
+
+    def _stop_processes(self, count: int):
+        stopped = 0
+        for i in range(len(self.processes) - 1, -1, -1):
+            if stopped >= count:
+                break
+
+            process = self.processes[i]
+            if process.is_alive():
+                process.terminate()
+                process.join(timeout=5)
+                if process.is_alive():
+                    process.kill()
+                    process.join()
+                self.processes.pop(i)
+                stopped += 1
+
+    def stop_all_processes(self):
+        self._stop_processes(len(self.processes))
+
+    def set_num_process(self, n: int, evaluation_function):
+        target_processes = max(self.min_processes, n)
+        target_processes = min(self.max_processes, target_processes)
+
+        self.processes = [p for p in self.processes if p.is_alive()]
+        current_count = len(self.processes)
+
+        if target_processes > current_count:
+            self._start_processes(target_processes - current_count, evaluation_function)
+        elif target_processes < current_count:
+            self._stop_processes(current_count - target_processes)
+
+    def get_process_count(self) -> int:
+        return len(self.processes)
 
 
 class PerformanceMonitor:
