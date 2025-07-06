@@ -1,6 +1,7 @@
 import socket
 import logging
 import threading
+import signal
 from typing import Optional, Callable
 import time
 import os
@@ -15,6 +16,15 @@ class OptimizationClient:
         self.port = port
         self._socket: Optional[socket.socket] = None
         self._stop_event = threading.Event()
+        self._setup_signal_handlers()
+
+    def _setup_signal_handlers(self):
+        def signal_handler(signum, frame):
+            logging.info(f"Received signal {signum}, stopping client...")
+            self._stop_event.set()
+        
+        signal.signal(signal.SIGTERM, signal_handler)
+        signal.signal(signal.SIGINT, signal_handler)
 
     def connect(self) -> bool:
         try:
