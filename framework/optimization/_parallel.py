@@ -102,7 +102,7 @@ class ProcessManager:
 
         return multiprocessing.Process(target=client_worker)
 
-    def set_process_count(self, target_count: int, evaluation_function: Callable):
+    def adjust_process_count(self, target_count: int, evaluation_function: Callable):
         target_count = max(self.min_processes, min(self.max_processes, target_count))
 
         self.processes = [p for p in self.processes if p.is_alive()]
