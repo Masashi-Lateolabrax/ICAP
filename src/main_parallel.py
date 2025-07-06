@@ -24,6 +24,8 @@ class ProcessManager:
         return sum(self.process_throughput.values())
 
     def update_process_metrics(self, metrics: ProcessMetrics):
+        if metrics.process_id not in self.process_throughput:
+            self.process_throughput[metrics.process_id] = 0.0
         a = self.process_throughput[metrics.process_id]
         self.process_throughput[metrics.process_id] = 0.8 * a + 0.2 * metrics.speed
 
