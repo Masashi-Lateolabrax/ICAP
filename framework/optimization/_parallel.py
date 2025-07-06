@@ -120,26 +120,31 @@ class ProcessManager:
     def get_total_throughput(self) -> float:
         return sum(self.process_throughput.values())
 
-    def update_throughput(self, metrics: ProcessMetrics):
-        if not metrics.process_id in self.process_throughput:
-            raise RuntimeError(f"Process ID {metrics.process_id} not found in registered processes")
-        self.process_throughput[metrics.process_id] = metrics.speed
+    def _create_client_process(self, evaluation_function: Callable) -> ProcessInfo:
+        throughput = Throughput(throughput=None, update_time=None)
 
-        print(metrics.format_log_message())
+        def handler(metrics: ProcessMetrics):
+            throughput.throughput = metrics.speed
+            throughput.update_time = metrics.timestamp
+            print(metrics.format_log_message())
 
-    def _create_client_process(self, evaluation_function: Callable) -> multiprocessing.Process:
         def client_worker():
             try:
                 connect_to_server(
                     self.host,
                     self.port,
                     evaluation_function=evaluation_function,
-                    handler=self.update_throughput
+                    handler=handler
                 )
             except Exception as e:
                 print(f"Client process error: {e}")
 
-        return multiprocessing.Process(target=client_worker)
+        process = multiprocessing.Process(target=client_worker)
+
+        return ProcessInfo(
+            process=process,
+            throughput=throughput
+        )
 
     def adjust_process_count(self, target_count: int, evaluation_function: Callable):
         target_count = max(self.min_processes, min(self.max_processes, target_count))
