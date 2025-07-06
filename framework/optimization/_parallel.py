@@ -181,16 +181,23 @@ def collect_throughput_observations(
         manager: ProcessManager,
         model: ThroughputModel,
         evaluation_function: Callable,
-        min_processes: int,
         max_processes: int,
-        adjustment_interval: float
+        interval=5  # seconds
 ) -> None:
     print("Collecting throughput observations...")
-    for count in range(min_processes, max_processes + 1):
+    for count in range(MIN_PROCESSES, max_processes + 1):
         manager.adjust_process_count(count, evaluation_function)
-        time.sleep(adjustment_interval)
+        current_time = time.time()
+
+        while not all([
+            p.throughput.update_time is not None and p.throughput.update_time >= current_time
+            for p in manager.processes if p.is_alive
+        ]):
+            time.sleep(interval)
+
         throughput = manager.get_total_throughput()
         model.add_observation(count, throughput)
+
         print(f"Processes: {count}, throughput: {throughput:.2f}")
     print("Throughput observation collection completed.")
 
