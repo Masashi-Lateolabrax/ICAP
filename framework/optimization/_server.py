@@ -6,6 +6,7 @@ import select
 from datetime import datetime
 from queue import Queue
 import math
+from typing import Optional, Callable
 
 from ._connection import Connection
 from ._cmaes import CMAES
@@ -50,7 +51,7 @@ class Reporter:
             self.last_output_time = time.time()
 
 
-def server_thread(settings: Settings, conn_queue, stop_event):
+def server_thread(settings: Settings, conn_queue, stop_event, handler: Optional[Callable[[CMAES], None]] = None):
     cmaes = CMAES(
         dimension=settings.Optimization.dimension,
         mean=None,
@@ -141,6 +142,8 @@ def server_thread(settings: Settings, conn_queue, stop_event):
 
         if cmaes.ready_to_update():
             try:
+                if handler:
+                    handler(cmaes)
                 solutions = cmaes.update()
 
                 if cmaes.should_stop():
@@ -196,10 +199,10 @@ class OptimizationServer:
             logging.error(f"Failed to setup server socket: {e}")
             raise RuntimeError(f"Failed to setup server socket: {e}")
 
-    def start_server(self) -> None:
+    def start_server(self, handler: Optional[Callable[[CMAES], None]] = None) -> None:
         self.server_thread = threading.Thread(
             target=server_thread,
-            args=(self.settings, self._queue, self.stop_event)
+            args=(self.settings, self._queue, self.stop_event, handler)
         )
         self.server_thread.start()
 
