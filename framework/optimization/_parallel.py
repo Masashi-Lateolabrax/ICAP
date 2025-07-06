@@ -10,6 +10,8 @@ from scipy.optimize import curve_fit
 from ..prelude import *
 from ._client import connect_to_server
 
+MIN_PROCESSES = 1
+
 
 class ThroughputModel:
     def __init__(self):
@@ -109,8 +111,6 @@ class ProcessInfo:
 
 
 class ProcessManager:
-    MIN_PROCESS = 1
-
     def __init__(self, host: str, port: int):
         self.host = host
         self.port = port
@@ -151,7 +151,7 @@ class ProcessManager:
         )
 
     def adjust_process_count(self, target_count: int, evaluation_function: Callable):
-        target_count = max(self.MIN_PROCESS, min(self.max_processes, target_count))
+        target_count = max(MIN_PROCESSES, min(self.max_processes, target_count))
 
         self.processes = [p for p in self.processes if p.is_alive]
         current_count = len(self.processes)
@@ -210,8 +210,6 @@ def run_adaptive_client_manager(
     if max_processes is None:
         max_processes = multiprocessing.cpu_count()
 
-    min_processes = 1
-
     model = ThroughputModel()
     manager = ProcessManager(host, port)
 
@@ -231,13 +229,13 @@ def run_adaptive_client_manager(
     print("=" * 50)
     print(f"Server: {host}:{port}")
     print(f"CPU Cores: {max_processes}")
-    print(f"Process Range: 1-{max_processes}")
+    print(f"Process Range: {MIN_PROCESSES}-{max_processes}")
     print("Press Ctrl+C to stop")
     print("=" * 50)
 
     collect_throughput_observations(
         manager, model, evaluation_function,
-        min_processes, max_processes, adjustment_interval
+        max_processes
     )
     last_observation = time.time()
 
@@ -248,13 +246,13 @@ def run_adaptive_client_manager(
             if current_time - last_observation >= observation_interval * 60:
                 collect_throughput_observations(
                     manager, model, evaluation_function,
-                    min_processes, max_processes, adjustment_interval
+                    max_processes
                 )
                 last_observation = current_time
 
             if current_time - last_adjustment >= adjustment_interval * 60:
                 current_count = manager.get_process_count()
-                optimal_count = model.find_optimal_count(min_processes, max_processes)
+                optimal_count = model.find_optimal_count(MIN_PROCESSES, max_processes)
 
                 if optimal_count != current_count:
                     manager.adjust_process_count(optimal_count, evaluation_function)
