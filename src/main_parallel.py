@@ -5,9 +5,80 @@ import signal
 from queue import Queue, Empty
 from typing import Dict, List
 
+import numpy as np
+from scipy.optimize import curve_fit
+
 from framework.prelude import *
 from framework.optimization import connect_to_server
 from settings import MySettings
+
+
+class ThroughputModel:
+    def __init__(self, initial_k: float = 1.0, initial_alpha: float = 0.0):
+        self.k = initial_k
+        self.alpha = initial_alpha
+        self.distribution: dict[int, float] = {}
+
+    @staticmethod
+    def _model(n, k, alpha):
+        return (k * n) / (1 + alpha * n)
+
+    def predict(self, num_processes: int) -> float:
+        if num_processes <= 0:
+            return 0.0
+        return ThroughputModel._model(num_processes, self.k, self.alpha)
+
+    def add_observation(self, num_processes: int, throughput: float):
+        a = self.distribution[num_processes] if num_processes in self.distribution else 0.0
+        self.distribution[num_processes] = 0.8 * a + 0.2 * throughput
+        self._update_parameters()
+
+    def _update_parameters(self):
+        if len(self.distribution) < 2:
+            return
+
+        n_values = np.array(list(self.distribution.keys()))
+        t_values = np.array(list(self.distribution.values()))
+
+        # Filter out invalid data points
+        valid_mask = t_values > 0
+        n_valid = n_values[valid_mask]
+        t_valid = t_values[valid_mask]
+
+        if len(n_valid) < 2:
+            return
+
+        try:
+            fit_result = curve_fit(
+                ThroughputModel._model,
+                n_valid,
+                t_valid,
+                p0=np.array([self.k, self.alpha]),
+                bounds=([0.1, 0.0], [10.0, 1.0]),  # k > 0.1, 0 <= alpha <= 1
+                method='trf'  # Trust Region Reflective algorithm supports bounds
+            )
+
+            params_array = np.asarray(fit_result[0])
+            new_k = float(params_array[0])
+            new_alpha = float(params_array[1])
+
+            self.k = 0.7 * self.k + 0.3 * new_k
+            self.alpha = 0.7 * self.alpha + 0.3 * new_alpha
+
+        except (RuntimeError, ValueError):
+            pass
+
+    def find_optimal_process_count(self, min_processes: int, max_processes: int) -> int:
+        if len(self.distribution) < 2:
+            return min_processes
+
+        best_count = 0
+        for n in range(min_processes, max_processes):
+            if self.predict(n) >= self.predict(n + 1):
+                best_count = n
+                break
+
+        return best_count
 
 
 class ProcessManager:
