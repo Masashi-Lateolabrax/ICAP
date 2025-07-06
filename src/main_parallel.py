@@ -87,10 +87,9 @@ class ProcessManager:
         return sum(self.process_throughput.values())
 
     def update_throughput(self, process_id: int, throughput: float):
-        if process_id in self.process_throughput:
-            self.process_throughput[process_id] = 0.8 * self.process_throughput[process_id] + 0.2 * throughput
-        else:
-            self.process_throughput[process_id] = throughput
+        if not process_id in self.process_throughput:
+            raise RuntimeError(f"Process ID {process_id} not found in registered processes")
+        self.process_throughput[process_id] = 0.8 * self.process_throughput[process_id] + 0.2 * throughput
 
     def _create_client_process(self, evaluation_function) -> multiprocessing.Process:
         def client_worker():
@@ -117,6 +116,7 @@ class ProcessManager:
                 process = self._create_client_process(evaluation_function)
                 process.start()
                 self.processes.append(process)
+                self.process_throughput[process.pid] = 0.0
         elif target_count < current_count:
             for _ in range(current_count - target_count):
                 if self.processes:
