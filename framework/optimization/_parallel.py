@@ -133,11 +133,10 @@ class ProcessManager:
         return total
 
     def _create_client_process(self, evaluation_function: Callable) -> ProcessInfo:
-        throughput = Throughput(throughput=None, update_time=None)
+        throughput_queue = multiprocessing.Queue()
 
         def handler(metrics: ProcessMetrics):
-            throughput.throughput = metrics.speed
-            throughput.update_time = metrics.timestamp
+            throughput_queue.put(metrics.speed)
             print(metrics.format_log_message())
 
         def client_worker():
@@ -155,7 +154,7 @@ class ProcessManager:
 
         return ProcessInfo(
             process=process,
-            throughput=throughput
+            throughput_queue=throughput_queue
         )
 
     def adjust_process_count(self, target_count: int, evaluation_function: Callable):
