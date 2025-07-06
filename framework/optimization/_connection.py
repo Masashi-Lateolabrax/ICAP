@@ -1,5 +1,6 @@
 import socket
 import logging
+import select
 from typing import Optional
 
 from ..prelude import *
@@ -24,14 +25,31 @@ class Connection:
 
     @property
     def is_healthy(self) -> bool:
-        """Check if the connection is healthy by attempting to get socket information"""
+        """Check if the connection is healthy with comprehensive socket state validation"""
         if self.socket is None:
             return False
+        
         try:
-            # Try to get peer address - this will fail if connection is broken
+            # Check 1: Basic socket state - get peer address
             self.socket.getpeername()
+            
+            # Check 2: Socket option validation - check if socket is in error state
+            error = self.socket.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
+            if error != 0:
+                return False
+            
+            # Check 3: Socket readiness check using select with zero timeout
+            ready_to_read, ready_to_write, in_error = select.select(
+                [self.socket], [self.socket], [self.socket], 0
+            )
+            
+            # If socket is in error state, it's not healthy
+            if in_error:
+                return False
+            
             return True
-        except (socket.error, OSError):
+            
+        except (socket.error, OSError, AttributeError, select.error):
             return False
 
     @property
