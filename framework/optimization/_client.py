@@ -82,6 +82,8 @@ class OptimizationClient:
                 ave_fitness = 0
                 start_time = time.time()
                 for individual in individuals:
+                    if self._stop_event.is_set():
+                        break
                     try:
                         individual.timer_start()
                         fitness = evaluation_function(individual)
