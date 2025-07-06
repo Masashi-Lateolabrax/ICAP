@@ -87,6 +87,21 @@ class ProcessInfo:
     def is_alive(self) -> bool:
         return self.process.is_alive() if self.process else False
 
+    def start(self):
+        if not self.process.is_alive():
+            self.process.start()
+            print(f"Process {self.pid} started.")
+
+    def terminate(self):
+        if self.process.is_alive():
+            self.process.terminate()
+            self.process.join(timeout=5)
+            if self.process.is_alive():
+                self.process.kill()
+            print(f"Process {self.pid} terminated.")
+        else:
+            print(f"Process {self.pid} is not alive, cannot terminate.")
+
 
 class ProcessManager:
     def __init__(self, host: str, port: int):
