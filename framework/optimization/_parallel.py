@@ -128,8 +128,8 @@ class ProcessManager:
     def get_total_throughput(self) -> float:
         total = 0.0
         for process_info in self.processes:
-            if process_info.is_alive and process_info.throughput.throughput is not None:
-                total += process_info.throughput.throughput
+            if process_info.is_alive:
+                total += process_info.get_throughput()[0]
         return total
 
     def _create_client_process(self, evaluation_function: Callable) -> ProcessInfo:
