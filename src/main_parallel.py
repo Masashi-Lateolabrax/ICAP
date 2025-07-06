@@ -105,6 +105,7 @@ class ProcessManager:
         return sum(self.process_throughput.values())
 
     def update_process_metrics(self, metrics: ProcessMetrics):
+        """Update process performance metrics with exponential moving average"""
         if metrics.process_id not in self.process_throughput:
             self.process_throughput[metrics.process_id] = 0.0
         a = self.process_throughput[metrics.process_id]
@@ -152,9 +153,11 @@ class ProcessManager:
         self._stop_processes(len(self.processes))
 
     def set_num_process(self, n: int, evaluation_function):
+        """Set the target number of processes"""
         target_processes = max(self.min_processes, n)
         target_processes = min(self.max_processes, target_processes)
 
+        # Clean up dead processes first
         self.processes = [p for p in self.processes if p.is_alive()]
         current_count = len(self.processes)
 
@@ -164,7 +167,9 @@ class ProcessManager:
             self._stop_processes(current_count - target_processes)
 
     def get_process_count(self) -> int:
+        """Get current number of active processes"""
         return len(self.processes)
+
 
 
 class PerformanceMonitor:
