@@ -4,9 +4,6 @@ import time
 import signal
 from typing import List, Callable, Optional
 
-import numpy as np
-from scipy.optimize import curve_fit
-
 from ..prelude import *
 from ._client import connect_to_server
 
@@ -15,62 +12,22 @@ MIN_PROCESSES = 1
 
 class ThroughputModel:
     def __init__(self):
-        self.k = 1.0
-        self.alpha = 0.0
         self.observations = {}
-
-    @staticmethod
-    def _model(n, k, alpha):
-        return (k * n) / (1 + alpha * n)
-
-    def predict(self, num_processes: int) -> float:
-        if num_processes <= 0:
-            return 0.0
-        return self._model(num_processes, self.k, self.alpha)
 
     def add_observation(self, num_processes: int, throughput: float):
         self.observations[num_processes] = throughput
-        self._update_parameters()
-
-    def _update_parameters(self):
-        if len(self.observations) < 3:
-            return
-
-        n_values = np.array(list(self.observations.keys()))
-        t_values = np.array(list(self.observations.values()))
-
-        valid_mask = t_values > 0
-        n_valid = n_values[valid_mask]
-        t_valid = t_values[valid_mask]
-
-        if len(n_valid) < 2:
-            return
-
-        try:
-            popt, _ = curve_fit(
-                self._model, n_valid, t_valid,
-                p0=[self.k, self.alpha],
-                bounds=([0.1, 0.0], [10.0, 1.0])
-            )
-            self.k = 0.7 * self.k + 0.3 * popt[0]
-            self.alpha = 0.7 * self.alpha + 0.3 * popt[1]
-        except (RuntimeError, ValueError):
-            pass
 
     def find_optimal_count(self, min_count: int, max_count: int) -> int:
-        if len(self.observations) < 3:
+        if not self.observations:
             return min_count
 
         best_count = min_count
         best_throughput = 0.0
 
-        for n in range(min_count, max_count + 1):
-            predicted = self.predict(n)
-            if predicted > best_throughput:
-                best_throughput = predicted
-                best_count = n
-            elif predicted < best_throughput * 0.95:
-                break
+        for num_processes, throughput in self.observations.items():
+            if min_count <= num_processes <= max_count and throughput > best_throughput:
+                best_throughput = throughput
+                best_count = num_processes
 
         return best_count
 
