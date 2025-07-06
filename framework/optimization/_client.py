@@ -125,6 +125,7 @@ class OptimizationClient:
             self._stop_event.set()
 
         finally:
+            logging.info("Client evaluation loop ended")
             self.disconnect()
 
 
