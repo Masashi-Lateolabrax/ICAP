@@ -28,6 +28,9 @@ class Distribution:
                     logging.warning(f"Connection {conn.address} is unhealthy, removing from performance tracking.")
                     # Remove unhealthy connection from performance tracking
                     del self.performance[conn.address]
+                if conn.address in self.batch_size:
+                    # Remove unhealthy connection from batch size tracking
+                    del self.batch_size[conn.address]
                 continue
 
     def _update_batch_size(self, num_ready_individuals: int) -> None:
