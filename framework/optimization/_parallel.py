@@ -171,7 +171,7 @@ def run_adaptive_client_manager(
     if max_processes is None:
         max_processes = multiprocessing.cpu_count()
 
-    initial_processes = max(2, max_processes // 4)
+    min_processes = 1
 
     model = ThroughputModel()
     manager = ProcessManager(host, port)
@@ -192,8 +192,7 @@ def run_adaptive_client_manager(
     print("=" * 50)
     print(f"Server: {host}:{port}")
     print(f"CPU Cores: {max_processes}")
-    print(f"Initial Processes: {initial_processes}")
-    print(f"Process Range: {min_processes}-{max_processes}")
+    print(f"Process Range: 1-{max_processes}")
     print("Press Ctrl+C to stop")
     print("=" * 50)
 
