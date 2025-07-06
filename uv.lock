@@ -296,6 +296,7 @@ dependencies = [
     { name = "glfw" },
     { name = "mujoco" },
     { name = "pillow" },
+    { name = "scipy" },
 ]
 
 [package.optional-dependencies]
@@ -317,6 +318,7 @@ requires-dist = [
     { name = "glfw", specifier = "==2.9.0" },
     { name = "mujoco", specifier = "==3.3.3" },
     { name = "pillow", specifier = "==11.2.1" },
+    { name = "scipy", specifier = ">=1.16.0" },
     { name = "torch", marker = "extra == 'cpu'", index = "https://download.pytorch.org/whl/cpu", conflict = { package = "icap", extra = "cpu" } },
     { name = "torch", marker = "extra == 'cu124'", index = "https://download.pytorch.org/whl/cu124", conflict = { package = "icap", extra = "cu124" } },
     { name = "torch", marker = "extra == 'cu128'", index = "https://download.pytorch.org/whl/cu128", conflict = { package = "icap", extra = "cu128" } },
