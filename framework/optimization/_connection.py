@@ -1,6 +1,5 @@
 import socket
 import logging
-import time
 from typing import Optional
 
 from ..prelude import *
@@ -9,10 +8,10 @@ from ._connection_utils import send_individuals, receive_individuals
 
 class Connection:
     def __init__(self, socket_: socket.socket):
-        self._socket = socket_
-        self._socket.settimeout(1.0)
+        self.socket = socket_
+        self.socket.settimeout(1.0)
         self._assigned_individuals: Optional[list[Individual]] = None
-        self._name = f"{self._socket.getpeername()[0]}:{self._socket.getpeername()[1]}"
+        self._name = f"{self.socket.getpeername()[0]}:{self.socket.getpeername()[1]}"
         self._throughput = 0
 
     @property
@@ -26,11 +25,11 @@ class Connection:
     @property
     def is_healthy(self) -> bool:
         """Check if the connection is healthy by attempting to get socket information"""
-        if self._socket is None:
+        if self.socket is None:
             return False
         try:
             # Try to get peer address - this will fail if connection is broken
-            self._socket.getpeername()
+            self.socket.getpeername()
             return True
         except (socket.error, OSError):
             return False
@@ -55,28 +54,45 @@ class Connection:
 
         logging.debug(f"Assigned batch of {len(individuals)} individuals to connection")
 
-    def update(self) -> Optional[tuple[list[float], float]]:
+    def send_if_ready(self) -> bool:
+        """Send individuals to client if they are ready to be sent.
+        
+        Returns:
+            bool: True if sending was successful or not needed, False if fatal error occurred
+        """
         if self._assigned_individuals is None:
-            logging.warning("Connection batch update called with no assigned batch")
-            return None
+            return True  # No individuals to send
 
-        # Sending
+        # Only send if individuals are not yet calculating
         if not bool(self._assigned_individuals) or not all([i.is_calculating for i in self._assigned_individuals]):
             batch_size = len(self._assigned_individuals)
-            logging.debug(f"Updating connection with batch of {batch_size} individuals")
+            logging.debug(f"Sending batch of {batch_size} individuals to connection")
 
-            success = send_individuals(self._socket, self._assigned_individuals)
+            success = send_individuals(self.socket, self._assigned_individuals)
             if not success:
                 logging.error("Connection closed while sending individual batch")
                 self.close_by_fatal_error()
-                return None
+                return False
 
             for individual in self._assigned_individuals:
                 individual.set_calculation_state(CalculationState.CALCULATING)
             logging.debug("Individual batch sent to client, state set to CALCULATING")
 
+        return True
+
+    def receive_if_ready(self) -> Optional[tuple[list[float], float]]:
+        """Receive individuals from client if data is available.
+        
+        Returns:
+            tuple[list[float], float]: Fitness values and throughput if successful
+            None: If no data available or error occurred
+        """
+        if self._assigned_individuals is None:
+            logging.warning("Connection batch receive called with no assigned batch")
+            return None
+
         # Receiving
-        success, individuals = receive_individuals(self._socket, blocking=False)
+        success, individuals = receive_individuals(self.socket, blocking=False)
 
         if not success:
             logging.error("Connection closed while receiving individual batch")
@@ -134,13 +150,13 @@ class Connection:
             self._assigned_individuals = None
 
         # Clean up socket
-        if self._socket is not None:
+        if self.socket is not None:
             try:
                 # Try to shutdown socket gracefully first
-                self._socket.shutdown(socket.SHUT_RDWR)
-                self._socket.close()
+                self.socket.shutdown(socket.SHUT_RDWR)
+                self.socket.close()
                 logging.debug("Socket closed successfully")
             except Exception as e:
                 logging.error(f"Error closing socket: {e}")
             finally:
-                self._socket = None
+                self.socket = None
