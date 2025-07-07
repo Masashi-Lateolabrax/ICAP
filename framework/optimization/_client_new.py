@@ -5,7 +5,7 @@ import threading
 import signal
 import queue
 import time
-from typing import Optional, Callable, Tuple
+from typing import Optional, Callable
 
 from ..prelude import *
 from ..types.communication import Packet, PacketType
