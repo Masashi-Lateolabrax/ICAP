@@ -27,41 +27,36 @@ def _send_message(sock: socket.socket, data: bytes, attempt_count: int = 10) -> 
     return CommunicationResult.OVER_ATTEMPT_COUNT
 
 
-def _receive_bytes(sock: socket.socket, size: int, blocking=True) -> tuple[_CommunicationResult, Optional[bytes]]:
+def _receive_bytes(sock: socket.socket, size: int, retry: int = 0) -> tuple[CommunicationResult, Optional[bytes]]:
     attempt = 0
     data = b''
     while len(data) < size:
         try:
-            try:
-                sock.getpeername()
-            except (socket.error, OSError):
-                logging.info("Socket disconnected (peer unreachable)")
-                return _CommunicationResult.DISCONNECTED, None
-            
             chunk = sock.recv(size - len(data))
             if not chunk:
                 logging.info("Server disconnected")
-                return _CommunicationResult.DISCONNECTED, None
+                return CommunicationResult.DISCONNECTED, None
             data += chunk
 
         except socket.timeout:
-            if not blocking:
-                logging.info("Socket timeout while receiving data, returning None")
-                return _CommunicationResult.OVER_ATTEMPT_COUNT, None
+            if retry > 0:
+                if attempt >= retry:
+                    logging.error("Exceeded maximum retry attempts while receiving data")
+                    return CommunicationResult.OVER_ATTEMPT_COUNT, None
 
-            attempt += 1
-            logging.warning(f"Socket timeout on attempt {attempt} while receiving data")
-            if attempt >= ATTEMPT_COUNT:
-                logging.error("Exceeded maximum attempt count while receiving data")
-                return _CommunicationResult.OVER_ATTEMPT_COUNT, None
+                attempt += 1
+                logging.warning(f"Socket timeout on attempt {attempt} while receiving data")
 
-            continue
+                continue
+
+            logging.error("Socket timeout while receiving data")
+            return CommunicationResult.CONNECTION_ERROR, None
 
         except (socket.error, struct.error, ConnectionResetError, ConnectionAbortedError) as e:
             logging.error(f"Connection error while receiving data: {e}")
-            return _CommunicationResult.CONNECTION_ERROR, None
+            return CommunicationResult.CONNECTION_ERROR, None
 
-    return _CommunicationResult.SUCCESS, data
+    return CommunicationResult.SUCCESS, data
 
 
 def send_individuals(sock: socket.socket, individuals: list[Individual]) -> bool:
