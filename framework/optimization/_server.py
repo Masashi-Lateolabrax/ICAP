@@ -183,6 +183,16 @@ class _Server:
             if result != CommunicationResult.SUCCESS:
                 self._drop_socket(sock)
 
+    def _update_assigned_individuals(self, cmaes: CMAES, distribution: Distribution):
+        for sock in self.sockets:
+            if self.socket_states[sock].assigned_individuals is not None:
+                continue
+            batch_size = ic(distribution.get_batch_size(sock))
+            self.socket_states[sock].assigned_individuals = cmaes.get_individuals(batch_size)
+
+        if self.reporter.should_output():
+            self.reporter.output()
+
     def run(self):
         distribution = Distribution()
         cmaes = CMAES(
@@ -204,14 +214,8 @@ class _Server:
             ic(result, len(individuals))
 
             distribution.update(len(individuals), self.socket_states)
-            for sock in self.sockets:
-                if self.socket_states[sock].assigned_individuals is not None:
-                    continue
-                batch_size = ic(distribution.get_batch_size(sock))
-                self.socket_states[sock].assigned_individuals = cmaes.get_individuals(batch_size)
 
-            if self.reporter.should_output():
-                self.reporter.output()
+            self._update_assigned_individuals(cmaes, distribution)
 
         self.reporter.output()
 
