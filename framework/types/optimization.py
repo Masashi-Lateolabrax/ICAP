@@ -79,24 +79,20 @@ class Individual(np.ndarray):
         self._calculation_end = state[3]
 
     @property
+    def is_ready(self) -> bool:
+        return self._calculation_state == CalculationState.NOT_STARTED
+
+    @property
+    def is_corrupted(self) -> bool:
+        return self._calculation_state == CalculationState.CORRUPTED
+
+    @property
     def is_calculating(self) -> bool:
         return self._calculation_state == CalculationState.CALCULATING
 
     @property
     def is_finished(self) -> bool:
         return self._calculation_state == CalculationState.FINISHED
-
-    @property
-    def is_ready(self) -> bool:
-        return self._calculation_state == CalculationState.NOT_STARTED
-
-    @property
-    def is_sending(self) -> bool:
-        return self._calculation_state == CalculationState.SENDING
-
-    @property
-    def is_corrupted(self) -> bool:
-        return self._calculation_state == CalculationState.CORRUPTED
 
     @property
     def norm(self):
