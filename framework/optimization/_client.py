@@ -213,18 +213,19 @@ class _CommunicationWorker:
     def set_throughput(self, throughput: float) -> None:
         self.throughput = throughput
 
-    def run(self) -> Optional[list[Individual]]:
+    def run(self) -> tuple[CommunicationResult, Optional[list[Individual]]]:
         if not self.is_alive():
             raise RuntimeError("Communication worker is not running")
 
-        self._heartbeat(self.throughput)
         if not self.is_assigned():
-            self._request()
+            result = self._request()
+            return result, self.task
 
         if self.task is None and self.evaluated_task is not None:
-            self._return()
+            result = self._return()
+            return result, None
 
-        return self.task
+        return self._heartbeat(self.throughput), None
 
 
 def connect_to_server(
