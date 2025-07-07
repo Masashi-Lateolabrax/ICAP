@@ -1,7 +1,6 @@
 import enum
 from typing import Callable
 import time
-from dataclasses import dataclass
 
 import numpy as np
 
@@ -109,30 +108,3 @@ class Individual(np.ndarray):
 
 
 EvaluationFunction = Callable[[Individual], float]
-
-
-@dataclass
-class ProcessMetrics:
-    """Performance metrics from a client process"""
-    id_: int
-    num_individuals: int
-    speed: float
-    average_fitness: float
-    timestamp: float
-
-    def __post_init__(self):
-        """Validate metrics after initialization"""
-        if self.num_individuals < 0:
-            raise ValueError("num_individuals must be non-negative")
-        if self.speed < 0:
-            raise ValueError("speed must be non-negative")
-        if self.timestamp < 0:
-            raise ValueError("timestamp must be non-negative")
-
-    def format_log_message(self) -> str:
-        """Format for logging output"""
-        return f"[{self.id_}] Num: {self.num_individuals}, Speed: {self.speed:.2f}, AveFitness: {self.average_fitness:.2f}"
-
-    def is_recent(self, max_age_seconds: float = 10.0) -> bool:
-        """Check if metrics are recent"""
-        return time.time() - self.timestamp <= max_age_seconds
