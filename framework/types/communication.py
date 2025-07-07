@@ -1,6 +1,10 @@
 from enum import Enum
 from typing import Any, Optional
 from dataclasses import dataclass
+import socket
+import time
+
+from .optimization import Individual
 
 
 class CommunicationResult(Enum):
@@ -38,3 +42,12 @@ class Packet:
     @property
     def packet_type(self) -> Optional[PacketType]:
         return self._packet_type
+
+
+class SocketState:
+    def __init__(self, sock: socket.socket):
+        peer = sock.getpeername()
+        self.address = f"{peer[0]}:{peer[1]}"
+        self.last_heartbeat = time.time()
+        self.assigned_individuals: Optional[list[Individual]] = None
+        self.throughput: float = 0.0

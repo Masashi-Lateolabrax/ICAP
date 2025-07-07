@@ -1,8 +1,8 @@
 from .position import Position, Position3d
 from .robot import RobotLocation, RobotSpec, RobotValues
 from .food import FoodSpec, FoodValues
-from .optimization import CalculationState, Individual, EvaluationFunction, ProcessMetrics
-from .communication import PacketType, Packet, CommunicationResult
+from .optimization import CalculationState, Individual, EvaluationFunction
+from .communication import PacketType, Packet, CommunicationResult, SocketState
 
 __all__ = [
     "Position",
@@ -15,7 +15,7 @@ __all__ = [
     "CalculationState",
     "Individual",
     "EvaluationFunction",
-    "ProcessMetrics",
+    "SocketState",
     "PacketType",
     "Packet",
     "CommunicationResult",
