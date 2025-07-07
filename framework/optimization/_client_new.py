@@ -203,7 +203,7 @@ class _CommunicationWorker:
             logging.error("Failed to send request packet")
             return result
 
-        self.tasks = packet.data
+        self.task = packet.data
 
         return CommunicationResult.SUCCESS
 
