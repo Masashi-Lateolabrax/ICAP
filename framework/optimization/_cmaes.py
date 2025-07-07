@@ -10,16 +10,16 @@ from ..prelude import *
 
 class _IndividualManager:
     def __init__(self):
-        self.ready_individuals: List[Individual]=
-        self._assigned_individuals: List[Individual] = []
+        self.ready_individuals: List[Individual] = []
+        self.assigned_individuals: List[Individual] = []
 
     @property
     def num_ready_individuals(self) -> int:
         return len(self.ready_individuals)
 
     def init(self, cmaes: CMA):
-        self.ready_individuals.clear()
-        self._assigned_individuals.clear()
+        self.ready_individuals = []
+        self.assigned_individuals = []
         for _ in range(cmaes.population_size):
             x = cmaes.ask()
             individual = Individual(x)
@@ -30,7 +30,7 @@ class _IndividualManager:
         remaining_individuals = []
         corrupted_count = 0
 
-        for individual in self._assigned_individuals:
+        for individual in self.assigned_individuals:
             if individual.is_finished:
                 remaining_individuals.append(individual)
             else:
@@ -43,25 +43,21 @@ class _IndividualManager:
         if corrupted_count > 0:
             logging.warning(f"Rearranged {corrupted_count} corrupted individuals back to ready queue")
 
-        self._assigned_individuals = remaining_individuals
+        self.assigned_individuals = remaining_individuals
+
+    def get_individual(self) -> Optional[Individual]:
+        if not self.ready_individuals:
+            return None
+
+        individual = self.ready_individuals.pop()
+        self.assigned_individuals.append(individual)
+        return individual
 
     def all_individuals_finished(self) -> bool:
         if self.ready_individuals:
             return False
-        finished_count = sum(1 for ind in self._assigned_individuals if ind.is_finished)
-        return finished_count >= len(self._assigned_individuals)
-
-    def get_solutions(self) -> list[tuple[np.ndarray, float]]:
-        solutions = []
-        finished_count = 0
-
-        for individual in self._assigned_individuals:
-            if individual.is_finished:
-                solutions.append((individual.to_ndarray(), individual.get_fitness()))
-                finished_count += 1
-
-        logging.debug(f"Retrieved {len(solutions)} solutions ({finished_count} finished)")
-        return solutions
+        finished_count = sum(1 for ind in self.assigned_individuals if ind.is_finished)
+        return finished_count >= len(self.assigned_individuals)
 
 
 class CMAES:
