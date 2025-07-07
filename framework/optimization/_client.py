@@ -12,6 +12,8 @@ from ..prelude import *
 from ..types.communication import Packet, PacketType
 from ._connection_utils import send_packet, communicate
 
+HEARTBEAT_INTERVAL = 7
+
 
 @dataclasses.dataclass
 class ClientCalculationState:
@@ -141,7 +143,6 @@ class _CommunicationWorker:
     def __init__(self, sock: socket.socket):
         self.sock = sock
         self.last_heartbeat = time.time()
-        self.heartbeat_interval = 10  # seconds
         self.throughput = 0.0
         self.task: Optional[list[Individual]] = None
         self.evaluated_task: Optional[list[Individual]] = None
@@ -161,7 +162,7 @@ class _CommunicationWorker:
             logging.error("Socket is not alive, cannot send heartbeat")
             return CommunicationResult.CONNECTION_ERROR
 
-        if time.time() - self.last_heartbeat < self.heartbeat_interval:
+        if time.time() - self.last_heartbeat < HEARTBEAT_INTERVAL:
             return CommunicationResult.SUCCESS
 
         packet = Packet(_packet_type=PacketType.HEARTBEAT, data=throughput)
