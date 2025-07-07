@@ -9,11 +9,11 @@ from typing import Optional, Callable
 
 from ..prelude import *
 from ..types.communication import Packet, PacketType
-from ._connection_utils import send_packet, receive_packet, communicate
+from ._connection_utils import send_packet, communicate
 
 
 @dataclasses.dataclass
-class CalculationState:
+class ClientCalculationState:
     idle: bool
     throughput: Optional[float] = None
     individuals: Optional[list[Individual]] = None
@@ -36,16 +36,11 @@ def _connect_to_server(server_address: str, port: int) -> socket.socket:
         raise ConnectionError(f"Failed to connect to server {server_address}:{port}") from e
 
     handshake_packet = Packet(_packet_type=PacketType.HANDSHAKE, data=None)
-    if send_packet(sock, handshake_packet) != CommunicationResult.SUCCESS:
-        logging.error("Failed to send handshake packet")
+    result, ack_packet = communicate(sock, handshake_packet)
+    if result != CommunicationResult.SUCCESS:
+        logging.error("Failed to complete handshake")
         sock.close()
-        raise ConnectionError("Failed to send handshake packet")
-
-    success, ack_packet = receive_packet(sock)
-    if not success or ack_packet is None or ack_packet.packet_type != PacketType.ACK:
-        logging.error("Failed to receive handshake ACK")
-        sock.close()
-        raise ConnectionError("Failed to receive handshake ACK")
+        raise ConnectionError("Failed to complete handshake")
 
     logging.info("Handshake completed successfully")
     return sock
@@ -72,12 +67,12 @@ class _EvaluationWorker:
                     logging.info("Received poison pill, stopping evaluation worker")
                     break
                 self.response_queue.put(
-                    CalculationState(idle=False, throughput=None)
+                    ClientCalculationState(idle=False, throughput=None)
                 )
 
             except queue.Empty:
                 self.response_queue.put(
-                    CalculationState(idle=True)
+                    ClientCalculationState(idle=True)
                 )
                 continue
 
@@ -96,7 +91,7 @@ class _EvaluationWorker:
                     individual.set_calculation_state(CalculationState.FINISHED)
 
                     self.response_queue.put(
-                        CalculationState(
+                        ClientCalculationState(
                             idle=False,
                             throughput=1 / (individual.get_elapse() + 1e-10)
                         )
@@ -110,7 +105,7 @@ class _EvaluationWorker:
                     continue
 
             self.response_queue.put(
-                CalculationState(
+                ClientCalculationState(
                     idle=True,
                     individuals=individuals,
                 )
@@ -139,13 +134,13 @@ class _EvaluationWorker:
             raise RuntimeError("Evaluation worker is not running")
         self.task_queue.put(individuals)
 
-    def get_response(self) -> CalculationState:
+    def get_response(self) -> ClientCalculationState:
         if not self.is_alive():
             raise RuntimeError("Evaluation worker is not running")
         try:
             return self.response_queue.get(timeout=1.0)
         except queue.Empty:
-            return CalculationState(idle=True)
+            return ClientCalculationState(idle=True)
 
 
 class _CommunicationWorker:
@@ -267,20 +262,35 @@ def connect_to_server(
 
     communication_worker = _CommunicationWorker(sock)
 
-    while not stop_event.is_set():
-        # Update throughput from evaluation worker
-        calc_state = evaluation_worker.get_response()
-        if calc_state.throughput is not None:
-            communication_worker.set_throughput(calc_state.throughput)
+    try:
+        while not stop_event.is_set():
+            # Update throughput from evaluation worker
+            calc_state = evaluation_worker.get_response()
+            if calc_state.throughput is not None:
+                communication_worker.set_throughput(calc_state.throughput)
 
-        if calc_state.individuals is not None:
-            communication_worker.set_evaluated_task(calc_state.individuals)
+            if calc_state.individuals is not None:
+                communication_worker.set_evaluated_task(calc_state.individuals)
 
-        # Run communication worker and get new task
-        new_task = communication_worker.run()
-        if new_task is not None:
-            evaluation_worker.add_task(new_task)
+            # Run communication worker and get new task
+            try:
+                new_task = communication_worker.run()
+                if new_task is not None:
+                    evaluation_worker.add_task(new_task)
+            except Exception as e:
+                logging.error(f"Communication error: {e}")
+                break
 
-        time.sleep(0.01)
+            time.sleep(0.01)
 
-    logging.info("Client disconnected")
+    finally:
+        # Clean up resources
+        evaluation_worker.stop()
+        if sock:
+            try:
+                disconnect_packet = Packet(_packet_type=PacketType.DISCONNECTION, data=None)
+                send_packet(sock, disconnect_packet)
+                sock.close()
+            except Exception as e:
+                logging.error(f"Error during disconnection: {e}")
+        logging.info("Client disconnected")
