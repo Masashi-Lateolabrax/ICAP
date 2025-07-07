@@ -142,3 +142,35 @@ def receive_packet(sock: socket.socket, retry: int = 0) -> tuple[CommunicationRe
     except pickle.UnpicklingError as e:
         logging.error(f"Pickle error while receiving packet: {e}")
         return CommunicationResult.BROKEN_DATA, None
+
+
+def communicate(
+        sock: socket.socket, packet: Packet, retry_count: int = 10
+) -> tuple[CommunicationResult, Optional[Packet]]:
+    try:
+        result = send_packet(sock, packet)
+        if result != CommunicationResult.SUCCESS:
+            logging.error("Failed to send packet")
+            return result, None
+        logging.debug("Packet sent successfully")
+
+    except socket.error as e:
+        logging.error(f"Socket error during communication: {e}")
+        return CommunicationResult.CONNECTION_ERROR, None
+
+    try:
+        result, ack_packet = receive_packet(sock)
+        if result != CommunicationResult.SUCCESS:
+            logging.error("Failed to receive ACK packet")
+            return result, None
+
+        if ack_packet is None or ack_packet.packet_type != PacketType.ACK:
+            logging.error("Received invalid ACK packet")
+            return CommunicationResult.CONNECTION_ERROR, None
+        logging.debug("ACK packet received successfully")
+
+    except socket.error as e:
+        logging.error(f"Socket error during heartbeat ACK: {e}")
+        return CommunicationResult.CONNECTION_ERROR, None
+
+    return CommunicationResult.SUCCESS, ack_packet
