@@ -17,6 +17,9 @@ from ..prelude import *
 from ..types.communication import Packet, PacketType
 from ._connection_utils import send_packet, receive_packet
 
+# Socket timeout for dead connection detection in seconds
+SOCKET_TIMEOUT = 10
+
 
 class Reporter:
     def __init__(self, interval: float = 1.0):
@@ -96,8 +99,8 @@ class _Server:
     def _mut_drop_dead_sockets(self):
         current_time = time.time()
         for sock, state in list(self.socket_states.items()):
-            if current_time - state.last_heartbeat > 10:
-                logging.warning(f"Dropping dead socket: {state.address} (no heartbeat for 10 seconds)")
+            if current_time - state.last_heartbeat > SOCKET_TIMEOUT:
+                logging.warning(f"Dropping dead socket: {state.address} (no heartbeat for {SOCKET_TIMEOUT} seconds)")
                 self._drop_socket(sock)
 
     def _mut_retrieve_socket(self) -> Optional[socket.socket]:
