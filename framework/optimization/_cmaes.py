@@ -111,9 +111,9 @@ class CMAES:
 
         return True, individuals
 
-    def get_individuals(self, batch_size: Optional[int] = None) -> list[Individual]:
+    def get_individuals(self, batch_size: Optional[int] = None) -> Optional[list[Individual]]:
         if batch_size is None or batch_size <= 0:
-            return []
+            return None
 
         self._individual_manager.arrange_individuals()
 
