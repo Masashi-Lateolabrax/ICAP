@@ -11,7 +11,9 @@ from settings import MySettings
 from simulator import Simulator
 
 # Configure icecream for distributed system debugging
-ic.configureOutput(prefix=lambda: f'[{datetime.now().strftime("%H:%M:%S.%f")[:-3]}][PID:{os.getpid()}][TID:{threading.get_ident()}] CLIENT| ')
+ic.configureOutput(
+    prefix=lambda: f'[{datetime.now().strftime("%H:%M:%S.%f")[:-3]}][PID:{os.getpid()}][TID:{threading.get_ident()}] CLIENT| '
+)
 
 
 def evaluation_function(individual: Individual):
