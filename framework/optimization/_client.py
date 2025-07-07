@@ -192,7 +192,7 @@ class _CommunicationWorker:
             return result
 
         self.task = packet.data
-        ic(len(self.task))
+        ic(len(self.task) if self.task else None)
 
         return CommunicationResult.SUCCESS
 
@@ -224,14 +224,14 @@ class _CommunicationWorker:
             raise RuntimeError("Communication worker is not running")
 
         if not self.is_assigned():
-            result = self._request()
+            result = ic(self._request())
             return result, self.task
 
         if self.task is None and self.evaluated_task is not None:
-            result = self._return()
+            result = ic(self._return())
             return result, None
 
-        return self._heartbeat(self.throughput), None
+        return ic(self._heartbeat(self.throughput)), None
 
 
 def connect_to_server(

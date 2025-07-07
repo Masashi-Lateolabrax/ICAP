@@ -16,7 +16,7 @@ ic.configureOutput(
     includeContext=True
 )
 
-ic.disable()
+ic.enable()
 
 
 def evaluation_function(individual: Individual):

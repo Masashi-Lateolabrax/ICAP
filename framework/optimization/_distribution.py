@@ -1,4 +1,5 @@
 import logging
+import math
 import socket
 from typing import Optional
 
@@ -54,6 +55,8 @@ class Distribution:
             logging.warning("If it works as designed, this should never happen")
             return None
 
-        batch_size = self.batch_size.get(sock, 0.0)
-        batch_size = min(batch_size, self.throughput[sock] * 10)
+        batch_size = self.batch_size.get(sock, 0)
+        if sock in self.throughput:
+            batch_size = min(batch_size, math.ceil(self.throughput[sock] * 10))
+
         return batch_size

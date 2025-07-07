@@ -140,7 +140,7 @@ class _Server:
 
                 case PacketType.REQUEST:
                     response_packet.data = self.socket_states[sock].assigned_individuals
-                    ic(len(response_packet.data))
+                    ic(len(response_packet.data) if response_packet.data else None)
 
                 case PacketType.RESPONSE:
                     if not isinstance(packet.data, list):
@@ -166,7 +166,7 @@ class _Server:
                         fitness_values.append(i.get_fitness())
                         throughput += 1 / (i.get_elapse() + 1e-10)
 
-                    ic(sock, fitness_values, throughput)
+                    ic(sock, np.average(fitness_values), throughput)
                     self.reporter.add(sock.fileno(), fitness_values, throughput / len(packet.data))
                     self.socket_states[sock].assigned_individuals = None
 
