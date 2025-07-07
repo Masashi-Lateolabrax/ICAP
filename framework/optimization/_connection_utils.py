@@ -4,7 +4,6 @@ import struct
 import logging
 from typing import Optional
 
-from icecream import ic
 from ..prelude import *
 
 
@@ -35,7 +34,6 @@ def _receive_bytes(sock: socket.socket, size: int, retry: int = 0) -> tuple[Comm
         try:
             chunk = sock.recv(size - len(data))
             if not chunk:
-                logging.info("Server disconnected")
                 return CommunicationResult.DISCONNECTED, None
             data += chunk
 
@@ -100,7 +98,6 @@ def communicate(
         if result != CommunicationResult.SUCCESS:
             logging.error("Failed to send packet")
             return result, None
-        ic("Packet sent successfully")
 
     except socket.error as e:
         logging.error(f"Socket error during communication: {e}")
@@ -115,7 +112,6 @@ def communicate(
         if ack_packet is None or ack_packet.packet_type != PacketType.ACK:
             logging.error("Received invalid ACK packet")
             return CommunicationResult.CONNECTION_ERROR, None
-        ic("ACK packet received successfully")
 
     except socket.error as e:
         logging.error(f"Socket error during heartbeat ACK: {e}")
