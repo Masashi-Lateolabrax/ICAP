@@ -33,14 +33,14 @@ def evaluation_function(individual: Individual):
 def main():
     settings = MySettings()
 
-    ic("=" * 50)
-    ic("OPTIMIZATION CLIENT")
-    ic("=" * 50)
-    ic(f"Server: {settings.Server.HOST}:{settings.Server.PORT}")
-    ic("-" * 30)
-    ic("Connecting to server...")
-    ic("Press Ctrl+C to disconnect")
-    ic("=" * 50)
+    print("=" * 50)
+    print("OPTIMIZATION CLIENT")
+    print("=" * 50)
+    print(f"Server: {settings.Server.HOST}:{settings.Server.PORT}")
+    print("-" * 30)
+    print("Connecting to server...")
+    print("Press Ctrl+C to disconnect")
+    print("=" * 50)
 
     connect_to_server(
         settings.Server.HOST,
