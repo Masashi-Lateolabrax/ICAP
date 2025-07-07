@@ -187,6 +187,7 @@ class _CommunicationWorker:
             return result
 
         self.task = packet.data
+        ic(len(self.task))
 
         return CommunicationResult.SUCCESS
 
@@ -250,32 +251,34 @@ def connect_to_server(
 
     communication_worker = _CommunicationWorker(sock)
 
-    try:
-        iteration = 0
-        while not stop_event.is_set():
-            calc_state = evaluation_worker.get_response()
-            if calc_state.throughput is not None:
-                communication_worker.set_throughput(calc_state.throughput)
+    while not stop_event.is_set():
+        calc_state = evaluation_worker.get_response()
+        if calc_state.throughput is not None:
+            communication_worker.set_throughput(calc_state.throughput)
 
-            if calc_state.individuals is not None:
-                communication_worker.set_evaluated_task(calc_state.individuals)
+        if calc_state.individuals is not None:
+            communication_worker.set_evaluated_task(calc_state.individuals)
 
-            try:
-                new_task = communication_worker.run()
-                evaluation_worker.add_task(new_task)
-
-            except Exception as e:
-                logging.error(f"Communication error: {e}")
+        try:
+            result, new_task = communication_worker.run()
+            if result != CommunicationResult.SUCCESS:
+                logging.error(f"Communication error: {result}")
                 break
 
-            time.sleep(0.01)
+            if new_task is not None:
+                evaluation_worker.add_task(new_task)
 
-    finally:
-        evaluation_worker.stop()
-        if sock:
-            try:
-                disconnect_packet = Packet(_packet_type=PacketType.DISCONNECTION, data=None)
-                send_packet(sock, disconnect_packet)
-                sock.close()
-            except Exception as e:
-                logging.warning(f"Error during disconnection: {e}")
+        except Exception as e:
+            logging.error(f"Communication error: {e}")
+            break
+
+        time.sleep(0.01)
+
+    evaluation_worker.stop()
+    if sock:
+        try:
+            disconnect_packet = Packet(_packet_type=PacketType.DISCONNECTION, data=None)
+            send_packet(sock, disconnect_packet)
+            sock.close()
+        except Exception as e:
+            logging.warning(f"Error during disconnection: {e}")
