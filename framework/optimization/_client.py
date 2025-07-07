@@ -241,15 +241,19 @@ def connect_to_server(
         handler: Optional[Callable[[Individual], None]] = None
 ) -> None:
     stop_event = threading.Event()
+    sock = _connect_to_server(server_address, port)
 
     def signal_handler(signum, frame):
         logging.warning(f"Received signal {signum}, stopping client...")
         stop_event.set()
+        if sock:
+            try:
+                sock.close()
+            except Exception as e:
+                logging.error(f"Error closing socket during signal handling: {e}")
 
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
-
-    sock = _connect_to_server(server_address, port)
 
     evaluation_worker = _EvaluationWorker(evaluation_function, handler)
     evaluation_worker.run()
