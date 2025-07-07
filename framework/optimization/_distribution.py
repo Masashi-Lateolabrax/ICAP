@@ -1,7 +1,7 @@
+import logging
 import socket
 from typing import Optional
 
-from icecream import ic
 import numpy as np
 
 from ..prelude import *
@@ -50,4 +50,10 @@ class Distribution:
             self.batch_size[key] += 1
 
     def get_batch_size(self, sock: socket.socket) -> Optional[int]:
-        return self.batch_size.get(sock, None)
+        if sock in self.batch_size:
+            logging.warning("If it works as designed, this should never happen")
+            return None
+
+        batch_size = self.batch_size.get(sock, 0.0)
+        batch_size = min(batch_size, self.throughput[sock] * 10)
+        return batch_size
