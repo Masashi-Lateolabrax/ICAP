@@ -25,6 +25,33 @@ def _send_heartbeat(sock: socket.socket, throughput: float) -> CommunicationResu
     return send_packet(sock, packet)
 
 
+def _connect_to_server(server_address: str, port: int) -> socket.socket:
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(10.0)
+
+    try:
+        sock.connect((server_address, port))
+        logging.info(f"Connected to server: {server_address}:{port}")
+    except (socket.error, socket.timeout) as e:
+        logging.error(f"Connection error: {e}")
+        raise ConnectionError(f"Failed to connect to server {server_address}:{port}") from e
+
+    handshake_packet = Packet(_packet_type=PacketType.HANDSHAKE, data=None)
+    if send_packet(sock, handshake_packet) != CommunicationResult.SUCCESS:
+        logging.error("Failed to send handshake packet")
+        sock.close()
+        raise ConnectionError("Failed to send handshake packet")
+
+    success, ack_packet = receive_packet(sock)
+    if not success or ack_packet is None or ack_packet.packet_type != PacketType.ACK:
+        logging.error("Failed to receive handshake ACK")
+        sock.close()
+        raise ConnectionError("Failed to receive handshake ACK")
+
+    logging.info("Handshake completed successfully")
+    return sock
+
+
 def communicate_with_server(
         server_address: str,
         port: int,
