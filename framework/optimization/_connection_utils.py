@@ -59,59 +59,6 @@ def _receive_bytes(sock: socket.socket, size: int, retry: int = 0) -> tuple[Comm
     return CommunicationResult.SUCCESS, data
 
 
-def send_individuals(sock: socket.socket, individuals: list[Individual]) -> bool:
-    """Send a list of Individual objects over socket."""
-    try:
-        data = pickle.dumps(individuals)
-        result = _send_message(sock, data)
-        if result != _CommunicationResult.SUCCESS:
-            logging.error("Connection error while sending individual list")
-        return result == _CommunicationResult.SUCCESS
-
-    except pickle.PicklingError as e:
-        logging.error(f"Pickle error while sending individual list: {e}")
-        return False
-
-
-def receive_individuals(sock: socket.socket, blocking=True) -> tuple[bool, Optional[list[Individual]]]:
-    """Receive a list of Individual objects from socket with proper error handling.
-    
-    Returns:
-        tuple[bool, Optional[list[Individual]]]: Status and received objects:
-            - (True, list[Individual]): Successfully received and deserialized Individual objects
-            - (True, None): Operation timed out (exceeded retry attempts) - recoverable
-            - (False, None): Fatal error occurred (connection, protocol, or deserialization error)
-    """
-    # First, receive the size
-    result, raw = _receive_bytes(sock, 4, blocking=blocking)
-    if result == _CommunicationResult.OVER_ATTEMPT_COUNT:
-        return True, None
-    elif result != _CommunicationResult.SUCCESS:
-        return False, None
-
-    # Extract size from the 4-byte data
-    try:
-        size_data = struct.unpack('!I', raw)[0]
-    except struct.error as e:
-        logging.error(f"Error unpacking size data: {e}")
-        return False, None
-
-    # Receive the actual data
-    result, raw = _receive_bytes(sock, size_data, blocking=blocking)
-    if result == _CommunicationResult.OVER_ATTEMPT_COUNT:
-        return True, None
-    elif result != _CommunicationResult.SUCCESS:
-        return False, None
-
-    # Deserialize the Individual list
-    try:
-        individuals = pickle.loads(raw)
-        return True, individuals
-    except pickle.UnpicklingError as e:
-        logging.error(f"Pickle error while receiving individual list: {e}")
-        return False, None
-
-
 def send_packet(sock: socket.socket, packet: Packet, retry: int = 10) -> CommunicationResult:
     try:
         data = pickle.dumps(packet)
@@ -142,35 +89,3 @@ def receive_packet(sock: socket.socket, retry: int = 0) -> tuple[CommunicationRe
     except pickle.UnpicklingError as e:
         logging.error(f"Pickle error while receiving packet: {e}")
         return CommunicationResult.BROKEN_DATA, None
-
-
-def communicate(
-        sock: socket.socket, packet: Packet, retry_count: int = 10
-) -> tuple[CommunicationResult, Optional[Packet]]:
-    try:
-        result = send_packet(sock, packet)
-        if result != CommunicationResult.SUCCESS:
-            logging.error("Failed to send packet")
-            return result, None
-        logging.debug("Packet sent successfully")
-
-    except socket.error as e:
-        logging.error(f"Socket error during communication: {e}")
-        return CommunicationResult.CONNECTION_ERROR, None
-
-    try:
-        result, ack_packet = receive_packet(sock)
-        if result != CommunicationResult.SUCCESS:
-            logging.error("Failed to receive ACK packet")
-            return result, None
-
-        if ack_packet is None or ack_packet.packet_type != PacketType.ACK:
-            logging.error("Received invalid ACK packet")
-            return CommunicationResult.CONNECTION_ERROR, None
-        logging.debug("ACK packet received successfully")
-
-    except socket.error as e:
-        logging.error(f"Socket error during heartbeat ACK: {e}")
-        return CommunicationResult.CONNECTION_ERROR, None
-
-    return CommunicationResult.SUCCESS, ack_packet
