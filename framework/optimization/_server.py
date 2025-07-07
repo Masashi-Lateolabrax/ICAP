@@ -207,9 +207,12 @@ class _Server:
             self._communicate_with_client()
 
             result, individuals = cmaes.update()
-            if not result:
-                logging.warning(f"Unfinished individuals: {len(individuals)}")
-                continue
+            if result:
+                logging.info(f"CMAES updated successfully")
+            else:
+                logging.info(
+                    f"CMAES has not been updated yet. Because there are {len(individuals)} unfinished individuals."
+                )
 
             distribution.update(len(individuals), self.socket_states)
             for sock in self.sockets:
