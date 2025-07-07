@@ -112,10 +112,10 @@ def receive_individuals(sock: socket.socket, blocking=True) -> tuple[bool, Optio
         return False, None
 
 
-def send_packet(sock: socket.socket, packet: Packet) -> CommunicationResult:
+def send_packet(sock: socket.socket, packet: Packet, attempt_count: int = 10) -> CommunicationResult:
     try:
         data = pickle.dumps(packet)
-        return _send_message(sock, data)
+        return _send_message(sock, data, attempt_count=attempt_count)
     except pickle.PicklingError as e:
         logging.error(f"Pickle error while sending packet: {e}")
         return CommunicationResult.BROKEN_DATA
