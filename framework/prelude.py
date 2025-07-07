@@ -1,6 +1,6 @@
 from .types import (
     Individual, CalculationState, RobotValues, RobotSpec, RobotLocation, FoodSpec, FoodValues, EvaluationFunction,
-    Position, Position3d, CommunicationResult, PacketType, Packet, SocketState
+    Position, Position3d, CommunicationResult, PacketType, Packet, SocketState, ProcessMetrics
 )
 
 from .config import *
