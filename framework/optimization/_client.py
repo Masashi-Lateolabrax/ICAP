@@ -48,12 +48,14 @@ class _EvaluationWorker:
     def __init__(
             self,
             evaluation_function: EvaluationFunction,
+            handler: Optional[Callable[[Individual], None]] = None
     ):
         self.task_queue = queue.Queue()
         self.response_queue = queue.Queue()
         self.evaluation_function = evaluation_function
         self.stop_event = threading.Event()
         self.thread: Optional[threading.Thread] = None
+        self.handler: Optional[Callable[[Individual], None]] = handler
 
     def _worker(self) -> None:
         while not self.stop_event.is_set():
@@ -90,6 +92,9 @@ class _EvaluationWorker:
                             throughput=throughput
                         )
                     )
+
+                    if self.handler:
+                        self.handler(individual)
 
                 except Exception as e:
                     logging.error(f"Error during evaluation function execution: {e}")
@@ -233,7 +238,7 @@ def connect_to_server(
         server_address: str,
         port: int,
         evaluation_function: EvaluationFunction,
-        handler: Optional[Callable] = None
+        handler: Optional[Callable[[Individual], None]] = None
 ) -> None:
     stop_event = threading.Event()
 
@@ -246,7 +251,7 @@ def connect_to_server(
 
     sock = _connect_to_server(server_address, port)
 
-    evaluation_worker = _EvaluationWorker(evaluation_function)
+    evaluation_worker = _EvaluationWorker(evaluation_function, handler)
     evaluation_worker.run()
 
     communication_worker = _CommunicationWorker(sock)
