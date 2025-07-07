@@ -50,7 +50,7 @@ class Distribution:
             self.batch_size[key] += 1
 
     def get_batch_size(self, sock: socket.socket) -> Optional[int]:
-        if sock in self.batch_size:
+        if not sock in self.batch_size:
             logging.warning("If it works as designed, this should never happen")
             return None
 
