@@ -5,10 +5,22 @@ This script starts an optimization server that distributes CMA-ES optimization
 tasks to connected clients.
 """
 
+import os
+import threading
+from datetime import datetime
+from icecream import ic
 from framework.optimization import OptimizationServer
 
 from controller import RobotNeuralNetwork
 from settings import MySettings
+
+# Configure icecream for distributed system debugging
+ic.configureOutput(
+    prefix=lambda: f'[{datetime.now().strftime("%H:%M:%S.%f")[:-3]}][PID:{os.getpid()}][TID:{threading.get_ident()}] SERVER| ',
+    includeContext=True
+)
+
+ic.disable()
 
 
 def main():

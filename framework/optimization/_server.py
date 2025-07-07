@@ -8,10 +8,17 @@ from queue import Queue
 import math
 from typing import Optional, Callable
 
-from ._connection import Connection
+import numpy as np
+from icecream import ic
+
 from ._cmaes import CMAES
 from ._distribution import Distribution
 from ..prelude import *
+from ..types.communication import Packet, PacketType
+from ._connection_utils import send_packet, receive_packet
+
+# Socket timeout for dead connection detection in seconds
+SOCKET_TIMEOUT = 10
 
 
 class Reporter:
@@ -20,7 +27,7 @@ class Reporter:
         self.buffer: list[str] = []
         self.last_output_time = time.time()
 
-    def add(self, address: str, fitness_values: list[float], throughput: float) -> None:
+    def add(self, address, fitness_values: list[float], throughput: float) -> None:
         if not fitness_values:
             logging.warning(f"No fitness values provided for address {address}")
             return
@@ -51,200 +58,228 @@ class Reporter:
             self.last_output_time = time.time()
 
 
-def server_thread(settings: Settings, conn_queue, stop_event, handler: Optional[Callable[[CMAES], None]] = None):
-    cmaes = CMAES(
-        dimension=settings.Optimization.dimension,
-        mean=None,
-        sigma=settings.Optimization.sigma,
-        population_size=settings.Optimization.population_size,
-    )
-    distribution = Distribution()
-    connections: set[Connection] = set()
-    reporter = Reporter(1.0)
+class _Server:
+    def __init__(
+            self,
+            settings: Settings,
+            socket_queue: Queue,
+            stop_event: threading.Event,
+            handler: Optional[Callable[[CMAES], None]] = None
+    ):
+        self.settings = settings
 
-    while not stop_event.is_set():
-        while not conn_queue.empty():
-            conn = conn_queue.get()
-            if isinstance(conn, Connection):
-                connections.add(conn)
-                distribution.add_new_connection(conn)
+        self.socket_queue = socket_queue
+        self.stop_event = stop_event
+        self.handler = handler
 
-        if len(connections) == 0:
-            if stop_event.is_set():
-                break
-            logging.debug("No connections available, waiting for clients...")
-            print("DEBUG: No connections available, waiting for clients...")
-            time.sleep(1)
-            continue
+        self.sockets: list[socket.socket] = []
+        self.socket_states: dict[socket.socket, SocketState] = {}
 
-        # Clean up unhealthy connections and assign individuals
-        unhealthy_connections = set()
-        assigned_connections = {}
+        self.reporter = Reporter()
 
-        for conn in connections:
-            if not conn.is_healthy:
-                conn.close_gracefully()
-                unhealthy_connections.add(conn)
-                continue
+    def _drop_socket(self, sock: socket.socket):
+        if sock in self.sockets:
+            self.sockets.remove(sock)
 
-            if not conn.has_assigned_individuals:
-                batch_size = distribution.get_batch_size(conn)
-                batch = cmaes.get_individuals(batch_size)
-                if batch is not None:
-                    conn.assign_individuals(batch)
-                    logging.debug(f"Assigned batch of {len(batch)} individuals to connection {conn.address}")
-                else:
-                    logging.debug(f"No individuals available to assign to connection {conn.address}")
-            else:
-                assigned_connections[conn.socket] = conn
+            if sock in self.socket_states:
+                status = self.socket_states[sock]
+                if status.assigned_individuals:
+                    count = 0
+                    for i in status.assigned_individuals:
+                        if not i.is_finished:
+                            i.set_calculation_state(CalculationState.CORRUPTED)
+                            count += 1
+                    logging.warning(f"Dropped {count} unfinished individuals from socket: {status.address}")
+                del self.socket_states[sock]
 
-        connections -= unhealthy_connections
+            sock.close()
+        else:
+            logging.warning(f"Attempted to drop a socket that is not in the list: {sock.getpeername()}")
 
-        ready_sockets = []
-        if assigned_connections:
+    def _mut_drop_dead_sockets(self):
+        current_time = time.time()
+        for sock, state in list(self.socket_states.items()):
+            if current_time - state.last_heartbeat > SOCKET_TIMEOUT:
+                logging.warning(f"Dropping dead socket: {state.address} (no heartbeat for {SOCKET_TIMEOUT} seconds)")
+                self._drop_socket(sock)
+
+    def _mut_retrieve_socket(self) -> Optional[socket.socket]:
+        while not self.socket_queue.empty():
             try:
-                sockets = list(assigned_connections.keys())
-                ready_sockets, _, _ = select.select(sockets, [], sockets, 0.1)
-            except select.error as e:
-                logging.error(f"Select error: {e}")
+                sock = self.socket_queue.get_nowait()
+                if isinstance(sock, socket.socket):
+                    self.sockets.append(sock)
+                    self.socket_states[sock] = SocketState(sock)
+            except Exception as e:
+                logging.error(f"Error retrieving socket from queue: {e}")
 
-        # Send individuals to all connections that need them
-        for conn in connections:
-            if conn.socket in ready_sockets:
-                try:
-                    reply = conn.receive_if_ready()
-                    if reply is not None:
-                        fitness_values, throughput = reply
-                        reporter.add(
-                            address=conn.address,
-                            fitness_values=fitness_values,
-                            throughput=throughput
-                        )
-                        distribution.register_throughput(conn, throughput)
+    def _communicate_with_client(self, timeout: float = 20.0):
+        try:
+            readable, _, _ = select.select(self.sockets, [], self.sockets, timeout)
 
+        except select.error as e:
+            logging.error(f"Select error: {e}")
+            return
+
+        if not readable:
+            return
+
+        for sock in readable:
+            success, packet = receive_packet(sock)
+            ic(success)
+            if success != CommunicationResult.SUCCESS:
+                self._drop_socket(sock)
+                continue
+            ic(packet.packet_type)
+
+            self.socket_states[sock].last_heartbeat = time.time()
+
+            response_packet = Packet(PacketType.ACK)
+            match packet.packet_type:
+                case PacketType.HEARTBEAT:
+                    self.socket_states[sock].throughput = ic(packet.data)
+
+                case PacketType.HANDSHAKE:
+                    pass
+
+                case PacketType.REQUEST:
+                    response_packet.data = self.socket_states[sock].assigned_individuals
+                    ic(len(response_packet.data) if response_packet.data else None)
+
+                case PacketType.RESPONSE:
+                    if not isinstance(packet.data, list):
+                        logging.error(f"Invalid data type in RESPONSE packet: {type(packet.data)}")
+                        self._drop_socket(sock)
+                        continue
+                    if not packet.data:
+                        logging.warning(f"Received empty RESPONSE packet from {sock.getpeername()}")
+                        continue
+
+                    fitness_values = []
+                    throughput = 0.0
+                    for i in packet.data:
+                        if not isinstance(i, Individual):
+                            logging.error(f"Invalid individual in RESPONSE packet: {i}")
+                            break
+                        for j in self.socket_states[sock].assigned_individuals:
+                            if j.is_finished:
+                                continue
+                            if np.array_equal(i, j):
+                                j.copy_from(i)
+                                continue
+                        fitness_values.append(i.get_fitness())
+                        throughput += 1 / (i.get_elapse() + 1e-10)
+
+                    ic(sock, np.average(fitness_values), throughput)
+                    self.reporter.add(sock.fileno(), fitness_values, throughput / len(packet.data))
+                    self.socket_states[sock].assigned_individuals = None
+
+                case PacketType.DISCONNECTION:
+                    send_packet(sock, response_packet)
+                    self._drop_socket(sock)
                     continue
 
-                except Exception as e:
-                    logging.error(f"Error handling connection {conn.address}: {e}")
-                    conn.close_gracefully()
-                    connections.discard(conn)
+                case PacketType.ACK:
+                    logging.warning(f"Received ACK packet: {packet.data}")
+                    continue
 
-            if conn.has_assigned_individuals and conn.is_healthy:
-                try:
-                    if not conn.send_if_ready():
-                        conn.close_gracefully()
-                        connections.discard(conn)
+            result = ic(send_packet(sock, response_packet))
+            if result != CommunicationResult.SUCCESS:
+                self._drop_socket(sock)
 
-                except Exception as e:
-                    logging.error(f"Error sending to connection {conn.address}: {e}")
-                    conn.close_gracefully()
-                    connections.discard(conn)
+    def _update_assigned_individuals(self, cmaes: CMAES, distribution: Distribution):
+        for sock in self.sockets:
+            if self.socket_states[sock].assigned_individuals is not None:
+                continue
+            batch_size = ic(distribution.get_batch_size(sock))
+            self.socket_states[sock].assigned_individuals = cmaes.get_individuals(batch_size)
 
-        if cmaes.ready_to_update():
+        if self.reporter.should_output():
+            self.reporter.output()
+
+    def run(self):
+        distribution = Distribution()
+        cmaes = CMAES(
+            dimension=self.settings.Optimization.dimension,
+            sigma=self.settings.Optimization.sigma,
+            population_size=self.settings.Optimization.population_size,
+        )
+
+        while not self.stop_event.is_set():
+            self._mut_retrieve_socket()
+            if ic(len(self.sockets)) == 0:
+                time.sleep(1)
+                continue
+
+            self._mut_drop_dead_sockets()
+            self._communicate_with_client()
+
+            result, individuals = cmaes.update()
+            ic(result, len(individuals))
+
+            distribution.update(len(individuals), self.socket_states)
+
+            self._update_assigned_individuals(cmaes, distribution)
+
+        self.reporter.output()
+
+
+def _spawn_thread(
+        settings: Settings, handler: Optional[Callable[[CMAES], None]] = None
+) -> tuple[threading.Thread, Queue, threading.Event]:
+    socket_queue: Queue = Queue()
+    stop_event: threading.Event = threading.Event()
+    thread = threading.Thread(
+        target=lambda: _Server(settings, socket_queue, stop_event, handler).run()
+    )
+    thread.daemon = True
+    thread.start()
+    return thread, socket_queue, stop_event
+
+
+def _create_server_socket(host: str, port: int) -> socket.socket:
+    try:
+        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        server_socket.settimeout(1.0)
+        server_socket.bind((host, port))
+        ic(host, port)
+        return server_socket
+    except socket.error as e:
+        ic(e)
+        raise RuntimeError(f"Failed to create server socket: {e}")
+
+
+def _server_entrance(host: str, port: int, socket_queue: Queue, stop_event: threading.Event):
+    sock = _create_server_socket(host, port)
+    sock.listen(5)
+
+    try:
+        while not stop_event.is_set():
             try:
-                if handler:
-                    handler(cmaes)
-                solutions = cmaes.update()
+                client_socket, client_address = sock.accept()
+                ic(client_address)
+                socket_queue.put(client_socket)
 
-                if cmaes.should_stop():
-                    logging.info("Optimization convergence reached, stopping server")
-                    stop_event.set()
+            except socket.timeout:
+                continue
 
-                    best_solution = None
-                    for solution in solutions:
-                        if best_solution is None or solution[1] < best_solution[1]:
-                            best_solution = solution
+            except socket.error as e:
+                ic(e)
+                continue
 
-                    if best_solution:
-                        logging.info(f"Best solution found: {best_solution[0]} with fitness {best_solution[1]}")
-                        print(f"Best solution found: {best_solution[0]} with fitness {best_solution[1]}")
-
-            except Exception as e:
-                logging.error(f"Error updating CMAES: {e}")
-
-        distribution.update(cmaes.num_ready_individuals, connections)
-
-        if reporter.should_output():
-            reporter.output()
-
-    reporter.output()
-
-    for conn in connections:
-        if conn.is_healthy:
-            conn.close_gracefully()
+    finally:
+        try:
+            sock.close()
+        except Exception as e:
+            ic(e)
 
 
 class OptimizationServer:
     def __init__(self, settings: Settings):
         self.settings = settings
 
-        self._queue = Queue()
-        self.stop_event = threading.Event()
-        self.server_thread = None
-
-    def _setup_server_socket(self):
-        try:
-            server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            server_socket.settimeout(1.0)
-            server_socket.bind((
-                self.settings.Server.HOST,
-                self.settings.Server.PORT
-            ))
-            server_socket.listen(self.settings.Server.SOCKET_BACKLOG)
-            logging.info(
-                f"Server socket bound to {self.settings.Server.HOST}:{self.settings.Server.PORT} with max connections: {self.settings.Server.SOCKET_BACKLOG}")
-            return server_socket
-        except socket.error as e:
-            logging.error(f"Failed to setup server socket: {e}")
-            raise RuntimeError(f"Failed to setup server socket: {e}")
-
     def start_server(self, handler: Optional[Callable[[CMAES], None]] = None) -> None:
-        self.server_thread = threading.Thread(
-            target=server_thread,
-            args=(self.settings, self._queue, self.stop_event, handler)
-        )
-        self.server_thread.start()
-
-        server_socket = self._setup_server_socket()
-
-        try:
-            logging.info(f"Optimization server listening on {self.settings.Server.HOST}:{self.settings.Server.PORT}")
-
-            while not self.stop_event.is_set():
-                try:
-                    client_socket, client_address = server_socket.accept()
-                    logging.info(f"Client connected: {client_address}")
-                    print(f"CONNECTION ESTABLISHED: {client_address}")
-
-                except socket.timeout:
-                    time.sleep(4)
-                    continue  # Check stop_event and try again
-
-                except socket.error as e:
-                    logging.error(f"Error accepting client connection: {e}")
-                    continue
-
-                connection = Connection(client_socket)
-
-                try:
-                    self._queue.put(connection)
-                except Exception as e:
-                    logging.error(f"Failed to queue connection: {e}")
-                    connection.close_by_fatal_error()
-
-
-        except KeyboardInterrupt:
-            logging.info("Server shutting down...")
-        except Exception as e:
-            logging.error(f"Server error: {e}")
-        finally:
-            try:
-                server_socket.close()
-            except Exception as e:
-                logging.error(f"Error closing server socket: {e}")
-
-            self.stop_event.set()
-            if self.server_thread and self.server_thread.is_alive():
-                self.server_thread.join()
-                print("DEBUG: Server thread joined")
+        server_thread, queue, stop_event = _spawn_thread(self.settings, handler)
+        _server_entrance(self.settings.Server.HOST, self.settings.Server.PORT, queue, stop_event)
+        server_thread.join()

@@ -3,17 +3,17 @@ import threading
 from datetime import datetime
 
 from icecream import ic
-from framework.optimization import connect_to_server
+from framework.optimization import run_adaptive_client_manager
 
 from evaluation_function import evaluation_function
 from framework.prelude import Individual
 
 ic.configureOutput(
-    prefix=lambda: f'[{datetime.now().strftime("%H:%M:%S.%f")[:-3]}][PID:{os.getpid()}][TID:{threading.get_ident()}] CLIENT| ',
+    prefix=lambda: f'[{datetime.now().strftime("%H:%M:%S.%f")[:-3]}][PID:{os.getpid()}][TID:{threading.get_ident()}] PARALLEL| ',
     includeContext=True
 )
 
-ic.enable()
+ic.disable()
 
 
 def handler(individual: Individual):
@@ -30,19 +30,19 @@ def main():
     settings = MySettings()
 
     print("=" * 50)
-    print("OPTIMIZATION CLIENT")
+    print("PARALLEL OPTIMIZATION CLIENT")
     print("=" * 50)
     print(f"Server: {settings.Server.HOST}:{settings.Server.PORT}")
     print("-" * 30)
-    print("Connecting to server...")
-    print("Press Ctrl+C to disconnect")
+    print("Starting adaptive client manager...")
+    print("Press Ctrl+C to stop")
     print("=" * 50)
 
-    connect_to_server(
-        settings.Server.HOST,
-        settings.Server.PORT,
+    run_adaptive_client_manager(
+        host=settings.Server.HOST,
+        port=settings.Server.PORT,
         evaluation_function=evaluation_function,
-        handler=handler,
+        observation_interval=10
     )
 
 

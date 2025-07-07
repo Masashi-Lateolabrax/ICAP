@@ -1,112 +1,294 @@
+import dataclasses
 import socket
 import logging
 import threading
-from typing import Optional
+import signal
+import queue
 import time
+from typing import Optional, Callable
 
+from icecream import ic
 from ..prelude import *
-from ._connection_utils import send_individuals, receive_individuals
+from ..types.communication import Packet, PacketType
+from ._connection_utils import send_packet, communicate
+
+HEARTBEAT_INTERVAL = 7
 
 
-class OptimizationClient:
-    def __init__(self, host: str = 'localhost', port: int = 5000):
-        self.host = host
-        self.port = port
-        self._socket: Optional[socket.socket] = None
-        self._stop_event = threading.Event()
+@dataclasses.dataclass
+class ClientCalculationState:
+    idle: bool
+    throughput: Optional[float] = None
+    individuals: Optional[list[Individual]] = None
+    error: Optional[str] = None
 
-    def connect(self) -> bool:
-        try:
-            self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self._socket.settimeout(10.0)
-            self._socket.connect((self.host, self.port))
-            print(f"Connected to server: {self.host}:{self.port}")
-            return True
-        except (socket.error, socket.timeout) as e:
-            logging.error(f"Failed to connect to server: {e}")
-            return False
+    @property
+    def is_idle(self) -> bool:
+        return self.idle
 
-    def disconnect(self) -> None:
-        if self._socket:
+
+def _connect_to_server(server_address: str, port: int) -> socket.socket:
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(10.0)
+
+    try:
+        sock.connect((server_address, port))
+
+    except (socket.error, socket.timeout) as e:
+        raise ConnectionError(f"Failed to connect to server {server_address}:{port}") from e
+
+    handshake_packet = Packet(_packet_type=PacketType.HANDSHAKE, data=None)
+    result, ack_packet = communicate(sock, handshake_packet)
+    if result != CommunicationResult.SUCCESS:
+        sock.close()
+        raise ConnectionError("Failed to complete handshake")
+
+    return sock
+
+
+class _EvaluationWorker:
+    def __init__(
+            self,
+            evaluation_function: EvaluationFunction,
+            handler: Optional[Callable[[Individual], None]] = None
+    ):
+        self.task_queue = queue.Queue()
+        self.response_queue = queue.Queue()
+        self.evaluation_function = evaluation_function
+        self.stop_event = threading.Event()
+        self.thread: Optional[threading.Thread] = None
+        self.handler: Optional[Callable[[Individual], None]] = handler
+
+    def _worker(self) -> None:
+        while not self.stop_event.is_set():
             try:
-                self._socket.close()
-            except Exception as e:
-                logging.error(f"Error closing socket: {e}")
-            self._socket = None
-
-    def run_evaluation_loop(self, evaluation_function: EvaluationFunction) -> None:
-        if self._socket is not None:
-            raise RuntimeError("Client is already connected.")
-
-        if not self.connect():
-            raise RuntimeError("Failed to connect to server.")
-
-        try:
-            assert self._socket is not None  # connect() succeeded
-            while not self._stop_event.is_set():
-                success, individuals = receive_individuals(self._socket)
-                if not success:
-                    logging.error("Fatal error receiving data from server, disconnecting")
-                    self.disconnect()
-                    break
-
+                individuals = self.task_queue.get(timeout=1.0)
                 if individuals is None:
-                    logging.info("Connection is healthy but no data received.")
-                    self.disconnect()
+                    break
+                self.response_queue.put(
+                    ClientCalculationState(idle=False, throughput=None)
+                )
+
+            except queue.Empty:
+                self.response_queue.put(
+                    ClientCalculationState(idle=True)
+                )
+                continue
+
+            for individual in individuals:
+                if self.stop_event.is_set():
                     break
 
-                if not isinstance(individuals, list):
-                    logging.error(f"Received invalid data type: {type(individuals)}")
-                    self.disconnect()
-                    break
+                try:
+                    individual.timer_start()
+                    fitness = ic(self.evaluation_function(individual))
+                    individual.timer_end()
 
-                if len(individuals) == 0:
-                    logging.info("Received empty list of individuals, continuing...")
-                    print(f"[{self._socket.getsockname()[1]}] Received empty list of individuals, continuing...")
-                    if self._stop_event.wait(0.01):
-                        break
+                    individual.set_fitness(fitness)
+                    individual.set_calculation_state(CalculationState.FINISHED)
+
+                    throughput = 1 / (individual.get_elapse() + 1e-10)
+                    self.response_queue.put(
+                        ClientCalculationState(
+                            idle=False,
+                            throughput=throughput
+                        )
+                    )
+
+                    if self.handler:
+                        self.handler(individual)
+
+                except Exception as e:
+                    logging.error(f"Error during evaluation function execution: {e}")
+                    individual.set_fitness(float('inf'))
                     continue
 
-                logging.debug(f"Received {len(individuals)} individuals")
-                ave_fitness = 0
-                start_time = time.time()
-                for individual in individuals:
-                    try:
-                        individual.timer_start()
-                        fitness = evaluation_function(individual)
-                        individual.timer_end()
-
-                        ave_fitness += fitness
-                        individual.set_fitness(fitness)
-                        individual.set_calculation_state(CalculationState.FINISHED)
-
-                        logging.debug(f"Evaluated individual with fitness: {fitness}")
-                    except Exception as e:
-                        logging.error(f"Error during evaluation function execution: {e}")
-                        individual.set_fitness(float('inf'))
-
-                ave_fitness /= len(individuals)
-                speed = len(individuals) / (max(1e-6, time.time() - start_time))
-                logging.info(
-                    f"[{self._socket.getsockname()[1]}] Num: {len(individuals)}, Speed: {speed:.2f}, AveFitness: {ave_fitness:.2f}"
+            self.response_queue.put(
+                ClientCalculationState(
+                    idle=True,
+                    individuals=individuals,
                 )
-                print(
-                    f"[{self._socket.getsockname()[1]}] Num: {len(individuals)}, Speed: {speed:.2f}, AveFitness: {ave_fitness:.2f}"
-                )
+            )
 
-                if not send_individuals(self._socket, individuals):
-                    logging.error("Failed to send result to server")
-                    self.disconnect()
-                    break
+    def is_alive(self) -> bool:
+        return self.thread is not None and self.thread.is_alive()
 
-        except KeyboardInterrupt:
-            logging.info("Client shutting down...")
-            self._stop_event.set()
+    def run(self):
+        self.thread = threading.Thread(target=self._worker)
+        self.thread.daemon = True
+        self.thread.start()
 
-        finally:
-            self.disconnect()
+    def stop(self):
+        if self.is_alive():
+            self.stop_event.set()
+            self.thread.join(timeout=5.0)
+        else:
+            logging.warning("Evaluation worker is not running, cannot stop it")
+
+    def add_task(self, individuals: list[Individual]) -> None:
+        if not self.is_alive():
+            raise RuntimeError("Evaluation worker is not running")
+        self.task_queue.put(individuals)
+
+    def get_response(self) -> ClientCalculationState:
+        if not self.is_alive():
+            raise RuntimeError("Evaluation worker is not running")
+        try:
+            return self.response_queue.get(timeout=1.0)
+        except queue.Empty:
+            return ClientCalculationState(idle=True)
 
 
-def connect_to_server(server_address: str, port: int, evaluation_function: EvaluationFunction) -> None:
-    client = OptimizationClient(server_address, port)
-    client.run_evaluation_loop(evaluation_function)
+class _CommunicationWorker:
+    def __init__(self, sock: socket.socket):
+        self.sock = sock
+        self.last_heartbeat = time.time()
+        self.throughput = 0.0
+        self.task: Optional[list[Individual]] = None
+        self.evaluated_task: Optional[list[Individual]] = None
+
+    def is_alive(self) -> bool:
+        return self.sock is not None
+
+    def is_assigned(self) -> bool:
+        return self.task is not None or self.evaluated_task is not None
+
+    def set_evaluated_task(self, individuals: list[Individual]) -> None:
+        self.task = None
+        self.evaluated_task = individuals
+
+    def _heartbeat(self, throughput: float) -> CommunicationResult:
+        if not self.is_alive():
+            logging.error("Socket is not alive, cannot send heartbeat")
+            return CommunicationResult.CONNECTION_ERROR
+
+        if time.time() - self.last_heartbeat < HEARTBEAT_INTERVAL:
+            return CommunicationResult.SUCCESS
+
+        packet = Packet(_packet_type=PacketType.HEARTBEAT, data=throughput)
+        result, packet = communicate(self.sock, packet)
+
+        if result != CommunicationResult.SUCCESS:
+            logging.error("Failed to send heartbeat packet")
+            return result
+
+        self.last_heartbeat = time.time()
+
+        return CommunicationResult.SUCCESS
+
+    def _request(self) -> CommunicationResult:
+        if not self.is_alive():
+            logging.error("Socket is not alive, cannot send request")
+            return CommunicationResult.CONNECTION_ERROR
+
+        if self.is_assigned():
+            logging.error("Already assigned, cannot send request")
+            return CommunicationResult.SUCCESS
+
+        packet = Packet(_packet_type=PacketType.REQUEST, data=None)
+        result, packet = communicate(self.sock, packet)
+
+        if result != CommunicationResult.SUCCESS:
+            logging.error("Failed to send request packet")
+            return result
+
+        self.task = packet.data
+        ic(len(self.task) if self.task else None)
+
+        return CommunicationResult.SUCCESS
+
+    def _return(self) -> CommunicationResult:
+        if not self.is_alive():
+            logging.error("Socket is not alive, cannot send individuals")
+            return CommunicationResult.CONNECTION_ERROR
+
+        if not self.is_assigned():
+            logging.error("No individuals to return, cannot send response")
+            return CommunicationResult.SUCCESS
+
+        packet = Packet(_packet_type=PacketType.RESPONSE, data=self.evaluated_task)
+        result, packet = communicate(self.sock, packet)
+
+        if result != CommunicationResult.SUCCESS:
+            logging.error("Failed to send response packet with individuals")
+            return result
+
+        self.evaluated_task = None
+
+        return CommunicationResult.SUCCESS
+
+    def set_throughput(self, throughput: float) -> None:
+        self.throughput = throughput
+
+    def run(self) -> tuple[CommunicationResult, Optional[list[Individual]]]:
+        if not self.is_alive():
+            raise RuntimeError("Communication worker is not running")
+
+        if not self.is_assigned():
+            result = ic(self._request())
+            return result, self.task
+
+        if self.task is None and self.evaluated_task is not None:
+            result = ic(self._return())
+            return result, None
+
+        return ic(self._heartbeat(self.throughput)), None
+
+
+def connect_to_server(
+        server_address: str,
+        port: int,
+        evaluation_function: EvaluationFunction,
+        handler: Optional[Callable[[Individual], None]] = None
+) -> None:
+    stop_event = threading.Event()
+    sock = _connect_to_server(server_address, port)
+
+    def signal_handler(signum, frame):
+        logging.warning(f"Received signal {signum}, stopping client...")
+        stop_event.set()
+        if sock:
+            try:
+                sock.close()
+            except Exception as e:
+                logging.error(f"Error closing socket during signal handling: {e}")
+
+    signal.signal(signal.SIGTERM, signal_handler)
+    signal.signal(signal.SIGINT, signal_handler)
+
+    evaluation_worker = _EvaluationWorker(evaluation_function, handler)
+    evaluation_worker.run()
+
+    communication_worker = _CommunicationWorker(sock)
+
+    while not stop_event.is_set():
+        calc_state = evaluation_worker.get_response()
+        if calc_state.throughput is not None:
+            communication_worker.set_throughput(calc_state.throughput)
+
+        if calc_state.individuals is not None:
+            communication_worker.set_evaluated_task(calc_state.individuals)
+
+        try:
+            result, new_task = communication_worker.run()
+            if result != CommunicationResult.SUCCESS:
+                logging.error(f"Communication error: {result}")
+                break
+
+            if new_task is not None:
+                evaluation_worker.add_task(new_task)
+
+        except Exception as e:
+            logging.error(f"Communication error: {e}")
+            break
+
+        time.sleep(0.01)
+
+    evaluation_worker.stop()
+    if sock:
+        try:
+            disconnect_packet = Packet(_packet_type=PacketType.DISCONNECTION, data=None)
+            send_packet(sock, disconnect_packet)
+            sock.close()
+        except Exception as e:
+            logging.warning(f"Error during disconnection: {e}")
