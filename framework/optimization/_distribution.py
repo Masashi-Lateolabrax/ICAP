@@ -28,7 +28,6 @@ class Distribution:
             socket_status: dict[socket.socket, SocketState],
     ) -> None:
         self._mut_init_batch_size_and_throughput(socket_status)
-        ic(self.batch_size, self.throughput)
 
         if not self.throughput:
             return
