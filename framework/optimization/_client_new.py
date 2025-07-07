@@ -9,7 +9,7 @@ from typing import Optional, Callable, Tuple
 
 from ..prelude import *
 from ..types.communication import Packet, PacketType
-from ._connection_utils import send_packet, receive_packet
+from ._connection_utils import send_packet, receive_packet, communicate
 
 
 @dataclasses.dataclass
@@ -22,33 +22,6 @@ class CalculationState:
     @property
     def is_idle(self) -> bool:
         return self.idle
-
-def _heartbeat(sock: socket.socket, throughput: float) -> CommunicationResult:
-    try:
-        packet = Packet(_packet_type=PacketType.HEARTBEAT, data=throughput)
-        result = send_packet(sock, packet)
-        if result != CommunicationResult.SUCCESS:
-            logging.error("Failed to send heartbeat packet")
-            return result
-        logging.debug(f"Heartbeat sent with throughput: {throughput}")
-    except socket.error as e:
-        logging.error(f"Socket error during heartbeat: {e}")
-        return CommunicationResult.CONNECTION_ERROR
-
-    try:
-        result, ack_packet = receive_packet(sock)
-        if result != CommunicationResult.SUCCESS:
-            logging.error("Failed to receive heartbeat ACK")
-            return result
-        if ack_packet is None or ack_packet.packet_type != PacketType.ACK:
-            logging.error("Received invalid ACK for heartbeat")
-            return CommunicationResult.CONNECTION_ERROR
-        logging.debug("Heartbeat ACK received successfully")
-    except socket.error as e:
-        logging.error(f"Socket error during heartbeat ACK: {e}")
-        return CommunicationResult.CONNECTION_ERROR
-
-    return CommunicationResult.SUCCESS
 
 
 def _connect_to_server(server_address: str, port: int) -> socket.socket:
@@ -173,6 +146,104 @@ class _EvaluationWorker:
             return self.response_queue.get(timeout=1.0)
         except queue.Empty:
             return CalculationState(idle=True)
+
+
+class _CommunicationWorker:
+    def __init__(self, sock: socket.socket):
+        self.sock = sock
+        self.last_heartbeat = time.time()
+        self.heartbeat_interval = 10  # seconds
+        self.throughput = 0.0
+        self.task: Optional[list[Individual]] = None
+        self.evaluated_task: Optional[list[Individual]] = None
+
+    def is_alive(self) -> bool:
+        return self.sock is not None
+
+    def is_assigned(self) -> bool:
+        return self.task is not None and self.evaluated_task is not None
+
+    def set_evaluated_task(self, individuals: list[Individual]) -> None:
+        self.task = None
+        self.evaluated_task = individuals
+
+    def _heartbeat(self, throughput: float) -> CommunicationResult:
+        if not self.is_alive():
+            logging.error("Socket is not alive, cannot send heartbeat")
+            return CommunicationResult.CONNECTION_ERROR
+
+        if time.time() - self.last_heartbeat < self.heartbeat_interval:
+            return CommunicationResult.SUCCESS
+
+        packet = Packet(_packet_type=PacketType.HEARTBEAT, data=throughput)
+        result, packet = communicate(self.sock, packet)
+
+        if result != CommunicationResult.SUCCESS:
+            logging.error("Failed to send heartbeat packet")
+            return result
+
+        self.last_heartbeat = time.time()
+
+        return CommunicationResult.SUCCESS
+
+    def _request(self) -> CommunicationResult:
+        if not self.is_alive():
+            logging.error("Socket is not alive, cannot send request")
+            return CommunicationResult.CONNECTION_ERROR
+
+        if self.is_assigned():
+            logging.error("Already assigned, cannot send request")
+            return CommunicationResult.SUCCESS
+
+        packet = Packet(_packet_type=PacketType.REQUEST, data=None)
+        result, packet = communicate(self.sock, packet)
+        logging.debug("Sending request packet to server")
+
+        if result != CommunicationResult.SUCCESS:
+            logging.error("Failed to send request packet")
+            return result
+
+        self.tasks = packet.data
+
+        return CommunicationResult.SUCCESS
+
+    def _return(self) -> CommunicationResult:
+        if not self.is_alive():
+            logging.error("Socket is not alive, cannot send individuals")
+            return CommunicationResult.CONNECTION_ERROR
+
+        if not self.is_assigned():
+            logging.error("No individuals to return, cannot send response")
+            return CommunicationResult.SUCCESS
+
+        packet = Packet(_packet_type=PacketType.RESPONSE, data=self.evaluated_task)
+        result, packet = communicate(self.sock, packet)
+
+        if result != CommunicationResult.SUCCESS:
+            logging.error("Failed to send response packet with individuals")
+            return result
+
+        logging.debug(f"Sent {len(self.evaluated_task)} individuals to server")
+        self.evaluated_task = None
+
+        return CommunicationResult.SUCCESS
+
+    def set_throughput(self, throughput: float) -> None:
+        self.throughput = throughput
+
+    def get_task(self) -> Optional[Packet]:
+        return self.tasks
+
+    def run(self):
+        if not self.is_alive():
+            raise RuntimeError("Communication worker is not running")
+
+        self._heartbeat(self.throughput)
+        if not self.is_assigned():
+            self._request()
+
+        if self.task is None and self.evaluated_task is not None:
+            self._return()
 
 
 def _evaluation_worker(
