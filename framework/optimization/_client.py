@@ -77,7 +77,7 @@ class _EvaluationWorker:
 
                 try:
                     individual.timer_start()
-                    fitness = self.evaluation_function(individual)
+                    fitness = ic(self.evaluation_function(individual))
                     individual.timer_end()
 
                     individual.set_fitness(fitness)
