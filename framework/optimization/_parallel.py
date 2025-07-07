@@ -140,6 +140,8 @@ class ProcessManager:
                     process_info = self.processes.pop()
                     process_info.terminate()
 
+        print(f"Adjusted process count: {target_count} (current: {current_count})")
+
     def get_process_count(self) -> int:
         return len([p for p in self.processes if p.is_alive])
 
@@ -164,9 +166,9 @@ def collect_throughput_observations(
         while not manager.all_throughput_observed():
             time.sleep(interval)
 
-        model.add_observation(
-            *ic((count, manager.get_total_throughput()))
-        )
+        throughput = manager.get_total_throughput()
+        print(f"Processes: {count}, Throughput: {throughput:.2f} ind/s")
+        model.add_observation(count, throughput)
 
 
 def run_adaptive_client_manager(
@@ -174,7 +176,6 @@ def run_adaptive_client_manager(
         port: int,
         evaluation_function: Callable,
         max_processes: Optional[int] = None,
-        adjustment_interval: float = 10.0,  # minutes
         observation_interval: float = 60.0  # minutes
 ):
     """
@@ -188,7 +189,6 @@ def run_adaptive_client_manager(
     manager = ProcessManager(host, port)
 
     running = True
-    last_adjustment = time.time()
 
     def signal_handler(_signum, _frame):
         nonlocal running
@@ -213,26 +213,21 @@ def run_adaptive_client_manager(
     )
     last_observation = time.time()
 
+    optimal_count = model.find_optimal_count(MIN_PROCESSES, max_processes)
+
     try:
         while running:
             current_time = time.time()
+
+            manager.adjust_process_count(optimal_count, evaluation_function)
 
             if current_time - last_observation >= observation_interval * 60:
                 collect_throughput_observations(
                     manager, model, evaluation_function,
                     max_processes
                 )
-                last_observation = current_time
-
-            if current_time - last_adjustment >= adjustment_interval * 60:
-                current_count = manager.get_process_count()
                 optimal_count = model.find_optimal_count(MIN_PROCESSES, max_processes)
-
-                if optimal_count != current_count:
-                    manager.adjust_process_count(optimal_count, evaluation_function)
-                    ic("Adjusted:", current_count, "->", optimal_count, "processes")
-
-                last_adjustment = current_time
+                last_observation = current_time
 
             time.sleep(5)
 
