@@ -15,7 +15,9 @@ from controller import RobotNeuralNetwork
 from settings import MySettings
 
 # Configure icecream for distributed system debugging
-ic.configureOutput(prefix=lambda: f'[{datetime.now().strftime("%H:%M:%S.%f")[:-3]}][PID:{os.getpid()}][TID:{threading.get_ident()}] SERVER| ')
+ic.configureOutput(
+    prefix=lambda: f'[{datetime.now().strftime("%H:%M:%S.%f")[:-3]}][PID:{os.getpid()}][TID:{threading.get_ident()}] SERVER| '
+)
 
 
 def main():
