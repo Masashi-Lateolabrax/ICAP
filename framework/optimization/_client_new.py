@@ -161,7 +161,7 @@ class _CommunicationWorker:
         return self.sock is not None
 
     def is_assigned(self) -> bool:
-        return self.task is not None and self.evaluated_task is not None
+        return self.task is not None or self.evaluated_task is not None
 
     def set_evaluated_task(self, individuals: list[Individual]) -> None:
         self.task = None
