@@ -112,6 +112,23 @@ def _evaluation_worker(
     logging.info("Evaluation worker stopped")
 
 
+def _spawn_evaluation_worker(
+        evaluation_function: EvaluationFunction,
+        stop_event: threading.Event
+) -> tuple[threading.Thread, queue.Queue, queue.Queue]:
+    task_queue = queue.Queue()
+    response_queue = queue.Queue()
+
+    worker_thread = threading.Thread(
+        target=_evaluation_worker,
+        args=(task_queue, response_queue, evaluation_function, stop_event)
+    )
+    worker_thread.daemon = True
+    worker_thread.start()
+
+    return worker_thread, task_queue, response_queue
+
+
 def communicate_with_server(
         server_address: str,
         port: int,
@@ -128,15 +145,7 @@ def communicate_with_server(
     signal.signal(signal.SIGINT, signal_handler)
 
     sock = _connect_to_server(server_address, port)
-    task_queue = queue.Queue()
-    response_queue = queue.Queue()
-
-    worker_thread = threading.Thread(
-        target=_evaluation_worker,
-        args=(task_queue, response_queue, evaluation_function, stop_event)
-    )
-    worker_thread.daemon = True
-    worker_thread.start()
+    worker_thread, task_queue, response_queue = _spawn_evaluation_worker(evaluation_function, stop_event)
 
     last_heartbeat = time.time()
     throughput = 0.0
