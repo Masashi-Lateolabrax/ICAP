@@ -19,6 +19,9 @@ class CalculationState:
     individuals: Optional[list[Individual]] = None
     error: Optional[str] = None
 
+    @property
+    def is_idle(self) -> bool:
+        return self.idle
 
 def _heartbeat(sock: socket.socket, throughput: float) -> CommunicationResult:
     try:
@@ -73,6 +76,103 @@ def _connect_to_server(server_address: str, port: int) -> socket.socket:
 
     logging.info("Handshake completed successfully")
     return sock
+
+
+class _EvaluationWorker:
+    def __init__(
+            self,
+            evaluation_function: EvaluationFunction,
+    ):
+        self.task_queue = queue.Queue()
+        self.response_queue = queue.Queue()
+        self.evaluation_function = evaluation_function
+        self.stop_event = threading.Event()
+        self.thread: Optional[threading.Thread] = None
+
+    def _worker(self) -> None:
+        logging.info("Evaluation worker started")
+
+        while not self.stop_event.is_set():
+            try:
+                individuals = self.task_queue.get(timeout=1.0)
+                if individuals is None:
+                    logging.info("Received poison pill, stopping evaluation worker")
+                    break
+                self.response_queue.put(
+                    CalculationState(idle=False, throughput=None)
+                )
+
+            except queue.Empty:
+                self.response_queue.put(
+                    CalculationState(idle=True)
+                )
+                continue
+
+            logging.debug(f"Evaluation worker received {len(individuals)} individuals")
+
+            for individual in individuals:
+                if self.stop_event.is_set():
+                    break
+
+                try:
+                    individual.timer_start()
+                    fitness = self.evaluation_function(individual)
+                    individual.timer_end()
+
+                    individual.set_fitness(fitness)
+                    individual.set_calculation_state(CalculationState.FINISHED)
+
+                    self.response_queue.put(
+                        CalculationState(
+                            idle=False,
+                            throughput=1 / (individual.get_elapse() + 1e-10)
+                        )
+                    )
+
+                    logging.debug(f"Evaluated individual with fitness: {fitness}")
+
+                except Exception as e:
+                    logging.error(f"Error during evaluation function execution: {e}")
+                    individual.set_fitness(float('inf'))
+                    continue
+
+            self.response_queue.put(
+                CalculationState(
+                    idle=True,
+                    individuals=individuals,
+                )
+            )
+
+        logging.info("Evaluation worker stopped")
+
+    def is_alive(self) -> bool:
+        return self.thread is not None and self.thread.is_alive()
+
+    def run(self):
+        self.thread = threading.Thread(target=self._worker)
+        self.thread.daemon = True
+        self.thread.start()
+
+    def stop(self):
+        if self.is_alive():
+            self.stop_event.set()
+            self.thread.join(timeout=5.0)
+            logging.info("Evaluation worker has been stopped")
+        else:
+            logging.warning("Evaluation worker is not running, cannot stop it")
+
+    def add_task(self, individuals: list[Individual]) -> None:
+        if not self.is_alive():
+            raise RuntimeError("Evaluation worker is not running")
+        self.task_queue.put(individuals)
+
+    def get_response(self) -> CalculationState:
+        if not self.is_alive():
+            raise RuntimeError("Evaluation worker is not running")
+        try:
+            return self.response_queue.get(timeout=1.0)
+        except queue.Empty:
+            return CalculationState(idle=True)
 
 
 def _evaluation_worker(
