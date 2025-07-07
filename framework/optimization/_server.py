@@ -210,6 +210,11 @@ class _Server:
                 batch_size = ic(distribution.get_batch_size(sock))
                 self.socket_states[sock].assigned_individuals = cmaes.get_individuals(batch_size)
 
+            if self.reporter.should_output():
+                self.reporter.output()
+
+        self.reporter.output()
+
 
 def _spawn_thread(
         settings: Settings, handler: Optional[Callable[[CMAES], None]] = None
