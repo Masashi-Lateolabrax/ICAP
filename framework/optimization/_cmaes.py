@@ -34,7 +34,6 @@ class _IndividualManager:
             if individual.is_finished:
                 remaining_individuals.append(individual)
             else:
-                print(f"{individual.get_calculation_state()}")
                 individual.set_calculation_state(CalculationState.NOT_STARTED)
                 individual.set_fitness(float("inf"))
                 self.ready_individuals.append(individual)
