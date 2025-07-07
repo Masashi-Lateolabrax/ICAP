@@ -12,8 +12,11 @@ from simulator import Simulator
 
 # Configure icecream for distributed system debugging
 ic.configureOutput(
-    prefix=lambda: f'[{datetime.now().strftime("%H:%M:%S.%f")[:-3]}][PID:{os.getpid()}][TID:{threading.get_ident()}] CLIENT| '
+    prefix=lambda: f'[{datetime.now().strftime("%H:%M:%S.%f")[:-3]}][PID:{os.getpid()}][TID:{threading.get_ident()}] CLIENT| ',
+    includeContext=True
 )
+
+ic.enable()
 
 
 def evaluation_function(individual: Individual):

@@ -96,7 +96,7 @@ class Controller:
                 self.input_ndarray[i, 4:6] = nest_data
                 valid_pairs.append(p)
             except Exception as e:
-                ic(f"Sensor data collection error for pair {i}: {e}")
+                ic("Sensor data collection error for pair", i, e)
                 p.error = e
                 p.is_calculating = False
                 # Set default values to prevent NaN propagation

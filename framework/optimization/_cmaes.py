@@ -25,7 +25,7 @@ class _IndividualManager:
             x = cmaes.ask()
             individual = Individual(x)
             self.ready_individuals.append(individual)
-        ic(f"Initialized {len(self.ready_individuals)} individuals")
+        ic("Initialized individuals", len(self.ready_individuals))
 
     def arrange_individuals(self):
         remaining_individuals = []
@@ -83,7 +83,7 @@ class CMAES:
 
         if mean is None:
             mean = np.zeros(dimension)
-            ic(f"Using default mean vector of zeros for dimension {dimension}")
+            ic("Using default mean vector of zeros for dimension", dimension)
         elif len(mean) != dimension:
             logging.error(f"Mean array length {len(mean)} does not match dimension {dimension}")
             raise ValueError(f"mean array length {len(mean)} does not match dimension {dimension}")
@@ -118,7 +118,7 @@ class CMAES:
         individuals = self._individual_manager.assigned_individuals
         solutions = [(i.to_ndarray(), i.get_fitness()) for i in individuals]
 
-        ic(f"Updating CMA with {len(solutions)} solutions")
+        ic("Updating CMA with solutions", len(solutions))
         self._optimizer.tell(solutions)
         self._individual_manager.init(self._optimizer)
 
@@ -145,7 +145,7 @@ class CMAES:
             else:
                 break
 
-        ic(f"Retrieved batch of {len(batch)} individuals")
+        ic("Retrieved batch of individuals", len(batch))
         return batch
 
     def should_stop(self) -> bool:

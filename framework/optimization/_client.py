@@ -26,7 +26,7 @@ class ClientCalculationState:
 
 
 def _connect_to_server(server_address: str, port: int) -> socket.socket:
-    ic(f"_connect_to_server: Connecting to {server_address}:{port}")
+    ic("_connect_to_server: Connecting to", server_address, port)
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(10.0)
     ic("_connect_to_server: Socket created with 10s timeout")
@@ -91,8 +91,8 @@ class _EvaluationWorker:
                 )
                 continue
 
-            ic(f"_worker: Processing {len(individuals)} individuals")
-            ic(f"Evaluation worker received {len(individuals)} individuals")
+            ic("_worker: Processing individuals", len(individuals))
+            ic("Evaluation worker received individuals", len(individuals))
 
             for individual in individuals:
                 if self.stop_event.is_set():
@@ -104,13 +104,13 @@ class _EvaluationWorker:
                     individual.timer_start()
                     fitness = self.evaluation_function(individual)
                     individual.timer_end()
-                    ic(f"_worker: Individual evaluated, fitness: {fitness}, elapse: {individual.get_elapse()}")
+                    ic("_worker: Individual evaluated, fitness:", fitness, "elapse:", individual.get_elapse())
 
                     individual.set_fitness(fitness)
                     individual.set_calculation_state(CalculationState.FINISHED)
 
                     throughput = 1 / (individual.get_elapse() + 1e-10)
-                    ic(f"_worker: Individual throughput: {throughput}")
+                    ic("_worker: Individual throughput:", throughput)
                     self.response_queue.put(
                         ClientCalculationState(
                             idle=False,
@@ -118,7 +118,7 @@ class _EvaluationWorker:
                         )
                     )
 
-                    ic(f"Evaluated individual with fitness: {fitness}")
+                    ic("Evaluated individual with fitness:", fitness)
 
                 except Exception as e:
                     ic("_worker: Error during evaluation:", e)
@@ -193,12 +193,12 @@ class _CommunicationWorker:
             return CommunicationResult.CONNECTION_ERROR
 
         time_since_last = time.time() - self.last_heartbeat
-        ic(f"_heartbeat: Time since last heartbeat: {time_since_last:.2f}s")
+        ic("_heartbeat: Time since last heartbeat:", f"{time_since_last:.2f}s")
         if time.time() - self.last_heartbeat < self.heartbeat_interval:
             ic("_heartbeat: Heartbeat not needed yet")
             return CommunicationResult.SUCCESS
 
-        ic(f"_heartbeat: Sending heartbeat with throughput: {throughput}")
+        ic("_heartbeat: Sending heartbeat with throughput:", throughput)
         packet = Packet(_packet_type=PacketType.HEARTBEAT, data=throughput)
         result, packet = communicate(self.sock, packet)
         ic("_heartbeat: Heartbeat result:", result)
@@ -236,7 +236,7 @@ class _CommunicationWorker:
             return result
 
         self.task = packet.data
-        ic(f"_request: Received task with {len(self.task) if self.task else 0} individuals")
+        ic("_request: Received task with individuals:", len(self.task) if self.task else 0)
 
         return CommunicationResult.SUCCESS
 
@@ -251,7 +251,7 @@ class _CommunicationWorker:
             logging.error("No individuals to return, cannot send response")
             return CommunicationResult.SUCCESS
 
-        ic(f"_return: Sending {len(self.evaluated_task)} evaluated individuals to server")
+        ic("_return: Sending evaluated individuals to server:", len(self.evaluated_task))
         packet = Packet(_packet_type=PacketType.RESPONSE, data=self.evaluated_task)
         result, packet = communicate(self.sock, packet)
         ic("_return: Return result:", result)
@@ -261,7 +261,7 @@ class _CommunicationWorker:
             logging.error("Failed to send response packet with individuals")
             return result
 
-        ic(f"Sent {len(self.evaluated_task)} individuals to server")
+        ic("Sent individuals to server:", len(self.evaluated_task))
         ic("_return: Successfully sent individuals, clearing evaluated_task")
         self.evaluated_task = None
 
@@ -275,19 +275,19 @@ class _CommunicationWorker:
             ic("run: Communication worker not alive")
             raise RuntimeError("Communication worker is not running")
 
-        ic(f"run: Running communication worker, throughput: {self.throughput}")
+        ic("run: Running communication worker, throughput:", self.throughput)
         self._heartbeat(self.throughput)
         if not self.is_assigned():
             ic("run: Not assigned, requesting new task")
             self._request()
         else:
-            ic(f"run: Already assigned, task: {self.task is not None}, evaluated_task: {self.evaluated_task is not None}")
+            ic("run: Already assigned, task:", self.task is not None, "evaluated_task:", self.evaluated_task is not None)
 
         if self.task is None and self.evaluated_task is not None:
             ic("run: Returning evaluated task")
             self._return()
 
-        ic(f"run: Returning task: {self.task is not None}")
+        ic("run: Returning task:", self.task is not None)
         return self.task
 
 
@@ -297,7 +297,7 @@ def connect_to_server(
         evaluation_function: EvaluationFunction,
         handler: Optional[Callable] = None
 ) -> None:
-    ic(f"connect_to_server: Starting client connection to {server_address}:{port}")
+    ic("connect_to_server: Starting client connection to", server_address, port)
     stop_event = threading.Event()
 
     def signal_handler(signum, frame):
@@ -321,12 +321,12 @@ def connect_to_server(
         iteration = 0
         while not stop_event.is_set():
             iteration += 1
-            ic(f"connect_to_server: Main loop iteration {iteration}")
+            ic("connect_to_server: Main loop iteration", iteration)
             # Update throughput from evaluation worker
             calc_state = evaluation_worker.get_response()
-            ic(f"connect_to_server: Calc state - idle: {calc_state.idle}, throughput: {calc_state.throughput}, individuals: {calc_state.individuals is not None}")
+            ic("connect_to_server: Calc state - idle:", calc_state.idle, "throughput:", calc_state.throughput, "individuals:", calc_state.individuals is not None)
             if calc_state.throughput is not None:
-                ic(f"connect_to_server: Setting throughput: {calc_state.throughput}")
+                ic("connect_to_server: Setting throughput:", calc_state.throughput)
                 communication_worker.set_throughput(calc_state.throughput)
 
             if calc_state.individuals is not None:
@@ -337,7 +337,7 @@ def connect_to_server(
             try:
                 new_task = communication_worker.run()
                 if new_task is not None:
-                    ic(f"connect_to_server: Received new task with {len(new_task)} individuals")
+                    ic("connect_to_server: Received new task with individuals:", len(new_task))
                     evaluation_worker.add_task(new_task)
                 else:
                     ic("connect_to_server: No new task received")

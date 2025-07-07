@@ -89,7 +89,7 @@ class _Server:
                         if not i.is_finished:
                             i.set_calculation_state(CalculationState.CORRUPTED)
                             count += 1
-                    ic(f"_drop_socket: Corrupted {count} unfinished individuals")
+                    ic("_drop_socket: Corrupted", count, "unfinished individuals")
                     logging.warning(f"Dropped {count} unfinished individuals from socket: {status.address}")
                 del self.socket_states[sock]
                 ic("_drop_socket: Removed socket state")
@@ -104,12 +104,12 @@ class _Server:
 
     def _mut_drop_dead_sockets(self):
         current_time = time.time()
-        ic(f"_mut_drop_dead_sockets: Checking {len(self.socket_states)} sockets for dead connections")
+        ic("_mut_drop_dead_sockets: Checking", len(self.socket_states), "sockets for dead connections")
         for sock, state in list(self.socket_states.items()):
             heartbeat_diff = current_time - state.last_heartbeat
-            ic(f"_mut_drop_dead_sockets: Socket {state.address} last heartbeat {heartbeat_diff:.2f}s ago")
+            ic("_mut_drop_dead_sockets: Socket", state.address, "last heartbeat", f"{heartbeat_diff:.2f}s ago")
             if current_time - state.last_heartbeat > 10:
-                ic(f"_mut_drop_dead_sockets: Dropping dead socket {state.address}")
+                ic("_mut_drop_dead_sockets: Dropping dead socket", state.address)
                 logging.warning(f"Dropping dead socket: {state.address} (no heartbeat for 10 seconds)")
                 self._drop_socket(sock)
 
@@ -130,10 +130,10 @@ class _Server:
                 logging.error(f"Error retrieving socket from queue: {e}")
 
     def _communicate_with_client(self, timeout: float = 20.0):
-        ic(f"_communicate_with_client: Starting communication with {len(self.sockets)} sockets")
+        ic("_communicate_with_client: Starting communication with", len(self.sockets), "sockets")
         try:
             readable, _, _ = select.select(self.sockets, [], self.sockets, timeout)
-            ic(f"_communicate_with_client: select() returned {len(readable)} readable sockets")
+            ic("_communicate_with_client: select() returned", len(readable), "readable sockets")
 
         except select.error as e:
             ic("_communicate_with_client: Select error:", e)
@@ -172,7 +172,7 @@ class _Server:
                 case PacketType.REQUEST:
                     ic("_communicate_with_client: REQUEST packet received")
                     response_packet.data = self.socket_states[sock].assigned_individuals
-                    ic(f"_communicate_with_client: Responding with {len(response_packet.data) if response_packet.data else 0} individuals")
+                    ic("_communicate_with_client: Responding with", len(response_packet.data) if response_packet.data else 0, "individuals")
 
                 case PacketType.RESPONSE:
                     ic("_communicate_with_client: RESPONSE packet received")
@@ -187,7 +187,7 @@ class _Server:
                         self._drop_socket(sock)
                         continue
 
-                    ic(f"_communicate_with_client: Processing {len(packet.data)} individuals")
+                    ic("_communicate_with_client: Processing", len(packet.data), "individuals")
                     fitness_values = []
                     throughput = 0.0
                     for i in packet.data:
@@ -206,7 +206,7 @@ class _Server:
                         throughput += 1 / i.get_elapse()  # This value is non-negative.
 
                     ic("_communicate_with_client: Processed fitness values:", fitness_values)
-                    ic(f"_communicate_with_client: Average throughput: {throughput / len(packet.data)}")
+                    ic("_communicate_with_client: Average throughput:", throughput / len(packet.data))
                     self.reporter.add(sock.fileno(), fitness_values, throughput / len(packet.data))
                     self.socket_states[sock].assigned_individuals = None
                     ic("_communicate_with_client: Cleared assigned individuals")
@@ -240,10 +240,10 @@ class _Server:
             sigma=self.settings.Optimization.sigma,
             population_size=self.settings.Optimization.population_size,
         )
-        ic(f"run: CMAES initialized with dimension={self.settings.Optimization.dimension}")
+        ic("run: CMAES initialized with dimension=", self.settings.Optimization.dimension)
 
         while not self.stop_event.is_set():
-            ic(f"run: Main loop iteration, stop_event: {self.stop_event.is_set()}")
+            ic("run: Main loop iteration, stop_event:", self.stop_event.is_set())
             self._mut_retrieve_socket()
             if not self.sockets:
                 ic("run: No sockets available, sleeping...")
@@ -251,7 +251,7 @@ class _Server:
                 time.sleep(1)
                 continue
 
-            ic(f"run: Working with {len(self.sockets)} sockets")
+            ic("run: Working with", len(self.sockets), "sockets")
 
             self._mut_drop_dead_sockets()
             self._communicate_with_client()
@@ -264,7 +264,7 @@ class _Server:
                     f"CMAES has not been updated yet. Because there are {len(individuals)} unfinished individuals."
                 )
 
-            ic(f"run: Updating distribution with {len(individuals)} individuals")
+            ic("run: Updating distribution with", len(individuals), "individuals")
             distribution.update(len(individuals), self.socket_states)
             for sock in self.sockets:
                 if self.socket_states[sock].assigned_individuals is not None:
@@ -272,7 +272,7 @@ class _Server:
                     continue
                 batch_size = distribution.get_batch_size(sock)
                 self.socket_states[sock].assigned_individuals = cmaes.get_individuals(batch_size)
-                ic(f"run: Assigned {batch_size} individuals to socket {sock}")
+                ic("run: Assigned", batch_size, "individuals to socket", sock)
 
 
 def _spawn_thread(
@@ -302,7 +302,7 @@ def _create_server_socket(host: str, port: int) -> socket.socket:
 
 
 def _server_entrance(host: str, port: int, socket_queue: Queue, stop_event: threading.Event):
-    ic(f"_server_entrance: Starting server entrance on {host}:{port}")
+    ic("_server_entrance: Starting server entrance on", f"{host}:{port}")
     sock = _create_server_socket(host, port)
     sock.listen(5)
     ic("_server_entrance: Server socket listening with backlog=5")
