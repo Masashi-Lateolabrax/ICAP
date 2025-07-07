@@ -158,7 +158,7 @@ def collect_throughput_observations(
         model: ThroughputModel,
         evaluation_function: Callable,
         max_processes: int,
-        interval=0.1  # seconds
+        interval=1  # seconds
 ) -> None:
     manager.stop_all()
 
