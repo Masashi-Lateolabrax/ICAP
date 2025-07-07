@@ -20,9 +20,32 @@ class CalculationState:
     error: Optional[str] = None
 
 
-def _send_heartbeat(sock: socket.socket, throughput: float) -> CommunicationResult:
-    packet = Packet(_packet_type=PacketType.HEARTBEAT, data=throughput)
-    return send_packet(sock, packet)
+def _heartbeat(sock: socket.socket, throughput: float) -> CommunicationResult:
+    try:
+        packet = Packet(_packet_type=PacketType.HEARTBEAT, data=throughput)
+        result = send_packet(sock, packet)
+        if result != CommunicationResult.SUCCESS:
+            logging.error("Failed to send heartbeat packet")
+            return result
+        logging.debug(f"Heartbeat sent with throughput: {throughput}")
+    except socket.error as e:
+        logging.error(f"Socket error during heartbeat: {e}")
+        return CommunicationResult.CONNECTION_ERROR
+
+    try:
+        result, ack_packet = receive_packet(sock)
+        if result != CommunicationResult.SUCCESS:
+            logging.error("Failed to receive heartbeat ACK")
+            return result
+        if ack_packet is None or ack_packet.packet_type != PacketType.ACK:
+            logging.error("Received invalid ACK for heartbeat")
+            return CommunicationResult.CONNECTION_ERROR
+        logging.debug("Heartbeat ACK received successfully")
+    except socket.error as e:
+        logging.error(f"Socket error during heartbeat ACK: {e}")
+        return CommunicationResult.CONNECTION_ERROR
+
+    return CommunicationResult.SUCCESS
 
 
 def _connect_to_server(server_address: str, port: int) -> socket.socket:
