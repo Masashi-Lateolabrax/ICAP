@@ -16,10 +16,10 @@ class Distribution:
         self.throughput = {}
         for sock, state in socket_status.items():
             if state.throughput > 0:
-                self.batch_size[sock.fileno()] = 0  # This value will be counted up later (LINE 49)
-                self.throughput[sock.fileno()] = state.throughput
+                self.batch_size[sock] = 0  # This value will be counted up later (LINE 49)
+                self.throughput[sock] = state.throughput
             else:
-                self.batch_size[sock.fileno()] = 1
+                self.batch_size[sock] = 1
 
     def update(
             self,
