@@ -42,7 +42,6 @@ def main():
         host=settings.Server.HOST,
         port=settings.Server.PORT,
         evaluation_function=evaluation_function,
-        adjustment_interval=5,
         observation_interval=10
     )
 
