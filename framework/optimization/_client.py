@@ -156,7 +156,6 @@ class _CommunicationWorker:
             logging.error("Socket is not alive, cannot send heartbeat")
             return CommunicationResult.CONNECTION_ERROR
 
-        time_since_last = time.time() - self.last_heartbeat
         if time.time() - self.last_heartbeat < self.heartbeat_interval:
             return CommunicationResult.SUCCESS
 
