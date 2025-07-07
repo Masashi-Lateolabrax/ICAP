@@ -231,8 +231,8 @@ class _CommunicationWorker:
     def set_throughput(self, throughput: float) -> None:
         self.throughput = throughput
 
-    def get_task(self) -> Optional[Packet]:
-        return self.tasks
+    def get_task(self) -> Optional[list[Individual]]:
+        return self.task
 
     def run(self):
         if not self.is_alive():
