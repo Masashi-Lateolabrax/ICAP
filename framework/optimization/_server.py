@@ -88,8 +88,9 @@ class _Server:
                     logging.warning(f"Dropped {count} unfinished individuals from socket: {status.address}")
                 del self.socket_states[sock]
 
+            # logging.info(f"Dropped socket: {sock.getpeername()}") # logging.info(f"Dropped socket: {sock.getpeername()}") # OSError: [Errno 107] Transport endpoint is not connected
+            logging.info(f"Socket {sock} dropped")
             sock.close()
-            logging.info(f"Dropped socket: {sock.getpeername()}")
         else:
             logging.warning(f"Attempted to drop a socket that is not in the list: {sock.getpeername()}")
 
@@ -191,7 +192,6 @@ class _Server:
         distribution = Distribution()
         cmaes = CMAES(
             dimension=self.settings.Optimization.dimension,
-            mean=self.settings.Optimization.mean,
             sigma=self.settings.Optimization.sigma,
             population_size=self.settings.Optimization.population_size,
         )
@@ -212,6 +212,11 @@ class _Server:
                 continue
 
             distribution.update(len(individuals), self.socket_states)
+            for sock in self.sockets:
+                if self.socket_states[sock].assigned_individuals is not None:
+                    continue
+                batch_size = distribution.get_batch_size(sock)
+                self.socket_states[sock].assigned_individuals = cmaes.get_individuals(batch_size)
 
 
 def _spawn_thread(
@@ -272,5 +277,5 @@ class OptimizationServer:
 
     def start_server(self, handler: Optional[Callable[[CMAES], None]] = None) -> None:
         server_thread, queue, stop_event = _spawn_thread(self.settings, handler)
-        _server_entrance(self.settings.Optimization.host, self.settings.Optimization.port, queue, stop_event)
+        _server_entrance(self.settings.Server.HOST, self.settings.Server.PORT, queue, stop_event)
         server_thread.join()
