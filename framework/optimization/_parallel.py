@@ -2,6 +2,7 @@ import dataclasses
 import multiprocessing
 import time
 import signal
+from datetime import datetime
 from typing import List, Callable, Optional
 
 import numpy as np
@@ -140,7 +141,8 @@ class ProcessManager:
                     process_info = self.processes.pop()
                     process_info.terminate()
 
-        print(f"Adjusted process count: {target_count} (current: {current_count})")
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        print(f"[{timestamp}] Adjusted process count: {target_count} (current: {current_count})")
 
     def get_process_count(self) -> int:
         return len([p for p in self.processes if p.is_alive])
@@ -167,7 +169,8 @@ def collect_throughput_observations(
             time.sleep(interval)
 
         throughput = manager.get_total_throughput()
-        print(f"Processes: {count}, Throughput: {throughput:.2f} ind/s")
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        print(f"[{timestamp}] Processes: {count}, Throughput: {throughput:.2f} ind/s")
         model.add_observation(count, throughput)
 
 
@@ -192,7 +195,8 @@ def run_adaptive_client_manager(
 
     def signal_handler(_signum, _frame):
         nonlocal running
-        print("\nShutting down...")
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        print(f"\n[{timestamp}] Shutting down...")
         running = False
 
     signal.signal(signal.SIGINT, signal_handler)
@@ -232,9 +236,11 @@ def run_adaptive_client_manager(
             time.sleep(60)
 
     except KeyboardInterrupt:
-        print("\nReceived interrupt signal")
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        print(f"\n[{timestamp}] Received interrupt signal")
 
     finally:
-        print("Stopping all processes...")
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        print(f"[{timestamp}] Stopping all processes...")
         manager.stop_all()
-        print("All processes stopped.")
+        print(f"[{timestamp}] All processes stopped.")
