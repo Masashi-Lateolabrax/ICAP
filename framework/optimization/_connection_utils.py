@@ -119,3 +119,26 @@ def send_packet(sock: socket.socket, packet: Packet, attempt_count: int = 10) ->
     except pickle.PicklingError as e:
         logging.error(f"Pickle error while sending packet: {e}")
         return CommunicationResult.BROKEN_DATA
+
+
+def receive_packet(sock: socket.socket, retry: int = 0) -> tuple[CommunicationResult, Optional[Packet]]:
+    result, raw = _receive_bytes(sock, 4, retry)
+    if result != CommunicationResult.SUCCESS:
+        return result, None
+
+    try:
+        size_data = struct.unpack('!I', raw)[0]
+    except struct.error as e:
+        logging.error(f"Error unpacking size data: {e}")
+        return CommunicationResult.BROKEN_DATA, None
+
+    result, raw = _receive_bytes(sock, size_data, retry)
+    if result != CommunicationResult.SUCCESS:
+        return result, None
+
+    try:
+        packet = pickle.loads(raw)
+        return CommunicationResult.SUCCESS, packet
+    except pickle.UnpicklingError as e:
+        logging.error(f"Pickle error while receiving packet: {e}")
+        return CommunicationResult.BROKEN_DATA, None
