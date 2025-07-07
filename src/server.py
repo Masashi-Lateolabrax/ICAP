@@ -28,31 +28,31 @@ def main():
     settings.Server.HOST = "0.0.0.0"
     settings.Optimization.dimension = dim
 
-    ic("=" * 50)
-    ic("OPTIMIZATION SERVER")
-    ic("=" * 50)
-    ic(f"Host: {settings.Server.HOST}")
-    ic(f"Port: {settings.Server.PORT}")
-    ic(f"Socket Backlog: {settings.Server.SOCKET_BACKLOG}")
-    ic("-" * 30)
-    ic(f"Problem dimension: {settings.Optimization.dimension}")
-    ic(f"Initial sigma: {settings.Optimization.sigma}")
-    ic(f"Population size: {settings.Optimization.population_size}")
-    ic("-" * 30)
-    ic("Waiting for clients to connect...")
-    ic("Press Ctrl+C to stop the server")
-    ic("=" * 50)
+    print("=" * 50)
+    print("OPTIMIZATION SERVER")
+    print("=" * 50)
+    print(f"Host: {settings.Server.HOST}")
+    print(f"Port: {settings.Server.PORT}")
+    print(f"Socket Backlog: {settings.Server.SOCKET_BACKLOG}")
+    print("-" * 30)
+    print(f"Problem dimension: {settings.Optimization.dimension}")
+    print(f"Initial sigma: {settings.Optimization.sigma}")
+    print(f"Population size: {settings.Optimization.population_size}")
+    print("-" * 30)
+    print("Waiting for clients to connect...")
+    print("Press Ctrl+C to stop the server")
+    print("=" * 50)
 
     server = OptimizationServer(settings)
 
     try:
         server.start_server()
     except KeyboardInterrupt:
-        ic("\n" + "=" * 50)
-        ic("Server stopped by user")
-        ic("=" * 50)
+        print("\n" + "=" * 50)
+        print("Server stopped by user")
+        print("=" * 50)
     except Exception as e:
-        ic(f"\nServer error: {e}")
+        print(f"\nServer error: {e}")
 
 
 if __name__ == "__main__":
