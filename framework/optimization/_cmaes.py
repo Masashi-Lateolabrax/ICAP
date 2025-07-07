@@ -10,7 +10,7 @@ from ..prelude import *
 
 class _IndividualManager:
     def __init__(self):
-        self.ready_individuals: deque = deque()
+        self.ready_individuals: List[Individual]=
         self._assigned_individuals: List[Individual] = []
 
     @property
