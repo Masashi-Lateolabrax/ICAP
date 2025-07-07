@@ -7,10 +7,9 @@ import numpy as np
 
 class CalculationState(enum.Enum):
     NOT_STARTED = 0
-    SENDING = 1
-    CALCULATING = 2
-    FINISHED = 3
-    CORRUPTED = 4
+    CALCULATING = 1
+    FINISHED = 2
+    CORRUPTED = 3
 
 
 class Individual(np.ndarray):
