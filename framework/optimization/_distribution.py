@@ -49,4 +49,4 @@ class Distribution:
             self.batch_size[key] += 1
 
     def get_batch_size(self, sock: socket.socket) -> Optional[int]:
-        return self.batch_size.get(sock.fileno(), 0)
+        return self.batch_size.get(sock.fileno(), None)
