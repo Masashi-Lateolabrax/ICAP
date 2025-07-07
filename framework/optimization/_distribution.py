@@ -1,6 +1,7 @@
 import socket
 from typing import Optional
 
+from icecream import ic
 import numpy as np
 
 from ..prelude import *
@@ -8,8 +9,8 @@ from ..prelude import *
 
 class Distribution:
     def __init__(self):
-        self.throughput: dict[int, float] = {}
-        self.batch_size: dict[int, int] = {}
+        self.throughput: dict[socket.socket, float] = {}
+        self.batch_size: dict[socket.socket, int] = {}
 
     def _mut_init_batch_size_and_throughput(self, socket_status: dict[socket.socket, SocketState]) -> None:
         self.batch_size = {}
@@ -27,6 +28,7 @@ class Distribution:
             socket_status: dict[socket.socket, SocketState],
     ) -> None:
         self._mut_init_batch_size_and_throughput(socket_status)
+        ic(self.batch_size, self.throughput)
 
         if not self.throughput:
             return
@@ -49,4 +51,4 @@ class Distribution:
             self.batch_size[key] += 1
 
     def get_batch_size(self, sock: socket.socket) -> Optional[int]:
-        return self.batch_size.get(sock.fileno(), None)
+        return self.batch_size.get(sock, None)

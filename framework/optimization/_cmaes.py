@@ -30,7 +30,7 @@ class _IndividualManager:
         corrupted_count = 0
 
         for individual in self.assigned_individuals:
-            if individual.is_finished:
+            if individual.is_finished or individual.is_calculating:
                 remaining_individuals.append(individual)
             else:
                 individual.set_calculation_state(CalculationState.NOT_STARTED)
@@ -48,6 +48,7 @@ class _IndividualManager:
             return None
 
         individual = self.ready_individuals.pop()
+        individual.set_calculation_state(CalculationState.CALCULATING)
         self.assigned_individuals.append(individual)
         return individual
 
@@ -123,6 +124,7 @@ class CMAES:
                 batch.append(individual)
             else:
                 break
+        ic(len(self._individual_manager.ready_individuals))
 
         return batch
 

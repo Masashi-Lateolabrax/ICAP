@@ -122,7 +122,8 @@ class _Server:
             return
 
         for sock in readable:
-            success, packet = ic(receive_packet(sock))
+            success, packet = receive_packet(sock)
+            ic(success, packet.packet_type)
             if success != CommunicationResult.SUCCESS:
                 self._drop_socket(sock)
                 continue
@@ -132,7 +133,7 @@ class _Server:
             response_packet = Packet(PacketType.ACK)
             match packet.packet_type:
                 case PacketType.HEARTBEAT:
-                    self.socket_states[sock].throughput = packet.data
+                    self.socket_states[sock].throughput = ic(packet.data)
 
                 case PacketType.HANDSHAKE:
                     pass
@@ -147,8 +148,7 @@ class _Server:
                         self._drop_socket(sock)
                         continue
                     if not packet.data:
-                        logging.error(f"Received empty RESPONSE packet from {sock.getpeername()}")
-                        self._drop_socket(sock)
+                        logging.warning(f"Received empty RESPONSE packet from {sock.getpeername()}")
                         continue
 
                     fitness_values = []
@@ -164,8 +164,9 @@ class _Server:
                                 j.copy_from(i)
                                 continue
                         fitness_values.append(i.get_fitness())
-                        throughput += 1 / i.get_elapse()  # This value is non-negative.
+                        throughput += 1 / (i.get_elapse() + 1e-10)
 
+                    ic(sock, fitness_values, throughput)
                     self.reporter.add(sock.fileno(), fitness_values, throughput / len(packet.data))
                     self.socket_states[sock].assigned_individuals = None
 
@@ -196,21 +197,18 @@ class _Server:
                 time.sleep(1)
                 continue
 
-            ic(len(self.sockets))
-
             self._mut_drop_dead_sockets()
             self._communicate_with_client()
 
-            result, individuals = ic(cmaes.update())
+            result, individuals = cmaes.update()
+            ic(result, len(individuals))
 
             distribution.update(len(individuals), self.socket_states)
             for sock in self.sockets:
                 if self.socket_states[sock].assigned_individuals is not None:
-                    ic(sock)
                     continue
-                batch_size = distribution.get_batch_size(sock)
+                batch_size = ic(distribution.get_batch_size(sock))
                 self.socket_states[sock].assigned_individuals = cmaes.get_individuals(batch_size)
-                ic(batch_size, sock)
 
 
 def _spawn_thread(
