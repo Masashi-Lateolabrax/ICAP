@@ -3,27 +3,17 @@ import pickle
 import struct
 import logging
 from typing import Optional
-import enum
 
 from ..prelude import *
 
 
-class _CommunicationResult(enum.Enum):
-    SUCCESS = 0
-    OVER_ATTEMPT_COUNT = 1
-    CONNECTION_ERROR = 2
-    DISCONNECTED = 3
-    BROKEN_DATA = 4
-
-
-def _send_message(sock: socket.socket, data: bytes) -> _CommunicationResult:
-    """Send a message with size prefix over socket."""
+def _send_message(sock: socket.socket, data: bytes, attempt_count: int = 10) -> CommunicationResult:
     size = struct.pack('!I', len(data))
 
-    for attempt in range(ATTEMPT_COUNT):
+    for attempt in range(attempt_count):
         try:
             sock.sendall(size + data)
-            return _CommunicationResult.SUCCESS
+            return CommunicationResult.SUCCESS
 
         except socket.timeout:
             logging.warning(f"Socket timeout on attempt {attempt + 1} while sending message")
@@ -31,10 +21,10 @@ def _send_message(sock: socket.socket, data: bytes) -> _CommunicationResult:
 
         except (socket.error, struct.error, BrokenPipeError, ConnectionResetError, ConnectionAbortedError) as e:
             logging.error(f"Error sending message: {e}")
-            return _CommunicationResult.CONNECTION_ERROR
+            return CommunicationResult.CONNECTION_ERROR
 
     logging.error("Failed to send message after multiple attempts")
-    return _CommunicationResult.OVER_ATTEMPT_COUNT
+    return CommunicationResult.OVER_ATTEMPT_COUNT
 
 
 def _receive_bytes(sock: socket.socket, size: int, blocking=True) -> tuple[_CommunicationResult, Optional[bytes]]:
