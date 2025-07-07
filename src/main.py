@@ -1,36 +1,19 @@
-import math
 import os
 import threading
 from datetime import datetime
 
 from icecream import ic
-from framework.prelude import *
 from framework.optimization import connect_to_server
 
-from settings import MySettings
-from simulator import Simulator
+from evaluation_function import evaluation_function
+from framework.prelude import Individual
 
-# Configure icecream for distributed system debugging
 ic.configureOutput(
     prefix=lambda: f'[{datetime.now().strftime("%H:%M:%S.%f")[:-3]}][PID:{os.getpid()}][TID:{threading.get_ident()}] CLIENT| ',
     includeContext=True
 )
 
 ic.enable()
-
-
-def evaluation_function(individual: Individual):
-    settings = MySettings()
-
-    RobotValues.set_max_speed(settings.Robot.MAX_SPEED)
-    RobotValues.set_distance_between_wheels(settings.Robot.DISTANCE_BETWEEN_WHEELS)
-    RobotValues.set_robot_height(settings.Robot.HEIGHT)
-
-    backend = Simulator(settings, individual)
-    for _ in range(math.ceil(settings.Simulation.TIME_LENGTH / settings.Simulation.TIME_STEP)):
-        backend.step()
-
-    return backend.total_score()
 
 
 def handler(individual: Individual):
@@ -43,6 +26,7 @@ def handler(individual: Individual):
 
 
 def main():
+    from settings import MySettings
     settings = MySettings()
 
     print("=" * 50)
