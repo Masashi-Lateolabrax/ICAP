@@ -163,7 +163,7 @@ def collect_throughput_observations(
     for count in range(MIN_PROCESSES, max_processes + 1):
         manager.adjust_process_count(count, evaluation_function)
 
-        while not manager.all_throughput_observed():
+        while not manager.all_throughput_observed() and manager.get_process_count() == count:
             time.sleep(interval)
 
         throughput = manager.get_total_throughput()
