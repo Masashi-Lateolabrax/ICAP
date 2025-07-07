@@ -3,6 +3,14 @@ from typing import Any, Optional
 from dataclasses import dataclass
 
 
+class CommunicationResult(Enum):
+    SUCCESS = 0
+    OVER_ATTEMPT_COUNT = 1
+    CONNECTION_ERROR = 2
+    DISCONNECTED = 3
+    BROKEN_DATA = 4
+
+
 class PacketType(Enum):
     """
     Packet types for client-server communication.
