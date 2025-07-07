@@ -229,7 +229,7 @@ def run_adaptive_client_manager(
                 optimal_count = model.find_optimal_count(MIN_PROCESSES, max_processes)
                 last_observation = current_time
 
-            time.sleep(5)
+            time.sleep(60)
 
     except KeyboardInterrupt:
         print("\nReceived interrupt signal")
