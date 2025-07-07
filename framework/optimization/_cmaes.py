@@ -10,58 +10,48 @@ from ..prelude import *
 
 class _IndividualManager:
     def __init__(self):
-        self._ready_individuals: deque = deque()
+        self.ready_individuals: deque = deque()
         self._assigned_individuals: List[Individual] = []
 
     @property
     def num_ready_individuals(self) -> int:
-        return len(self._ready_individuals)
+        return len(self.ready_individuals)
 
     def init(self, cmaes: CMA):
-        self._ready_individuals.clear()
+        self.ready_individuals.clear()
         self._assigned_individuals.clear()
         for _ in range(cmaes.population_size):
             x = cmaes.ask()
             individual = Individual(x)
-            self._ready_individuals.append(individual)
-        logging.debug(f"Initialized {len(self._ready_individuals)} individuals")
+            self.ready_individuals.append(individual)
+        logging.debug(f"Initialized {len(self.ready_individuals)} individuals")
 
     def arrange_individuals(self):
         remaining_individuals = []
         corrupted_count = 0
 
         for individual in self._assigned_individuals:
-            if individual.is_corrupted:
+            if individual.is_finished:
+                remaining_individuals.append(individual)
+            else:
+                print(f"{individual.get_calculation_state()}")
                 individual.set_calculation_state(CalculationState.NOT_STARTED)
                 individual.set_fitness(float("inf"))
-                self._ready_individuals.append(individual)
+                self.ready_individuals.append(individual)
                 corrupted_count += 1
-            else:
-                remaining_individuals.append(individual)
 
         if corrupted_count > 0:
             logging.warning(f"Rearranged {corrupted_count} corrupted individuals back to ready queue")
 
         self._assigned_individuals = remaining_individuals
 
-    def get_individual(self) -> Optional[Individual]:
-        if not self._ready_individuals:
-            return None
-
-        individual = self._ready_individuals.popleft()
-        self._assigned_individuals.append(individual)
-        return individual
-
     def all_individuals_finished(self) -> bool:
-        if self._ready_individuals:
+        if self.ready_individuals:
             return False
         finished_count = sum(1 for ind in self._assigned_individuals if ind.is_finished)
         return finished_count >= len(self._assigned_individuals)
 
-    def get_solutions(self) -> List[Tuple[np.ndarray, float]]:
-        """
-        Before calling this method, ensure that all assigned individuals are finished by calling `all_individuals_finished()`.
-        """
+    def get_solutions(self) -> list[tuple[np.ndarray, float]]:
         solutions = []
         finished_count = 0
 
