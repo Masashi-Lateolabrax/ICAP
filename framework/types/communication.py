@@ -50,4 +50,4 @@ class SocketState:
         self.address = f"{peer[0]}:{peer[1]}"
         self.last_heartbeat = time.time()
         self.assigned_individuals: Optional[list[Individual]] = None
-        self.throughput: float = 0.0
+        self.throughput: float = float("nan")
