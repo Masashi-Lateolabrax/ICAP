@@ -20,7 +20,7 @@ ic.configureOutput(
     includeContext=True
 )
 
-ic.enable()
+ic.disable()
 
 
 def main():

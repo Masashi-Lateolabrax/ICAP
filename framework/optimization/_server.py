@@ -123,10 +123,11 @@ class _Server:
 
         for sock in readable:
             success, packet = receive_packet(sock)
-            ic(success, packet.packet_type)
+            ic(success)
             if success != CommunicationResult.SUCCESS:
                 self._drop_socket(sock)
                 continue
+            ic(packet.packet_type)
 
             self.socket_states[sock].last_heartbeat = time.time()
 
