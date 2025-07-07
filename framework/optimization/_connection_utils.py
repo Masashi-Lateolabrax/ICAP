@@ -115,3 +115,12 @@ def receive_individuals(sock: socket.socket, blocking=True) -> tuple[bool, Optio
     except pickle.UnpicklingError as e:
         logging.error(f"Pickle error while receiving individual list: {e}")
         return False, None
+
+
+def send_packet(sock: socket.socket, packet: Packet) -> CommunicationResult:
+    try:
+        data = pickle.dumps(packet)
+        return _send_message(sock, data)
+    except pickle.PicklingError as e:
+        logging.error(f"Pickle error while sending packet: {e}")
+        return CommunicationResult.BROKEN_DATA
