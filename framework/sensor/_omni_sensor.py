@@ -2,6 +2,7 @@ import numpy as np
 
 from mujoco._structs import _MjDataSiteViews
 
+from icecream import ic
 from ..prelude import *
 
 
@@ -56,7 +57,7 @@ class OmniSensor(SensorInterface):
         sub = self.target_positions - bot_pos
         distance = np.linalg.norm(sub, axis=1)
         if np.any(distance == 0):
-            # print("distance array contains 0")
+            # ic("distance array contains 0")
             return np.zeros(2)
 
         sub = sub.T / distance

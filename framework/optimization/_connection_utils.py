@@ -4,6 +4,7 @@ import struct
 import logging
 from typing import Optional
 
+from icecream import ic
 from ..prelude import *
 
 
@@ -99,7 +100,7 @@ def communicate(
         if result != CommunicationResult.SUCCESS:
             logging.error("Failed to send packet")
             return result, None
-        logging.debug("Packet sent successfully")
+        ic("Packet sent successfully")
 
     except socket.error as e:
         logging.error(f"Socket error during communication: {e}")
@@ -114,7 +115,7 @@ def communicate(
         if ack_packet is None or ack_packet.packet_type != PacketType.ACK:
             logging.error("Received invalid ACK packet")
             return CommunicationResult.CONNECTION_ERROR, None
-        logging.debug("ACK packet received successfully")
+        ic("ACK packet received successfully")
 
     except socket.error as e:
         logging.error(f"Socket error during heartbeat ACK: {e}")

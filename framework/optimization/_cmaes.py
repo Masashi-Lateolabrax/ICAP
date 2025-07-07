@@ -5,6 +5,7 @@ from collections import deque
 import numpy as np
 from cmaes import CMA
 
+from icecream import ic
 from ..prelude import *
 
 
@@ -24,7 +25,7 @@ class _IndividualManager:
             x = cmaes.ask()
             individual = Individual(x)
             self.ready_individuals.append(individual)
-        logging.debug(f"Initialized {len(self.ready_individuals)} individuals")
+        ic(f"Initialized {len(self.ready_individuals)} individuals")
 
     def arrange_individuals(self):
         remaining_individuals = []
@@ -82,7 +83,7 @@ class CMAES:
 
         if mean is None:
             mean = np.zeros(dimension)
-            logging.debug(f"Using default mean vector of zeros for dimension {dimension}")
+            ic(f"Using default mean vector of zeros for dimension {dimension}")
         elif len(mean) != dimension:
             logging.error(f"Mean array length {len(mean)} does not match dimension {dimension}")
             raise ValueError(f"mean array length {len(mean)} does not match dimension {dimension}")
@@ -98,7 +99,7 @@ class CMAES:
 
         self._individual_manager = _IndividualManager()
         self._individual_manager.init(self._optimizer)
-        logging.debug("Individual manager initialized successfully")
+        ic("Individual manager initialized successfully")
 
     @property
     def population_size(self) -> int:
@@ -111,13 +112,13 @@ class CMAES:
     def update(self) -> tuple[bool, list[Individual]]:
         self._individual_manager.arrange_individuals()
         if not self._individual_manager.all_individuals_finished():
-            logging.debug("Not all individuals are finished, cannot update CMA")
+            ic("Not all individuals are finished, cannot update CMA")
             return False, self._individual_manager.ready_individuals
 
         individuals = self._individual_manager.assigned_individuals
         solutions = [(i.to_ndarray(), i.get_fitness()) for i in individuals]
 
-        logging.debug(f"Updating CMA with {len(solutions)} solutions")
+        ic(f"Updating CMA with {len(solutions)} solutions")
         self._optimizer.tell(solutions)
         self._individual_manager.init(self._optimizer)
 
@@ -144,7 +145,7 @@ class CMAES:
             else:
                 break
 
-        logging.debug(f"Retrieved batch of {len(batch)} individuals")
+        ic(f"Retrieved batch of {len(batch)} individuals")
         return batch
 
     def should_stop(self) -> bool:

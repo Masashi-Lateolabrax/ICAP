@@ -4,6 +4,7 @@ import time
 import signal
 from typing import List, Callable, Optional
 
+from icecream import ic
 from ..prelude import *
 from ._client import connect_to_server
 
@@ -47,7 +48,7 @@ class ProcessInfo:
             if speed:
                 self.latest_throughput = speed
         except Exception as e:
-            print(f"Error retrieving throughput: {e}")
+            ic("Error retrieving throughput:", e)
 
         return self.latest_throughput, True
 
@@ -62,7 +63,7 @@ class ProcessInfo:
     def start(self):
         if not self.process.is_alive():
             self.process.start()
-            print(f"Process {self.pid} started.")
+            ic(f"Process {self.pid} started.")
 
     def terminate(self):
         if self.process.is_alive():
@@ -70,9 +71,9 @@ class ProcessInfo:
             self.process.join(timeout=5)
             if self.process.is_alive():
                 self.process.kill()
-            print(f"Process {self.pid} terminated.")
+            ic(f"Process {self.pid} terminated.")
         else:
-            print(f"Process {self.pid} is not alive, cannot terminate.")
+            ic(f"Process {self.pid} is not alive, cannot terminate.")
 
 
 class ProcessManager:
@@ -94,7 +95,7 @@ class ProcessManager:
 
         def handler(metrics: ProcessMetrics):
             throughput_queue.put(metrics.speed)
-            print(metrics.format_log_message())
+            ic(metrics.format_log_message())
 
         def client_worker():
             try:
@@ -105,7 +106,7 @@ class ProcessManager:
                     handler=handler
                 )
             except Exception as e:
-                print(f"Client process error: {e}")
+                ic("Client process error:", e)
 
         process = multiprocessing.Process(target=client_worker)
 
@@ -125,7 +126,7 @@ class ProcessManager:
                 process_info = self._create_client_process(evaluation_function)
                 process_info.start()
                 self.processes.append(process_info)
-                print(f"Registered new process: {process_info.pid}")
+                ic(f"Registered new process: {process_info.pid}")
         elif target_count < current_count:
             for _ in range(current_count - target_count):
                 if self.processes:
@@ -148,7 +149,7 @@ def collect_throughput_observations(
         max_processes: int,
         interval=0.1  # seconds
 ) -> None:
-    print("Collecting throughput observations...")
+    ic("Collecting throughput observations...")
     manager.stop_all()
 
     for count in range(MIN_PROCESSES, max_processes + 1):
@@ -168,8 +169,8 @@ def collect_throughput_observations(
         throughput = manager.get_total_throughput()
         model.add_observation(count, throughput)
 
-        print(f"Processes: {count}, throughput: {throughput:.2f}")
-    print("Throughput observation collection completed.")
+        ic(f"Processes: {count}, throughput: {throughput:.2f}")
+    ic("Throughput observation collection completed.")
 
 
 def run_adaptive_client_manager(
@@ -195,20 +196,20 @@ def run_adaptive_client_manager(
 
     def signal_handler(_signum, _frame):
         nonlocal running
-        print("\nShutting down...")
+        ic("\nShutting down...")
         running = False
 
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
 
-    print("=" * 50)
-    print("ADAPTIVE MULTIPROCESSING CLIENT MANAGER")
-    print("=" * 50)
-    print(f"Server: {host}:{port}")
-    print(f"CPU Cores: {max_processes}")
-    print(f"Process Range: {MIN_PROCESSES}-{max_processes}")
-    print("Press Ctrl+C to stop")
-    print("=" * 50)
+    ic("=" * 50)
+    ic("ADAPTIVE MULTIPROCESSING CLIENT MANAGER")
+    ic("=" * 50)
+    ic(f"Server: {host}:{port}")
+    ic(f"CPU Cores: {max_processes}")
+    ic(f"Process Range: {MIN_PROCESSES}-{max_processes}")
+    ic("Press Ctrl+C to stop")
+    ic("=" * 50)
 
     collect_throughput_observations(
         manager, model, evaluation_function,
@@ -233,16 +234,16 @@ def run_adaptive_client_manager(
 
                 if optimal_count != current_count:
                     manager.adjust_process_count(optimal_count, evaluation_function)
-                    print(f"Adjusted: {current_count} -> {optimal_count} processes")
+                    ic(f"Adjusted: {current_count} -> {optimal_count} processes")
 
                 last_adjustment = current_time
 
             time.sleep(5)
 
     except KeyboardInterrupt:
-        print("\nReceived interrupt signal")
+        ic("\nReceived interrupt signal")
 
     finally:
-        print("Stopping all processes...")
+        ic("Stopping all processes...")
         manager.stop_all()
-        print("All processes stopped.")
+        ic("All processes stopped.")
