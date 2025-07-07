@@ -33,6 +33,15 @@ def evaluation_function(individual: Individual):
     return backend.total_score()
 
 
+def handler(individual: Individual):
+    throughput = 1 / (individual.get_elapse() + 1e-10)
+    print(
+        f"pid:{os.getpid()} "
+        f"fitness:{individual.get_fitness()} "
+        f"throughput:{throughput:.2f} ind/s"
+    )
+
+
 def main():
     settings = MySettings()
 
@@ -49,6 +58,7 @@ def main():
         settings.Server.HOST,
         settings.Server.PORT,
         evaluation_function=evaluation_function,
+        handler=handler,
     )
 
 
