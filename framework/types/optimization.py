@@ -112,6 +112,14 @@ class Individuals:
         self._ready_individuals = ready_individuals
         self._assigned_individuals = assigned_individuals
 
+    @property
+    def num_finished(self) -> int:
+        return len(self._assigned_individuals)
+
+    @property
+    def num_ready(self) -> int:
+        return len(self._ready_individuals)
+
     def __len__(self):
         return len(self._ready_individuals) + len(self._assigned_individuals)
 
