@@ -179,7 +179,7 @@ class _Server:
 
         return True
 
-    def _communicate_with_client(self, timeout: float = 20.0):
+    def _communicate_with_client(self, timeout: float = 1.0):
         try:
             readable, _, _ = select.select(self.sockets, [], self.sockets, timeout)
 
