@@ -269,6 +269,7 @@ def _server_entrance(host: str, port: int, socket_queue: Queue, stop_event: thre
         while not stop_event.is_set():
             try:
                 client_socket, client_address = sock.accept()
+                client_socket.settimeout(0.1)
                 ic(client_address)
                 socket_queue.put(client_socket)
 
