@@ -63,6 +63,7 @@ class CMAES:
     def __init__(
             self,
             dimension: int,
+            max_generation: int,
             mean: Optional[np.ndarray] = None,
             sigma: float = 1.0,
             population_size: Optional[int] = None
@@ -81,6 +82,8 @@ class CMAES:
         elif len(mean) != dimension:
             raise ValueError(f"mean array length {len(mean)} does not match dimension {dimension}")
 
+        self.max_generation = max_generation
+
         self._optimizer = CMA(
             mean=mean,
             sigma=sigma,
@@ -89,6 +92,10 @@ class CMAES:
 
         self._individual_manager = _IndividualManager()
         self._individual_manager.init(self._optimizer)
+
+    @property
+    def individuals(self) -> Individuals:
+        return Individuals(self._individual_manager.ready_individuals, self._individual_manager.assigned_individuals)
 
     @property
     def population_size(self) -> int:
@@ -130,6 +137,12 @@ class CMAES:
 
     def should_stop(self) -> bool:
         should_stop = self._optimizer.should_stop()
+
+        if self.generation >= self.max_generation:
+            logging.warning(f"Reached maximum generation limit: {self.max_generation}")
+            should_stop = True
+
         if should_stop:
             logging.warning("Stopping CMA optimization")
+
         return should_stop

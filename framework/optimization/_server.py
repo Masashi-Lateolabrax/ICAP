@@ -200,9 +200,10 @@ class _Server:
     def run(self):
         distribution = Distribution()
         cmaes = CMAES(
-            dimension=self.settings.Optimization.dimension,
-            sigma=self.settings.Optimization.sigma,
-            population_size=self.settings.Optimization.population_size,
+            max_generation=self.settings.Optimization.GENERATION,
+            dimension=self.settings.Optimization.DIMENSION,
+            sigma=self.settings.Optimization.SIGMA,
+            population_size=self.settings.Optimization.POPULATION,
         )
 
         while not self.stop_event.is_set():
@@ -216,6 +217,9 @@ class _Server:
 
             result, individuals = cmaes.update()
             ic(result, len(individuals))
+
+            if self.handler:
+                self.handler(cmaes)
 
             distribution.update(len(individuals), self.socket_states)
 
@@ -276,10 +280,11 @@ def _server_entrance(host: str, port: int, socket_queue: Queue, stop_event: thre
 
 
 class OptimizationServer:
-    def __init__(self, settings: Settings):
+    def __init__(self, settings: Settings, handler: Optional[Callable[[CMAES], None]] = None):
         self.settings = settings
+        self.handler = handler
 
-    def start_server(self, handler: Optional[Callable[[CMAES], None]] = None) -> None:
-        server_thread, queue, stop_event = _spawn_thread(self.settings, handler)
+    def start_server(self) -> None:
+        server_thread, queue, stop_event = _spawn_thread(self.settings, self.handler)
         _server_entrance(self.settings.Server.HOST, self.settings.Server.PORT, queue, stop_event)
         server_thread.join()
