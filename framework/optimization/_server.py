@@ -157,18 +157,13 @@ class _Server:
 
                     fitness_values = []
                     throughput = 0.0
-                    for i in packet.data:
-                        if not isinstance(i, Individual):
+                    for i, ind in enumerate(packet.data):
+                        if not isinstance(ind, Individual):
                             logging.error(f"Invalid individual in RESPONSE packet: {i}")
                             break
-                        for j in self.socket_states[sock].assigned_individuals:
-                            if j.is_finished:
-                                continue
-                            if np.array_equal(i, j):
-                                j.copy_from(i)
-                                continue
-                        fitness_values.append(i.get_fitness())
-                        throughput += 1 / (i.get_elapse() + 1e-10)
+                        self.socket_states[sock].assigned_individuals[i].copy_from(ind)
+                        fitness_values.append(ind.get_fitness())
+                        throughput += 1 / (ind.get_elapse() + 1e-10)
 
                     ic(sock, np.average(fitness_values), throughput)
                     self.reporter.add(sock.fileno(), fitness_values, throughput / len(packet.data))
