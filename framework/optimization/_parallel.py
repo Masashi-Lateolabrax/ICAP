@@ -158,12 +158,18 @@ def collect_throughput_observations(
         model: ThroughputModel,
         evaluation_function: Callable,
         max_processes: int,
+        stop_signal: multiprocessing.Event,
         interval=1  # seconds
 ) -> None:
     manager.stop_all()
 
     for count in range(MIN_PROCESSES, max_processes + 1):
+        if stop_signal.is_set():
+            break
+            
         while not manager.all_throughput_observed() or manager.get_process_count() != count:
+            if stop_signal.is_set():
+                return
             manager.adjust_process_count(count, evaluation_function)
             time.sleep(interval)
 
@@ -190,13 +196,12 @@ def run_adaptive_client_manager(
     model = ThroughputModel()
     manager = ProcessManager(host, port)
 
-    running = True
+    stop_signal = multiprocessing.Event()
 
     def signal_handler(_signum, _frame):
-        nonlocal running
         timestamp = datetime.now().strftime("%H:%M:%S")
         print(f"\n[{timestamp}] Shutting down...")
-        running = False
+        stop_signal.set()
 
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
@@ -212,14 +217,14 @@ def run_adaptive_client_manager(
 
     collect_throughput_observations(
         manager, model, evaluation_function,
-        max_processes
+        max_processes, stop_signal
     )
     last_observation = time.time()
 
     optimal_count = model.find_optimal_count(MIN_PROCESSES, max_processes)
 
     try:
-        while running:
+        while not stop_signal.is_set():
             current_time = time.time()
 
             manager.adjust_process_count(optimal_count, evaluation_function)
@@ -227,7 +232,7 @@ def run_adaptive_client_manager(
             if current_time - last_observation >= observation_interval * 60:
                 collect_throughput_observations(
                     manager, model, evaluation_function,
-                    max_processes
+                    max_processes, stop_signal
                 )
                 optimal_count = model.find_optimal_count(MIN_PROCESSES, max_processes)
                 last_observation = current_time
