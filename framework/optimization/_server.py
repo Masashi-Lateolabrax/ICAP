@@ -18,7 +18,7 @@ from ..types.communication import Packet, PacketType
 from ._connection_utils import send_packet, receive_packet
 
 # Socket timeout for dead connection detection in seconds
-SOCKET_TIMEOUT = 30
+SOCKET_TIMEOUT = 45
 
 
 class Reporter:
@@ -179,7 +179,7 @@ class _Server:
 
         return True
 
-    def _communicate_with_client(self, timeout: float = 20.0):
+    def _communicate_with_client(self, timeout: float = 1.0):
         try:
             readable, _, _ = select.select(self.sockets, [], self.sockets, timeout)
 
