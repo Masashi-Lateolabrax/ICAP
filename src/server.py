@@ -46,7 +46,10 @@ def main():
     print("Press Ctrl+C to stop the server")
     print("=" * 50)
 
-    server = OptimizationServer(settings)
+    server = OptimizationServer(
+        settings,
+        handler=None
+    )
 
     try:
         server.start_server()
