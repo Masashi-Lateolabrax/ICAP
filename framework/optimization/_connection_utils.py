@@ -69,7 +69,7 @@ def _receive_bytes(sock: socket.socket, size: int, retry: int = 0) -> tuple[Comm
     return CommunicationResult.SUCCESS, data
 
 
-def send_packet(sock: socket.socket, packet: Packet, retry: int = 10) -> CommunicationResult:
+def send_packet(sock: socket.socket, packet: Packet, retry: int = 3) -> CommunicationResult:
     try:
         data = pickle.dumps(packet)
         return _send_message(sock, data, retry=retry)
@@ -102,7 +102,7 @@ def receive_packet(sock: socket.socket, retry: int = 0) -> tuple[CommunicationRe
 
 
 def communicate(
-        sock: socket.socket, packet: Packet, retry_count: int = 10
+        sock: socket.socket, packet: Packet, retry_count: int = 3
 ) -> tuple[CommunicationResult, Optional[Packet]]:
     try:
         result = send_packet(sock, packet, retry_count)

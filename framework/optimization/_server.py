@@ -18,7 +18,7 @@ from ..types.communication import Packet, PacketType
 from ._connection_utils import send_packet, receive_packet
 
 # Socket timeout for dead connection detection in seconds
-SOCKET_TIMEOUT = 30
+SOCKET_TIMEOUT = 45
 
 
 class Reporter:
