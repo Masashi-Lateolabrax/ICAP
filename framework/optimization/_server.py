@@ -64,7 +64,7 @@ class _Server:
             settings: Settings,
             socket_queue: Queue,
             stop_event: threading.Event,
-            handler: Optional[Callable[[CMAES], None]] = None
+            handler: Optional[Callable[[CMAES, list[Individual]], None]] = None
     ):
         self.settings = settings
 
@@ -219,7 +219,7 @@ class _Server:
             ic(result, len(individuals))
 
             if self.handler:
-                self.handler(cmaes)
+                self.handler(cmaes, individuals)
 
             distribution.update(len(individuals), self.socket_states)
 
@@ -229,7 +229,7 @@ class _Server:
 
 
 def _spawn_thread(
-        settings: Settings, handler: Optional[Callable[[CMAES], None]] = None
+        settings: Settings, handler: Optional[Callable[[CMAES, list[Individual]], None]] = None
 ) -> tuple[threading.Thread, Queue, threading.Event]:
     socket_queue: Queue = Queue()
     stop_event: threading.Event = threading.Event()
@@ -280,7 +280,7 @@ def _server_entrance(host: str, port: int, socket_queue: Queue, stop_event: thre
 
 
 class OptimizationServer:
-    def __init__(self, settings: Settings, handler: Optional[Callable[[CMAES], None]] = None):
+    def __init__(self, settings: Settings, handler: Optional[Callable[[CMAES, list[Individual]], None]] = None):
         self.settings = settings
         self.handler = handler
 
