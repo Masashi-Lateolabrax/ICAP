@@ -58,7 +58,7 @@ def _receive_bytes(sock: socket.socket, size: int, retry: int = 0) -> tuple[Comm
                 continue
 
             logging.error("Socket timeout while receiving data")
-            return CommunicationResult.CONNECTION_ERROR, None
+            return CommunicationResult.TIMEOUT, None
 
         except (socket.error, struct.error, ConnectionResetError, ConnectionAbortedError) as e:
             logging.error(f"Connection error while receiving data: {e}")
@@ -70,7 +70,7 @@ def _receive_bytes(sock: socket.socket, size: int, retry: int = 0) -> tuple[Comm
 def send_packet(sock: socket.socket, packet: Packet, retry: int = 10) -> CommunicationResult:
     try:
         data = pickle.dumps(packet)
-        return _send_message(sock, data, attempt_count=retry)
+        return _send_message(sock, data, retry=retry)
     except pickle.PicklingError as e:
         logging.error(f"Pickle error while sending packet: {e}")
         return CommunicationResult.BROKEN_DATA
