@@ -77,6 +77,17 @@ class _Server:
 
         self.reporter = Reporter()
 
+    def sock_name(self, sock: socket) -> str:
+        if sock in self.socket_states:
+            address = self.socket_states[sock].address
+        else:
+            try:
+                address = f"{sock.getpeername()[0]}:{sock.getpeername()[1]}"
+            except socket.error as e:
+                logging.error(f"Error getting peer name: {e}")
+                address = "Unknown"
+        return address
+
     def _drop_socket(self, sock: socket.socket):
         if sock in self.sockets:
             self.sockets.remove(sock)
@@ -94,7 +105,7 @@ class _Server:
 
             sock.close()
         else:
-            logging.warning(f"Attempted to drop a socket that is not in the list: {sock.getpeername()}")
+            logging.warning(f"Attempted to drop a socket that is not in the list: {self.sock_name(sock)}")
 
     def _mut_drop_dead_sockets(self):
         current_time = time.time()
@@ -120,7 +131,7 @@ class _Server:
         if success == CommunicationResult.TIMEOUT or success == CommunicationResult.OVER_ATTEMPT_COUNT:
             return False
         elif success != CommunicationResult.SUCCESS:
-            logging.error(f"Failed to receive packet from {sock.getpeername()}: {success}")
+            logging.error(f"Failed to receive packet from {self.sock_name(sock)}: {success}")
             self._drop_socket(sock)
             return False
 
@@ -146,7 +157,7 @@ class _Server:
                     self._drop_socket(sock)
                     return False
                 if not packet.data:
-                    logging.warning(f"Received empty RESPONSE packet from {sock.getpeername()}")
+                    logging.warning(f"Received empty RESPONSE packet from {self.sock_name(sock)}")
                     return True
 
                 fitness_values = []
