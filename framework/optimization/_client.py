@@ -14,6 +14,7 @@ from ..types.communication import Packet, PacketType
 from ._connection_utils import send_packet, communicate
 
 HEARTBEAT_INTERVAL = 20
+REQUEST_LIMIT = 10
 
 
 @dataclasses.dataclass
@@ -144,6 +145,7 @@ class _CommunicationWorker:
     def __init__(self, sock: socket.socket):
         self.sock = sock
         self.last_heartbeat = time.time()
+        self.last_request = 0.0
         self.throughput = 0.0
         self.task: Optional[list[Individual]] = None
         self.evaluated_task: Optional[list[Individual]] = None
@@ -192,6 +194,9 @@ class _CommunicationWorker:
             logging.error("Already assigned, cannot send request")
             return CommunicationResult.SUCCESS
 
+        if time.time() - self.last_request < REQUEST_LIMIT:
+            return CommunicationResult.SUCCESS
+
         packet = Packet(_packet_type=PacketType.REQUEST, data=None)
         result, packet = communicate(self.sock, packet)
 
@@ -199,11 +204,9 @@ class _CommunicationWorker:
             logging.error("Failed to send request packet")
             return result
 
+        self.last_request = time.time()
         self.task = packet.data
         ic(len(self.task) if self.task else None)
-
-        if not bool(self.task):
-            time.sleep(3)
 
         return CommunicationResult.SUCCESS
 
