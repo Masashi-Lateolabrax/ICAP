@@ -9,7 +9,7 @@ import os
 import threading
 from datetime import datetime
 from icecream import ic
-from framework.optimization import OptimizationServer
+from framework.optimization import OptimizationServer, CMAES
 
 from controller import RobotNeuralNetwork
 from settings import MySettings
@@ -21,6 +21,24 @@ ic.configureOutput(
 )
 
 ic.disable()
+
+_generation = None
+
+
+def handler(cmaes: CMAES):
+    global _generation
+
+    if _generation is not None and cmaes.generation == _generation:
+        return
+
+    _generation = cmaes.generation
+    individuals = cmaes.individuals
+    n = len(individuals)
+
+    fittness = [individuals.get_fitness(i) for i in range(len(individuals))]
+    ave_fittness = sum(fittness) / n
+
+    print(f"Generation: {cmaes.generation} | Average: {ave_fittness:.2f}")
 
 
 def main():
@@ -48,7 +66,7 @@ def main():
 
     server = OptimizationServer(
         settings,
-        handler=None
+        handler=handler
     )
 
     try:
