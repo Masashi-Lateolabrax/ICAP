@@ -203,7 +203,7 @@ class _CommunicationWorker:
         ic(len(self.task) if self.task else None)
 
         if not bool(self.task):
-            time.sleep(HEARTBEAT_INTERVAL * 0.3)
+            time.sleep(3)
 
         return CommunicationResult.SUCCESS
 
