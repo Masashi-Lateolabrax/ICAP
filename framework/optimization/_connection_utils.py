@@ -4,6 +4,8 @@ import struct
 import logging
 from typing import Optional
 
+from icecream import ic
+
 from ..prelude import *
 
 
@@ -24,7 +26,7 @@ def _send_message(sock: socket.socket, data: bytes, retry: int = 0) -> Communica
                     return CommunicationResult.OVER_ATTEMPT_COUNT
                 attempt += 1
                 continue
-            logging.error(f"Socket timed out while sending data")
+            ic(f"Socket timed out while sending data")
             return CommunicationResult.TIMEOUT
 
 
@@ -57,7 +59,7 @@ def _receive_bytes(sock: socket.socket, size: int, retry: int = 0) -> tuple[Comm
 
                 continue
 
-            logging.error("Socket timeout while receiving data")
+            ic("Socket timeout while receiving data")
             return CommunicationResult.TIMEOUT, None
 
         except (socket.error, struct.error, ConnectionResetError, ConnectionAbortedError) as e:
