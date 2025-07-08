@@ -282,7 +282,7 @@ def connect_to_server(
             logging.error(f"Communication error: {e}")
             break
 
-        time.sleep(0.01)
+        time.sleep(1.0)
 
     evaluation_worker.stop()
     if sock:
