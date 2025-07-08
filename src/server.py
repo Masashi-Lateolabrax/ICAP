@@ -23,7 +23,7 @@ ic.configureOutput(
     includeContext=True
 )
 
-ic.enable()
+ic.disable()
 
 _generation = None
 _last_call_time: Optional[datetime.datetime] = None
