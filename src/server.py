@@ -59,7 +59,7 @@ def handler(cmaes: CMAES):
         f"[{current_time.strftime("%H:%M:%S")}] "
         f"Generation: {cmaes.generation} | "
         f"Average: {ave_fittness:.2f} | "
-        f"Speed: {speed:.2f} gen/sec | "
+        f"Speed: {1 / speed:.2f} gen/sec | "
         f"ETA: {(current_time + remaining_seconds)} "
     )
 
