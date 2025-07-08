@@ -14,7 +14,7 @@ from ..types.communication import Packet, PacketType
 from ._connection_utils import send_packet, communicate
 
 HEARTBEAT_INTERVAL = 20
-REQUEST_LIMIT = 10
+REQUEST_LIMIT = 1
 
 
 @dataclasses.dataclass
