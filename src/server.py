@@ -22,7 +22,7 @@ ic.configureOutput(
     includeContext=True
 )
 
-ic.disable()
+ic.enable()
 
 _generation = None
 _last_call_time: Optional[datetime.datetime] = None
@@ -48,8 +48,9 @@ def handler(cmaes: CMAES):
     individuals = cmaes.individuals
     n = len(individuals)
 
-    fittness = [individuals.get_fitness(i) for i in range(len(individuals))]
-    ave_fittness = sum(fittness) / n
+    fittness = [individuals.get_fitness(i) for i in range(len(individuals)) if individuals]
+    ic(fittness)
+    ave_fittness = sum(fittness) / len(fittness)
 
     speed = time_diff.total_seconds()  # sec/gen
     remaining_generations = cmaes.max_generation - cmaes.generation
@@ -58,6 +59,7 @@ def handler(cmaes: CMAES):
     print(
         f"[{current_time.strftime("%H:%M:%S")}] "
         f"Generation: {cmaes.generation} | "
+        f"Num: {len(fittness)}/{n} | "
         f"Average: {ave_fittness:.2f} | "
         f"Speed: {1 / speed:.2f} gen/sec | "
         f"ETA: {(current_time + remaining_seconds)} "
