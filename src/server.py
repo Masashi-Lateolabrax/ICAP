@@ -7,7 +7,9 @@ tasks to connected clients.
 
 import os
 import threading
-from datetime import datetime
+import datetime
+from typing import Optional
+
 from icecream import ic
 from framework.optimization import OptimizationServer, CMAES
 
@@ -16,29 +18,50 @@ from settings import MySettings
 
 # Configure icecream for distributed system debugging
 ic.configureOutput(
-    prefix=lambda: f'[{datetime.now().strftime("%H:%M:%S.%f")[:-3]}][PID:{os.getpid()}][TID:{threading.get_ident()}] SERVER| ',
+    prefix=lambda: f'[{datetime.datetime.now().strftime("%H:%M:%S.%f")[:-3]}][PID:{os.getpid()}][TID:{threading.get_ident()}] SERVER| ',
     includeContext=True
 )
 
 ic.disable()
 
 _generation = None
+_last_call_time: Optional[datetime.datetime] = None
 
 
 def handler(cmaes: CMAES):
-    global _generation
+    global _generation, _last_call_time
 
+    current_time = datetime.datetime.now()
+
+    ic(current_time, cmaes.generation, cmaes.individuals.num_ready)
+
+    if _last_call_time is None:
+        _last_call_time = current_time
+        return
     if _generation is not None and cmaes.generation == _generation:
         return
 
     _generation = cmaes.generation
+    time_diff = current_time - _last_call_time
+    _last_call_time = current_time
+
     individuals = cmaes.individuals
     n = len(individuals)
 
     fittness = [individuals.get_fitness(i) for i in range(len(individuals))]
     ave_fittness = sum(fittness) / n
 
-    print(f"Generation: {cmaes.generation} | Average: {ave_fittness:.2f}")
+    speed = time_diff.total_seconds()  # sec/gen
+    remaining_generations = cmaes.max_generation - cmaes.generation
+    remaining_seconds = datetime.timedelta(seconds=remaining_generations * speed)
+
+    print(
+        f"[{current_time.strftime("%H:%M:%S")}] "
+        f"Generation: {cmaes.generation} | "
+        f"Average: {ave_fittness:.2f} | "
+        f"Speed: {speed:.2f} gen/sec | "
+        f"ETA: {(current_time + remaining_seconds)} "
+    )
 
 
 def main():
@@ -78,6 +101,5 @@ def main():
     except Exception as e:
         print(f"\nServer error: {e}")
 
-
-if __name__ == "__main__":
-    main()
+    if __name__ == "__main__":
+        main()
