@@ -45,6 +45,7 @@ def _receive_bytes(sock: socket.socket, size: int, retry: int = 0) -> tuple[Comm
         try:
             chunk = sock.recv(size - len(data))
             if not chunk:
+                logging.warning("Received empty chunk, connection may be broken")
                 return CommunicationResult.DISCONNECTED, None
             data += chunk
 
