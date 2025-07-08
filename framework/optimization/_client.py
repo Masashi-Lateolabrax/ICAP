@@ -7,6 +7,7 @@ import queue
 import time
 from typing import Optional, Callable
 
+import numpy as np
 from icecream import ic
 from ..prelude import *
 from ..types.communication import Packet, PacketType
@@ -151,11 +152,17 @@ class _CommunicationWorker:
         return self.sock is not None
 
     def is_assigned(self) -> bool:
-        return self.task is not None or self.evaluated_task is not None
+        return not bool(self.task) or not bool(self.evaluated_task)
 
     def set_evaluated_task(self, individuals: list[Individual]) -> None:
+        self.evaluated_task = [i for i in self.task]
+        for j in individuals:
+            for i in self.task:
+                if np.array_equal(i.view(), j.view()):
+                    self.task.remove(i)
+                    i.copy_from(j)
+                    break
         self.task = None
-        self.evaluated_task = individuals
 
     def _heartbeat(self, throughput: float) -> CommunicationResult:
         if not self.is_alive():
