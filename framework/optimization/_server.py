@@ -200,9 +200,10 @@ class _Server:
     def run(self):
         distribution = Distribution()
         cmaes = CMAES(
-            dimension=self.settings.Optimization.dimension,
-            sigma=self.settings.Optimization.sigma,
-            population_size=self.settings.Optimization.population_size,
+            max_generation=self.settings.Optimization.GENERATION,
+            dimension=self.settings.Optimization.DIMENSION,
+            sigma=self.settings.Optimization.SIGMA,
+            population_size=self.settings.Optimization.POPULATION,
         )
 
         while not self.stop_event.is_set():

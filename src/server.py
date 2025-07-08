@@ -70,7 +70,7 @@ def main():
     settings = MySettings()
 
     settings.Server.HOST = "0.0.0.0"
-    settings.Optimization.dimension = dim
+    settings.Optimization.DIMENSION = dim
 
     print("=" * 50)
     print("OPTIMIZATION SERVER")
@@ -79,9 +79,9 @@ def main():
     print(f"Port: {settings.Server.PORT}")
     print(f"Socket Backlog: {settings.Server.SOCKET_BACKLOG}")
     print("-" * 30)
-    print(f"Problem dimension: {settings.Optimization.dimension}")
-    print(f"Initial sigma: {settings.Optimization.sigma}")
-    print(f"Population size: {settings.Optimization.population_size}")
+    print(f"Problem dimension: {settings.Optimization.DIMENSION}")
+    print(f"Initial sigma: {settings.Optimization.SIGMA}")
+    print(f"Population size: {settings.Optimization.POPULATION}")
     print("-" * 30)
     print("Waiting for clients to connect...")
     print("Press Ctrl+C to stop the server")

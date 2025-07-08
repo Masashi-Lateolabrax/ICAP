@@ -51,10 +51,10 @@ class Server:
 
 
 class Optimization:
-    dimension: int = 10
-    population_size: int = 1000
-    generations: int = 100
-    sigma: float = 0.5
+    DIMENSION: int = 10
+    POPULATION: int = 1000
+    GENERATION: int = 100
+    SIGMA: float = 0.5
 
 
 class Loss:
