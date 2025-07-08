@@ -101,5 +101,6 @@ def main():
     except Exception as e:
         print(f"\nServer error: {e}")
 
-    if __name__ == "__main__":
-        main()
+
+if __name__ == "__main__":
+    main()
