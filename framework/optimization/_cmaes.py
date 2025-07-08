@@ -91,6 +91,10 @@ class CMAES:
         self._individual_manager.init(self._optimizer)
 
     @property
+    def individuals(self) -> Individuals:
+        return Individuals(self._individual_manager.ready_individuals + self._individual_manager.assigned_individuals)
+
+    @property
     def population_size(self) -> int:
         return self._optimizer.population_size
 
