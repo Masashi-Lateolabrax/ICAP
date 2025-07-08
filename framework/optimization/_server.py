@@ -53,7 +53,7 @@ class Reporter:
     def output(self) -> None:
         if self.buffer:
             for message in self.buffer:
-                print(message)
+                ic(message)
             self.buffer.clear()
             self.last_output_time = time.time()
 
