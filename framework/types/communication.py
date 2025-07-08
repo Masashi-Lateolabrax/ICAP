@@ -13,6 +13,7 @@ class CommunicationResult(Enum):
     CONNECTION_ERROR = 2
     DISCONNECTED = 3
     BROKEN_DATA = 4
+    TIMEOUT = 5
 
 
 class PacketType(Enum):
