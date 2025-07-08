@@ -11,6 +11,7 @@ import datetime
 from typing import Optional
 
 from icecream import ic
+from framework.prelude import *
 from framework.optimization import OptimizationServer, CMAES
 
 from controller import RobotNeuralNetwork
@@ -22,18 +23,18 @@ ic.configureOutput(
     includeContext=True
 )
 
-ic.disable()
+ic.enable()
 
 _generation = None
 _last_call_time: Optional[datetime.datetime] = None
 
 
-def handler(cmaes: CMAES):
+def handler(cmaes: CMAES, individuals: list[Individual]):
     global _generation, _last_call_time
 
     current_time = datetime.datetime.now()
 
-    ic(current_time, cmaes.generation, cmaes.individuals.num_ready)
+    ic(current_time, cmaes.generation, len(individuals))
 
     if _last_call_time is None:
         _last_call_time = current_time
@@ -45,11 +46,8 @@ def handler(cmaes: CMAES):
     time_diff = current_time - _last_call_time
     _last_call_time = current_time
 
-    individuals = cmaes.individuals
-    n = len(individuals)
-
-    fittness = [individuals.get_fitness(i) for i in range(len(individuals))]
-    ave_fittness = sum(fittness) / n
+    fittness = [i.get_fitness() for i in individuals]
+    ave_fittness = sum(fittness) / len(fittness)
 
     speed = time_diff.total_seconds()  # sec/gen
     remaining_generations = cmaes.max_generation - cmaes.generation
@@ -59,7 +57,7 @@ def handler(cmaes: CMAES):
         f"[{current_time.strftime("%H:%M:%S")}] "
         f"Generation: {cmaes.generation} | "
         f"Average: {ave_fittness:.2f} | "
-        f"Speed: {1 / speed:.2f} gen/sec | "
+        f"Speed: {len(fittness) / speed:.2f} ind/sec | "
         f"ETA: {(current_time + remaining_seconds)} "
     )
 
