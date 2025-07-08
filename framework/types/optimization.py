@@ -109,27 +109,27 @@ class Individual(np.ndarray):
 
 class Individuals:
     def __init__(self, ready_individuals: list[Individual], assigned_individuals: list[Individual]):
-        self._ready_individuals = ready_individuals
-        self._assigned_individuals = assigned_individuals
+        self.__ready_individuals = ready_individuals
+        self.__assigned_individuals = assigned_individuals
 
     @property
     def num_finished(self) -> int:
-        return len(self._assigned_individuals)
+        return len(self.__assigned_individuals)
 
     @property
     def num_ready(self) -> int:
-        return len(self._ready_individuals)
+        return len(self.__ready_individuals)
 
     def __len__(self):
-        return len(self._ready_individuals) + len(self._assigned_individuals)
+        return len(self.__ready_individuals) + len(self.__assigned_individuals)
 
     def __getitem__ref(self, index) -> Optional[Individual]:
         if index < 0 or index >= len(self):
             return None
-        if index < len(self._ready_individuals):
-            i = self._ready_individuals[index]
+        if index < len(self.__ready_individuals):
+            i = self.__ready_individuals[index]
         else:
-            i = self._assigned_individuals[index - len(self._ready_individuals)]
+            i = self.__assigned_individuals[index - len(self.__ready_individuals)]
         return i
 
     def __getitem__(self, index: int) -> np.ndarray:
