@@ -118,7 +118,7 @@ class _Server:
 
         ic(success)
         if success == CommunicationResult.TIMEOUT or success == CommunicationResult.OVER_ATTEMPT_COUNT:
-            return True
+            return False
         elif success != CommunicationResult.SUCCESS:
             logging.error(f"Failed to receive packet from {sock.getpeername()}: {success}")
             self._drop_socket(sock)
