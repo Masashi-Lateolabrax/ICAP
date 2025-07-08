@@ -107,4 +107,20 @@ class Individual(np.ndarray):
         return self._calculation_end - self._calculation_start
 
 
+class Individuals:
+    def __init__(self, individuals: list[Individual]):
+        self.__individuals = individuals
+
+    def __len__(self):
+        return len(self.__individuals)
+
+    def __getitem__(self, index: int) -> np.ndarray:
+        return np.copy(self.__individuals[index])
+
+    def get_fitness(self, index: int) -> float:
+        if index < 0 or index >= len(self.__individuals):
+            raise IndexError(f"Index {index} out of range for individuals list")
+        return self.__individuals[index].get_fitness()
+
+
 EvaluationFunction = Callable[[Individual], float]
