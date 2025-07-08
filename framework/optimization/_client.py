@@ -202,6 +202,9 @@ class _CommunicationWorker:
         self.task = packet.data
         ic(len(self.task) if self.task else None)
 
+        if not bool(self.task):
+            time.sleep(HEARTBEAT_INTERVAL * 0.3)
+
         return CommunicationResult.SUCCESS
 
     def _return(self) -> CommunicationResult:
