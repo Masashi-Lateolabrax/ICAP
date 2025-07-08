@@ -46,8 +46,6 @@ def handler(cmaes: CMAES, individuals: list[Individual]):
     time_diff = current_time - _last_call_time
     _last_call_time = current_time
 
-    n = len(individuals)
-
     fittness = [i.get_fitness() for i in individuals]
     ave_fittness = sum(fittness) / len(fittness)
 
@@ -58,9 +56,8 @@ def handler(cmaes: CMAES, individuals: list[Individual]):
     print(
         f"[{current_time.strftime("%H:%M:%S")}] "
         f"Generation: {cmaes.generation} | "
-        f"Num: {len(fittness)}/{n} | "
         f"Average: {ave_fittness:.2f} | "
-        f"Speed: {1 / speed:.2f} gen/sec | "
+        f"Speed: {len(fittness) / speed:.2f} ind/sec | "
         f"ETA: {(current_time + remaining_seconds)} "
     )
 
