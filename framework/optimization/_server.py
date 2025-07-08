@@ -77,6 +77,17 @@ class _Server:
 
         self.reporter = Reporter()
 
+    def get_socket_addresses(self, sock: socket) -> str:
+        if sock in self.socket_states:
+            address = self.socket_states[sock].address
+        else:
+            try:
+                address = f"{sock.getpeername()[0]}:{sock.getpeername()[1]}"
+            except socket.error as e:
+                logging.error(f"Error getting peer name: {e}")
+                address = "Unknown"
+        return address
+
     def _drop_socket(self, sock: socket.socket):
         if sock in self.sockets:
             self.sockets.remove(sock)
