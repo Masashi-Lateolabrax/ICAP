@@ -217,6 +217,9 @@ class _Server:
             result, individuals = cmaes.update()
             ic(result, len(individuals))
 
+            if self.handler:
+                self.handler(cmaes)
+
             distribution.update(len(individuals), self.socket_states)
 
             self._update_assigned_individuals(cmaes, distribution)
