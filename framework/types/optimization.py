@@ -1,5 +1,5 @@
 import enum
-from typing import Callable
+from typing import Callable, Optional
 import time
 
 import numpy as np
@@ -108,19 +108,33 @@ class Individual(np.ndarray):
 
 
 class Individuals:
-    def __init__(self, individuals: list[Individual]):
-        self.__individuals = individuals
+    def __init__(self, ready_individuals: list[Individual], assigned_individuals: list[Individual]):
+        self._ready_individuals = ready_individuals
+        self._assigned_individuals = assigned_individuals
 
     def __len__(self):
-        return len(self.__individuals)
+        return len(self._ready_individuals) + len(self._assigned_individuals)
+
+    def __getitem__ref(self, index) -> Optional[Individual]:
+        if index < 0 or index >= len(self):
+            return None
+        if index < len(self._ready_individuals):
+            i = self._ready_individuals[index]
+        else:
+            i = self._assigned_individuals[index - len(self._ready_individuals)]
+        return i
 
     def __getitem__(self, index: int) -> np.ndarray:
-        return np.copy(self.__individuals[index])
+        i = self.__getitem__ref(index)
+        if i is None:
+            raise IndexError(f"Index {index} out of range for individuals list")
+        return np.copy(i)
 
     def get_fitness(self, index: int) -> float:
-        if index < 0 or index >= len(self.__individuals):
+        i = self.__getitem__ref(index)
+        if i is None:
             raise IndexError(f"Index {index} out of range for individuals list")
-        return self.__individuals[index].get_fitness()
+        return i.get_fitness()
 
 
 EvaluationFunction = Callable[[Individual], float]
