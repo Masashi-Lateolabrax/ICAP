@@ -92,7 +92,7 @@ class CMAES:
 
     @property
     def individuals(self) -> Individuals:
-        return Individuals(self._individual_manager.ready_individuals + self._individual_manager.assigned_individuals)
+        return Individuals(self._individual_manager.ready_individuals, self._individual_manager.assigned_individuals)
 
     @property
     def population_size(self) -> int:
