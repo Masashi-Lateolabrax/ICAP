@@ -7,17 +7,26 @@ from typing import Optional
 from ..prelude import *
 
 
-def _send_message(sock: socket.socket, data: bytes, attempt_count: int = 10) -> CommunicationResult:
+def _send_message(sock: socket.socket, data: bytes, retry: int = 0) -> CommunicationResult:
     size = struct.pack('!I', len(data))
+    attempt = 0
 
-    for attempt in range(attempt_count):
+    while True:
         try:
             sock.sendall(size + data)
             return CommunicationResult.SUCCESS
 
         except socket.timeout:
-            logging.warning(f"Socket timeout on attempt {attempt + 1} while sending message")
-            continue
+            if retry > 0:
+                logging.warning(f"Socket timeout on attempt {attempt + 1} while sending data")
+                if attempt >= retry:
+                    logging.error("Exceeded maximum retry attempts while sending data")
+                    return CommunicationResult.OVER_ATTEMPT_COUNT
+                attempt += 1
+                continue
+            logging.error(f"Socket timed out while sending data")
+            return CommunicationResult.TIMEOUT
+
 
         except (socket.error, struct.error, BrokenPipeError, ConnectionResetError, ConnectionAbortedError) as e:
             logging.error(f"Error sending message: {e}")
