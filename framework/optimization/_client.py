@@ -12,7 +12,7 @@ from ..prelude import *
 from ..types.communication import Packet, PacketType
 from ._connection_utils import send_packet, communicate
 
-HEARTBEAT_INTERVAL = 7
+HEARTBEAT_INTERVAL = 20
 
 
 @dataclasses.dataclass
@@ -62,7 +62,7 @@ class _EvaluationWorker:
     def _worker(self) -> None:
         while not self.stop_event.is_set():
             try:
-                individuals = self.task_queue.get(timeout=1.0)
+                individuals = self.task_queue.get_nowait()
                 if individuals is None:
                     break
                 self.response_queue.put(
@@ -134,7 +134,7 @@ class _EvaluationWorker:
         if not self.is_alive():
             raise RuntimeError("Evaluation worker is not running")
         try:
-            return self.response_queue.get(timeout=1.0)
+            return self.response_queue.get_nowait()
         except queue.Empty:
             return ClientCalculationState(idle=True)
 
