@@ -335,7 +335,7 @@ requires-dist = [
     { name = "cmaes", specifier = "==0.11.1" },
     { name = "genesis-world", git = "https://github.com/Genesis-Embodied-AI/Genesis.git?rev=7cf9efe7b32ae76df602475ed6cb580c1477f89f" },
     { name = "glfw", specifier = "==2.9.0" },
-    { name = "icecream", specifier = ">=2.1.5" },
+    { name = "icecream", specifier = "==2.1.5" },
     { name = "mujoco", specifier = "==3.3.3" },
     { name = "pillow", specifier = "==11.2.1" },
     { name = "scipy", specifier = "==1.16.0" },
