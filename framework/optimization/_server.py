@@ -190,7 +190,7 @@ class _Server:
 
         return True
 
-    def _receive_packet(self, timeout=1) -> Optional[dict[PacketType, list[tuple[socket.socket, Packet]]]]:
+    def _receive_packet(self, timeout=1) -> Optional[dict[PacketType, dict[socket.socket, Packet]]]:
         try:
             readable, _, _ = select.select(self.sockets, [], self.sockets, timeout)
 
@@ -203,17 +203,18 @@ class _Server:
 
         result = {}
         for sock in readable:
-            success, packet = receive_packet(sock)
-            ic(success)
+            while True:
+                success, packet = receive_packet(sock)
+                ic(success)
 
-            if success == CommunicationResult.TIMEOUT or success == CommunicationResult.OVER_ATTEMPT_COUNT:
-                continue
-            elif success != CommunicationResult.SUCCESS:
-                logging.error(f"Failed to receive packet from {self.sock_name(sock)}: {success}")
-                self._drop_socket(sock)
-                continue
+                if success == CommunicationResult.TIMEOUT or success == CommunicationResult.OVER_ATTEMPT_COUNT:
+                    break
+                elif success != CommunicationResult.SUCCESS:
+                    logging.error(f"Failed to receive packet from {self.sock_name(sock)}: {success}")
+                    self._drop_socket(sock)
+                    break
 
-            result[packet.packet_type] = result.get(packet.packet_type, []) + [(sock, packet)]
+            result[packet.packet_type][sock] = packet
 
         return result
 
