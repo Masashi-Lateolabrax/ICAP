@@ -34,7 +34,6 @@ def save_individuals(cmaes: CMAES, individuals: list[Individual], settings: MySe
     try:
         os.makedirs(settings.Storage.SAVE_DIRECTORY, exist_ok=True)
         file_path = os.path.join(settings.Storage.SAVE_DIRECTORY, f"generation_{cmaes.generation:04d}.pkl")
-        os.makedirs(file_path, exist_ok=True)
 
         num_to_save = max(1, settings.Storage.TOP_N) if settings.Storage.TOP_N > 0 else len(individuals)
         sorted_individuals = sorted(individuals, key=lambda x: x.get_fitness())
