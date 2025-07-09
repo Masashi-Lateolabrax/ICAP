@@ -320,8 +320,6 @@ class _Server:
 
             self._update_assigned_individuals(cmaes, distribution)
 
-        self.reporter.output()
-
 
 def _spawn_thread(
         settings: Settings, handler: Optional[Callable[[CMAES, list[Individual]], None]] = None
