@@ -214,7 +214,7 @@ class _Server:
                     self._drop_socket(sock)
                     break
 
-            self.socket_states[sock].last_heartbeat = time.time()
+            self.socket_states[sock].last_heartbeat = ic(time.time())
             result[packet.packet_type][sock] = packet
 
         return result
