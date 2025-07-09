@@ -273,6 +273,23 @@ class _Server:
             self.socket_states[sock].throughput = ic(packet.data)
             self._response_ack(sock)
 
+    def _deal_with_response(self, response_packets: dict[socket.socket, Packet]):
+        for sock, packet in response_packets.items():
+            if sock not in self.socket_states:
+                logging.warning(f"Socket {self.sock_name(sock)} not found in socket states")
+                continue
+            if not isinstance(packet.data, list):
+                logging.error(f"Invalid data type in RESPONSE packet from {self.sock_name(sock)}: {type(packet.data)}")
+                self._drop_socket(sock)
+                continue
+            for i, evaluated_individual in enumerate(packet.data):
+                if not isinstance(evaluated_individual, Individual):
+                    logging.error(f"Invalid individual in RESPONSE packet from {self.sock_name(sock)}")
+                    self._drop_socket(sock)
+                    continue
+                self.socket_states[sock].assigned_individuals[i].copy_from(evaluated_individual)
+            self._response_ack(sock)
+
     def run(self):
         distribution = Distribution()
         cmaes = CMAES(
