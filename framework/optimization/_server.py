@@ -108,6 +108,7 @@ class _Server:
                     self._drop_socket(sock)
                     break
 
+                ic(packet_.packet_type)
                 packet = packet_
 
             if packet is None:
