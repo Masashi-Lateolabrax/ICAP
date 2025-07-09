@@ -79,7 +79,7 @@ class _EvaluationWorker:
                     break
 
                 try:
-                    individual.timer_start()
+                    ic(individual.timer_start())
                     fitness = ic(self.evaluation_function(individual))
                     individual.timer_end()
 
@@ -206,6 +206,7 @@ class _CommunicationWorker:
 
         self.last_request = time.time()
         self.task = packet.data
+        self.evaluated_task = None
         ic(len(self.task) if self.task else None)
 
         return CommunicationResult.SUCCESS
@@ -237,15 +238,17 @@ class _CommunicationWorker:
         if not self.is_alive():
             raise RuntimeError("Communication worker is not running")
 
+        result = ic(self._heartbeat(self.throughput))
+        task = None
+
         if not self.is_assigned():
             result = ic(self._request())
-            return result, self.task
+            task = self.task
 
-        if self.task is None and self.evaluated_task is not None:
+        if not bool(self.task) and bool(self.evaluated_task):
             result = ic(self._return())
-            return result, None
 
-        return ic(self._heartbeat(self.throughput)), None
+        return result, task
 
 
 def connect_to_server(
