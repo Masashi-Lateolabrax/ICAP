@@ -125,8 +125,8 @@ class _Server:
 
         return result
 
-    def _response_ack(self, sock: socket.socket):
-        response_packet = Packet(PacketType.ACK)
+    def _response_ack(self, sock: socket.socket, data=None):
+        response_packet = Packet(PacketType.ACK, data=data)
         if send_packet(sock, response_packet, retry=3) != CommunicationResult.SUCCESS:
             logging.error(f"Failed to send ACK packet to {self.sock_name(sock)}")
             self._drop_socket(sock)
@@ -172,10 +172,7 @@ class _Server:
             if sock not in self.socket_states:
                 logging.warning(f"Socket {self.sock_name(sock)} not found in socket states")
                 continue
-            response_packet = Packet(PacketType.RESPONSE, data=self.socket_states[sock].assigned_individuals)
-            if send_packet(sock, response_packet, retry=3) != CommunicationResult.SUCCESS:
-                logging.error(f"Failed to send RESPONSE packet to {self.sock_name(sock)}")
-                self._drop_socket(sock)
+            self._response_ack(sock, data=self.socket_states[sock].assigned_individuals)
 
     def _update_assigned_individuals(self, cmaes: CMAES, distribution: Distribution):
         for sock in self.sockets:
