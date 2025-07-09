@@ -250,14 +250,14 @@ class _Server:
             logging.error(f"Failed to send ACK packet to {self.sock_name(sock)}")
             self._drop_socket(sock)
 
-    def _handshake(self, handshake_packets: dict[socket.socket, Packet]):
+    def _deal_with_handshake(self, handshake_packets: dict[socket.socket, Packet]):
         for sock, packet in handshake_packets.items():
             if sock not in self.socket_states:
                 logging.warning(f"Socket {self.sock_name(sock)} not found in socket states")
                 continue
             self._response_ack(sock)
 
-    def _heartbeat(self, heartbeat_packets: dict[socket.socket, Packet]):
+    def _deal_with_heartbeat(self, heartbeat_packets: dict[socket.socket, Packet]):
         for sock, packet in heartbeat_packets:
             if sock not in self.socket_states:
                 logging.warning(f"Socket {self.sock_name(sock)} not found in socket states")
