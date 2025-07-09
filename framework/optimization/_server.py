@@ -181,7 +181,6 @@ class _Server:
                 time.sleep(1)
                 continue
 
-            self._mut_drop_dead_sockets()
             sorted_packets: Optional[dict[PacketType, dict[socket.socket, Packet]]] = self._receive_packet()
             if sorted_packets is None:
                 continue
@@ -193,6 +192,7 @@ class _Server:
 
             for sock in sorted_packets.get(PacketType.DISCONNECTION, {}).keys():
                 self._drop_socket(sock)
+            self._mut_drop_dead_sockets()
 
             result, individuals = cmaes.update()
             ic(result, len(individuals))
