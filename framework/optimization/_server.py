@@ -190,7 +190,7 @@ class _Server:
 
         return True
 
-    def _receive_packet(self, timeout=1) -> Optional[dict[PacketType, tuple[socket.socket, Packet]]]:
+    def _receive_packet(self, timeout=1) -> Optional[dict[PacketType, list[tuple[socket.socket, Packet]]]]:
         try:
             readable, _, _ = select.select(self.sockets, [], self.sockets, timeout)
 
@@ -213,7 +213,7 @@ class _Server:
                 self._drop_socket(sock)
                 return None
 
-            result[packet.packet_type] = (sock, packet)
+            result[packet.packet_type] = result.get(packet.packet_type, []) + [(sock, packet)]
 
         return result
 
