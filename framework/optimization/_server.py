@@ -234,16 +234,6 @@ class _Server:
             while self._communicate_with_the_client(sock):
                 pass
 
-    def _update_assigned_individuals(self, cmaes: CMAES, distribution: Distribution):
-        for sock in self.sockets:
-            if self.socket_states[sock].assigned_individuals is not None:
-                continue
-            batch_size = ic(distribution.get_batch_size(sock))
-            self.socket_states[sock].assigned_individuals = cmaes.get_individuals(batch_size)
-
-        if self.reporter.should_output():
-            self.reporter.output()
-
     def _response_ack(self, sock: socket.socket):
         response_packet = Packet(PacketType.ACK)
         if send_packet(sock, response_packet, retry=3) != CommunicationResult.SUCCESS:
@@ -291,6 +281,16 @@ class _Server:
             if send_packet(sock, response_packet, retry=3) != CommunicationResult.SUCCESS:
                 logging.error(f"Failed to send RESPONSE packet to {self.sock_name(sock)}")
                 self._drop_socket(sock)
+
+    def _update_assigned_individuals(self, cmaes: CMAES, distribution: Distribution):
+        for sock in self.sockets:
+            if self.socket_states[sock].assigned_individuals is not None:
+                continue
+            batch_size = ic(distribution.get_batch_size(sock))
+            self.socket_states[sock].assigned_individuals = cmaes.get_individuals(batch_size)
+
+        if self.reporter.should_output():
+            self.reporter.output()
 
     def run(self):
         distribution = Distribution()
