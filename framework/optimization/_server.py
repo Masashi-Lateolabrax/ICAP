@@ -266,7 +266,7 @@ class _Server:
             self._response_ack(sock)
 
     def _deal_with_heartbeat(self, heartbeat_packets: dict[socket.socket, Packet]):
-        for sock, packet in heartbeat_packets:
+        for sock, packet in heartbeat_packets.items():
             if sock not in self.socket_states:
                 logging.warning(f"Socket {self.sock_name(sock)} not found in socket states")
                 continue
