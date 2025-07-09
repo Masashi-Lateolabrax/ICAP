@@ -127,6 +127,7 @@ class _EvaluationWorker:
     def add_task(self, individuals: list[Individual]) -> None:
         if not self.is_alive():
             raise RuntimeError("Evaluation worker is not running")
+        ic(len(individuals))
         self.task_queue.put(individuals)
 
     def get_response(self) -> list[ClientCalculationState]:
@@ -272,7 +273,7 @@ def connect_to_server(
     communication_worker = _CommunicationWorker(sock)
 
     while not stop_event.is_set():
-        calc_states = evaluation_worker.get_response()
+        calc_states = ic(evaluation_worker.get_response())
         for state in calc_states:
             if state.throughput is not None:
                 communication_worker.set_throughput(state.throughput)
