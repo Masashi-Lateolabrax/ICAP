@@ -190,6 +190,33 @@ class _Server:
 
         return True
 
+    def _receive_packet(self, timeout=1) -> Optional[dict[PacketType, tuple[socket.socket, Packet]]]:
+        try:
+            readable, _, _ = select.select(self.sockets, [], self.sockets, timeout)
+
+        except select.error as e:
+            logging.error(f"Select error: {e}")
+            return None
+
+        if not readable:
+            return None
+
+        result = {}
+        for sock in readable:
+            success, packet = receive_packet(sock)
+            ic(success)
+
+            if success == CommunicationResult.TIMEOUT or success == CommunicationResult.OVER_ATTEMPT_COUNT:
+                return None
+            elif success != CommunicationResult.SUCCESS:
+                logging.error(f"Failed to receive packet from {self.sock_name(sock)}: {success}")
+                self._drop_socket(sock)
+                return None
+
+            result[packet.packet_type] = (sock, packet)
+
+        return result
+
     def _communicate_with_client(self, timeout: float = 1.0):
         try:
             readable, _, _ = select.select(self.sockets, [], self.sockets, timeout)
