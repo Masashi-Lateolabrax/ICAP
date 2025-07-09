@@ -1,5 +1,5 @@
 import enum
-from typing import Callable
+from typing import Callable, Optional
 import time
 
 import numpy as np
@@ -7,10 +7,9 @@ import numpy as np
 
 class CalculationState(enum.Enum):
     NOT_STARTED = 0
-    SENDING = 1
-    CALCULATING = 2
-    FINISHED = 3
-    CORRUPTED = 4
+    CALCULATING = 1
+    FINISHED = 2
+    CORRUPTED = 3
 
 
 class Individual(np.ndarray):
@@ -80,24 +79,20 @@ class Individual(np.ndarray):
         self._calculation_end = state[3]
 
     @property
+    def is_ready(self) -> bool:
+        return self._calculation_state == CalculationState.NOT_STARTED
+
+    @property
+    def is_corrupted(self) -> bool:
+        return self._calculation_state == CalculationState.CORRUPTED
+
+    @property
     def is_calculating(self) -> bool:
         return self._calculation_state == CalculationState.CALCULATING
 
     @property
     def is_finished(self) -> bool:
         return self._calculation_state == CalculationState.FINISHED
-
-    @property
-    def is_ready(self) -> bool:
-        return self._calculation_state == CalculationState.NOT_STARTED
-
-    @property
-    def is_sending(self) -> bool:
-        return self._calculation_state == CalculationState.SENDING
-
-    @property
-    def is_corrupted(self) -> bool:
-        return self._calculation_state == CalculationState.CORRUPTED
 
     @property
     def norm(self):

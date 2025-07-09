@@ -2,6 +2,7 @@ import genesis as gs
 import torch
 import numpy as np
 
+from icecream import ic
 from ..interfaces import SimulatorBackend
 
 _genesis_initialized = False
@@ -35,7 +36,7 @@ class GenesisBackend(SimulatorBackend):
                     resized = cv2.resize(rendered_img, (w, h))
                     img_buf[:] = resized
         except Exception as e:
-            print(f"Genesis render error: {e}")
+            ic("Genesis render error:", e)
             if img_buf is not None:
                 img_buf.fill(0)
 

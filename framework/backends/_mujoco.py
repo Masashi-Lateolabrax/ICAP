@@ -3,6 +3,7 @@ import abc
 import mujoco
 import numpy as np
 
+from icecream import ic
 from ..prelude import *
 
 from ..environment import (
@@ -118,5 +119,5 @@ class MujocoBackend(SimulatorBackend, abc.ABC):
                     renderer.render(out=img_buf)
 
         except Exception as e:
-            print(f"MuJoCo render error: {e}")
+            ic("MuJoCo render error:", e)
             img_buf.fill(0)

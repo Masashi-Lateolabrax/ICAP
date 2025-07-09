@@ -1,91 +1,62 @@
-import math
 import logging
-from typing import Optional, Iterable
+import math
+import socket
+from typing import Optional
 
 import numpy as np
 
-from ._connection import Connection
+from ..prelude import *
 
 
 class Distribution:
     def __init__(self):
-        self.probabilities: dict[str, Optional[float]] = {}
-        self.batch_size: dict[str, int] = {}
-        self.performance: dict[str, Optional[float]] = {}
+        self.throughput: dict[socket.socket, float] = {}
+        self.batch_size: dict[socket.socket, int] = {}
 
-    def add_new_connection(self, conn: Connection) -> None:
-        if conn.address in self.performance:
-            logging.warning(f"Connection {conn.address} already exists in performance tracking.")
-            return
-
-        self.performance[conn.address] = None
-        self.batch_size[conn.address] = 1
-
-    def _remove_unhealthy_connection_info(self, connections: Iterable[Connection]) -> None:
-        for conn in connections:
-            if not conn.is_healthy:
-                if conn.address in self.performance:
-                    logging.warning(f"Connection {conn.address} is unhealthy, removing from performance tracking.")
-                    # Remove unhealthy connection from performance tracking
-                    del self.performance[conn.address]
-                continue
-
-    def _update_batch_size(self, num_ready_individuals: int) -> None:
-        keys = list(self.performance.keys())
-        if not keys:
-            logging.warning("No connections available for distribution update")
-            return
-
+    def _mut_init_batch_size_and_throughput(self, socket_status: dict[socket.socket, SocketState]) -> None:
         self.batch_size = {}
-
-        probabilities: dict[str, Optional[float]] = {}
-        for k in keys:
-            p = self.performance[k]
-            if p is not None and p > 0:
-                probabilities[k] = p
+        self.throughput = {}
+        for sock, state in socket_status.items():
+            if state.throughput > 0:
+                self.batch_size[sock] = 0  # This value will be counted up later (LINE 49)
+                self.throughput[sock] = state.throughput
             else:
-                # Set batch size to 1 at least for connections with no performance or zero throughput
-                self.batch_size[k] = 1
+                self.batch_size[sock] = 1
 
-        population_size = num_ready_individuals - len(self.batch_size)
-        if not probabilities or population_size <= 0:
+    def update(
+            self,
+            num_ready_individuals: int,
+            socket_status: dict[socket.socket, SocketState],
+    ) -> None:
+        self._mut_init_batch_size_and_throughput(socket_status)
+
+        if not self.throughput:
             return
 
-        total = sum(probabilities.values())
-        for key in probabilities:
-            probabilities[key] = probabilities[key] / total
+        probability = {}
+        for key, throughput in self.throughput.items():
+            probability[key] = throughput
+        total = sum(probability.values())
+        probability = {key: throughput / total for key, throughput in probability.items()}
 
-        num_connections = len(probabilities)
+        newbies = sum(self.batch_size.values())
+        num_tasks = num_ready_individuals - newbies
+        if not probability or num_tasks <= 0:
+            return
 
-        # Each values of 'probabilities' is greater than 0 absolutely. Because we filtered out
-        # connections with zero or None performance above.
         selected_indices = np.random.choice(
-            np.arange(num_connections), size=population_size, p=list(probabilities.values())
+            list(probability.keys()), size=num_tasks, p=list(probability.values())
         )
-        task_distribution = np.bincount(selected_indices, minlength=num_connections)
+        for key in selected_indices:
+            self.batch_size[key] += 1
 
-        for key, num in zip(probabilities.keys(), task_distribution):
-            self.batch_size[key] = num
-
-    def register_throughput(self, conn, throughput: float) -> None:
-        if self.performance[conn.address] is None:
-            self.performance[conn.address] = throughput
-        else:
-            self.performance[conn.address] = 0.8 * self.performance[conn.address] + 0.2 * throughput
-
-    def update(self, num_ready_individuals: int, connections: Iterable[Connection]) -> None:
-        self._remove_unhealthy_connection_info(connections)
-        self._update_batch_size(num_ready_individuals)
-
-    def get_batch_size(self, conn: Connection) -> Optional[int]:
-        if not conn.is_healthy:
-            logging.warning(f"Connection {conn.address} is unhealthy, returning None for batch size.")
-            return None
-        elif conn.address not in self.batch_size:
-            logging.warning(f"Connection {conn.address} not found in batch size tracking, returning None.")
+    def get_batch_size(self, sock: socket.socket) -> Optional[int]:
+        if not sock in self.batch_size:
+            logging.warning("If it works as designed, this should never happen")
             return None
 
-        batch_size = self.batch_size[conn.address]
-        n = math.floor(max(conn.throughput * 10, 1))
+        batch_size = self.batch_size.get(sock, 0)
+        if sock in self.throughput:
+            batch_size = min(batch_size, math.ceil(self.throughput[sock] * 10))
 
-        return min(batch_size, n)
+        return batch_size
