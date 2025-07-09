@@ -308,7 +308,17 @@ class _Server:
                 continue
 
             self._mut_drop_dead_sockets()
-            self._communicate_with_client()
+            sorted_packets: Optional[dict[PacketType, dict[socket.socket, Packet]]] = self._receive_packet()
+            if sorted_packets is None:
+                continue
+
+            self._deal_with_handshake(sorted_packets.get(PacketType.HANDSHAKE, {}))
+            self._deal_with_heartbeat(sorted_packets.get(PacketType.HEARTBEAT, {}))
+            self._deal_with_response(sorted_packets.get(PacketType.RESPONSE, {}))
+            self._deal_with_request(sorted_packets.get(PacketType.REQUEST, {}))
+
+            for sock in sorted_packets.get(PacketType.DISCONNECTION, {}).keys():
+                self._drop_socket(sock)
 
             result, individuals = cmaes.update()
             ic(result, len(individuals))
