@@ -9,7 +9,6 @@ import os
 import threading
 import datetime
 import pickle
-from pathlib import Path
 from typing import Optional
 
 from icecream import ic
@@ -33,10 +32,8 @@ _last_call_time: Optional[datetime.datetime] = None
 
 def save_individuals(cmaes: CMAES, individuals: list[Individual], settings: MySettings):
     try:
-        save_dir = Path(settings.Storage.SAVE_DIRECTORY)
-        save_dir.mkdir(exist_ok=True)
-
-        file_path = os.path.join(save_dir, f"generation_{cmaes.generation:04d}.pkl")
+        os.makedirs(settings.Storage.SAVE_DIRECTORY, exist_ok=True)
+        file_path = os.path.join(settings.Storage.SAVE_DIRECTORY, f"generation_{cmaes.generation:04d}.pkl")
         os.makedirs(file_path, exist_ok=True)
 
         num_to_save = max(1, settings.Storage.TOP_N) if settings.Storage.TOP_N > 0 else len(individuals)
