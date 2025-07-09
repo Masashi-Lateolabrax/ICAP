@@ -254,7 +254,7 @@ class _Server:
 
     def _response_ack(self, sock: socket.socket):
         response_packet = Packet(PacketType.ACK)
-        if send_packet(sock, response_packet) != CommunicationResult.SUCCESS:
+        if send_packet(sock, response_packet, retry=3) != CommunicationResult.SUCCESS:
             logging.error(f"Failed to send ACK packet to {self.sock_name(sock)}")
             self._drop_socket(sock)
 
