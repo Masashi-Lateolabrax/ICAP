@@ -132,13 +132,13 @@ class _EvaluationWorker:
             raise RuntimeError("Evaluation worker is not running")
         self.task_queue.put(individuals)
 
-    def get_response(self) -> ClientCalculationState:
+    def get_response(self) -> Optional[ClientCalculationState]:
         if not self.is_alive():
             raise RuntimeError("Evaluation worker is not running")
-        try:
-            return self.response_queue.get_nowait()
-        except queue.Empty:
-            return ClientCalculationState(idle=True)
+        state = None
+        while not self.response_queue.empty():
+            state = self.response_queue.get_nowait()
+        return state
 
 
 class _CommunicationWorker:
