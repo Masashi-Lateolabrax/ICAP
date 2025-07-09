@@ -207,11 +207,11 @@ class _Server:
             ic(success)
 
             if success == CommunicationResult.TIMEOUT or success == CommunicationResult.OVER_ATTEMPT_COUNT:
-                return None
+                continue
             elif success != CommunicationResult.SUCCESS:
                 logging.error(f"Failed to receive packet from {self.sock_name(sock)}: {success}")
                 self._drop_socket(sock)
-                return None
+                continue
 
             result[packet.packet_type] = result.get(packet.packet_type, []) + [(sock, packet)]
 
