@@ -290,6 +290,16 @@ class _Server:
                 self.socket_states[sock].assigned_individuals[i].copy_from(evaluated_individual)
             self._response_ack(sock)
 
+    def _deal_with_request(self, request_packets: dict[socket.socket, Packet]):
+        for sock, packet in request_packets.items():
+            if sock not in self.socket_states:
+                logging.warning(f"Socket {self.sock_name(sock)} not found in socket states")
+                continue
+            response_packet = Packet(PacketType.RESPONSE, data=self.socket_states[sock].assigned_individuals)
+            if send_packet(sock, response_packet, retry=3) != CommunicationResult.SUCCESS:
+                logging.error(f"Failed to send RESPONSE packet to {self.sock_name(sock)}")
+                self._drop_socket(sock)
+
     def run(self):
         distribution = Distribution()
         cmaes = CMAES(
