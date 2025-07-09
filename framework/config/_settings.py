@@ -87,6 +87,13 @@ class Render:
     LIGHT_SPECULAR = 1.0
 
 
+class Storage:
+    SAVE_INDIVIDUALS = True
+    SAVE_DIRECTORY = "results"
+    SAVE_INTERVAL = 10  # Save every N generations
+    TOP_N = 0  # Save top N individuals, 0 means save all
+
+
 class Settings:
     """
     Basically, the attributes' unit is meter.
@@ -100,3 +107,4 @@ class Settings:
     Robot = Robot
     Food = Food
     Nest = Nest
+    Storage = Storage
