@@ -124,72 +124,6 @@ class _Server:
             except Exception as e:
                 logging.error(f"Error retrieving socket from queue: {e}")
 
-    def _communicate_with_the_client(self, sock: socket.socket) -> bool:
-        success, packet = receive_packet(sock)
-
-        ic(success)
-        if success == CommunicationResult.TIMEOUT or success == CommunicationResult.OVER_ATTEMPT_COUNT:
-            return False
-        elif success != CommunicationResult.SUCCESS:
-            logging.error(f"Failed to receive packet from {self.sock_name(sock)}: {success}")
-            self._drop_socket(sock)
-            return False
-
-        ic(packet.packet_type)
-
-        self.socket_states[sock].last_heartbeat = time.time()
-
-        response_packet = Packet(PacketType.ACK)
-        match packet.packet_type:
-            case PacketType.HEARTBEAT:
-                self.socket_states[sock].throughput = ic(packet.data)
-
-            case PacketType.HANDSHAKE:
-                pass
-
-            case PacketType.REQUEST:
-                response_packet.data = self.socket_states[sock].assigned_individuals
-                ic(len(response_packet.data) if response_packet.data else None)
-
-            case PacketType.RESPONSE:
-                if not isinstance(packet.data, list):
-                    logging.error(f"Invalid data type in RESPONSE packet: {type(packet.data)}")
-                    self._drop_socket(sock)
-                    return False
-                if not packet.data:
-                    logging.warning(f"Received empty RESPONSE packet from {self.sock_name(sock)}")
-                    return True
-
-                fitness_values = []
-                throughput = 0.0
-                for i, ind in enumerate(packet.data):
-                    if not isinstance(ind, Individual):
-                        logging.error(f"Invalid individual in RESPONSE packet: {i}")
-                        break
-                    self.socket_states[sock].assigned_individuals[i].copy_from(ind)
-                    fitness_values.append(ind.get_fitness())
-                    throughput += 1 / (ind.get_elapse() + 1e-10)
-
-                ic(sock, np.average(fitness_values), throughput)
-                self.reporter.add(sock.fileno(), fitness_values, throughput / len(packet.data))
-                self.socket_states[sock].assigned_individuals = None
-
-            case PacketType.DISCONNECTION:
-                send_packet(sock, response_packet)
-                self._drop_socket(sock)
-                return False
-
-            case PacketType.ACK:
-                logging.warning(f"Received ACK packet: {packet.data}")
-                return True
-
-        result = ic(send_packet(sock, response_packet))
-        if result != CommunicationResult.SUCCESS:
-            self._drop_socket(sock)
-            return False
-
-        return True
-
     def _receive_packet(self, timeout=1) -> Optional[dict[PacketType, dict[socket.socket, Packet]]]:
         try:
             readable, _, _ = select.select(self.sockets, [], self.sockets, timeout)
@@ -218,21 +152,6 @@ class _Server:
             result[packet.packet_type][sock] = packet
 
         return result
-
-    def _communicate_with_client(self, timeout: float = 1.0):
-        try:
-            readable, _, _ = select.select(self.sockets, [], self.sockets, timeout)
-
-        except select.error as e:
-            logging.error(f"Select error: {e}")
-            return
-
-        if not readable:
-            return
-
-        for sock in readable:
-            while self._communicate_with_the_client(sock):
-                pass
 
     def _response_ack(self, sock: socket.socket):
         response_packet = Packet(PacketType.ACK)
