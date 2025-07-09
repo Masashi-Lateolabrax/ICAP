@@ -159,9 +159,9 @@ class _CommunicationWorker:
     def set_evaluated_task(self, individuals: list[Individual]) -> None:
         self.evaluated_task = [i for i in self.task]
         for j in individuals:
-            for i in self.task:
+            for idx, i in enumerate(self.task):
                 if np.array_equal(i.view(), j.view()):
-                    self.task.remove(i)
+                    self.task.pop(idx)
                     i.copy_from(j)
                     break
         self.task = None
