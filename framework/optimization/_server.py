@@ -107,6 +107,8 @@ class _Server:
                     break
 
             self.socket_states[sock].last_heartbeat = ic(time.time())
+            if packet.packet_type not in result:
+                result[packet.packet_type] = {}
             result[packet.packet_type][sock] = packet
 
         return result
