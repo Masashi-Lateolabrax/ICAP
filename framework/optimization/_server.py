@@ -111,7 +111,10 @@ class _Server:
                 packet = packet_
 
             if packet is None:
-                logging.warning(f"Invalid packet received from {self.sock_name(sock)}")
+                logging.error(f"Invalid packet received from {self.sock_name(sock)}")
+                continue
+            if sock not in self.socket_states:
+                logging.error(f"This socket({self.sock_name(sock)}) may be dropped, so it is not in socket states")
                 continue
 
             self.socket_states[sock].last_heartbeat = ic(time.time())
