@@ -95,8 +95,9 @@ class _Server:
 
         result = {}
         for sock in readable:
+            packet = None
             while True:
-                success, packet = receive_packet(sock)
+                success, packet_ = receive_packet(sock)
                 ic(success)
 
                 if success == CommunicationResult.TIMEOUT or success == CommunicationResult.OVER_ATTEMPT_COUNT:
@@ -106,6 +107,8 @@ class _Server:
                     logging.error(f"Failed to receive packet from {self.sock_name(sock)}: {success}")
                     self._drop_socket(sock)
                     break
+
+                packet = packet_
 
             if packet is None:
                 logging.warning(f"Invalid packet received from {self.sock_name(sock)}")
