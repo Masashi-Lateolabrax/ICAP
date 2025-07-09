@@ -244,6 +244,12 @@ class _Server:
         if self.reporter.should_output():
             self.reporter.output()
 
+    def _response_ack(self, sock: socket.socket):
+        response_packet = Packet(PacketType.ACK)
+        if send_packet(sock, response_packet) != CommunicationResult.SUCCESS:
+            logging.error(f"Failed to send ACK packet to {self.sock_name(sock)}")
+            self._drop_socket(sock)
+
     def _heartbeat(self, heartbeat_packets: dict[socket.socket, Packet]):
         for sock, packet in heartbeat_packets:
             if sock not in self.socket_states:
