@@ -106,6 +106,10 @@ class _Server:
                     self._drop_socket(sock)
                     break
 
+            if packet is None:
+                logging.warning(f"Invalid packet received from {self.sock_name(sock)}")
+                continue
+
             self.socket_states[sock].last_heartbeat = ic(time.time())
             if packet.packet_type not in result:
                 result[packet.packet_type] = {}
