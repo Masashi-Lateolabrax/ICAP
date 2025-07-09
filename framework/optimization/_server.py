@@ -165,6 +165,7 @@ class _Server:
                     self._drop_socket(sock)
                     continue
                 self.socket_states[sock].assigned_individuals[i].copy_from(evaluated_individual)
+            self.socket_states[sock].assigned_individuals = None
             self._response_ack(sock)
 
     def _deal_with_request(self, request_packets: dict[socket.socket, Packet]):
