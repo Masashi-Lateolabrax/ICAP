@@ -72,6 +72,14 @@ class _Server:
         self.stop_event = stop_event
         self.handler = handler
 
+        self.distribution = Distribution()
+        self.cmaes = CMAES(
+            max_generation=self.settings.Optimization.GENERATION,
+            dimension=self.settings.Optimization.DIMENSION,
+            sigma=self.settings.Optimization.SIGMA,
+            population_size=self.settings.Optimization.POPULATION,
+        )
+
         self.sockets: list[socket.socket] = []
         self.socket_states: dict[socket.socket, SocketState] = {}
 
