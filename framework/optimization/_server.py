@@ -243,9 +243,9 @@ class _Server:
         if self.reporter.should_output():
             self.reporter.output()
 
-    def _update_socket_states(self, sorted_packets: Optional[dict[PacketType, list[tuple[socket.socket, Packet]]]]):
-        for socks in sorted_packets.values():
-            for sock, _ in socks:
+    def _update_socket_states(self, sorted_packets: dict[PacketType, dict[socket.socket, Packet]]):
+        for receives in sorted_packets.values():
+            for sock in receives.keys():
                 if sock not in self.socket_states:
                     logging.warning(f"Socket {self.sock_name(sock)} not found in socket states")
                     continue
