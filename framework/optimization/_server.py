@@ -256,6 +256,7 @@ class _Server:
                 logging.warning(f"Socket {self.sock_name(sock)} not found in socket states")
                 continue
             self.socket_states[sock].throughput = ic(packet.data)
+            self._response_ack(sock)
 
     def run(self):
         distribution = Distribution()
