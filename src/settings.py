@@ -105,3 +105,13 @@ MySettings.Nest.RADIUS = 1.0
 MySettings.Nest.HEIGHT = 0.01
 MySettings.Nest.COLOR = (0, 1, 0, 1)
 ###################################################################################
+
+
+###################################################################################
+# Storage settings
+###################################################################################
+MySettings.Storage.SAVE_INDIVIDUALS = True
+MySettings.Storage.SAVE_DIRECTORY = "results"
+MySettings.Storage.SAVE_INTERVAL = 10  # Save every 10 generations
+MySettings.Storage.TOP_N = 1
+###################################################################################
