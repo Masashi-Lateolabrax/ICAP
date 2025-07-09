@@ -143,6 +143,10 @@ class _Server:
                 logging.error(f"Invalid data type in RESPONSE packet from {self.sock_name(sock)}: {type(packet.data)}")
                 self._drop_socket(sock)
                 continue
+            if len(packet.data) != len(self.socket_states[sock].assigned_individuals):
+                logging.error(f"Size mismatch in RESPONSE packet from {self.sock_name(sock)}")
+                self._drop_socket(sock)
+                continue
             for i, evaluated_individual in enumerate(packet.data):
                 if not isinstance(evaluated_individual, Individual):
                     logging.error(f"Invalid individual in RESPONSE packet from {self.sock_name(sock)}")
