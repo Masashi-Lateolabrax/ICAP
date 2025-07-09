@@ -133,9 +133,11 @@ class _EvaluationWorker:
     def get_response(self) -> list[ClientCalculationState]:
         if not self.is_alive():
             raise RuntimeError("Evaluation worker is not running")
-        state = None
+        state = []
         while not self.response_queue.empty():
-            state = self.response_queue.get_nowait()
+            state.append(
+                self.response_queue.get_nowait()
+            )
         return state
 
 
