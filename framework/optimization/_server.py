@@ -3,12 +3,9 @@ import threading
 import logging
 import time
 import select
-from datetime import datetime
 from queue import Queue
-import math
 from typing import Optional, Callable
 
-import numpy as np
 from icecream import ic
 
 from ._cmaes import CMAES
@@ -19,43 +16,6 @@ from ._connection_utils import send_packet, receive_packet
 
 # Socket timeout for dead connection detection in seconds
 SOCKET_TIMEOUT = 45
-
-
-class Reporter:
-    def __init__(self, interval: float = 1.0):
-        self.interval = interval
-        self.buffer: list[str] = []
-        self.last_output_time = time.time()
-
-    def add(self, address, fitness_values: list[float], throughput: float) -> None:
-        if not fitness_values:
-            logging.warning(f"No fitness values provided for address {address}")
-            return
-
-        timestamp = datetime.now().strftime("%H:%M:%S")
-
-        average_fitness = sum(fitness_values) / len(fitness_values)
-        variance_fitness = math.sqrt(sum((f - average_fitness) ** 2 for f in fitness_values) / len(fitness_values))
-        error_count = sum(1 for f in fitness_values if f == float("inf"))
-
-        message = (f"[{timestamp}] [{address}] "
-                   f"Num:{len(fitness_values)}, "
-                   f"AveFitness:{average_fitness:.2f}, "
-                   f"Variance:{variance_fitness:.2f}, "
-                   f"Error:{error_count}, "
-                   f"Throughput:{throughput:.1f} ind/sec")
-        self.buffer.append(message)
-
-    def should_output(self) -> bool:
-        current_time = time.time()
-        return current_time - self.last_output_time >= self.interval
-
-    def output(self) -> None:
-        if self.buffer:
-            for message in self.buffer:
-                ic(message)
-            self.buffer.clear()
-            self.last_output_time = time.time()
 
 
 class _Server:
@@ -74,8 +34,6 @@ class _Server:
 
         self.sockets: list[socket.socket] = []
         self.socket_states: dict[socket.socket, SocketState] = {}
-
-        self.reporter = Reporter()
 
     def sock_name(self, sock: socket) -> str:
         if sock in self.socket_states:
@@ -207,9 +165,6 @@ class _Server:
                 continue
             batch_size = ic(distribution.get_batch_size(sock))
             self.socket_states[sock].assigned_individuals = cmaes.get_individuals(batch_size)
-
-        if self.reporter.should_output():
-            self.reporter.output()
 
     def run(self):
         distribution = Distribution()
