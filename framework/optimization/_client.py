@@ -72,9 +72,6 @@ class _EvaluationWorker:
                 )
 
             except queue.Empty:
-                self.response_queue.put(
-                    ClientCalculationState(idle=True)
-                )
                 continue
 
             for individual in individuals:
