@@ -276,11 +276,12 @@ def connect_to_server(
 
     while not stop_event.is_set():
         calc_state = evaluation_worker.get_response()
-        if calc_state.throughput is not None:
-            communication_worker.set_throughput(calc_state.throughput)
+        if isinstance(calc_state, ClientCalculationState):
+            if calc_state.throughput is not None:
+                communication_worker.set_throughput(calc_state.throughput)
 
-        if calc_state.individuals is not None:
-            communication_worker.set_evaluated_task(calc_state.individuals)
+            if calc_state.individuals is not None:
+                communication_worker.set_evaluated_task(calc_state.individuals)
 
         try:
             result, new_task = communication_worker.run()
