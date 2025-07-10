@@ -8,6 +8,7 @@ tasks to connected clients.
 import os
 import threading
 import datetime
+import subprocess
 from typing import Optional
 import math
 
@@ -26,6 +27,15 @@ ic.configureOutput(
 )
 
 ic.disable()
+
+
+def get_git_hash() -> str:
+    try:
+        result = subprocess.run(['git', 'rev-parse', '--short', 'HEAD'],
+                                capture_output=True, text=True, cwd=os.path.dirname(__file__))
+        return result.stdout.strip() if result.returncode == 0 else "unknown"
+    except Exception:
+        return "unknown"
 
 
 class Handler:
@@ -59,10 +69,19 @@ class Handler:
             f"ETA: {eta} "
         )
 
+    def _make_result_directory(self) -> str:
+        timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+        git_hash = get_git_hash()
+        folder_name = f"{timestamp}_{git_hash}"
+        save_directory = os.path.join(self.settings.Storage.SAVE_DIRECTORY, folder_name)
+        os.makedirs(save_directory, exist_ok=True)
+        return save_directory
+
     def _save(self, generation, individuals: list[Individual]):
         try:
-            os.makedirs(self.settings.Storage.SAVE_DIRECTORY, exist_ok=True)
-            file_path = os.path.join(self.settings.Storage.SAVE_DIRECTORY, f"generation_{generation:04d}.pkl")
+            save_directory = self._make_result_directory()
+            filename = f"generation_{generation:04d}.pkl"
+            file_path = os.path.join(save_directory, filename)
 
             num_to_save = max(1, self.settings.Storage.TOP_N) if self.settings.Storage.TOP_N > 0 else len(individuals)
             sorted_individuals = sorted(individuals, key=lambda x: x.get_fitness())
