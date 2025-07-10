@@ -4,7 +4,7 @@ Optimization Server
 This script starts an optimization server that distributes CMA-ES optimization
 tasks to connected clients.
 """
-
+import logging
 import os
 import threading
 import datetime
@@ -95,7 +95,7 @@ class Handler:
             )
             saved_ind.save(file_path)
 
-            print(f"Saved {len(individuals_to_save)} individuals to {file_path}")
+            logging.info(f"Saved {len(individuals_to_save)} individuals to {file_path}")
 
         except Exception as e:
             print(f"Error saving individuals: {e}")
@@ -108,14 +108,16 @@ class Handler:
         if self._last_call_time is None:
             self._last_call_time = self._current_time
             return
-        if not cmaes.should_stop() and self._generation is not None and cmaes.generation == self._generation:
+        if self._generation is not None and cmaes.generation == self._generation:
             return
 
         self._generation = cmaes.generation
 
         ave_fitness, sd, speed, eta = self._calc_statistic(cmaes, individuals)
         self._print_info(cmaes.generation, ave_fitness, sd, speed, eta)
-        self._save(cmaes.generation, individuals)
+
+        if cmaes.should_stop() or self._generation % self.settings.Storage.SAVE_INTERVAL == 0:
+            self._save(cmaes.generation, individuals)
 
         self._last_call_time = self._current_time
 
