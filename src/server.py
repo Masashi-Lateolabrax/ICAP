@@ -8,8 +8,8 @@ tasks to connected clients.
 import os
 import threading
 import datetime
-import pickle
 from typing import Optional
+import math
 
 from icecream import ic
 from framework.prelude import *
@@ -17,6 +17,7 @@ from framework.optimization import OptimizationServer, CMAES
 
 from controller import RobotNeuralNetwork
 from settings import MySettings
+from save_type import SavedIndividual
 
 # Configure icecream for distributed system debugging
 ic.configureOutput(
@@ -26,73 +27,78 @@ ic.configureOutput(
 
 ic.disable()
 
-_generation = None
-_last_call_time: Optional[datetime.datetime] = None
 
+class Handler:
+    def __init__(self, settings: Settings):
+        self.settings: Settings = settings
+        self._generation: Optional[int] = None
+        self._last_call_time: Optional[datetime.datetime] = None
+        self._current_time: datetime.datetime = datetime.datetime.now()
 
-def save_individuals(cmaes: CMAES, individuals: list[Individual], settings: MySettings):
-    try:
-        os.makedirs(settings.Storage.SAVE_DIRECTORY, exist_ok=True)
-        file_path = os.path.join(settings.Storage.SAVE_DIRECTORY, f"generation_{cmaes.generation:04d}.pkl")
-
-        num_to_save = max(1, settings.Storage.TOP_N) if settings.Storage.TOP_N > 0 else len(individuals)
-        sorted_individuals = sorted(individuals, key=lambda x: x.get_fitness())
-        individuals_to_save = sorted_individuals[:num_to_save]
-
-        with open(file_path, 'wb') as f:
-            pickle.dump({
-                'generation': cmaes.generation,
-                'best_fitness': min(ind.get_fitness() for ind in individuals_to_save),
-                'worst_fitness': max(ind.get_fitness() for ind in individuals),
-                'avg_fitness': sum(ind.get_fitness() for ind in individuals) / len(individuals),
-                'timestamp': datetime.datetime.now().isoformat(),
-                "num_individuals": len(individuals_to_save),
-                "individuals": individuals_to_save
-            }, f)
-
-        print(f"Saved {len(individuals_to_save)} individuals to {file_path}")
-
-    except Exception as e:
-        print(f"Error saving individuals: {e}")
-
-
-def create_handler(settings: MySettings):
-    def handler(cmaes: CMAES, individuals: list[Individual]):
-        global _generation, _last_call_time
-
-        current_time = datetime.datetime.now()
-
-        ic(current_time, cmaes.generation, len(individuals))
-
-        if _last_call_time is None:
-            _last_call_time = current_time
-            return
-        if _generation is not None and cmaes.generation == _generation:
-            return
-
-        _generation = cmaes.generation
-        time_diff = current_time - _last_call_time
-        _last_call_time = current_time
-
-        fittness = [i.get_fitness() for i in individuals]
-        ave_fittness = sum(fittness) / len(fittness)
-
+    def _calc_statistic(self, cmaes: CMAES, individuals: list[Individual]):
+        time_diff = self._current_time - self._last_call_time
         speed = time_diff.total_seconds()  # sec/gen
         remaining_generations = cmaes.max_generation - cmaes.generation
         remaining_seconds = datetime.timedelta(seconds=remaining_generations * speed)
+        eta = self._current_time + remaining_seconds
 
+        fitness = [i.get_fitness() for i in individuals]
+        ave_fitness = sum(fitness) / len(fitness)
+        variance = sum([(f - ave_fitness) ** 2 for f in fitness])
+        sd = math.sqrt(variance / len(fitness))
+
+        return ave_fitness, sd, len(fitness) / speed, eta
+
+    def _print_info(self, generation, ave_fitness, sd, speed, eta):
         print(
-            f"[{current_time.strftime("%H:%M:%S")}] "
-            f"Generation: {cmaes.generation} | "
-            f"Average: {ave_fittness:.2f} | "
-            f"Speed: {len(fittness) / speed:.2f} ind/sec | "
-            f"ETA: {(current_time + remaining_seconds)} "
+            f"[{self._current_time.strftime("%H:%M:%S")}] "
+            f"Generation: {generation} | "
+            f"Average: {ave_fitness:.2f} | "
+            f"SD: {sd:.2f} | "
+            f"Speed: {speed:.2f} ind/sec | "
+            f"ETA: {eta} "
         )
 
-        if settings.Storage.SAVE_INDIVIDUALS and cmaes.generation % settings.Storage.SAVE_INTERVAL == 0:
-            save_individuals(cmaes, individuals, settings)
+    def _save(self, generation, individuals: list[Individual]):
+        try:
+            os.makedirs(self.settings.Storage.SAVE_DIRECTORY, exist_ok=True)
+            file_path = os.path.join(self.settings.Storage.SAVE_DIRECTORY, f"generation_{generation:04d}.pkl")
 
-    return handler
+            num_to_save = max(1, self.settings.Storage.TOP_N) if self.settings.Storage.TOP_N > 0 else len(individuals)
+            sorted_individuals = sorted(individuals, key=lambda x: x.get_fitness())
+            individuals_to_save = sorted_individuals[:num_to_save]
+
+            saved_ind = SavedIndividual(
+                generation=generation,
+                avg_fitness=sum(ind.get_fitness() for ind in individuals) / len(individuals),
+                timestamp=datetime.datetime.now().isoformat(),
+                individuals=individuals_to_save
+            )
+            saved_ind.save(file_path)
+
+            print(f"Saved {len(individuals_to_save)} individuals to {file_path}")
+
+        except Exception as e:
+            print(f"Error saving individuals: {e}")
+
+    def run(self, cmaes: CMAES, individuals: list[Individual]):
+        self._current_time = datetime.datetime.now()
+
+        ic(self._current_time, cmaes.generation, len(individuals))
+
+        if self._last_call_time is None:
+            self._last_call_time = self._current_time
+            return
+        if not cmaes.should_stop() and self._generation is not None and cmaes.generation == self._generation:
+            return
+
+        self._generation = cmaes.generation
+
+        ave_fitness, sd, speed, eta = self._calc_statistic(cmaes, individuals)
+        self._print_info(cmaes.generation, ave_fitness, sd, speed, eta)
+        self._save(cmaes.generation, individuals)
+
+        self._last_call_time = self._current_time
 
 
 def main():
@@ -123,9 +129,10 @@ def main():
     print("Press Ctrl+C to stop the server")
     print("=" * 50)
 
+    handler = Handler(settings)
     server = OptimizationServer(
         settings,
-        handler=create_handler(settings)
+        handler=handler.run
     )
 
     try:
