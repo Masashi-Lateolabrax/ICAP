@@ -215,6 +215,11 @@ class _Server:
             if self.handler:
                 self.handler(cmaes, individuals)
 
+            if cmaes.should_stop():
+                logging.info("CMA-ES optimization has stopped.")
+                self.stop_event.set()
+                break
+
             distribution.update(len(individuals), self.socket_states)
 
             self._update_assigned_individuals(cmaes, distribution)
