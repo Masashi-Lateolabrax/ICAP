@@ -44,6 +44,15 @@ class Handler:
         self._generation: Optional[int] = None
         self._last_call_time: Optional[datetime.datetime] = None
         self._current_time: datetime.datetime = datetime.datetime.now()
+        self._save_directory: str = self._make_result_directory()
+
+    def _make_result_directory(self) -> str:
+        timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+        git_hash = get_git_hash()
+        folder_name = f"{timestamp}_{git_hash}"
+        save_directory = os.path.join(self.settings.Storage.SAVE_DIRECTORY, folder_name)
+        os.makedirs(save_directory, exist_ok=True)
+        return save_directory
 
     def _calc_statistic(self, cmaes: CMAES, individuals: list[Individual]):
         time_diff = self._current_time - self._last_call_time
@@ -69,19 +78,10 @@ class Handler:
             f"ETA: {eta} "
         )
 
-    def _make_result_directory(self) -> str:
-        timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-        git_hash = get_git_hash()
-        folder_name = f"{timestamp}_{git_hash}"
-        save_directory = os.path.join(self.settings.Storage.SAVE_DIRECTORY, folder_name)
-        os.makedirs(save_directory, exist_ok=True)
-        return save_directory
-
     def _save(self, generation, individuals: list[Individual]):
         try:
-            save_directory = self._make_result_directory()
             filename = f"generation_{generation:04d}.pkl"
-            file_path = os.path.join(save_directory, filename)
+            file_path = os.path.join(self._save_directory, filename)
 
             num_to_save = max(1, self.settings.Storage.TOP_N) if self.settings.Storage.TOP_N > 0 else len(individuals)
             sorted_individuals = sorted(individuals, key=lambda x: x.get_fitness())
