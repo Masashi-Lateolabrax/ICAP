@@ -101,7 +101,6 @@ class _Server:
                 ic(success)
 
                 if success == CommunicationResult.TIMEOUT or success == CommunicationResult.OVER_ATTEMPT_COUNT:
-                    logging.warning(f"Received packet from socket: {self.sock_name(sock)}")
                     break
                 elif success != CommunicationResult.SUCCESS:
                     logging.error(f"Failed to receive packet from {self.sock_name(sock)}: {success}")
