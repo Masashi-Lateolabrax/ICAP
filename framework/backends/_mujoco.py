@@ -13,73 +13,73 @@ from ..environment import (
 )
 
 
-def _generate_mjspec(
-        settings: Settings
-) -> tuple[mujoco.MjSpec, mujoco._specs.MjsSite, list[RobotSpec], list[FoodSpec]]:
-    spec = mujoco.MjSpec()
-
-    setup_option(spec, settings)
-    setup_visual(spec, settings)
-    setup_textures(spec, settings)
-
-    add_wall(spec, settings)
-
-    add_geom(
-        spec.worldbody,
-        geom_type=mujoco.mjtGeom.mjGEOM_PLANE,
-        pos=(0, 0, 0),
-        size=(
-            settings.Simulation.WORLD_WIDTH * 0.5,
-            settings.Simulation.WORLD_HEIGHT * 0.5,
-            1
-        ),
-        material="ground",
-        rgba=GROUND_COLOR,
-        condim=GROUND_COLLISION_CONDIM
-    )
-
-    nest_spec = add_nest(spec, settings)
-
-    invalid_area: list[tuple[Position, float]] = []
-
-    # Create food objects
-    food_specs = []
-    for i in range(settings.Food.NUM):
-        if i < len(settings.Food.INITIAL_POSITION):
-            position: Position = settings.Food.INITIAL_POSITION[i]
-        else:
-            position: Position = rand_food_pos(settings, invalid_area)
-        invalid_area.append(
-            (position, settings.Food.RADIUS)
-        )
-        food_specs.append(
-            add_food_object(spec, settings, i, position)
-        )
-
-    # Create robots
-    robot_specs = []
-    for i in range(settings.Robot.NUM):
-        if i < len(settings.Robot.INITIAL_POSITION):
-            position: RobotLocation = settings.Robot.INITIAL_POSITION[i]
-        else:
-            position: RobotLocation = rand_robot_pos(settings, invalid_area)
-        invalid_area.append(
-            (position.position, settings.Robot.RADIUS)
-        )
-        robot_specs.append(
-            add_robot(spec, settings, i, position)
-        )
-
-    return spec, nest_spec, robot_specs, food_specs
-
-
 class MujocoBackend(SimulatorBackend, abc.ABC):
+    @staticmethod
+    def _generate_mjspec(
+            settings: Settings
+    ) -> tuple[mujoco.MjSpec, mujoco._specs.MjsSite, list[RobotSpec], list[FoodSpec]]:
+        spec = mujoco.MjSpec()
+
+        setup_option(spec, settings)
+        setup_visual(spec, settings)
+        setup_textures(spec, settings)
+
+        add_wall(spec, settings)
+
+        add_geom(
+            spec.worldbody,
+            geom_type=mujoco.mjtGeom.mjGEOM_PLANE,
+            pos=(0, 0, 0),
+            size=(
+                settings.Simulation.WORLD_WIDTH * 0.5,
+                settings.Simulation.WORLD_HEIGHT * 0.5,
+                1
+            ),
+            material="ground",
+            rgba=GROUND_COLOR,
+            condim=GROUND_COLLISION_CONDIM
+        )
+
+        nest_spec = add_nest(spec, settings)
+
+        invalid_area: list[tuple[Position, float]] = []
+
+        # Create food objects
+        food_specs = []
+        for i in range(settings.Food.NUM):
+            if i < len(settings.Food.INITIAL_POSITION):
+                position: Position = settings.Food.INITIAL_POSITION[i]
+            else:
+                position: Position = rand_food_pos(settings, invalid_area)
+            invalid_area.append(
+                (position, settings.Food.RADIUS)
+            )
+            food_specs.append(
+                add_food_object(spec, settings, i, position)
+            )
+
+        # Create robots
+        robot_specs = []
+        for i in range(settings.Robot.NUM):
+            if i < len(settings.Robot.INITIAL_POSITION):
+                position: RobotLocation = settings.Robot.INITIAL_POSITION[i]
+            else:
+                position: RobotLocation = rand_robot_pos(settings, invalid_area)
+            invalid_area.append(
+                (position.position, settings.Robot.RADIUS)
+            )
+            robot_specs.append(
+                add_robot(spec, settings, i, position)
+            )
+
+        return spec, nest_spec, robot_specs, food_specs
+
     def __init__(self, settings: Settings, render: bool = False):
         self.settings = settings
         self.do_render = render
         self.render_shape = self.settings.Render.RENDER_WIDTH, self.settings.Render.RENDER_HEIGHT
 
-        self.spec, nest_spec, robot_specs, food_specs = _generate_mjspec(self.settings)
+        self.spec, nest_spec, robot_specs, food_specs = self._generate_mjspec(self.settings)
 
         self.model: mujoco.MjModel = self.spec.compile()
         # self.model: mujoco.MjModel = mujoco.MjModel.from_xml_string(self.spec.to_xml())
