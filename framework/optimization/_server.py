@@ -142,10 +142,10 @@ class _Server:
             if sock not in self.socket_states:
                 logging.warning(f"Socket {self.sock_name(sock)} not found in socket states")
                 continue
-            self.socket_states[sock].throughput = ic(packet.data)
             self._response_ack(sock)
 
     def _deal_with_response(self, response_packets: dict[socket.socket, Packet]):
+        current_time = time.time()
         for sock, packet in response_packets.items():
             if sock not in self.socket_states:
                 logging.warning(f"Socket {self.sock_name(sock)} not found in socket states")
@@ -158,20 +158,25 @@ class _Server:
                 logging.error(f"Size mismatch in RESPONSE packet from {self.sock_name(sock)}")
                 self._drop_socket(sock)
                 continue
+
             for i, evaluated_individual in enumerate(packet.data):
                 if not isinstance(evaluated_individual, Individual):
                     logging.error(f"Invalid individual in RESPONSE packet from {self.sock_name(sock)}")
                     self._drop_socket(sock)
                     continue
                 self.socket_states[sock].assigned_individuals[i].copy_from(evaluated_individual)
+
+            self.socket_states[sock].calculation_end_time = current_time
             self.socket_states[sock].assigned_individuals = None
             self._response_ack(sock)
 
     def _deal_with_request(self, request_packets: dict[socket.socket, Packet]):
+        current_time = time.time()
         for sock, packet in request_packets.items():
             if sock not in self.socket_states:
                 logging.warning(f"Socket {self.sock_name(sock)} not found in socket states")
                 continue
+            self.socket_states[sock].calculation_end_time = current_time
             self._response_ack(sock, data=self.socket_states[sock].assigned_individuals)
 
     def _update_assigned_individuals(self, cmaes: CMAES, distribution: Distribution):
