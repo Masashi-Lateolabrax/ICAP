@@ -23,3 +23,7 @@ class SavedIndividual:
     def save(self, path: str) -> None:
         with open(path, 'wb') as f:
             pickle.dump(self, f)
+
+    @property
+    def best_individual(self):
+        return min(self.individuals, key=lambda ind: ind.get_fitness())
