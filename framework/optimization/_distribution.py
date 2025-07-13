@@ -84,6 +84,6 @@ class Distribution:
             logging.warning("If it works as designed, this should never happen")
             return None
 
-        limit = math.floor(self.throughput[sock] * 10) if sock in self.throughput else 1
+        limit = math.ceil(self.throughput[sock] * 10) if sock in self.throughput else 1
 
         return min(self.batch_size[sock], limit)
