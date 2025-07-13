@@ -64,8 +64,9 @@ class _EvaluationWorker:
     def _worker(self) -> None:
         while not self.stop_event.is_set():
             try:
-                individuals = self.task_queue.get_nowait()
-                if individuals is None:
+                individuals = self.task_queue.get(timeout=1)
+                if bool(individuals):
+                    logging.error("Received empty task.")
                     break
                 self.response_queue.put(
                     ClientCalculationState(idle=False, throughput=None)
@@ -83,12 +84,6 @@ class _EvaluationWorker:
 
                     individual.set_fitness(fitness)
                     individual.set_calculation_state(CalculationState.FINISHED)
-
-                    self.response_queue.put(
-                        ClientCalculationState(
-                            idle=False,
-                        )
-                    )
 
                 except Exception as e:
                     logging.error(f"Error during evaluation function execution: {e}")
@@ -180,7 +175,7 @@ class _CommunicationWorker:
 
         return CommunicationResult.SUCCESS
 
-    def _request(self) -> CommunicationResult:
+    def _mut_request(self) -> CommunicationResult:
         if not self.is_alive():
             logging.error("Socket is not alive, cannot send request")
             return CommunicationResult.CONNECTION_ERROR
@@ -206,7 +201,7 @@ class _CommunicationWorker:
 
         return CommunicationResult.SUCCESS
 
-    def _return(self) -> CommunicationResult:
+    def _mut_return(self) -> CommunicationResult:
         if not self.is_alive():
             logging.error("Socket is not alive, cannot send individuals")
             return CommunicationResult.CONNECTION_ERROR
@@ -234,11 +229,11 @@ class _CommunicationWorker:
         task = None
 
         if not self.is_assigned():
-            result = ic(self._request())
+            result = ic(self._mut_request())
             task = self.task
 
         if not bool(self.task) and bool(self.evaluated_task):
-            result = ic(self._return())
+            result = ic(self._mut_return())
 
         return result, task
 
@@ -281,7 +276,7 @@ def connect_to_server(
                 logging.error(f"Communication error: {result}")
                 break
 
-            if new_task is not None:
+            if bool(new_task):
                 evaluation_worker.add_task(new_task)
 
         except Exception as e:
