@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-from framework.backends import ExampleSTL
+from framework.backends import MujocoSTL
 from framework.utils import GenericTkinterViewer
 from framework.prelude import Settings, RobotLocation, Position, RobotValues
 
@@ -41,7 +41,7 @@ def mujoco_stl_example():
 
     viewer = GenericTkinterViewer(
         settings,
-        ExampleSTL(settings, render=True),
+        MujocoSTL(settings, render=True),
     )
     viewer.run()
 

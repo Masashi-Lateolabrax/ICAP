@@ -1,9 +1,7 @@
 import os.path
 
 import mujoco
-import numpy as np
 
-from icecream import ic
 from ..prelude import *
 
 from ._mujoco import MujocoBackend
@@ -18,7 +16,7 @@ from ..environment import (
 )
 
 
-class ExampleSTL(MujocoBackend):
+class MujocoSTL(MujocoBackend):
     @staticmethod
     def _generate_mjspec(
             settings: Settings
