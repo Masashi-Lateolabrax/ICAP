@@ -176,7 +176,7 @@ class _Server:
             if sock not in self.socket_states:
                 logging.warning(f"Socket {self.sock_name(sock)} not found in socket states")
                 continue
-            self.socket_states[sock].calculation_end_time = current_time
+            self.socket_states[sock].calculation_start_time = current_time
             self._response_ack(sock, data=self.socket_states[sock].assigned_individuals)
 
     def _update_assigned_individuals(self, cmaes: CMAES, distribution: Distribution):
