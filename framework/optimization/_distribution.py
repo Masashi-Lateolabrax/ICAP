@@ -55,8 +55,6 @@ class Distribution:
             logging.warning("If it works as designed, this should never happen")
             return None
 
-        batch_size = self.batch_size.get(sock, 0)
-        if sock in self.throughput:
-            batch_size = min(batch_size, math.ceil(self.throughput[sock] * 10))
+        limit = math.ceil(self.throughput[sock] * 10) if sock in self.throughput else 1
 
-        return batch_size
+        return min(self.batch_size[sock], limit)
