@@ -67,20 +67,23 @@ class Distribution:
         if num_tasks <= 0:
             return
 
-        probability = self._solve_lp(num_tasks)
-        probability /= num_tasks
+        # probability = self._solve_lp(num_tasks)
+        # probability /= num_tasks
+        #
+        # selected_indices = np.random.choice(
+        #     list(self.throughput.keys()), size=num_tasks, p=probability
+        # )
+        # for key in selected_indices:
+        #     self.batch_size[key] += 1
 
-        selected_indices = np.random.choice(
-            list(self.throughput.keys()), size=num_tasks, p=probability
-        )
-        for key in selected_indices:
-            self.batch_size[key] += 1
+        for k, v in zip(self.throughput.keys(), self._solve_lp(num_tasks)):
+            self.batch_size[k] += math.floor(v)
 
     def get_batch_size(self, sock: socket.socket) -> Optional[int]:
         if not sock in self.batch_size:
             logging.warning("If it works as designed, this should never happen")
             return None
 
-        limit = math.ceil(self.throughput[sock] * 10) if sock in self.throughput else 1
+        limit = math.floor(self.throughput[sock] * 10) if sock in self.throughput else 1
 
         return min(self.batch_size[sock], limit)
