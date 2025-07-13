@@ -252,7 +252,7 @@ class CameraControlPanel(ttk.Frame):
 
         for label, var, range_min, range_max in [
             ("Distance:", self.distance_var, 1.0, 20.0),
-            ("Azimuth (°):", self.azimuth_var, -90.0, 270.0),
+            ("Azimuth (°):", self.azimuth_var, -270.0, 90.0),
             ("Elevation (°):", self.elevation_var, 0.0, 90.0)
         ]:
             _install_scale_helper(var, range_min, range_max, label)

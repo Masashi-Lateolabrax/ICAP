@@ -107,7 +107,7 @@ class MujocoBackend(SimulatorBackend, abc.ABC):
             self.camera.distance = np.linalg.norm(sub)
             self.camera.azimuth = np.arctan2(
                 sub[1], sub[0]
-            ) * 180 / mujoco.mjPI
+            ) * 180 / mujoco.mjPI + 180
             self.camera.elevation = -np.arcsin(
                 sub[2] / self.camera.distance
             ) * 180 / mujoco.mjPI
