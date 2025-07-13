@@ -35,10 +35,6 @@ def mujoco_stl_example():
         Position(1, 2),
     ]
 
-    RobotValues.set_max_speed(settings.Robot.MAX_SPEED)
-    RobotValues.set_distance_between_wheels(settings.Robot.DISTANCE_BETWEEN_WHEELS)
-    RobotValues.set_robot_height(settings.Robot.HEIGHT)
-
     viewer = GenericTkinterViewer(
         settings,
         MujocoSTL(settings, render=True),
