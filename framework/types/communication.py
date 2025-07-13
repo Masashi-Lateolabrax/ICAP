@@ -55,12 +55,19 @@ class SocketState:
         self.assigned_individuals: Optional[list[Individual]] = None
         self.calculation_start_time: Optional[float] = None
         self.calculation_end_time: Optional[float] = None
+        self.__throughput: float = float('nan')
 
     @property
     def throughput(self) -> float:
+        if self.assigned_individuals is None:
+            return self.__throughput
+
         if self.calculation_start_time is None or self.calculation_end_time is None:
             return float('nan')
         duration = self.calculation_end_time - self.calculation_start_time
         if duration <= 0:
             return float('nan')
-        return ic(len(self.assigned_individuals) / duration)
+
+        self.__throughput = ic(len(self.assigned_individuals) / duration)
+
+        return self.__throughput
