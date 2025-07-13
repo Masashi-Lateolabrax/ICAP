@@ -3,14 +3,14 @@ import torch
 import mujoco
 
 from framework.prelude import *
-from framework.backends import MujocoBackend
+from framework.backends import MujocoSTL
 from framework.sensor import PreprocessedOmniSensor, DirectionSensor
 
 from loss import Loss
 from controller import RobotNeuralNetwork
 
 
-class Simulator(MujocoBackend):
+class Simulator(MujocoSTL):
     def __init__(self, settings: Settings, parameters: Individual, render: bool = False):
         super().__init__(settings, render)
 
@@ -19,7 +19,7 @@ class Simulator(MujocoBackend):
         self.sensors: list[tuple[SensorInterface]] = self._create_sensors()
 
         self.controller = RobotNeuralNetwork(parameters)
-        self.input_ndarray = np.zeros((settings.Robot.NUM, 2 * 2 + 1), dtype=np.float32)
+        self.input_ndarray = np.zeros((settings.Robot.NUM, 2 * 3), dtype=np.float32)
         self.input_tensor = torch.from_numpy(self.input_ndarray)
 
         mujoco.mj_step(self.model, self.data)
@@ -51,7 +51,7 @@ class Simulator(MujocoBackend):
         for i, sensors in enumerate(self.sensors):
             self.input_ndarray[i, 0:2] = sensors[0].get()
             self.input_ndarray[i, 2:4] = sensors[1].get()
-            self.input_ndarray[i, 4] = sensors[2].get()
+            self.input_ndarray[i, 4:6] = sensors[2].get()
         return self.input_tensor
 
     def evaluation(self) -> Loss:

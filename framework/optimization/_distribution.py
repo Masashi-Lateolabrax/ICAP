@@ -23,6 +23,35 @@ class Distribution:
             else:
                 self.batch_size[sock] = 1
 
+    def _solve_lp(self, n: int) -> np.ndarray:
+        from scipy.optimize import linprog
+
+        weight = np.array([1 / v for v in self.throughput.values()])
+        num_weight = len(weight)
+
+        c = np.zeros(num_weight + 1)
+        c[-1] = 1
+
+        A_ub = np.zeros((num_weight, num_weight + 1))
+        b_ub = np.zeros(num_weight)
+
+        A_ub[:, :-1] = np.eye(num_weight) * weight
+        A_ub[:, -1] = -1
+
+        A_eq = np.zeros((1, num_weight + 1))
+        b_eq = np.array([n])
+
+        A_eq[0, :num_weight] = 1
+
+        res = linprog(
+            c,
+            A_ub=A_ub, b_ub=b_ub,
+            A_eq=A_eq, b_eq=b_eq,
+            method='highs'
+        )
+
+        return res.x[:num_weight]
+
     def update(
             self,
             num_ready_individuals: int,
@@ -33,30 +62,28 @@ class Distribution:
         if not self.throughput:
             return
 
-        probability = {}
-        for key, throughput in self.throughput.items():
-            probability[key] = throughput
-        total = sum(probability.values())
-        probability = {key: throughput / total for key, throughput in probability.items()}
-
         newbies = sum(self.batch_size.values())
         num_tasks = num_ready_individuals - newbies
-        if not probability or num_tasks <= 0:
+        if num_tasks <= 0:
             return
 
-        selected_indices = np.random.choice(
-            list(probability.keys()), size=num_tasks, p=list(probability.values())
-        )
-        for key in selected_indices:
-            self.batch_size[key] += 1
+        # probability = self._solve_lp(num_tasks)
+        # probability /= num_tasks
+        #
+        # selected_indices = np.random.choice(
+        #     list(self.throughput.keys()), size=num_tasks, p=probability
+        # )
+        # for key in selected_indices:
+        #     self.batch_size[key] += 1
+
+        for k, v in zip(self.throughput.keys(), self._solve_lp(num_tasks)):
+            self.batch_size[k] += math.ceil(v)
 
     def get_batch_size(self, sock: socket.socket) -> Optional[int]:
         if not sock in self.batch_size:
             logging.warning("If it works as designed, this should never happen")
             return None
 
-        batch_size = self.batch_size.get(sock, 0)
-        if sock in self.throughput:
-            batch_size = min(batch_size, math.ceil(self.throughput[sock] * 10))
+        limit = math.ceil(self.throughput[sock] * 10) if sock in self.throughput else 1
 
-        return batch_size
+        return min(self.batch_size[sock], limit)

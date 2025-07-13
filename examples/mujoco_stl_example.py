@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-from framework.backends import ExampleSTL
+from framework.backends import MujocoSTL
 from framework.utils import GenericTkinterViewer
 from framework.prelude import Settings, RobotLocation, Position, RobotValues
 
@@ -32,16 +32,12 @@ def mujoco_stl_example():
         RobotLocation(0, 0, np.pi / 2),
     ]
     settings.Food.INITIAL_POSITION = [
-        Position(0, 2),
+        Position(1, 2),
     ]
-
-    RobotValues.set_max_speed(settings.Robot.MAX_SPEED)
-    RobotValues.set_distance_between_wheels(settings.Robot.DISTANCE_BETWEEN_WHEELS)
-    RobotValues.set_robot_height(settings.Robot.HEIGHT)
 
     viewer = GenericTkinterViewer(
         settings,
-        ExampleSTL(settings, render=True),
+        MujocoSTL(settings, render=True),
     )
     viewer.run()
 

@@ -11,7 +11,7 @@ class DirectionSensor(SensorInterface):
         self.target = target_site
         self.target_radius = target_radius
 
-    def get(self) -> float:
+    def get(self) -> np.ndarray:
         direction = self.robot_values.xdirection
         center = self.robot_values.xpos
         target = self.target.xpos[0:2]
@@ -34,4 +34,7 @@ class DirectionSensor(SensorInterface):
 
         result = np.dot(direction_matrix, normalized_sub)
 
-        return np.arctan2(result[1], result[0]) / (np.pi * 0.5)
+        angle = np.arctan2(result[1], result[0]) / (np.pi * 0.5)
+        magnitude = distance / self.target_radius if distance < self.target_radius else 1.0
+
+        return np.array([magnitude, angle], dtype=np.float32)

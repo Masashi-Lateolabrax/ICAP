@@ -1,5 +1,7 @@
+import argparse
 import os
 import threading
+import time
 from datetime import datetime
 
 from icecream import ic
@@ -16,33 +18,53 @@ ic.configureOutput(
 ic.disable()
 
 
-def handler(individual: Individual):
-    throughput = 1 / (individual.get_elapse() + 1e-10)
-    print(
-        f"pid:{os.getpid()} "
-        f"fitness:{individual.get_fitness()} "
-        f"throughput:{throughput:.2f} ind/s"
-    )
+class Handler:
+    def __init__(self):
+        self.time = -1
+
+    def run(self, individuals: list[Individual]):
+        current_time = time.time()
+        throughput = len(individuals) / ((current_time - self.time) + 1e-10)
+        self.time = current_time
+
+        ave_fitness = sum([i.get_fitness() for i in individuals]) / len(individuals)
+
+        print(
+            f"pid:{os.getpid()} "
+            f"num: {len(individuals)} "
+            f"fitness:{ave_fitness} "
+            f"throughput:{throughput:.2f} ind/s"
+        )
 
 
 def main():
+    parser = argparse.ArgumentParser(description="ICAP Optimization Client")
+    parser.add_argument("--host", type=str, help="Server host address")
+    parser.add_argument("--port", type=int, help="Server port number")
+    args = parser.parse_args()
+
     from settings import MySettings
     settings = MySettings()
+
+    host = args.host if args.host is not None else settings.Server.HOST
+    port = args.port if args.port is not None else settings.Server.PORT
 
     print("=" * 50)
     print("OPTIMIZATION CLIENT")
     print("=" * 50)
-    print(f"Server: {settings.Server.HOST}:{settings.Server.PORT}")
+    print(f"Server: {host}:{port}")
     print("-" * 30)
     print("Connecting to server...")
     print("Press Ctrl+C to disconnect")
     print("=" * 50)
 
+    handler = Handler()
+
     connect_to_server(
-        settings.Server.HOST,
-        settings.Server.PORT,
+        host,
+        port,
         evaluation_function=evaluation_function,
-        handler=handler,
+        handler=handler.run,
     )
 
 

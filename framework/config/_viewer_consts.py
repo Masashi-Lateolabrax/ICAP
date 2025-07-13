@@ -6,7 +6,7 @@ DEFAULT_LOOKAT_Z = 0.0
 
 # Camera spherical coordinates defaults
 DEFAULT_CAMERA_DISTANCE = 5.0
-DEFAULT_CAMERA_AZIMUTH = 90.0  # degrees
+DEFAULT_CAMERA_AZIMUTH = -90.0  # degrees
 DEFAULT_CAMERA_ELEVATION = 30.0  # degrees
 
 TARGET_FPS = 30.0

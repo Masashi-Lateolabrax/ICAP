@@ -39,33 +39,7 @@ class RobotSpec:
 
 
 class RobotValues:
-    _d = 1
-    _v = 1
-    _z = 1
-    _matrix = np.zeros((2, 2))
-
-    @staticmethod
-    def _update_matrix():
-        RobotValues._matrix = np.array([
-            [RobotValues._v * 0.5, RobotValues._v * 0.5],
-            [- RobotValues._v / RobotValues._d, RobotValues._v / RobotValues._d]
-        ])
-
-    @staticmethod
-    def set_distance_between_wheels(d: float):
-        RobotValues._d = d
-        RobotValues._update_matrix()
-
-    @staticmethod
-    def set_max_speed(v: float):
-        RobotValues._v = v
-        RobotValues._update_matrix()
-
-    @staticmethod
-    def set_robot_height(h: float):
-        RobotValues._z = h * 0.5 + 0.01
-
-    def __init__(self, data: mujoco.MjData, spec: RobotSpec):
+    def __init__(self, d: float, velocity: float, data: mujoco.MjData, spec: RobotSpec):
         self._center_site: mujoco._structs._MjDataSiteViews = data.site(spec.center_site.name)
         self._front_site: mujoco._structs._MjDataSiteViews = data.site(spec.front_site.name)
         self._free_join: mujoco._structs._MjDataJointViews = data.joint(spec.free_join.name)
@@ -73,6 +47,13 @@ class RobotValues:
         self._y_act: mujoco._structs._MjDataActuatorViews = data.actuator(spec.y_act.name)
         self._z_act: mujoco._structs._MjDataActuatorViews = data.actuator(spec.z_act.name)
         self._r_act: mujoco._structs._MjDataActuatorViews = data.actuator(spec.r_act.name)
+
+        self._d = d
+        self._v = velocity
+        self._matrix = np.array([
+            [self._v * 0.5, self._v * 0.5],
+            [- self._v / self._d, self._v / self._d]
+        ])
 
         self._xdirection_buf = np.zeros(3)
         self._direction_buf = np.zeros(3)
@@ -109,5 +90,4 @@ class RobotValues:
         power = self.xdirection * power_and_torque[0]
         self._x_act.ctrl[0] = power[0]
         self._y_act.ctrl[0] = power[1]
-        self._z_act.ctrl[0] = RobotValues._z
         self._r_act.ctrl[0] = power_and_torque[1]

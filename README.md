@@ -34,7 +34,8 @@ TypeError: bad argument type for built-in operation
 
 This happens because the `_imagingtk` C extension isn't properly built.
 
-This issue is known to occur with uv when it auto-installs python-build-standalone, which lacks full support for certain C extensions. See also:
+This issue is known to occur with uv when it auto-installs python-build-standalone, which lacks full support for certain
+C extensions. See also:
 [astral-sh/python-build-standalone#533](https://github.com/astral-sh/python-build-standalone/issues/533)
 
 ### Solution
@@ -61,7 +62,8 @@ This ensures full Pillow functionality, including `ImageTk`.
 
 ## Usage
 
-This project implements a distributed optimization system using CMA-ES (Covariance Matrix Adaptation Evolution Strategy) with a client-server architecture for training robotic behaviors.
+This project implements a distributed optimization system using CMA-ES (Covariance Matrix Adaptation Evolution Strategy)
+with a client-server architecture for training robotic behaviors.
 
 ### Architecture Overview
 
@@ -95,6 +97,8 @@ PYTHONPATH=. uv run src/server.py --extra cpu
 
 Clients perform the actual robot simulation evaluations. You can run multiple clients for parallel processing:
 
+##### Single Client
+
 ```bash
 # Navigate to project root directory first
 cd /path/to/ICAP
@@ -102,9 +106,29 @@ cd /path/to/ICAP
 # Primary client for robot behavior evaluation
 PYTHONPATH=. uv run src/main.py --extra cu128
 
-# Example client for testing (uses simple Rosenbrock function)
-PYTHONPATH=. uv run examples/optimization/client.py --extra cu128
+# With custom server settings
+PYTHONPATH=. uv run src/main.py --extra cu128 --host 192.168.1.100 --port 5001
 ```
+
+##### Multiple Clients (Parallel Processing)
+
+Use the provided shell script to automatically start multiple client processes:
+
+```bash
+# Navigate to project root directory first
+cd /path/to/ICAP
+
+# Start multiple clients with default settings (CPU version)
+./src/main.sh
+
+# Start multiple clients with CUDA 12.8 support
+./src/main.sh --extra cu128
+
+# Start multiple clients with custom server settings
+./src/main.sh --host 192.168.1.100 --port 5001 --extra cu128
+```
+
+The script automatically detects CPU cores and starts 3/4 of that number as client processes for optimal performance.
 
 Replace `cu128` with `cu124` or `cpu` depending on your environment setup.
 

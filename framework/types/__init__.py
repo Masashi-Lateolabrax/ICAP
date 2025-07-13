@@ -3,6 +3,7 @@ from .robot import RobotLocation, RobotSpec, RobotValues
 from .food import FoodSpec, FoodValues
 from .optimization import CalculationState, Individual, EvaluationFunction
 from .communication import PacketType, Packet, CommunicationResult, SocketState
+from .utils import SavedIndividual
 
 __all__ = [
     "Position",
@@ -19,4 +20,5 @@ __all__ = [
     "PacketType",
     "Packet",
     "CommunicationResult",
+    "SavedIndividual",
 ]

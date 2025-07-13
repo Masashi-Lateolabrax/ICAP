@@ -28,6 +28,14 @@ class _Server:
     ):
         self.settings = settings
 
+        self.distribution = Distribution()
+        self.cmaes = CMAES(
+            max_generation=self.settings.Optimization.GENERATION,
+            dimension=self.settings.Optimization.DIMENSION,
+            sigma=self.settings.Optimization.SIGMA,
+            population_size=self.settings.Optimization.POPULATION,
+        )
+
         self.socket_queue = socket_queue
         self.stop_event = stop_event
         self.handler = handler
@@ -142,7 +150,6 @@ class _Server:
             if sock not in self.socket_states:
                 logging.warning(f"Socket {self.sock_name(sock)} not found in socket states")
                 continue
-            self.socket_states[sock].throughput = ic(packet.data)
             self._response_ack(sock)
 
     def _deal_with_response(self, response_packets: dict[socket.socket, Packet]):
@@ -158,12 +165,15 @@ class _Server:
                 logging.error(f"Size mismatch in RESPONSE packet from {self.sock_name(sock)}")
                 self._drop_socket(sock)
                 continue
+
             for i, evaluated_individual in enumerate(packet.data):
                 if not isinstance(evaluated_individual, Individual):
                     logging.error(f"Invalid individual in RESPONSE packet from {self.sock_name(sock)}")
                     self._drop_socket(sock)
                     continue
                 self.socket_states[sock].assigned_individuals[i].copy_from(evaluated_individual)
+
+            self.socket_states[sock].stop_timer()
             self.socket_states[sock].assigned_individuals = None
             self._response_ack(sock)
 
@@ -172,23 +182,17 @@ class _Server:
             if sock not in self.socket_states:
                 logging.warning(f"Socket {self.sock_name(sock)} not found in socket states")
                 continue
+            if not bool(self.socket_states[sock].assigned_individuals):
+                batch_size = self.distribution.get_batch_size(sock)
+                self.socket_states[sock].assigned_individuals = self.cmaes.get_individuals(batch_size)
+            else:
+                logging.warning(f"Socket {self.sock_name(sock)} already has assigned individuals, ignoring REQUEST")
+                for i in self.socket_states[sock].assigned_individuals:
+                    i.set_calculation_state(CalculationState.CALCULATING)
+            self.socket_states[sock].start_timer()
             self._response_ack(sock, data=self.socket_states[sock].assigned_individuals)
 
-    def _update_assigned_individuals(self, cmaes: CMAES, distribution: Distribution):
-        for sock in self.sockets:
-            if self.socket_states[sock].assigned_individuals is not None:
-                continue
-            batch_size = ic(distribution.get_batch_size(sock))
-            self.socket_states[sock].assigned_individuals = cmaes.get_individuals(batch_size)
-
     def run(self):
-        distribution = Distribution()
-        cmaes = CMAES(
-            max_generation=self.settings.Optimization.GENERATION,
-            dimension=self.settings.Optimization.DIMENSION,
-            sigma=self.settings.Optimization.SIGMA,
-            population_size=self.settings.Optimization.POPULATION,
-        )
 
         while not self.stop_event.is_set():
             self._mut_retrieve_socket()
@@ -209,20 +213,18 @@ class _Server:
                 self._drop_socket(sock)
             self._mut_drop_dead_sockets()
 
-            result, individuals = cmaes.update()
+            result, individuals = self.cmaes.update()
             ic(result, len(individuals))
 
             if self.handler:
-                self.handler(cmaes, individuals)
+                self.handler(self.cmaes, individuals)
 
-            if cmaes.should_stop():
+            if self.cmaes.should_stop():
                 logging.info("CMA-ES optimization has stopped.")
                 self.stop_event.set()
                 break
 
-            distribution.update(len(individuals), self.socket_states)
-
-            self._update_assigned_individuals(cmaes, distribution)
+            self.distribution.update(len(individuals), self.socket_states)
 
 
 def _spawn_thread(

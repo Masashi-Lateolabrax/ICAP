@@ -127,7 +127,7 @@ def add_food_object_with_mesh(
 ) -> FoodSpec:
     food_body = add_body(
         spec.worldbody,
-        pos=(position.x, position.y, 5),
+        pos=(position.x, position.y, 1),
     )
     add_geom(
         food_body,

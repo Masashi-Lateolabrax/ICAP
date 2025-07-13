@@ -52,20 +52,21 @@ class _EvaluationWorker:
     def __init__(
             self,
             evaluation_function: EvaluationFunction,
-            handler: Optional[Callable[[Individual], None]] = None
+            handler: Optional[Callable[[list[Individual]], None]] = None
     ):
         self.task_queue = queue.Queue()
         self.response_queue = queue.Queue()
         self.evaluation_function = evaluation_function
         self.stop_event = threading.Event()
         self.thread: Optional[threading.Thread] = None
-        self.handler: Optional[Callable[[Individual], None]] = handler
+        self.handler: Optional[Callable[[list[Individual]], None]] = handler
 
     def _worker(self) -> None:
         while not self.stop_event.is_set():
             try:
-                individuals = self.task_queue.get_nowait()
-                if individuals is None:
+                individuals = self.task_queue.get(timeout=1)
+                if not bool(individuals):
+                    logging.error("Received empty task.")
                     break
                 self.response_queue.put(
                     ClientCalculationState(idle=False, throughput=None)
@@ -79,23 +80,10 @@ class _EvaluationWorker:
                     break
 
                 try:
-                    ic(individual.timer_start())
                     fitness = ic(self.evaluation_function(individual))
-                    individual.timer_end()
 
                     individual.set_fitness(fitness)
                     individual.set_calculation_state(CalculationState.FINISHED)
-
-                    throughput = 1 / (individual.get_elapse() + 1e-10)
-                    self.response_queue.put(
-                        ClientCalculationState(
-                            idle=False,
-                            throughput=throughput
-                        )
-                    )
-
-                    if self.handler:
-                        self.handler(individual)
 
                 except Exception as e:
                     logging.error(f"Error during evaluation function execution: {e}")
@@ -108,6 +96,9 @@ class _EvaluationWorker:
                     individuals=individuals,
                 )
             )
+
+            if self.handler:
+                self.handler(individuals)
 
     def is_alive(self) -> bool:
         return self.thread is not None and self.thread.is_alive()
@@ -146,7 +137,6 @@ class _CommunicationWorker:
         self.sock = sock
         self.last_heartbeat = time.time()
         self.last_request = 0.0
-        self.throughput = 0.0
         self.task: Optional[list[Individual]] = None
         self.evaluated_task: Optional[list[Individual]] = None
 
@@ -166,7 +156,7 @@ class _CommunicationWorker:
                     break
         self.task = None
 
-    def _heartbeat(self, throughput: float) -> CommunicationResult:
+    def _heartbeat(self) -> CommunicationResult:
         if not self.is_alive():
             logging.error("Socket is not alive, cannot send heartbeat")
             return CommunicationResult.CONNECTION_ERROR
@@ -174,7 +164,7 @@ class _CommunicationWorker:
         if time.time() - self.last_heartbeat < HEARTBEAT_INTERVAL:
             return CommunicationResult.SUCCESS
 
-        packet = Packet(_packet_type=PacketType.HEARTBEAT, data=throughput)
+        packet = Packet(_packet_type=PacketType.HEARTBEAT)
         result, packet = communicate(self.sock, packet)
 
         if result != CommunicationResult.SUCCESS:
@@ -185,7 +175,7 @@ class _CommunicationWorker:
 
         return CommunicationResult.SUCCESS
 
-    def _request(self) -> CommunicationResult:
+    def _mut_request(self) -> CommunicationResult:
         if not self.is_alive():
             logging.error("Socket is not alive, cannot send request")
             return CommunicationResult.CONNECTION_ERROR
@@ -211,7 +201,7 @@ class _CommunicationWorker:
 
         return CommunicationResult.SUCCESS
 
-    def _return(self) -> CommunicationResult:
+    def _mut_return(self) -> CommunicationResult:
         if not self.is_alive():
             logging.error("Socket is not alive, cannot send individuals")
             return CommunicationResult.CONNECTION_ERROR
@@ -231,22 +221,19 @@ class _CommunicationWorker:
 
         return CommunicationResult.SUCCESS
 
-    def set_throughput(self, throughput: float) -> None:
-        self.throughput = throughput
-
     def run(self) -> tuple[CommunicationResult, Optional[list[Individual]]]:
         if not self.is_alive():
             raise RuntimeError("Communication worker is not running")
 
-        result = ic(self._heartbeat(self.throughput))
+        result = ic(self._heartbeat())
         task = None
 
         if not self.is_assigned():
-            result = ic(self._request())
+            result = ic(self._mut_request())
             task = self.task
 
         if not bool(self.task) and bool(self.evaluated_task):
-            result = ic(self._return())
+            result = ic(self._mut_return())
 
         return result, task
 
@@ -255,7 +242,7 @@ def connect_to_server(
         server_address: str,
         port: int,
         evaluation_function: EvaluationFunction,
-        handler: Optional[Callable[[Individual], None]] = None
+        handler: Optional[Callable[[list[Individual]], None]] = None
 ) -> None:
     stop_event = threading.Event()
     sock = _connect_to_server(server_address, port)
@@ -280,9 +267,6 @@ def connect_to_server(
     while not stop_event.is_set():
         calc_states = ic(evaluation_worker.get_response())
         for state in calc_states:
-            if state.throughput is not None:
-                communication_worker.set_throughput(state.throughput)
-
             if state.individuals is not None:
                 communication_worker.set_evaluated_task(state.individuals)
 
@@ -292,7 +276,7 @@ def connect_to_server(
                 logging.error(f"Communication error: {result}")
                 break
 
-            if new_task is not None:
+            if bool(new_task):
                 evaluation_worker.add_task(new_task)
 
         except Exception as e:

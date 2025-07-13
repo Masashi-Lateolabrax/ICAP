@@ -8,7 +8,7 @@ class RobotNeuralNetwork(torch.nn.Module):
         super(RobotNeuralNetwork, self).__init__()
 
         self.sequential = torch.nn.Sequential(
-            torch.nn.Linear(5, 3),
+            torch.nn.Linear(6, 3),
             torch.nn.Tanhshrink(),
             torch.nn.Linear(3, 2),
             torch.nn.Tanh()
