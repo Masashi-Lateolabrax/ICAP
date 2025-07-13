@@ -86,7 +86,10 @@ class MujocoBackend(SimulatorBackend, abc.ABC):
         self.data: mujoco.MjData = mujoco.MjData(self.model)
 
         self.nest_site = self.data.site(nest_spec.name)
-        self.robot_values = [RobotValues(self.data, s) for s in robot_specs]
+        self.robot_values = [
+            RobotValues(settings.Robot.DISTANCE_BETWEEN_WHEELS, settings.Robot.MAX_SPEED, self.data, s)
+            for s in robot_specs
+        ]
         self.food_values = [FoodValues(self.data, s) for s in food_specs]
 
         # Initialize renderer if needed
