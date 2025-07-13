@@ -166,7 +166,7 @@ def main():
 
     # from analysis import record, latest_saved_individual_file, get_latest_folder
     #
-    # save_dir = get_latest_folder(os.path.join(".", settings.Storage.SAVE_DIRECTORY))
+    # save_dir = get_latest_folder(settings.Storage.SAVE_DIRECTORY)
     # saved_individual = SavedIndividual.load(latest_saved_individual_file(save_dir))
     #
     # record(

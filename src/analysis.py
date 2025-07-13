@@ -84,7 +84,7 @@ def main():
     settings = MySettings()
 
     save_dir = os.path.abspath(
-        get_latest_folder(os.path.join(".", settings.Storage.SAVE_DIRECTORY))
+        get_latest_folder(settings.Storage.SAVE_DIRECTORY)
     )
     saved_individual = SavedIndividual.load(
         latest_saved_individual_file(save_dir)
