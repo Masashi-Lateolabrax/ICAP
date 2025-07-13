@@ -80,4 +80,4 @@ class SocketState:
             return
 
         throughput = self.throughput if not np.isnan(self.throughput) else 0.0
-        self.throughput = 0.2 * throughput + 0.8 * ic(len(self.assigned_individuals) / duration)
+        self.throughput = 0.8 * throughput + 0.2 * ic(len(self.assigned_individuals) / duration)
