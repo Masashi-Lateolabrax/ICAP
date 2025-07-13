@@ -3,14 +3,14 @@ import torch
 import mujoco
 
 from framework.prelude import *
-from framework.backends import MujocoBackend
+from framework.backends import MujocoSTL
 from framework.sensor import PreprocessedOmniSensor, DirectionSensor
 
 from loss import Loss
 from controller import RobotNeuralNetwork
 
 
-class Simulator(MujocoBackend):
+class Simulator(MujocoSTL):
     def __init__(self, settings: Settings, parameters: Individual, render: bool = False):
         super().__init__(settings, render)
 
