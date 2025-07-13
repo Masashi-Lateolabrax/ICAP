@@ -22,11 +22,13 @@ MySettings.Server.TIMEOUT = 5.0
 ###################################################################################
 # Render settings
 ###################################################################################
-MySettings.Render.RENDER_WIDTH = 100
-MySettings.Render.RENDER_HEIGHT = 100
+MySettings.Render.RENDER_WIDTH = 500
+MySettings.Render.RENDER_HEIGHT = 500
 MySettings.Render.LIGHT_AMBIENT = 1.0
 MySettings.Render.LIGHT_DIFFUSE = 1.0
 MySettings.Render.LIGHT_SPECULAR = 1.0
+MySettings.Render.CAMERA_POS = (0.0, -1e-3, 13.0)
+MySettings.Render.CAMERA_LOOKAT = (0.0, 0.0, 0.0)
 
 ###################################################################################
 # Optimization settings

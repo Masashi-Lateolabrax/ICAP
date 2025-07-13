@@ -80,11 +80,13 @@ class Simulation:
 
 
 class Render:
-    RENDER_WIDTH = 100
-    RENDER_HEIGHT = 100
+    RENDER_WIDTH = 500
+    RENDER_HEIGHT = 500
     LIGHT_AMBIENT = 1.0
     LIGHT_DIFFUSE = 1.0
     LIGHT_SPECULAR = 1.0
+    CAMERA_POS = (0.0, -1e-3, 13.0)
+    CAMERA_LOOKAT = (0.0, 0.0, 0.0)
 
 
 class Storage:
