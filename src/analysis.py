@@ -10,7 +10,6 @@ from framework.prelude import *
 
 from simulator import Simulator
 from settings import MySettings
-from save_type import SavedIndividual
 
 
 def get_latest_folder(base_directory: str) -> str:

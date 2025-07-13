@@ -1,6 +1,6 @@
 import pickle
 
-from framework.prelude import Individual
+from .optimization import Individual
 
 
 class SavedIndividual:

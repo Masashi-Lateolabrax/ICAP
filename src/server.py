@@ -18,7 +18,6 @@ from framework.optimization import OptimizationServer, CMAES
 
 from controller import RobotNeuralNetwork
 from settings import MySettings
-from save_type import SavedIndividual
 
 # Configure icecream for distributed system debugging
 ic.configureOutput(
