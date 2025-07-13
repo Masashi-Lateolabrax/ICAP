@@ -32,7 +32,7 @@ def mujoco_stl_example():
         RobotLocation(0, 0, np.pi / 2),
     ]
     settings.Food.INITIAL_POSITION = [
-        Position(0, 2),
+        Position(1, 2),
     ]
 
     RobotValues.set_max_speed(settings.Robot.MAX_SPEED)
