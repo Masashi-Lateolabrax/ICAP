@@ -91,9 +91,10 @@ class Render:
 
 class Storage:
     SAVE_INDIVIDUALS = True
-    SAVE_DIRECTORY = "results"
+    SAVE_DIRECTORY = "./results"
     SAVE_INTERVAL = 10  # Save every N generations
     TOP_N = 0  # Save top N individuals, 0 means save all
+    ASSET_DIRECTORY = "./assets"
 
 
 class Settings:

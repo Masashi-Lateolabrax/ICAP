@@ -30,7 +30,7 @@ class MujocoSTL(MujocoBackend):
         food_mesh = add_mesh_in_asset(
             spec,
             name="food_mesh",
-            file=os.path.abspath("../assets/food-object.stl"),
+            file=os.path.abspath(os.path.join(settings.Storage.ASSET_DIRECTORY, "food-object.stl")),
             content_type=MeshContentType.STL,
             inertia=mujoco.mjtMeshInertia.mjMESH_INERTIA_CONVEX
         )
@@ -38,7 +38,7 @@ class MujocoSTL(MujocoBackend):
         robot_mesh = add_mesh_in_asset(
             spec,
             name="robot_mesh",
-            file=os.path.abspath("../assets/robot-object.stl"),
+            file=os.path.abspath(os.path.join(settings.Storage.ASSET_DIRECTORY, "robot-object.stl")),
             content_type=MeshContentType.STL,
             inertia=mujoco.mjtMeshInertia.mjMESH_INERTIA_CONVEX
         )
