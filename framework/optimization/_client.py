@@ -79,18 +79,14 @@ class _EvaluationWorker:
                     break
 
                 try:
-                    ic(individual.timer_start())
                     fitness = ic(self.evaluation_function(individual))
-                    individual.timer_end()
 
                     individual.set_fitness(fitness)
                     individual.set_calculation_state(CalculationState.FINISHED)
 
-                    throughput = 1 / (individual.get_elapse() + 1e-10)
                     self.response_queue.put(
                         ClientCalculationState(
                             idle=False,
-                            throughput=throughput
                         )
                     )
 
@@ -146,7 +142,6 @@ class _CommunicationWorker:
         self.sock = sock
         self.last_heartbeat = time.time()
         self.last_request = 0.0
-        self.throughput = 0.0
         self.task: Optional[list[Individual]] = None
         self.evaluated_task: Optional[list[Individual]] = None
 
@@ -166,7 +161,7 @@ class _CommunicationWorker:
                     break
         self.task = None
 
-    def _heartbeat(self, throughput: float) -> CommunicationResult:
+    def _heartbeat(self) -> CommunicationResult:
         if not self.is_alive():
             logging.error("Socket is not alive, cannot send heartbeat")
             return CommunicationResult.CONNECTION_ERROR
@@ -174,7 +169,7 @@ class _CommunicationWorker:
         if time.time() - self.last_heartbeat < HEARTBEAT_INTERVAL:
             return CommunicationResult.SUCCESS
 
-        packet = Packet(_packet_type=PacketType.HEARTBEAT, data=throughput)
+        packet = Packet(_packet_type=PacketType.HEARTBEAT)
         result, packet = communicate(self.sock, packet)
 
         if result != CommunicationResult.SUCCESS:
@@ -231,14 +226,11 @@ class _CommunicationWorker:
 
         return CommunicationResult.SUCCESS
 
-    def set_throughput(self, throughput: float) -> None:
-        self.throughput = throughput
-
     def run(self) -> tuple[CommunicationResult, Optional[list[Individual]]]:
         if not self.is_alive():
             raise RuntimeError("Communication worker is not running")
 
-        result = ic(self._heartbeat(self.throughput))
+        result = ic(self._heartbeat())
         task = None
 
         if not self.is_assigned():
@@ -280,9 +272,6 @@ def connect_to_server(
     while not stop_event.is_set():
         calc_states = ic(evaluation_worker.get_response())
         for state in calc_states:
-            if state.throughput is not None:
-                communication_worker.set_throughput(state.throughput)
-
             if state.individuals is not None:
                 communication_worker.set_evaluated_task(state.individuals)
 
