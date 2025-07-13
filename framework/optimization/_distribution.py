@@ -77,7 +77,7 @@ class Distribution:
         #     self.batch_size[key] += 1
 
         for k, v in zip(self.throughput.keys(), self._solve_lp(num_tasks)):
-            self.batch_size[k] += math.floor(v)
+            self.batch_size[k] += math.ceil(v)
 
     def get_batch_size(self, sock: socket.socket) -> Optional[int]:
         if not sock in self.batch_size:
