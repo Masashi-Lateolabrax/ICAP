@@ -165,6 +165,17 @@ def main():
     except Exception as e:
         print(f"\nServer error: {e}")
 
+    # from analysis import record, latest_saved_individual_file, get_latest_folder
+    #
+    # save_dir = get_latest_folder(os.path.join(".", settings.Storage.SAVE_DIRECTORY))
+    # saved_individual = SavedIndividual.load(latest_saved_individual_file(save_dir))
+    #
+    # record(
+    #     settings,
+    #     saved_individual.best_individual,
+    #     os.path.join(save_dir, "movie.mp4")
+    # )
+
 
 if __name__ == "__main__":
     main()
