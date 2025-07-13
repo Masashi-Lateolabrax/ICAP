@@ -4,6 +4,8 @@ from dataclasses import dataclass
 import socket
 import time
 
+from icecream import ic
+
 from .optimization import Individual
 
 
@@ -21,7 +23,7 @@ class PacketType(Enum):
     Packet types for client-server communication.
     
     HANDSHAKE: Initial connection setup - no data
-    HEARTBEAT: Regular keepalive with processing speed data
+    HEARTBEAT: Regular keepalive signal - no data
     REQUEST: Request for Individuals from server - no data
     RESPONSE: Send Individuals to server - contains Individual data
     DISCONNECTION: Notify before disconnecting - no data
@@ -51,4 +53,14 @@ class SocketState:
         self.address = f"{peer[0]}:{peer[1]}"
         self.last_heartbeat = time.time()
         self.assigned_individuals: Optional[list[Individual]] = None
-        self.throughput: float = float("nan")
+        self.calculation_start_time: Optional[float] = None
+        self.calculation_end_time: Optional[float] = None
+
+    @property
+    def throughput(self) -> float:
+        if self.calculation_start_time is None or self.calculation_end_time is None:
+            return float('nan')
+        duration = self.calculation_end_time - self.calculation_start_time
+        if duration <= 0:
+            return float('nan')
+        return ic(len(self.assigned_individuals) / duration)
