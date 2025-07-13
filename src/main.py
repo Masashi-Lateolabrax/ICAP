@@ -1,5 +1,6 @@
 import os
 import threading
+import time
 from datetime import datetime
 
 from icecream import ic
@@ -16,13 +17,23 @@ ic.configureOutput(
 ic.disable()
 
 
-def handler(individual: Individual):
-    throughput = 1 / (individual.get_elapse() + 1e-10)
-    print(
-        f"pid:{os.getpid()} "
-        f"fitness:{individual.get_fitness()} "
-        f"throughput:{throughput:.2f} ind/s"
-    )
+class Handler:
+    def __init__(self):
+        self.time = -1
+
+    def run(self, individuals: list[Individual]):
+        current_time = time.time()
+        throughput = 1 / ((current_time - self.time) + 1e-10)
+        self.time = current_time
+
+        ave_fitness = sum([i.get_fitness() for i in individuals]) / len(individuals)
+
+        print(
+            f"pid:{os.getpid()} "
+            f"num: {len(individuals)} "
+            f"fitness:{ave_fitness} "
+            f"throughput:{throughput:.2f} ind/s"
+        )
 
 
 def main():
@@ -38,11 +49,13 @@ def main():
     print("Press Ctrl+C to disconnect")
     print("=" * 50)
 
+    handler = Handler()
+
     connect_to_server(
         settings.Server.HOST,
         settings.Server.PORT,
         evaluation_function=evaluation_function,
-        handler=handler,
+        handler=handler.run,
     )
 
 
