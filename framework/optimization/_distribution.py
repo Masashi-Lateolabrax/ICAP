@@ -23,6 +23,39 @@ class Distribution:
             else:
                 self.batch_size[sock] = 1
 
+    def _solve_lp(self, n: int, max_: int = 10) -> np.ndarray:
+        from scipy.optimize import linprog
+
+        max_ = [v * max_ for v in self.throughput.values()]
+        weight = np.array([1 / v for v in self.throughput.values()])
+        num_weight = len(weight)
+
+        c = np.zeros(num_weight + 1)
+        c[-1] = 1
+
+        A_ub = np.zeros((n, num_weight + 1))
+        b_ub = np.zeros(n)
+
+        A_ub[:, :-1] = np.eye(n) * weight
+        A_ub[:, -1] = -1
+
+        A_eq = np.zeros((1, num_weight + 1))
+        b_eq = np.array([n])
+
+        A_eq[0, :n] = 1
+
+        bounds = [(0, m) for m in max_] + [(None, None)]
+
+        res = linprog(
+            c,
+            A_ub=A_ub, b_ub=b_ub,
+            A_eq=A_eq, b_eq=b_eq,
+            bounds=bounds,
+            method='highs'
+        )
+
+        return res.x[:num_weight]
+
     def update(
             self,
             num_ready_individuals: int,
@@ -33,19 +66,16 @@ class Distribution:
         if not self.throughput:
             return
 
-        probability = {}
-        for key, throughput in self.throughput.items():
-            probability[key] = throughput
-        total = sum(probability.values())
-        probability = {key: throughput / total for key, throughput in probability.items()}
-
         newbies = sum(self.batch_size.values())
         num_tasks = num_ready_individuals - newbies
-        if not probability or num_tasks <= 0:
+        if not num_tasks <= 0:
             return
 
+        probability = self._solve_lp(num_tasks)
+        probability /= num_tasks
+
         selected_indices = np.random.choice(
-            list(probability.keys()), size=num_tasks, p=list(probability.values())
+            list(self.throughput.keys()), size=num_tasks, p=probability
         )
         for key in selected_indices:
             self.batch_size[key] += 1
