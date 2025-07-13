@@ -118,6 +118,52 @@ def add_food_object(spec: mujoco.MjSpec, settings: Settings, id_: int, position:
     )
 
 
+def add_food_object_with_mesh(
+        spec: mujoco.MjSpec,
+        settings: Settings,
+        mesh: mujoco.MjsMesh,
+        id_: int,
+        position: Position
+) -> FoodSpec:
+    food_body = add_body(
+        spec.worldbody,
+        pos=(position.x, position.y, 5),
+    )
+    add_geom(
+        food_body,
+        geom_type=mujoco.mjtGeom.mjGEOM_MESH,
+        rgba=settings.Food.COLOR,
+        condim=FOOD_COLLISION_CONDIM,
+        density=settings.Food.DENSITY,
+        mesh=mesh,
+    )
+
+    free_joint = add_joint(
+        food_body,
+        name=f"food{id_}_free",
+        joint_type=mujoco.mjtJoint.mjJNT_FREE,
+    )
+
+    center_site = add_site(
+        food_body,
+        name=f"food{id_}_center",
+        # type_=mujoco.mjtGeom.mjGEOM_SPHERE,
+        # size=[0.5] * 3
+    )
+
+    velocimeter = add_velocimeter(
+        spec,
+        name=f"food{id_}_vel",
+        site=center_site
+    )
+
+    return FoodSpec(
+        center_site=center_site,
+        free_join=free_joint,
+        velocimeter=velocimeter
+    )
+
+
 def add_robot(
         spec: mujoco.MjSpec,
         settings: Settings,
@@ -226,6 +272,106 @@ def add_robot(
         joint=free_join,
         kv=settings.Robot.ACTUATOR_ROT_KV,
         gear=(0, 0, 0, 0, 0, 1)
+    )
+
+    return RobotSpec(
+        center_site=center_site,
+        front_site=front_site,
+        free_join=free_join,
+        x_act=x_act,
+        y_act=y_act,
+        z_act=z_act,
+        r_act=r_act
+    )
+
+
+def add_robot_with_mesh(
+        spec: mujoco.MjSpec,
+        settings: Settings,
+        mesh: mujoco.MjsMesh,
+        id_: int,
+        robot_location: RobotLocation,
+) -> RobotSpec:
+    if spec is None:
+        raise ValueError("MuJoCo specification cannot be None")
+    if settings is None:
+        raise ValueError("Settings cannot be None")
+    if robot_location is None:
+        raise ValueError("Robot location cannot be None")
+    if not isinstance(id_, int):
+        raise TypeError("Robot ID must be an integer")
+    if id_ < 0:
+        raise ValueError("Robot ID must be non-negative")
+
+    robot_body = add_body(
+        spec.worldbody,
+        name=f"robot{id_}",
+        pos=(robot_location.x, robot_location.y, settings.Robot.HEIGHT * 0.5),
+        quat=axisangle_to_quat((0, 0, 1), robot_location.theta),
+    )
+
+    add_geom(
+        robot_body,
+        geom_type=mujoco.mjtGeom.mjGEOM_MESH,
+        rgba=settings.Robot.COLOR,
+        condim=ROBOT_COLLISION_CONDIM,
+        mass=settings.Robot.MASS,
+        mesh=mesh,
+    )
+
+    center_site = add_site(
+        robot_body,
+        name=f"robot{id_}_center",
+        pos=(0, 0, 0),
+    )
+
+    front_site_size = settings.Robot.RADIUS * ROBOT_FRONT_SIZE_FACTOR
+    front_site = add_site(
+        robot_body,
+        name=f"robot{id_}_front",
+        pos=(0, settings.Robot.RADIUS, 0.05),
+        size=[front_site_size, front_site_size, front_site_size],
+        rgba=ROBOT_FRONT_COLOR,
+        type_=mujoco.mjtGeom.mjGEOM_SPHERE
+    )
+
+    free_join = add_joint(
+        robot_body,
+        name=f"robot{id_}_joint",
+        joint_type=mujoco.mjtJoint.mjJNT_FREE,
+    )
+
+    x_act = add_velocity_actuator(
+        spec,
+        name=f"robot{id_}_x_act",
+        joint=free_join,
+        kv=settings.Robot.ACTUATOR_MOVE_KV,
+        gear=(1.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+    )
+
+    y_act = add_velocity_actuator(
+        spec,
+        name=f"robot{id_}_y_act",
+        joint=free_join,
+        kv=settings.Robot.ACTUATOR_MOVE_KV,
+        gear=(0.0, 1.0, 0.0, 0.0, 0.0, 0.0)
+    )
+
+    z_act = add_position_actuator(
+        spec,
+        joint=free_join,
+        kp=50,
+        kv=1,
+        name=f"robot{id_}_z_act",
+        gear=(0.0, 0.0, 1.0, 0.0, 0.0, 0.0)
+    )
+
+    r_act = add_velocity_actuator(
+        spec,
+        name=f"robot{id_}_r_act",
+        joint=free_join,
+        kv=settings.Robot.ACTUATOR_ROT_KV,
+        gear=(0.0, 0.0, 0.0, 0.0, 0.0, 1.0)
     )
 
     return RobotSpec(

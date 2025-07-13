@@ -64,7 +64,7 @@ def add_material(
 def add_geom(
         body: mujoco._specs.MjsBody,
         geom_type: mujoco.mjtGeom,
-        size: tuple[float, float, float],
+        size: tuple[float, float, float] = None,
         pos: tuple[float, float, float] = (0, 0, 0),
         name: str = None,
         material: str = None,
@@ -73,6 +73,7 @@ def add_geom(
         density: float = None,
         mass: float = None,
         quat: np.ndarray = None,
+        mesh: mujoco.MjsMesh = None,
 ) -> mujoco._specs.MjsGeom:
     """Add a geometry to a MuJoCo body.
     
@@ -97,8 +98,9 @@ def add_geom(
     geom: mujoco._specs.MjsGeom = body.add_geom()
     geom.type = geom_type
     geom.pos = pos
-    geom.size = size
 
+    if size is not None:
+        geom.size = size
     if quat is not None:
         geom.quat = quat
     if name is not None:
@@ -113,6 +115,8 @@ def add_geom(
         geom.mass = mass
     elif density is not None:
         geom.density = density
+    if mesh is not None:
+        geom.meshname = mesh.name
 
     return geom
 
@@ -284,7 +288,7 @@ def add_velocity_actuator(
         joint: mujoco._specs.MjsJoint,
         kv: float,
         name: str = None,
-        gear: tuple[float, float, float, float, float, float, float] = None
+        gear: tuple[float, float, float, float, float, float] = None
 ) -> mujoco._specs.MjsActuator:
     """Add a velocity actuator to control a joint.
     
@@ -334,7 +338,7 @@ def add_position_actuator(
         kp: float,
         kv: float,
         name: str = None,
-        gear: tuple[float, float, float, float, float, float, float] = None
+        gear: tuple[float, float, float, float, float, float] = None
 ) -> mujoco._specs.MjsActuator:
     if spec is None:
         raise ValueError("MuJoCo specification cannot be None")
