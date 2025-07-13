@@ -23,10 +23,6 @@ def evaluation_function(individual: Individual):
     """
     settings = MySettings()
 
-    RobotValues.set_max_speed(settings.Robot.MAX_SPEED)
-    RobotValues.set_distance_between_wheels(settings.Robot.DISTANCE_BETWEEN_WHEELS)
-    RobotValues.set_robot_height(settings.Robot.HEIGHT)
-
     backend = Simulator(settings, individual)
     for _ in range(math.ceil(settings.Simulation.TIME_LENGTH / settings.Simulation.TIME_STEP)):
         backend.step()
