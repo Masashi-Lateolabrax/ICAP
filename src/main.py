@@ -23,7 +23,7 @@ class Handler:
 
     def run(self, individuals: list[Individual]):
         current_time = time.time()
-        throughput = 1 / ((current_time - self.time) + 1e-10)
+        throughput = len(individuals) / ((current_time - self.time) + 1e-10)
         self.time = current_time
 
         ave_fitness = sum([i.get_fitness() for i in individuals]) / len(individuals)
