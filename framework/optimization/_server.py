@@ -174,7 +174,7 @@ class _Server:
                     continue
                 self.socket_states[sock].assigned_individuals[i].copy_from(evaluated_individual)
 
-            self.socket_states[sock].calculation_end_time = current_time
+            self.socket_states[sock].stop_timer(current_time)
             self.socket_states[sock].assigned_individuals = None
             self._response_ack(sock)
 
@@ -189,7 +189,7 @@ class _Server:
                 continue
             batch_size = self.distribution.get_batch_size(sock)
             self.socket_states[sock].assigned_individuals = self.cmaes.get_individuals(batch_size)
-            self.socket_states[sock].calculation_start_time = current_time
+            self.socket_states[sock].start_timer(current_time)
             self._response_ack(sock, data=self.socket_states[sock].assigned_individuals)
 
     def run(self):

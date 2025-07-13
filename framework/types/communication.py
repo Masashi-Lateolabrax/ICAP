@@ -1,9 +1,11 @@
+import logging
 from enum import Enum
 from typing import Any, Optional
 from dataclasses import dataclass
 import socket
 import time
 
+import numpy as np
 from icecream import ic
 
 from .optimization import Individual
@@ -53,21 +55,29 @@ class SocketState:
         self.address = f"{peer[0]}:{peer[1]}"
         self.last_heartbeat = time.time()
         self.assigned_individuals: Optional[list[Individual]] = None
-        self.calculation_start_time: Optional[float] = None
-        self.calculation_end_time: Optional[float] = None
-        self.__throughput: float = float('nan')
+        self.__timer: float = -1
+        self.throughput: float = float('nan')
 
-    @property
-    def throughput(self) -> float:
+    def start_timer(self, current_time: Optional[float] = None):
+        if current_time is None:
+            current_time = time.time()
+        self.__timer = current_time
+
+    def stop_timer(self, current_time: Optional[float] = None):
         if self.assigned_individuals is None:
-            return self.__throughput
+            logging.error("No assigned individuals")
+            return
+        if self.__timer < 0:
+            logging.error("Timer was not started")
+            return
 
-        if self.calculation_start_time is None or self.calculation_end_time is None:
-            return float('nan')
-        duration = self.calculation_end_time - self.calculation_start_time
+        if current_time is None:
+            current_time = time.time()
+        duration = current_time - self.__timer
+
         if duration <= 0:
-            return float('nan')
+            logging.error("Invalid duration: %s", duration)
+            return
 
-        self.__throughput = ic(len(self.assigned_individuals) / duration)
-
-        return self.__throughput
+        throughput = self.throughput if not np.isnan(self.throughput) else 0.0
+        self.throughput = 0.2 * throughput + 0.8 * ic(len(self.assigned_individuals) / duration)
