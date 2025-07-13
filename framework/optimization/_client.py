@@ -52,14 +52,14 @@ class _EvaluationWorker:
     def __init__(
             self,
             evaluation_function: EvaluationFunction,
-            handler: Optional[Callable[[Individual], None]] = None
+            handler: Optional[Callable[[list[Individual]], None]] = None
     ):
         self.task_queue = queue.Queue()
         self.response_queue = queue.Queue()
         self.evaluation_function = evaluation_function
         self.stop_event = threading.Event()
         self.thread: Optional[threading.Thread] = None
-        self.handler: Optional[Callable[[Individual], None]] = handler
+        self.handler: Optional[Callable[[list[Individual]], None]] = handler
 
     def _worker(self) -> None:
         while not self.stop_event.is_set():
@@ -90,9 +90,6 @@ class _EvaluationWorker:
                         )
                     )
 
-                    if self.handler:
-                        self.handler(individual)
-
                 except Exception as e:
                     logging.error(f"Error during evaluation function execution: {e}")
                     individual.set_fitness(float('inf'))
@@ -104,6 +101,9 @@ class _EvaluationWorker:
                     individuals=individuals,
                 )
             )
+
+            if self.handler:
+                self.handler(individuals)
 
     def is_alive(self) -> bool:
         return self.thread is not None and self.thread.is_alive()
@@ -247,7 +247,7 @@ def connect_to_server(
         server_address: str,
         port: int,
         evaluation_function: EvaluationFunction,
-        handler: Optional[Callable[[Individual], None]] = None
+        handler: Optional[Callable[[list[Individual]], None]] = None
 ) -> None:
     stop_event = threading.Event()
     sock = _connect_to_server(server_address, port)
