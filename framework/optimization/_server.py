@@ -182,11 +182,13 @@ class _Server:
             if sock not in self.socket_states:
                 logging.warning(f"Socket {self.sock_name(sock)} not found in socket states")
                 continue
-            if self.socket_states[sock].assigned_individuals is not None:
-                logging.error(f"Socket {self.sock_name(sock)} already has assigned individuals, ignoring REQUEST")
-                continue
-            batch_size = self.distribution.get_batch_size(sock)
-            self.socket_states[sock].assigned_individuals = self.cmaes.get_individuals(batch_size)
+            if not bool(self.socket_states[sock].assigned_individuals):
+                batch_size = self.distribution.get_batch_size(sock)
+                self.socket_states[sock].assigned_individuals = self.cmaes.get_individuals(batch_size)
+            else:
+                logging.warning(f"Socket {self.sock_name(sock)} already has assigned individuals, ignoring REQUEST")
+                for i in self.socket_states[sock].assigned_individuals:
+                    i.set_calculation_state(CalculationState.CALCULATING)
             self.socket_states[sock].start_timer()
             self._response_ack(sock, data=self.socket_states[sock].assigned_individuals)
 
