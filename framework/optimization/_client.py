@@ -65,7 +65,7 @@ class _EvaluationWorker:
         while not self.stop_event.is_set():
             try:
                 individuals = self.task_queue.get(timeout=1)
-                if bool(individuals):
+                if not bool(individuals):
                     logging.error("Received empty task.")
                     break
                 self.response_queue.put(
