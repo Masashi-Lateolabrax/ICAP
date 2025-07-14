@@ -1,5 +1,7 @@
 import mujoco
 
+from .position import Position
+
 
 class FoodSpec:
     def __init__(
@@ -26,6 +28,10 @@ class FoodValues:
     @property
     def xpos(self):
         return self._center_site.xpos[0:2]
+
+    @property
+    def position(self) -> Position:
+        return Position(self.xpos[0], self.xpos[1])
 
 
 class DummyFoodValues:
