@@ -141,6 +141,7 @@ class Handler:
         ave_fitness = sum([i.get_fitness() for i in individuals]) / len(individuals)
 
         print(
+            f"[{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(current_time))}] "
             f"pid:{os.getpid()} "
             f"num: {len(individuals)} "
             f"fitness:{ave_fitness} "
@@ -152,6 +153,7 @@ def main():
     parser = argparse.ArgumentParser(description="ICAP Optimization Client")
     parser.add_argument("--host", type=str, help="Server host address")
     parser.add_argument("--port", type=int, help="Server port number")
+    parser.add_argument("--num-processes", type=int, default=1, help="Number of evaluation processes")
     args = parser.parse_args()
 
     settings = MySettings()
@@ -177,6 +179,7 @@ def main():
             settings, lambda ind: Simulator(settings, ind, False)
         ).run,
         handler=handler.run,
+        num_processes=args.num_processes,
     )
 
 
