@@ -1,7 +1,7 @@
 import dataclasses
 import socket
 import logging
-import threading
+import multiprocessing
 import signal
 import queue
 import time
@@ -14,7 +14,6 @@ from ..types.communication import Packet, PacketType
 from ._connection_utils import send_packet, communicate
 
 HEARTBEAT_INTERVAL = 20
-REQUEST_LIMIT = 1
 
 
 @dataclasses.dataclass
@@ -48,70 +47,91 @@ def _connect_to_server(server_address: str, port: int) -> socket.socket:
     return sock
 
 
+def _evaluation_worker_process(
+        task_queue: multiprocessing.Queue,
+        response_queue: multiprocessing.Queue,
+        evaluation_function: EvaluationFunction,
+        stop_event: multiprocessing.Event,
+) -> None:
+    """Worker process for evaluation tasks"""
+
+    # Set up signal handlers in child process
+    def signal_handler(signum, frame):
+        logging.info(f"Worker process received signal {signum}, stopping...")
+        stop_event.set()
+
+    signal.signal(signal.SIGTERM, signal_handler)
+    signal.signal(signal.SIGINT, signal_handler)
+
+    while not stop_event.is_set():
+        try:
+            individual = task_queue.get(timeout=1)
+
+        except queue.Empty:
+            continue
+
+        try:
+            fitness = evaluation_function(individual)
+            individual.set_fitness(fitness)
+            individual.set_calculation_state(CalculationState.FINISHED)
+
+        except Exception as e:
+            logging.error(f"Error during evaluation function execution: {e}")
+            individual.set_fitness(float('inf'))
+            continue
+
+        response_queue.put(individual)
+
+
 class _EvaluationWorker:
     def __init__(
             self,
             evaluation_function: EvaluationFunction,
-            handler: Optional[Callable[[list[Individual]], None]] = None
+            num_processes: int = 1
     ):
-        self.task_queue = queue.Queue()
-        self.response_queue = queue.Queue()
+        self.task_queue = multiprocessing.Queue()
+        self.response_queue = multiprocessing.Queue()
         self.evaluation_function = evaluation_function
-        self.stop_event = threading.Event()
-        self.thread: Optional[threading.Thread] = None
-        self.handler: Optional[Callable[[list[Individual]], None]] = handler
-
-    def _worker(self) -> None:
-        while not self.stop_event.is_set():
-            try:
-                individuals = self.task_queue.get(timeout=1)
-                if not bool(individuals):
-                    logging.error("Received empty task.")
-                    break
-                self.response_queue.put(
-                    ClientCalculationState(idle=False, throughput=None)
-                )
-
-            except queue.Empty:
-                continue
-
-            for individual in individuals:
-                if self.stop_event.is_set():
-                    break
-
-                try:
-                    fitness = ic(self.evaluation_function(individual))
-
-                    individual.set_fitness(fitness)
-                    individual.set_calculation_state(CalculationState.FINISHED)
-
-                except Exception as e:
-                    logging.error(f"Error during evaluation function execution: {e}")
-                    individual.set_fitness(float('inf'))
-                    continue
-
-            self.response_queue.put(
-                ClientCalculationState(
-                    idle=True,
-                    individuals=individuals,
-                )
-            )
-
-            if self.handler:
-                self.handler(individuals)
+        self.stop_event = multiprocessing.Event()
+        self.processes: list[multiprocessing.Process] = []
+        self.num_processes = num_processes
 
     def is_alive(self) -> bool:
-        return self.thread is not None and self.thread.is_alive()
+        return any(p.is_alive() for p in self.processes)
 
     def run(self):
-        self.thread = threading.Thread(target=self._worker)
-        self.thread.daemon = True
-        self.thread.start()
+        for i in range(self.num_processes):
+            process = multiprocessing.Process(
+                target=_evaluation_worker_process,
+                args=(
+                    self.task_queue,
+                    self.response_queue,
+                    self.evaluation_function,
+                    self.stop_event,
+                )
+            )
+            process.daemon = False
+            process.start()
+            self.processes.append(process)
 
     def stop(self):
         if self.is_alive():
+            logging.info("Stopping evaluation worker processes...")
             self.stop_event.set()
-            self.thread.join(timeout=5.0)
+
+            for process in self.processes:
+                process.join(timeout=3.0)
+                if process.is_alive():
+                    logging.warning(f"Process {process.pid} did not stop gracefully, terminating...")
+                    process.terminate()
+                    process.join(timeout=2.0)
+                    if process.is_alive():
+                        logging.error(f"Process {process.pid} still alive after termination, killing...")
+                        process.kill()
+                        process.join()
+
+            self.processes.clear()
+            logging.info("All evaluation worker processes stopped")
         else:
             logging.warning("Evaluation worker is not running, cannot stop it")
 
@@ -119,17 +139,18 @@ class _EvaluationWorker:
         if not self.is_alive():
             raise RuntimeError("Evaluation worker is not running")
         ic(len(individuals))
-        self.task_queue.put(individuals)
+        for individual in individuals:
+            self.task_queue.put(individual)
 
-    def get_response(self) -> list[ClientCalculationState]:
+    def get_response(self) -> list[Individual]:
         if not self.is_alive():
             raise RuntimeError("Evaluation worker is not running")
-        state = []
+        individuals = []
         while not self.response_queue.empty():
-            state.append(
+            individuals.append(
                 self.response_queue.get_nowait()
             )
-        return state
+        return individuals
 
 
 class _CommunicationWorker:
@@ -138,23 +159,31 @@ class _CommunicationWorker:
         self.last_heartbeat = time.time()
         self.last_request = 0.0
         self.task: Optional[list[Individual]] = None
-        self.evaluated_task: Optional[list[Individual]] = None
+        self.calculating_task: list[Individual] = []
 
     def is_alive(self) -> bool:
         return self.sock is not None
 
     def is_assigned(self) -> bool:
-        return bool(self.task) or bool(self.evaluated_task)
+        return bool(self.task)
+
+    def calculation_finished(self) -> bool:
+        return len(self.calculating_task) == 0
 
     def set_evaluated_task(self, individuals: list[Individual]) -> None:
-        self.evaluated_task = [i for i in self.task]
-        for j in individuals:
-            for idx, i in enumerate(self.task):
-                if np.array_equal(i.view(), j.view()):
-                    self.task.pop(idx)
-                    i.copy_from(j)
+        if not self.is_assigned():
+            logging.error("Not assigned to any task, cannot set evaluated individuals")
+            return
+        if self.calculation_finished():
+            logging.error("All tasks are already finished, cannot set evaluated individuals")
+            return
+
+        for ind in individuals:
+            for idx, t in enumerate(self.calculating_task):
+                if np.array_equal(t.view(), ind.view()):
+                    self.calculating_task.pop(idx)
+                    t.copy_from(ind)
                     break
-        self.task = None
 
     def _heartbeat(self) -> CommunicationResult:
         if not self.is_alive():
@@ -184,9 +213,6 @@ class _CommunicationWorker:
             logging.error("Already assigned, cannot send request")
             return CommunicationResult.SUCCESS
 
-        if time.time() - self.last_request < REQUEST_LIMIT:
-            return CommunicationResult.SUCCESS
-
         packet = Packet(_packet_type=PacketType.REQUEST, data=None)
         result, packet = communicate(self.sock, packet)
 
@@ -196,7 +222,7 @@ class _CommunicationWorker:
 
         self.last_request = time.time()
         self.task = packet.data
-        self.evaluated_task = None
+        self.calculating_task = [ind for ind in self.task] if self.task else []
         ic(len(self.task) if self.task else None)
 
         return CommunicationResult.SUCCESS
@@ -210,14 +236,18 @@ class _CommunicationWorker:
             logging.error("No individuals to return, cannot send response")
             return CommunicationResult.SUCCESS
 
-        packet = Packet(_packet_type=PacketType.RESPONSE, data=self.evaluated_task)
+        if not self.calculation_finished():
+            logging.error("Some tasks are still being calculated, cannot send response")
+            return CommunicationResult.SUCCESS
+
+        packet = Packet(_packet_type=PacketType.RESPONSE, data=self.task)
         result, packet = communicate(self.sock, packet)
 
         if result != CommunicationResult.SUCCESS:
             logging.error("Failed to send response packet with individuals")
             return result
 
-        self.evaluated_task = None
+        self.task = None
 
         return CommunicationResult.SUCCESS
 
@@ -228,11 +258,13 @@ class _CommunicationWorker:
         result = ic(self._heartbeat())
         task = None
 
+        if result != CommunicationResult.SUCCESS:
+            return result, task
+
         if not self.is_assigned():
             result = ic(self._mut_request())
             task = self.task
-
-        if not bool(self.task) and bool(self.evaluated_task):
+        elif self.calculation_finished():
             result = ic(self._mut_return())
 
         return result, task
@@ -242,33 +274,30 @@ def connect_to_server(
         server_address: str,
         port: int,
         evaluation_function: EvaluationFunction,
-        handler: Optional[Callable[[list[Individual]], None]] = None
+        handler: Optional[Callable[[list[Individual]], None]] = None,
+        num_processes: int = 1
 ) -> None:
-    stop_event = threading.Event()
+    stop_event = multiprocessing.Event()
     sock = _connect_to_server(server_address, port)
 
     def signal_handler(signum, frame):
         logging.warning(f"Received signal {signum}, stopping client...")
         stop_event.set()
-        if sock:
-            try:
-                sock.close()
-            except Exception as e:
-                logging.error(f"Error closing socket during signal handling: {e}")
 
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
 
-    evaluation_worker = _EvaluationWorker(evaluation_function, handler)
+    evaluation_worker = _EvaluationWorker(evaluation_function, num_processes)
     evaluation_worker.run()
 
     communication_worker = _CommunicationWorker(sock)
 
     while not stop_event.is_set():
-        calc_states = ic(evaluation_worker.get_response())
-        for state in calc_states:
-            if state.individuals is not None:
-                communication_worker.set_evaluated_task(state.individuals)
+        evaluated_individuals = ic(evaluation_worker.get_response())
+        if evaluated_individuals:
+            communication_worker.set_evaluated_task(evaluated_individuals)
+            if handler:
+                handler(evaluated_individuals)
 
         try:
             result, new_task = communication_worker.run()
@@ -285,11 +314,18 @@ def connect_to_server(
 
         time.sleep(1.0)
 
+    logging.info("Shutting down evaluation worker...")
     evaluation_worker.stop()
     if sock:
         try:
+            logging.info("Sending disconnection packet...")
             disconnect_packet = Packet(_packet_type=PacketType.DISCONNECTION, data=None)
             send_packet(sock, disconnect_packet)
-            sock.close()
         except Exception as e:
-            logging.warning(f"Error during disconnection: {e}")
+            logging.warning(f"Error sending disconnection packet: {e}")
+        finally:
+            try:
+                sock.close()
+                logging.info("Socket closed successfully")
+            except Exception as e:
+                logging.warning(f"Error closing socket: {e}")
