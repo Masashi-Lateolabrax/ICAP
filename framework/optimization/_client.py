@@ -1,7 +1,7 @@
 import dataclasses
 import socket
 import logging
-import threading
+import multiprocessing
 import signal
 import queue
 import time
@@ -48,70 +48,84 @@ def _connect_to_server(server_address: str, port: int) -> socket.socket:
     return sock
 
 
+def _evaluation_worker_process(
+        task_queue: multiprocessing.Queue,
+        response_queue: multiprocessing.Queue,
+        evaluation_function: EvaluationFunction,
+        stop_event: multiprocessing.Event,
+        handler: Optional[Callable[[list[Individual]], None]] = None
+) -> None:
+    """Worker process for evaluation tasks"""
+    while not stop_event.is_set():
+        try:
+            individual = task_queue.get(timeout=1)
+
+        except queue.Empty:
+            continue
+
+        try:
+            fitness = evaluation_function(individual)
+            individual.set_fitness(fitness)
+            individual.set_calculation_state(CalculationState.FINISHED)
+
+        except Exception as e:
+            logging.error(f"Error during evaluation function execution: {e}")
+            individual.set_fitness(float('inf'))
+            continue
+
+        response_queue.put(
+            ClientCalculationState(
+                individual=individual,
+            )
+        )
+
+        if handler:
+            handler(individual)
+
+
 class _EvaluationWorker:
     def __init__(
             self,
             evaluation_function: EvaluationFunction,
-            handler: Optional[Callable[[list[Individual]], None]] = None
+            handler: Optional[Callable[[list[Individual]], None]] = None,
+            num_processes: int = 1
     ):
-        self.task_queue = queue.Queue()
-        self.response_queue = queue.Queue()
+        self.task_queue = multiprocessing.Queue()
+        self.response_queue = multiprocessing.Queue()
         self.evaluation_function = evaluation_function
-        self.stop_event = threading.Event()
-        self.thread: Optional[threading.Thread] = None
+        self.stop_event = multiprocessing.Event()
+        self.processes: list[multiprocessing.Process] = []
         self.handler: Optional[Callable[[list[Individual]], None]] = handler
-
-    def _worker(self) -> None:
-        while not self.stop_event.is_set():
-            try:
-                individuals = self.task_queue.get(timeout=1)
-                if not bool(individuals):
-                    logging.error("Received empty task.")
-                    break
-                self.response_queue.put(
-                    ClientCalculationState(idle=False, throughput=None)
-                )
-
-            except queue.Empty:
-                continue
-
-            for individual in individuals:
-                if self.stop_event.is_set():
-                    break
-
-                try:
-                    fitness = ic(self.evaluation_function(individual))
-
-                    individual.set_fitness(fitness)
-                    individual.set_calculation_state(CalculationState.FINISHED)
-
-                except Exception as e:
-                    logging.error(f"Error during evaluation function execution: {e}")
-                    individual.set_fitness(float('inf'))
-                    continue
-
-            self.response_queue.put(
-                ClientCalculationState(
-                    idle=True,
-                    individuals=individuals,
-                )
-            )
-
-            if self.handler:
-                self.handler(individuals)
+        self.num_processes = num_processes
 
     def is_alive(self) -> bool:
-        return self.thread is not None and self.thread.is_alive()
+        return any(p.is_alive() for p in self.processes)
 
     def run(self):
-        self.thread = threading.Thread(target=self._worker)
-        self.thread.daemon = True
-        self.thread.start()
+        for i in range(self.num_processes):
+            process = multiprocessing.Process(
+                target=_evaluation_worker_process,
+                args=(
+                    self.task_queue,
+                    self.response_queue,
+                    self.evaluation_function,
+                    self.stop_event,
+                    self.handler
+                )
+            )
+            process.daemon = True
+            process.start()
+            self.processes.append(process)
 
     def stop(self):
         if self.is_alive():
             self.stop_event.set()
-            self.thread.join(timeout=5.0)
+            for process in self.processes:
+                process.join(timeout=5.0)
+                if process.is_alive():
+                    process.terminate()
+                    process.join(timeout=2.0)
+            self.processes.clear()
         else:
             logging.warning("Evaluation worker is not running, cannot stop it")
 
@@ -242,9 +256,10 @@ def connect_to_server(
         server_address: str,
         port: int,
         evaluation_function: EvaluationFunction,
-        handler: Optional[Callable[[list[Individual]], None]] = None
+        handler: Optional[Callable[[list[Individual]], None]] = None,
+        num_processes: int = 1
 ) -> None:
-    stop_event = threading.Event()
+    stop_event = multiprocessing.Event()
     sock = _connect_to_server(server_address, port)
 
     def signal_handler(signum, frame):
@@ -259,7 +274,7 @@ def connect_to_server(
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
 
-    evaluation_worker = _EvaluationWorker(evaluation_function, handler)
+    evaluation_worker = _EvaluationWorker(evaluation_function, handler, num_processes)
     evaluation_worker.run()
 
     communication_worker = _CommunicationWorker(sock)
