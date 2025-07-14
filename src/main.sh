@@ -43,7 +43,7 @@ cpu_cores=$(nproc)
 process_count=$((cpu_cores * 3 / 4))
 
 echo "Detected $cpu_cores CPU cores"
-echo "Starting $process_count main.py processes (3/4 of cores)..."
+echo "Starting $process_count client.py processes (3/4 of cores)..."
 echo "Using extra: $extra"
 if [[ -n "$cmd_args" ]]; then
     echo "Using arguments:$cmd_args"
@@ -52,7 +52,7 @@ fi
 # Start processes in background
 for i in $(seq 1 $process_count); do
     echo "Starting process $i..."
-    PYTHONPATH=. uv run --extra $extra src/main.py $cmd_args &
+    PYTHONPATH=. uv run --extra $extra src/client.py $cmd_args &
 done
 
 # Wait for all background processes to complete
