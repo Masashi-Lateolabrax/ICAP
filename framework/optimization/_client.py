@@ -294,11 +294,18 @@ def connect_to_server(
 
         time.sleep(1.0)
 
+    logging.info("Shutting down evaluation worker...")
     evaluation_worker.stop()
     if sock:
         try:
+            logging.info("Sending disconnection packet...")
             disconnect_packet = Packet(_packet_type=PacketType.DISCONNECTION, data=None)
             send_packet(sock, disconnect_packet)
-            sock.close()
         except Exception as e:
-            logging.warning(f"Error during disconnection: {e}")
+            logging.warning(f"Error sending disconnection packet: {e}")
+        finally:
+            try:
+                sock.close()
+                logging.info("Socket closed successfully")
+            except Exception as e:
+                logging.warning(f"Error closing socket: {e}")
