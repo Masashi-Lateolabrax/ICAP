@@ -53,7 +53,6 @@ def _evaluation_worker_process(
         response_queue: multiprocessing.Queue,
         evaluation_function: EvaluationFunction,
         stop_event: multiprocessing.Event,
-        handler: Optional[Callable[[Individual], None]] = None
 ) -> None:
     """Worker process for evaluation tasks"""
     while not stop_event.is_set():
@@ -75,15 +74,11 @@ def _evaluation_worker_process(
 
         response_queue.put(individual)
 
-        if handler:
-            handler(individual)
-
 
 class _EvaluationWorker:
     def __init__(
             self,
             evaluation_function: EvaluationFunction,
-            handler: Optional[Callable[[Individual], None]] = None,
             num_processes: int = 1
     ):
         self.task_queue = multiprocessing.Queue()
@@ -91,7 +86,6 @@ class _EvaluationWorker:
         self.evaluation_function = evaluation_function
         self.stop_event = multiprocessing.Event()
         self.processes: list[multiprocessing.Process] = []
-        self.handler: Optional[Callable[[Individual], None]] = handler
         self.num_processes = num_processes
 
     def is_alive(self) -> bool:
@@ -106,7 +100,6 @@ class _EvaluationWorker:
                     self.response_queue,
                     self.evaluation_function,
                     self.stop_event,
-                    self.handler
                 )
             )
             process.daemon = True
@@ -256,7 +249,7 @@ def connect_to_server(
         server_address: str,
         port: int,
         evaluation_function: EvaluationFunction,
-        handler: Optional[Callable[[Individual], None]] = None,
+        handler: Optional[Callable[[list[Individual]], None]] = None,
         num_processes: int = 1
 ) -> None:
     stop_event = multiprocessing.Event()
@@ -274,7 +267,7 @@ def connect_to_server(
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
 
-    evaluation_worker = _EvaluationWorker(evaluation_function, handler, num_processes)
+    evaluation_worker = _EvaluationWorker(evaluation_function, num_processes)
     evaluation_worker.run()
 
     communication_worker = _CommunicationWorker(sock)
@@ -283,6 +276,8 @@ def connect_to_server(
         evaluated_individuals = ic(evaluation_worker.get_response())
         if evaluated_individuals:
             communication_worker.set_evaluated_task(evaluated_individuals)
+            if handler:
+                handler(evaluated_individuals)
 
         try:
             result, new_task = communication_worker.run()
