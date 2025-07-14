@@ -53,7 +53,7 @@ def _evaluation_worker_process(
         response_queue: multiprocessing.Queue,
         evaluation_function: EvaluationFunction,
         stop_event: multiprocessing.Event,
-        handler: Optional[Callable[[list[Individual]], None]] = None
+        handler: Optional[Callable[[Individual], None]] = None
 ) -> None:
     """Worker process for evaluation tasks"""
     while not stop_event.is_set():
@@ -76,14 +76,14 @@ def _evaluation_worker_process(
         response_queue.put(individual)
 
         if handler:
-            handler([individual])
+            handler(individual)
 
 
 class _EvaluationWorker:
     def __init__(
             self,
             evaluation_function: EvaluationFunction,
-            handler: Optional[Callable[[list[Individual]], None]] = None,
+            handler: Optional[Callable[[Individual], None]] = None,
             num_processes: int = 1
     ):
         self.task_queue = multiprocessing.Queue()
@@ -91,7 +91,7 @@ class _EvaluationWorker:
         self.evaluation_function = evaluation_function
         self.stop_event = multiprocessing.Event()
         self.processes: list[multiprocessing.Process] = []
-        self.handler: Optional[Callable[[list[Individual]], None]] = handler
+        self.handler: Optional[Callable[[Individual], None]] = handler
         self.num_processes = num_processes
 
     def is_alive(self) -> bool:
@@ -256,7 +256,7 @@ def connect_to_server(
         server_address: str,
         port: int,
         evaluation_function: EvaluationFunction,
-        handler: Optional[Callable[[list[Individual]], None]] = None,
+        handler: Optional[Callable[[Individual], None]] = None,
         num_processes: int = 1
 ) -> None:
     stop_event = multiprocessing.Event()
