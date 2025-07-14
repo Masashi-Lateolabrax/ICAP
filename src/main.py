@@ -56,6 +56,47 @@ class Loss(utils.Loss):
         return self.r_loss + self.n_loss
 
 
+class Simulator(utils.Simulator):
+    def create_sensors(self) -> list[list[SensorInterface]]:
+        sensors = []
+        for i, robot in enumerate(self.robot_values):
+            sensor_tuple = [
+                PreprocessedOmniSensor(
+                    robot,
+                    self.settings.Robot.ROBOT_SENSOR_GAIN,
+                    self.settings.Robot.RADIUS * 2,
+                    [other.site for j, other in enumerate(self.robot_values) if j != i]
+                ),
+                PreprocessedOmniSensor(
+                    robot,
+                    self.settings.Robot.FOOD_SENSOR_GAIN,
+                    self.settings.Robot.RADIUS + self.settings.Food.RADIUS,
+                    [food.site for food in self.food_values]
+                ),
+                DirectionSensor(
+                    robot, self.nest_site, self.settings.Nest.RADIUS
+                )
+            ]
+            sensors.append(sensor_tuple)
+        return sensors
+
+    def create_input_for_controller(self):
+        for i, sensors in enumerate(self.sensors):
+            self.input_ndarray[i, 0:2] = sensors[0].get()
+            self.input_ndarray[i, 2:4] = sensors[1].get()
+            self.input_ndarray[i, 4:6] = sensors[2].get()
+        return self.input_tensor
+
+    def evaluation(self) -> Loss:
+        robot_positions = [r.xpos for r in self.robot_values]
+        food_positions = [f.xpos for f in self.food_values]
+        nest_position = self.nest_site.xpos
+        return Loss(
+            self.settings,
+            robot_positions=robot_positions,
+            food_positions=food_positions,
+            nest_position=nest_position
+        )
 
 
 class Handler:
