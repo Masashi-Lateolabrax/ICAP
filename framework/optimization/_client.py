@@ -179,7 +179,6 @@ class _CommunicationWorker:
                     self.task.pop(idx)
                     i.copy_from(j)
                     break
-        self.task = None
 
     def _heartbeat(self) -> CommunicationResult:
         if not self.is_alive():
