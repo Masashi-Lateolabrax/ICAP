@@ -9,7 +9,7 @@ from icecream import ic
 from framework.prelude import Individual
 from framework.optimization import connect_to_server
 
-from src.simulator import Simulator
+from src.utils.simulator import Simulator
 from src.utils.evaluation_function import EvaluationFunction
 from settings import MySettings
 
