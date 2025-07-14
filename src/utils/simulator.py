@@ -95,12 +95,14 @@ class Simulator(MujocoSTL, abc.ABC):
         self.dummy_foods.append(dummy_food)
 
         invalid_area = [
-            (self.nest_site.xpos[0:2], self.settings.Nest.RADIUS)
+            (Position(self.nest_site.xpos[0], self.nest_site.xpos[1]), self.settings.Nest.RADIUS)
         ]
 
         for food in self.food_values:
             if food is not food_values:
-                invalid_area.append((food.xpos, self.settings.Food.RADIUS))
+                invalid_area.append(
+                    (food.position, self.settings.Food.RADIUS)
+                )
 
         new_position = rand_food_pos(self.settings, invalid_area)
 
