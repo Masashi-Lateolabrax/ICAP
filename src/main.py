@@ -5,10 +5,13 @@ import time
 from datetime import datetime
 
 from icecream import ic
+
+from framework.prelude import Individual
 from framework.optimization import connect_to_server
 
-from evaluation_function import evaluation_function
-from framework.prelude import Individual
+from src.simulator import Simulator
+from src.utils.evaluation_function import EvaluationFunction
+from settings import MySettings
 
 ic.configureOutput(
     prefix=lambda: f'[{datetime.now().strftime("%H:%M:%S.%f")[:-3]}][PID:{os.getpid()}][TID:{threading.get_ident()}] CLIENT| ',
@@ -43,7 +46,6 @@ def main():
     parser.add_argument("--port", type=int, help="Server port number")
     args = parser.parse_args()
 
-    from settings import MySettings
     settings = MySettings()
 
     host = args.host if args.host is not None else settings.Server.HOST
@@ -63,7 +65,9 @@ def main():
     connect_to_server(
         host,
         port,
-        evaluation_function=evaluation_function,
+        evaluation_function=EvaluationFunction(
+            settings, lambda ind: Simulator(settings, ind)
+        ).run,
         handler=handler.run,
     )
 
