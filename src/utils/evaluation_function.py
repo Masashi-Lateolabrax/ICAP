@@ -13,4 +13,4 @@ class EvaluationFunction:
         backend = self.simulator_builder(individual)
         for _ in range(math.ceil(self.settings.Simulation.TIME_LENGTH / self.settings.Simulation.TIME_STEP)):
             backend.step()
-        return backend.total_score()
+        return backend.calc_total_score()

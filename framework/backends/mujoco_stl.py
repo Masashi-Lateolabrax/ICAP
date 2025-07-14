@@ -99,8 +99,8 @@ class MujocoSTL(MujocoBackend):
     def step(self):
         mujoco.mj_step(self.model, self.data)
 
-    def score(self) -> list[float]:
+    def get_scores(self) -> list[float]:
         return [0.0]
 
-    def total_score(self) -> float:
+    def calc_total_score(self) -> float:
         return 0.0
