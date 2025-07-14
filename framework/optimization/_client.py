@@ -14,7 +14,6 @@ from ..types.communication import Packet, PacketType
 from ._connection_utils import send_packet, communicate
 
 HEARTBEAT_INTERVAL = 20
-REQUEST_LIMIT = 1
 
 
 @dataclasses.dataclass
@@ -160,24 +159,30 @@ class _CommunicationWorker:
         self.last_heartbeat = time.time()
         self.last_request = 0.0
         self.task: Optional[list[Individual]] = None
-        self.evaluated_task: Optional[list[Individual]] = None
+        self.calculating_task: list[Individual] = []
 
     def is_alive(self) -> bool:
         return self.sock is not None
 
     def is_assigned(self) -> bool:
-        return bool(self.task) or bool(self.evaluated_task)
+        return bool(self.task)
+
+    def calculation_finished(self) -> bool:
+        return len(self.calculating_task) == 0
 
     def set_evaluated_task(self, individuals: list[Individual]) -> None:
-        if not self.task:
-            logging.error("No task assigned, cannot set evaluated individuals")
+        if not self.is_assigned():
+            logging.error("Not assigned to any task, cannot set evaluated individuals")
             return
-        self.evaluated_task = [i for i in self.task]
-        for j in individuals:
-            for idx, i in enumerate(self.task):
-                if np.array_equal(i.view(), j.view()):
-                    self.task.pop(idx)
-                    i.copy_from(j)
+        if self.calculation_finished():
+            logging.error("All tasks are already finished, cannot set evaluated individuals")
+            return
+
+        for ind in individuals:
+            for idx, t in enumerate(self.calculating_task):
+                if np.array_equal(t.view(), ind.view()):
+                    self.calculating_task.pop(idx)
+                    t.copy_from(ind)
                     break
 
     def _heartbeat(self) -> CommunicationResult:
@@ -208,13 +213,6 @@ class _CommunicationWorker:
             logging.error("Already assigned, cannot send request")
             return CommunicationResult.SUCCESS
 
-        if self.task:
-            logging.error("Task already exists, cannot send request")
-            return CommunicationResult.SUCCESS
-
-        if time.time() - self.last_request < REQUEST_LIMIT:
-            return CommunicationResult.SUCCESS
-
         packet = Packet(_packet_type=PacketType.REQUEST, data=None)
         result, packet = communicate(self.sock, packet)
 
@@ -224,7 +222,7 @@ class _CommunicationWorker:
 
         self.last_request = time.time()
         self.task = packet.data
-        self.evaluated_task = None
+        self.calculating_task = [ind for ind in self.task]
         ic(len(self.task) if self.task else None)
 
         return CommunicationResult.SUCCESS
@@ -238,18 +236,18 @@ class _CommunicationWorker:
             logging.error("No individuals to return, cannot send response")
             return CommunicationResult.SUCCESS
 
-        if self.task:
-            logging.error("Task is not empty, cannot send response")
+        if not self.calculation_finished():
+            logging.error("Some tasks are still being calculated, cannot send response")
             return CommunicationResult.SUCCESS
 
-        packet = Packet(_packet_type=PacketType.RESPONSE, data=self.evaluated_task)
+        packet = Packet(_packet_type=PacketType.RESPONSE, data=self.task)
         result, packet = communicate(self.sock, packet)
 
         if result != CommunicationResult.SUCCESS:
             logging.error("Failed to send response packet with individuals")
             return result
 
-        self.evaluated_task = None
+        self.task = None
 
         return CommunicationResult.SUCCESS
 
@@ -260,12 +258,15 @@ class _CommunicationWorker:
         result = ic(self._heartbeat())
         task = None
 
+        if result != CommunicationResult.SUCCESS:
+            return result, task
+
+        if self.calculation_finished():
+            result = ic(self._mut_return())
+
         if not self.is_assigned():
             result = ic(self._mut_request())
             task = self.task
-
-        if not bool(self.task) and bool(self.evaluated_task):
-            result = ic(self._mut_return())
 
         return result, task
 
