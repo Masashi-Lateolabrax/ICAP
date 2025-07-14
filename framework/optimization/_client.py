@@ -261,12 +261,11 @@ class _CommunicationWorker:
         if result != CommunicationResult.SUCCESS:
             return result, task
 
-        if self.calculation_finished():
-            result = ic(self._mut_return())
-
         if not self.is_assigned():
             result = ic(self._mut_request())
             task = self.task
+        elif self.calculation_finished():
+            result = ic(self._mut_return())
 
         return result, task
 
