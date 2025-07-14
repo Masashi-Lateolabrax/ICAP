@@ -16,8 +16,7 @@ from icecream import ic
 from framework.prelude import *
 from framework.optimization import OptimizationServer, CMAES
 
-from controller import RobotNeuralNetwork
-from settings import MySettings
+from client import MySettings, RobotNeuralNetwork
 
 # Configure icecream for distributed system debugging
 ic.configureOutput(

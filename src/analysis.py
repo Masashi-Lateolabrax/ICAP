@@ -8,19 +8,19 @@ import cv2
 
 from framework.prelude import *
 
-from simulator import Simulator
+from src.utils.simulator import Simulator
 from settings import MySettings
 
 
 def get_latest_folder(base_directory: str) -> str:
-    folders = [f for f in os.listdir(base_directory) 
-              if os.path.isdir(os.path.join(base_directory, f))]
-    
+    folders = [f for f in os.listdir(base_directory)
+               if os.path.isdir(os.path.join(base_directory, f))]
+
     if not folders:
         raise ValueError(f"No folders found in {base_directory}")
-    
+
     folders.sort(reverse=True)
-    
+
     return os.path.join(base_directory, folders[0])
 
 
