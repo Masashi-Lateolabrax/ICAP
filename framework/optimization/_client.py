@@ -55,15 +55,15 @@ def _evaluation_worker_process(
         stop_event: multiprocessing.Event,
 ) -> None:
     """Worker process for evaluation tasks"""
-    
+
     # Set up signal handlers in child process
     def signal_handler(signum, frame):
         logging.info(f"Worker process received signal {signum}, stopping...")
         stop_event.set()
-    
+
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
-    
+
     while not stop_event.is_set():
         try:
             individual = task_queue.get(timeout=1)
@@ -276,11 +276,6 @@ def connect_to_server(
     def signal_handler(signum, frame):
         logging.warning(f"Received signal {signum}, stopping client...")
         stop_event.set()
-        if sock:
-            try:
-                sock.close()
-            except Exception as e:
-                logging.error(f"Error closing socket during signal handling: {e}")
 
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
