@@ -142,7 +142,6 @@ class Handler:
 
         print(
             f"[{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(current_time))}] "
-            f"pid:{os.getpid()} "
             f"num: {len(individuals)} "
             f"fitness:{ave_fitness} "
             f"throughput:{throughput:.2f} ind/s"
