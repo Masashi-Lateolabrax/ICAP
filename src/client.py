@@ -13,7 +13,7 @@ from framework.interfaces import SensorInterface
 from framework.sensor import PreprocessedOmniSensor, DirectionSensor
 from framework.optimization import connect_to_server
 
-from src import utils
+import utils
 from settings import MySettings
 
 ic.configureOutput(
