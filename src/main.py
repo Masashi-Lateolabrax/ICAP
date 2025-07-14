@@ -5,12 +5,14 @@ import time
 from datetime import datetime
 
 from icecream import ic
+import numpy as np
 
-from framework.prelude import Individual
+from framework.prelude import Settings, Individual
+from framework.interfaces import SensorInterface
+from framework.sensor import PreprocessedOmniSensor, DirectionSensor
 from framework.optimization import connect_to_server
 
-from src.utils.simulator import Simulator
-from src.utils.evaluation_function import EvaluationFunction
+from src import utils
 from settings import MySettings
 
 ic.configureOutput(
