@@ -9,18 +9,39 @@ def calc_loss_sigma(point, value):
     return -(point ** 2) / np.log(value)
 
 
-class Robot:
-    NUM = 1
-    INITIAL_POSITION: list[RobotLocation] = []
+class Server:
+    HOST: str = 'localhost'
+    PORT: int = 5000
+    SOCKET_BACKLOG: int = 10
 
+
+class Render:
+    RENDER_WIDTH = 500
+    RENDER_HEIGHT = 500
+
+    LIGHT_AMBIENT = 1.0
+    LIGHT_DIFFUSE = 1.0
+    LIGHT_SPECULAR = 1.0
+
+    CAMERA_POS = (0.0, -1e-3, 13.0)
+    CAMERA_LOOKAT = (0.0, 0.0, 0.0)
+
+
+class Optimization:
+    DIMENSION: int = None
+    POPULATION: int = 1000
+    GENERATION: int = 100
+    SIGMA: float = 0.5
+
+
+class Robot:
     HEIGHT = 0.1
     RADIUS = 0.175
     DISTANCE_BETWEEN_WHEELS = 0.175 * 2 * 0.8
-
     MAX_SPEED = 0.8
+    MASS = 10
 
     COLOR = (1, 1, 0, 1)
-    MASS = 10
 
     ACTUATOR_MOVE_KV = 100
     ACTUATOR_ROT_KV = 10
@@ -28,14 +49,19 @@ class Robot:
     ROBOT_SENSOR_GAIN = 1.0
     FOOD_SENSOR_GAIN = 1.0
 
+    NUM = 1
+    INITIAL_POSITION: list[RobotLocation] = []
+
 
 class Food:
+    RADIUS = 0.5
+    HEIGHT = 0.07
+
+    DENSITY = 80
+    COLOR = (0, 1, 1, 1)
+
     NUM: int = 1
     INITIAL_POSITION: list[Position] = [Position(0.0, 0.0)]
-    RADIUS = 0.5
-    DENSITY = 80
-    HEIGHT = 0.07
-    COLOR = (0, 1, 1, 1)
 
 
 class Nest:
@@ -43,20 +69,6 @@ class Nest:
     RADIUS = 1.0
     HEIGHT = 0.01
     COLOR = (0, 1, 0, 1)
-
-
-class Server:
-    HOST: str = 'localhost'
-    PORT: int = 5000
-    SOCKET_BACKLOG: int = 10
-    TIMEOUT: float = 5.0  # seconds
-
-
-class Optimization:
-    DIMENSION: int = 10
-    POPULATION: int = 1000
-    GENERATION: int = 100
-    SIGMA: float = 0.5
 
 
 class Loss:
@@ -77,18 +89,9 @@ class Simulation:
 
     WORLD_WIDTH: float = 10.0
     WORLD_HEIGHT: float = 10.0
+
     WALL_THICKNESS: float = 1
     WALL_HEIGHT: float = 1
-
-
-class Render:
-    RENDER_WIDTH = 500
-    RENDER_HEIGHT = 500
-    LIGHT_AMBIENT = 1.0
-    LIGHT_DIFFUSE = 1.0
-    LIGHT_SPECULAR = 1.0
-    CAMERA_POS = (0.0, -1e-3, 13.0)
-    CAMERA_LOOKAT = (0.0, 0.0, 0.0)
 
 
 class Storage:
