@@ -1,74 +1,58 @@
+import abc
+
 import numpy as np
 import torch
 import mujoco
 
 from framework.prelude import *
 from framework.backends import MujocoSTL
-from framework.sensor import PreprocessedOmniSensor, DirectionSensor
-
-from loss import Loss
-from controller import RobotNeuralNetwork
 
 
-class Simulator(MujocoSTL):
-    def __init__(self, settings: Settings, parameters: Individual, render: bool = False):
+class Loss(metaclass=abc.ABCMeta):
+    @abc.abstractmethod
+    def __init__(self, settings: Settings, robot_positions, food_positions, nest_position):
+        raise NotImplementedError("Subclasses should implement this method.")
+
+    @abc.abstractmethod
+    def as_float(self) -> float:
+        raise NotImplementedError("Subclasses should implement this method.")
+
+
+class Simulator(MujocoSTL, abc.ABC):
+    def __init__(self, settings: Settings, parameters: Individual, controller: torch.nn.Module, render: bool = False):
         super().__init__(settings, render)
 
         self.parameters = parameters
         self.scores: list[Loss] = []
-        self.sensors: list[tuple[SensorInterface]] = self._create_sensors()
+        self.sensors: list[list[SensorInterface]] = self.create_sensors()
 
-        self.controller = RobotNeuralNetwork(parameters)
+        self.controller = controller
         self.input_ndarray = np.zeros((settings.Robot.NUM, 2 * 3), dtype=np.float32)
         self.input_tensor = torch.from_numpy(self.input_ndarray)
 
+        torch.nn.utils.vector_to_parameters(
+            torch.tensor(parameters, dtype=torch.float32),
+            self.controller.parameters()
+        )
+
         mujoco.mj_step(self.model, self.data)
 
-    def _create_sensors(self) -> list[tuple[SensorInterface]]:
-        sensors = []
-        for i, robot in enumerate(self.robot_values):
-            sensor_tuple = (
-                PreprocessedOmniSensor(
-                    robot,
-                    self.settings.Robot.ROBOT_SENSOR_GAIN,
-                    self.settings.Robot.RADIUS * 2,
-                    [other.site for j, other in enumerate(self.robot_values) if j != i]
-                ),
-                PreprocessedOmniSensor(
-                    robot,
-                    self.settings.Robot.FOOD_SENSOR_GAIN,
-                    self.settings.Robot.RADIUS + self.settings.Food.RADIUS,
-                    [food.site for food in self.food_values]
-                ),
-                DirectionSensor(
-                    robot, self.nest_site, self.settings.Nest.RADIUS
-                )
-            )
-            sensors.append(sensor_tuple)
-        return sensors
+    @abc.abstractmethod
+    def create_sensors(self) -> list[list[SensorInterface]]:
+        raise NotImplementedError("Subclasses should implement this method.")
 
-    def _create_input_for_controller(self):
-        for i, sensors in enumerate(self.sensors):
-            self.input_ndarray[i, 0:2] = sensors[0].get()
-            self.input_ndarray[i, 2:4] = sensors[1].get()
-            self.input_ndarray[i, 4:6] = sensors[2].get()
-        return self.input_tensor
+    @abc.abstractmethod
+    def create_input_for_controller(self):
+        raise NotImplementedError("Subclasses should implement this method.")
 
+    @abc.abstractmethod
     def evaluation(self) -> Loss:
-        robot_positions = [r.xpos for r in self.robot_values]
-        food_positions = [f.xpos for f in self.food_values]
-        nest_position = self.nest_site.xpos
-        return Loss(
-            self.settings,
-            robot_positions=robot_positions,
-            food_positions=food_positions,
-            nest_position=nest_position
-        )
+        raise NotImplementedError("Subclasses should implement this method.")
 
     def step(self):
         with torch.no_grad():
-            input_ = self._create_input_for_controller()
-            output = self.controller.forward(input_)
+            input_ = self.create_input_for_controller()
+            output = self.controller(input_)
             output_ndarray = output.numpy()
 
         for i, robot in enumerate(self.robot_values):
@@ -82,9 +66,9 @@ class Simulator(MujocoSTL):
         loss = self.evaluation()
         self.scores.append(loss)
 
-    def scores(self) -> list[float]:
+    def get_scores(self) -> list[float]:
         return [s.as_float() for s in self.scores]
 
-    def total_score(self) -> float:
+    def calc_total_score(self) -> float:
         regularization_loss = self.settings.Loss.REGULARIZATION_COEFFICIENT * self.parameters.norm
         return sum(s.as_float() for s in self.scores) + regularization_loss
