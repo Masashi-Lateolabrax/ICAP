@@ -92,7 +92,6 @@ class MujocoBackend(SimulatorBackend, abc.ABC):
         ]
         self.food_values = [FoodValues(self.data, s) for s in food_specs]
 
-        # Initialize renderer if needed
         self.camera = mujoco.MjvCamera()
 
     def reset(self):

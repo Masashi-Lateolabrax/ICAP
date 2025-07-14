@@ -25,7 +25,7 @@ class DirectionSensor(SensorInterface):
         distance = np.linalg.norm(sub)
 
         if distance <= 1e-6:
-            return 0.0
+            return np.array([0.0, 0.0], dtype=np.float32)
 
         normalized_sub = sub / distance
 
