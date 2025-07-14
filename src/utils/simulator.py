@@ -27,7 +27,7 @@ class Simulator(MujocoSTL, abc.ABC):
         self.scores: list[Loss] = []
         self.sensors: list[list[SensorInterface]] = self.create_sensors()
 
-        self.dummy_foods = []
+        self.dummy_foods: list[DummyFoodValues] = []
 
         self.controller = controller
         self.input_ndarray = np.zeros((settings.Robot.NUM, 2 * 3), dtype=np.float32)
