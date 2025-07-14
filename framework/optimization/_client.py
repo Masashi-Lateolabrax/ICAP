@@ -208,6 +208,10 @@ class _CommunicationWorker:
             logging.error("Already assigned, cannot send request")
             return CommunicationResult.SUCCESS
 
+        if self.task:
+            logging.error("Task already exists, cannot send request")
+            return CommunicationResult.SUCCESS
+
         if time.time() - self.last_request < REQUEST_LIMIT:
             return CommunicationResult.SUCCESS
 
@@ -232,6 +236,10 @@ class _CommunicationWorker:
 
         if not self.is_assigned():
             logging.error("No individuals to return, cannot send response")
+            return CommunicationResult.SUCCESS
+
+        if self.task:
+            logging.error("Task is not empty, cannot send response")
             return CommunicationResult.SUCCESS
 
         packet = Packet(_packet_type=PacketType.RESPONSE, data=self.evaluated_task)
