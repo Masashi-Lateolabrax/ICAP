@@ -111,19 +111,28 @@ class _EvaluationWorker:
                     self.stop_event,
                 )
             )
-            process.daemon = True
+            process.daemon = False
             process.start()
             self.processes.append(process)
 
     def stop(self):
         if self.is_alive():
+            logging.info("Stopping evaluation worker processes...")
             self.stop_event.set()
+
             for process in self.processes:
-                process.join(timeout=5.0)
+                process.join(timeout=3.0)
                 if process.is_alive():
+                    logging.warning(f"Process {process.pid} did not stop gracefully, terminating...")
                     process.terminate()
                     process.join(timeout=2.0)
+                    if process.is_alive():
+                        logging.error(f"Process {process.pid} still alive after termination, killing...")
+                        process.kill()
+                        process.join()
+
             self.processes.clear()
+            logging.info("All evaluation worker processes stopped")
         else:
             logging.warning("Evaluation worker is not running, cannot stop it")
 
