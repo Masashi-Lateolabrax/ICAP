@@ -1,3 +1,5 @@
+import logging
+
 import numpy as np
 
 from ..types import RobotLocation, Position
@@ -111,3 +113,84 @@ class Settings:
     Food = Food
     Nest = Nest
     Storage = Storage
+
+    def as_dict(self):
+        def as_dict(obj):
+            ALLOWED_TYPES = (str, int, float, bool, Position, RobotLocation)
+            attributes = {}
+
+            for attr_name in dir(obj):
+                if attr_name.startswith('_') or attr_name == 'as_dict':
+                    continue
+
+                attr_value = getattr(obj, attr_name)
+
+                if isinstance(attr_value, type):
+                    res = as_dict(attr_value)
+                    if res is not None:
+                        attributes[attr_name] = res
+
+                elif isinstance(attr_value, ALLOWED_TYPES):
+                    attributes[attr_name] = attr_value
+
+                elif isinstance(attr_value, tuple):
+                    tuple_ = []
+                    for v in attr_value:
+                        if not isinstance(v, ALLOWED_TYPES):
+                            logging.warning("Skipping non-serializable value in tuple: %s", v)
+                            continue
+                        tuple_.append(v)
+                    attributes[attr_name] = tuple(tuple_)
+
+                elif isinstance(attr_value, list):
+                    list_ = []
+                    for v in attr_value:
+                        if not isinstance(v, ALLOWED_TYPES):
+                            logging.warning("Skipping non-serializable value in list: %s", v)
+                            continue
+                        list_.append(v)
+                    attributes[attr_name] = list_
+
+                elif isinstance(attr_value, dict):
+                    dict_ = {}
+                    for k, v in attr_value.items():
+                        if not isinstance(k, (str, int)) or not isinstance(v, ALLOWED_TYPES):
+                            logging.warning("Skipping non-serializable key-value pair in dict: %s: %s", k, v)
+                            continue
+                        dict_[k] = v
+                    attributes[attr_name] = dict_
+
+            return attributes
+
+        return as_dict(self)
+
+    def compare_settings(self, other: 'Settings'):
+        base_attrs = self.as_dict()
+        app_attrs = other.as_dict()
+
+        # Find all unique keys
+        all_keys = set(base_attrs.keys()) | set(app_attrs.keys())
+
+        differences = []
+        identical = []
+
+        for key in sorted(all_keys):
+            base_value = base_attrs.get(key, "<NOT SET>")
+            app_value = app_attrs.get(key, "<NOT SET>")
+
+            if base_value != app_value:
+                differences.append((key, base_value, app_value))
+            else:
+                identical.append((key, base_value))
+
+        # Print differences
+        if differences:
+            print(f"\n🔍 DIFFERENCES FOUND ({len(differences)} settings):")
+            print("-" * 60)
+            for key, base_val, app_val in differences:
+                print(f"Setting: {key}")
+                print(f"  self: {base_val}")
+                print(f"  other: {app_val}")
+                print()
+
+        return {"difference": differences, "identical": identical}
