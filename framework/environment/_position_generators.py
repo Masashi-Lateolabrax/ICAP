@@ -6,16 +6,16 @@ from ..prelude import *
 def check_collision(
         pos: np.ndarray,
         size: float,
-        invalid_area: list[np.ndarray],
+        invalid_area: list[tuple[Position, float]],
 ) -> bool:
-    return np.any([np.linalg.norm(area[:2] - pos) <= area[2] + size for area in invalid_area])
+    return np.any([np.linalg.norm(np.array([area[0].x, area[0].y]) - pos) <= area[1] + size for area in invalid_area])
 
 
 def random_point_avoiding_invalid_areas(
         left_upper_point: tuple[float, float],
         right_lower_point: tuple[float, float],
         size: float,
-        invalid_area: list[np.ndarray],
+        invalid_area: list[tuple[Position, float]],
         retry: int = -1,
         padding: float = 0
 ) -> np.ndarray | None:
@@ -35,10 +35,9 @@ def random_point_avoiding_invalid_areas(
         The (x, y) coordinates of the lower-right corner at the rectangular area.
     size : float
         The size of the object to be placed within the rectangular area.
-    invalid_area : list of np.ndarray
-        A list of NumPy arrays representing invalid regions. Each array should contain at least three elements:
-        the first two elements are the (x, y) coordinates of the center in the invalid area, and the third
-        element is the radius of the invalid area.
+    invalid_area : list[tuple[Position, float]]
+        A list of tuples representing invalid regions. Each tuple contains a Position object (with x, y coordinates)
+        as the first element and a float radius as the second element.
     retry : int, optional
         The number of attempts to generate a valid point. If set to -1, the function will retry indefinitely
         until a valid point is found. The default value is -1.
@@ -78,11 +77,11 @@ def rand_robot_pos(settings: Settings, invalid_area: list[tuple[Position, float]
     Args:
         settings (Settings): 設定
 
-        invalid_area (list[np.ndarray]): 無効エリアのリスト. ndarrayは3要素のリストであり、
-            そのうちの2要素は座標であり、残りの1要素はサイズです。
+        invalid_area (list[tuple[Position, float]]): 無効エリアのリスト. 各タプルはPosition（x, y座標）と
+            半径（float）を含みます。
 
     Returns:
-        tuple[float, float, float]: ロボットの位置と角度
+        RobotLocation: ロボットの位置と角度
     """
     pos = random_point_avoiding_invalid_areas(
         (settings.Simulation.WORLD_WIDTH * -0.5, settings.Simulation.WORLD_HEIGHT * 0.5),
@@ -102,11 +101,11 @@ def rand_food_pos(settings: Settings, invalid_area: list[tuple[Position, float]]
     Args:
         settings (Settings): 設定
 
-        invalid_area (list[np.ndarray]): 無効エリアのリスト. ndarrayは3要素のリストであり、
-            そのうちの2要素は座標であり、残りの1要素はサイズです。
+        invalid_area (list[tuple[Position, float]]): 無効エリアのリスト. 各タプルはPosition（x, y座標）と
+            半径（float）を含みます。
 
     Returns:
-        tuple[float, float]: フードの位置
+        Position: フードの位置
     """
     pos = random_point_avoiding_invalid_areas(
         (settings.Simulation.WORLD_WIDTH * -0.5, settings.Simulation.WORLD_HEIGHT * 0.5),
