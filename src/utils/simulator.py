@@ -5,6 +5,7 @@ import torch
 import mujoco
 
 from framework.prelude import *
+from framework.environment import rand_food_pos
 from framework.backends import MujocoSTL
 
 
@@ -26,6 +27,8 @@ class Simulator(MujocoSTL, abc.ABC):
         self.scores: list[Loss] = []
         self.sensors: list[list[SensorInterface]] = self.create_sensors()
 
+        self.dummy_foods = []
+
         self.controller = controller
         self.input_ndarray = np.zeros((settings.Robot.NUM, 2 * 3), dtype=np.float32)
         self.input_tensor = torch.from_numpy(self.input_ndarray)
@@ -36,6 +39,10 @@ class Simulator(MujocoSTL, abc.ABC):
         )
 
         mujoco.mj_step(self.model, self.data)
+
+    def reset(self):
+        mujoco.mj_resetData(self.model, self.data)
+        self.dummy_foods.clear()
 
     @abc.abstractmethod
     def create_sensors(self) -> list[list[SensorInterface]]:
@@ -61,6 +68,8 @@ class Simulator(MujocoSTL, abc.ABC):
                 left_wheel=output_ndarray[i, 1]
             )
 
+        self.check_and_respawn_food()
+
         mujoco.mj_step(self.model, self.data)
 
         loss = self.evaluation()
@@ -72,3 +81,37 @@ class Simulator(MujocoSTL, abc.ABC):
     def calc_total_score(self) -> float:
         regularization_loss = self.settings.Loss.REGULARIZATION_COEFFICIENT * self.parameters.norm
         return sum(s.as_float() for s in self.scores) + regularization_loss
+
+    def _is_food_in_nest(self, food_values: FoodValues) -> bool:
+        food_pos = food_values.xpos
+        nest_pos = self.nest_site.xpos[0:2]
+        nest_radius = self.settings.Nest.RADIUS
+
+        distance = np.linalg.norm(food_pos - nest_pos)
+        return distance <= nest_radius
+
+    def _respawn_food(self, food_values: FoodValues):
+        dummy_food = DummyFoodValues(food_values)
+        self.dummy_foods.append(dummy_food)
+
+        invalid_area = [
+            (self.nest_site.xpos[0:2], self.settings.Nest.RADIUS)
+        ]
+
+        for food in self.food_values:
+            if food is not food_values:
+                invalid_area.append((food.xpos, self.settings.Food.RADIUS))
+
+        new_position = rand_food_pos(self.settings, invalid_area)
+
+        food_joint = food_values.joint
+
+        food_joint.qpos[0] = new_position.x
+        food_joint.qpos[1] = new_position.y
+        food_joint.qpos[2] = 1
+        food_joint.qvel[:] = 0.0
+
+    def check_and_respawn_food(self):
+        for food in self.food_values:
+            if self._is_food_in_nest(food):
+                self._respawn_food(food)

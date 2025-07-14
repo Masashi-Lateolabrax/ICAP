@@ -92,7 +92,6 @@ class MujocoBackend(SimulatorBackend, abc.ABC):
         ]
         self.food_values = [FoodValues(self.data, s) for s in food_specs]
 
-        # Initialize renderer if needed
         self.camera = mujoco.MjvCamera()
 
     def reset(self):
@@ -124,11 +123,3 @@ class MujocoBackend(SimulatorBackend, abc.ABC):
         except Exception as e:
             ic("MuJoCo render error:", e)
             img_buf.fill(0)
-
-    def _is_food_in_nest(self, food_values: FoodValues) -> bool:
-        food_pos = food_values.xpos
-        nest_pos = self.nest_site.xpos[0:2]
-        nest_radius = self.settings.Nest.RADIUS
-
-        distance = np.linalg.norm(food_pos - nest_pos)
-        return distance <= nest_radius
