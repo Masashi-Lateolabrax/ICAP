@@ -8,8 +8,7 @@ import cv2
 
 from framework.prelude import *
 
-from src.utils.simulator import Simulator
-from settings import MySettings
+from client import MySettings, Simulator
 
 
 def get_latest_folder(base_directory: str) -> str:
@@ -73,7 +72,7 @@ def record(settings: Settings, parameters: Individual, file_path: str):
         img = cv2.cvtColor(buffer, cv2.COLOR_RGB2BGR)
         writer.write(img)
 
-        if time.time() - timer > 1:
+        if time.time() - timer > 1.0:
             print(f"Recording frame {t + 1}/{length}")
             timer = time.time()
 

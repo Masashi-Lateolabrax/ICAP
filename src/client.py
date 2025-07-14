@@ -13,7 +13,7 @@ from framework.interfaces import SensorInterface
 from framework.sensor import PreprocessedOmniSensor, DirectionSensor
 from framework.optimization import connect_to_server
 
-from src import utils
+import utils
 from settings import MySettings
 
 ic.configureOutput(
@@ -119,7 +119,7 @@ class Simulator(utils.Simulator):
 
     def evaluation(self) -> Loss:
         robot_positions = [r.xpos for r in self.robot_values]
-        food_positions = [f.xpos for f in self.food_values]
+        food_positions = [f.xpos for f in self.food_values] + [f.xpos for f in self.dummy_foods]
         nest_position = self.nest_site.xpos
         return Loss(
             self.settings,
@@ -142,7 +142,6 @@ class Handler:
 
         print(
             f"[{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(current_time))}] "
-            f"pid:{os.getpid()} "
             f"num: {len(individuals)} "
             f"fitness:{ave_fitness} "
             f"throughput:{throughput:.2f} ind/s"

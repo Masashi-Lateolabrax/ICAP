@@ -222,7 +222,7 @@ class _CommunicationWorker:
 
         self.last_request = time.time()
         self.task = packet.data
-        self.calculating_task = [ind for ind in self.task]
+        self.calculating_task = [ind for ind in self.task] if self.task else []
         ic(len(self.task) if self.task else None)
 
         return CommunicationResult.SUCCESS

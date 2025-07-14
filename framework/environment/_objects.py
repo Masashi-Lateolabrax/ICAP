@@ -113,7 +113,7 @@ def add_food_object(spec: mujoco.MjSpec, settings: Settings, id_: int, position:
 
     return FoodSpec(
         center_site=center_site,
-        free_join=free_joint,
+        free_joint=free_joint,
         velocimeter=velocimeter
     )
 
@@ -159,7 +159,7 @@ def add_food_object_with_mesh(
 
     return FoodSpec(
         center_site=center_site,
-        free_join=free_joint,
+        free_joint=free_joint,
         velocimeter=velocimeter
     )
 
