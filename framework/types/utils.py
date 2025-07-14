@@ -36,6 +36,11 @@ class SavedIndividual:
 class Rec:
     generation: int
     individuals: list[Individual]
+    avg_fitness: float
+    worst_fitness: float
+    best_fitness: float
+    variance: float
+    median: float
 
     @staticmethod
     def load(path: str) -> 'Rec':
