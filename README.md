@@ -58,13 +58,13 @@ The server manages the CMA-ES optimization process and coordinates multiple clie
 cd /path/to/ICAP
 
 # For CUDA 12.8 support
-PYTHONPATH=. uv run src/server.py --extra cu128
+PYTHONPATH=. uv run --extra cu128 src/server.py
 
 # For CUDA 12.4 support  
-PYTHONPATH=. uv run src/server.py --extra cu124
+PYTHONPATH=. uv run --extra cu124 src/server.py
 
 # For CPU-only execution
-PYTHONPATH=. uv run src/server.py --extra cpu
+PYTHONPATH=. uv run --extra cpu src/server.py
 ```
 
 #### 2. Connect Optimization Clients
@@ -76,13 +76,13 @@ Clients perform the actual robot simulation evaluations using multiprocessing fo
 cd /path/to/ICAP
 
 # Single evaluation process (default)
-PYTHONPATH=. uv run src/client.py --extra cu128
+PYTHONPATH=. uv run --extra cu128 src/client.py
 
 # Multiple evaluation processes for parallel simulation
-PYTHONPATH=. uv run src/client.py --extra cu128 --num-processes 4
+PYTHONPATH=. uv run --extra cu128 src/client.py --num-processes 4
 
 # With custom server settings
-PYTHONPATH=. uv run src/client.py --extra cu128 --host 192.168.1.100 --port 5001 --num-processes 4
+PYTHONPATH=. uv run --extra cu128 src/client.py --host 192.168.1.100 --port 5001 --num-processes 4
 ```
 
 Replace `cu128` with `cu124` or `cpu` depending on your environment setup.
