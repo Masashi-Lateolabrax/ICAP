@@ -11,6 +11,7 @@ import datetime
 import subprocess
 from typing import Optional
 import math
+import re
 
 from icecream import ic
 from framework.prelude import *
@@ -42,7 +43,7 @@ class Handler:
         self._generation: Optional[int] = None
         self._last_call_time: Optional[datetime.datetime] = None
         self._current_time: datetime.datetime = datetime.datetime.now()
-        self._save_directory: str = self._make_result_directory()
+        self.save_directory: str = self._make_result_directory()
 
     def _make_result_directory(self) -> str:
         timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -78,20 +79,28 @@ class Handler:
 
     def _save(self, generation, individuals: list[Individual]):
         try:
-            filename = f"generation_{generation:04d}.pkl"
-            file_path = os.path.join(self._save_directory, filename)
+            filename = f"generation_{generation}.pkl"
+            file_path = os.path.join(self.save_directory, filename)
 
             num_to_save = max(1, self.settings.Storage.TOP_N) if self.settings.Storage.TOP_N > 0 else len(individuals)
             sorted_individuals = sorted(individuals, key=lambda x: x.get_fitness())
             individuals_to_save = sorted_individuals[:num_to_save]
 
-            saved_ind = SavedIndividual(
+            avg_fitness = sum(ind.get_fitness() for ind in individuals) / len(individuals)
+            worst_fitness = min(ind.get_fitness() for ind in individuals)
+            best_fitness = max(ind.get_fitness() for ind in individuals)
+            variance = sum((ind.get_fitness() - avg_fitness) ** 2 for ind in individuals) / len(individuals)
+            median = sorted(ind.get_fitness() for ind in individuals)[len(individuals) // 2]
+
+            Rec(
                 generation=generation,
-                avg_fitness=sum(ind.get_fitness() for ind in individuals) / len(individuals),
-                timestamp=datetime.datetime.now().isoformat(),
-                individuals=individuals_to_save
-            )
-            saved_ind.save(file_path)
+                individuals=individuals_to_save,
+                avg_fitness=avg_fitness,
+                worst_fitness=worst_fitness,
+                best_fitness=best_fitness,
+                variance=variance,
+                median=median
+            ).save(file_path)
 
             logging.info(f"Saved {len(individuals_to_save)} individuals to {file_path}")
 
@@ -162,6 +171,14 @@ def main():
         print("=" * 50)
     except Exception as e:
         print(f"\nServer error: {e}")
+
+    IndividualRecorder.load_from_recs_folder(handler.save_directory).save("optimization_log.pkl")
+
+    # Remove generation pkl files (generation_{number}.pkl)
+    generation_pattern = re.compile(r"^generation_\d+\.pkl$")
+    for filename in os.listdir(handler.save_directory):
+        if generation_pattern.match(filename):
+            os.remove(os.path.join(handler.save_directory, filename))
 
     # from analysis import record, latest_saved_individual_file, get_latest_folder
     #
