@@ -84,6 +84,9 @@ class RobotNeuralNetwork(torch.nn.Module):
 
 
 class Simulator(utils.Simulator):
+    def __init__(self, settings: Settings, individual: Individual, render: bool):
+        super().__init__(settings, individual, RobotNeuralNetwork(), render)
+
     def create_sensors(self) -> list[list[SensorInterface]]:
         sensors = []
         for i, robot in enumerate(self.robot_values):
@@ -170,8 +173,8 @@ def main():
     connect_to_server(
         host,
         port,
-        evaluation_function=EvaluationFunction(
-            settings, lambda ind: Simulator(settings, ind)
+        evaluation_function=utils.EvaluationFunction(
+            settings, lambda ind: Simulator(settings, ind, False)
         ).run,
         handler=handler.run,
     )
