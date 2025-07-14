@@ -73,14 +73,10 @@ def _evaluation_worker_process(
             individual.set_fitness(float('inf'))
             continue
 
-        response_queue.put(
-            ClientCalculationState(
-                individual=individual,
-            )
-        )
+        response_queue.put(individual)
 
         if handler:
-            handler(individual)
+            handler([individual])
 
 
 class _EvaluationWorker:
@@ -133,17 +129,18 @@ class _EvaluationWorker:
         if not self.is_alive():
             raise RuntimeError("Evaluation worker is not running")
         ic(len(individuals))
-        self.task_queue.put(individuals)
+        for individual in individuals:
+            self.task_queue.put(individual)
 
-    def get_response(self) -> list[ClientCalculationState]:
+    def get_response(self) -> list[Individual]:
         if not self.is_alive():
             raise RuntimeError("Evaluation worker is not running")
-        state = []
+        individuals = []
         while not self.response_queue.empty():
-            state.append(
+            individuals.append(
                 self.response_queue.get_nowait()
             )
-        return state
+        return individuals
 
 
 class _CommunicationWorker:
@@ -161,6 +158,9 @@ class _CommunicationWorker:
         return bool(self.task) or bool(self.evaluated_task)
 
     def set_evaluated_task(self, individuals: list[Individual]) -> None:
+        if not self.task:
+            logging.error("No task assigned, cannot set evaluated individuals")
+            return
         self.evaluated_task = [i for i in self.task]
         for j in individuals:
             for idx, i in enumerate(self.task):
@@ -280,10 +280,9 @@ def connect_to_server(
     communication_worker = _CommunicationWorker(sock)
 
     while not stop_event.is_set():
-        calc_states = ic(evaluation_worker.get_response())
-        for state in calc_states:
-            if state.individuals is not None:
-                communication_worker.set_evaluated_task(state.individuals)
+        evaluated_individuals = ic(evaluation_worker.get_response())
+        if evaluated_individuals:
+            communication_worker.set_evaluated_task(evaluated_individuals)
 
         try:
             result, new_task = communication_worker.run()
