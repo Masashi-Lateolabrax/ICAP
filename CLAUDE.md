@@ -146,6 +146,8 @@ If you encounter `PIL._imagingtk` errors with uv's standalone Python:
 - Ignoring system architecture
 - Repeating same errors after feedback
 - Not understanding distributed optimization requirements
+- **Type Consistency Errors**: Always verify function signatures match usage patterns - check both parameter types and return types before implementation
+- **Array Shape Assumptions**: Never assume array shapes without explicit validation - always check sensor outputs and data structure consistency
 
 ### Key Principles
 - Ask "why" three times before changing code
