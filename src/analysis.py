@@ -119,17 +119,29 @@ def main():
     saved_individuals = IndividualRecorder.load(
         os.path.join(save_dir, "optimization_log.pkl")
     )
+    debug_info_path = os.path.join(save_dir, "debug_info.pkl")
 
-    best_rec: Rec = saved_individuals.get_best_rec()
-    best_individual: Individual = best_rec.best_individual
-    debug_info = record(
-        settings,
-        best_individual,
-        os.path.join(save_dir, f"generation_{best_rec.generation}.mp4")
-    )
+    rec: Rec = saved_individuals.get_best_rec()
+    individual: Individual = rec.best_individual
 
-    with open(os.path.join(save_dir, f"debug_info_{best_rec.generation}.pkl"), 'wb') as f:
-        pickle.dump(debug_info, f)
+    # Record the behavior of the best individual.
+    # And save the debug info while doing so.
+    file_path = os.path.join(save_dir, f"generation_{rec.generation}.mp4")
+    if not os.path.exists(file_path) or not os.path.exists(debug_info_path):
+        debug_info: list[DebugInfo] = record(
+            settings,
+            individual,
+            file_path
+        )
+        with open(debug_info_path, 'wb') as f:
+            pickle.dump(debug_info, f)
+    else:
+        with open(debug_info_path, 'rb') as f:
+            debug_info: list[DebugInfo] = pickle.load(f)
+        if not isinstance(debug_info, list):
+            raise ValueError(f"Expected debug_info to be a list, got {type(debug_info)}")
+        if not all(isinstance(di, DebugInfo) for di in debug_info):
+            raise ValueError("All items in debug_info must be DebugInfo instances")
 
     input_animation(
         settings,
