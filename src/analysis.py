@@ -171,8 +171,7 @@ def input_animation(settings: Settings, debug_info: list[DebugInfo], file_path: 
             draw_arrowed_line(buffer, pos, robot_dir, 20, (200, 0, 0), thickness=2, tip_length=0.3)
 
             # Draw the nest direction by robot sight.
-            angle_degrees = inputs[5] * (np.pi * 0.5) - 0.5 * np.pi
-            nest_direction = rotate_vector_2d(robot_dir, angle_degrees)
+            nest_direction = rotate_vector_2d(robot_dir, inputs[5] * np.pi)
             draw_arrowed_line(buffer, pos, nest_direction, 20, (255, 100, 0), thickness=2, tip_length=0.3)
 
         for food_pos, food_dir in zip(di.food_positions, di.food_directions):
