@@ -85,16 +85,16 @@ def main():
     save_dir = os.path.abspath(
         get_latest_folder(settings.Storage.SAVE_DIRECTORY)
     )
-    saved_individual = SavedIndividual.load(
-        latest_saved_individual_file(save_dir)
+    saved_individuals = IndividualRecorder.load(
+        os.path.join(save_dir, "optimization_log.pkl")
     )
 
-    best_individual: Individual = min(saved_individual.individuals, key=lambda i: i.get_fitness())
-
+    best_rec: Rec = saved_individuals.get_best_rec()
+    best_individual: Individual = best_rec.best_individual
     record(
         settings,
         best_individual,
-        os.path.join(save_dir, "movie.mp4")
+        os.path.join(save_dir, f"generation_{best_rec.generation}.mp4")
     )
 
 
