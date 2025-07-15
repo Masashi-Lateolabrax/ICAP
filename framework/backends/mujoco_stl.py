@@ -74,7 +74,7 @@ class MujocoSTL(MujocoBackend):
                 (position, settings.Food.RADIUS)
             )
             food_specs.append(
-                add_food_object_with_mesh(spec, settings, food_mesh, 0, position)
+                add_food_object_with_mesh(spec, settings, food_mesh, i, position)
             )
 
         # Create robots
@@ -88,7 +88,7 @@ class MujocoSTL(MujocoBackend):
                 (position.position, settings.Robot.RADIUS)
             )
             robot_specs.append(
-                add_robot_with_mesh(spec, settings, robot_mesh, 0, position)
+                add_robot_with_mesh(spec, settings, robot_mesh, i, position)
             )
 
         return spec, nest_spec, robot_specs, food_specs
