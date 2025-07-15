@@ -34,7 +34,7 @@ class DirectionSensor(SensorInterface):
 
         result = np.dot(direction_matrix, normalized_sub)
 
-        angle = np.arctan2(result[0], result[1]) / np.pi
+        angle = np.arctan2(-result[0], result[1]) / np.pi
         magnitude = distance / self.target_radius if distance < self.target_radius else 1.0
 
         return np.array([magnitude, angle], dtype=np.float32)
