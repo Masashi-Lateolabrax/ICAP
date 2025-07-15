@@ -17,6 +17,8 @@ from client import MySettings, Simulator
 class DebugInfo:
     time: float
     robot_positions: list[np.ndarray]
+    robot_inputs: np.ndarray
+    robot_directions: list[np.ndarray]
     food_positions: list[np.ndarray]
     food_directions: list[np.ndarray]
 
@@ -35,6 +37,8 @@ class SimulatorForDebugging(Simulator):
         self.debug_data.append(DebugInfo(
             time=self.timer,
             robot_positions=[np.copy(r.xpos) for r in self.robot_values],
+            robot_inputs=self.input_ndarray.copy(),
+            robot_directions=[np.copy(r.xdirection) for r in self.robot_values],
             food_positions=[np.copy(f.xpos) for f in self.food_values],
             food_directions=[np.copy(f.direction) for f in self.food_values]
         ))
@@ -143,19 +147,27 @@ def input_animation(settings: Settings, debug_info: list[DebugInfo], file_path: 
     for i, di in enumerate(debug_info):
         buffer.fill(255)
 
-        for robot_pos in di.robot_positions:
+        for robot_pos, robot_dir, inputs in zip(di.robot_positions, di.robot_directions, di.robot_inputs):
             pos = world_to_pixel(robot_pos)
-            cv2.circle(buffer, pos, 5, (255, 0, 0), -1)
+            cv2.circle(buffer, pos, 5, (200, 0, 0), -1)
+
+            arrow_length = 20
+            arrow_end = (
+                pos[0] + int(arrow_length * robot_dir[0]),
+                pos[1] - int(arrow_length * robot_dir[1])
+            )
+            cv2.arrowedLine(buffer, pos, arrow_end, (255, 0, 0), 2, tipLength=0.3)
+
         for food_pos, food_dir in zip(di.food_positions, di.food_directions):
             pos = world_to_pixel(food_pos)
-            cv2.circle(buffer, pos, 5, (0, 255, 0), -1)
+            cv2.circle(buffer, pos, 5, (0, 200, 0), -1)
 
             arrow_length = 20
             arrow_end = (
                 pos[0] + int(arrow_length * food_dir[0]),
                 pos[1] - int(arrow_length * food_dir[1])
             )
-            cv2.arrowedLine(buffer, pos, arrow_end, (0, 0, 255), 2, tipLength=0.3)
+            cv2.arrowedLine(buffer, pos, arrow_end, (0, 255, 0), 2, tipLength=0.3)
 
         img = cv2.cvtColor(buffer, cv2.COLOR_RGB2BGR)
         writer.write(img)
