@@ -65,7 +65,7 @@ class RobotNeuralNetwork(torch.nn.Module):
             torch.nn.Linear(6, 3),
             torch.nn.Tanhshrink(),
             torch.nn.Linear(3, 2),
-            torch.nn.Tanh()
+            torch.nn.Sigmoid()
         )
 
         if parameters is not None:
