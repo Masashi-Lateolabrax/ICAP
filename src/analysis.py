@@ -1,6 +1,7 @@
 import dataclasses
 import math
 import os.path
+import pickle
 import time
 import re
 
@@ -17,6 +18,7 @@ class DebugInfo:
     time: float
     robot_positions: list[np.ndarray]
     food_positions: list[np.ndarray]
+    food_directions: list[np.ndarray]
 
 
 class SimulatorForDebugging(Simulator):
@@ -123,6 +125,15 @@ def main():
         settings,
         best_individual,
         os.path.join(save_dir, f"generation_{best_rec.generation}.mp4")
+    )
+
+    with open(os.path.join(save_dir, f"debug_info_{best_rec.generation}.pkl"), 'wb') as f:
+        pickle.dump(debug_info, f)
+
+    input_animation(
+        settings,
+        debug_info,
+        os.path.join(save_dir, f"input_animation_{best_rec.generation}.mp4")
     )
 
 
