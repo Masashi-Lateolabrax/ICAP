@@ -134,6 +134,22 @@ def input_animation(settings: Settings, debug_info: list[DebugInfo], file_path: 
         pixel_pos = np.clip(pixel_pos, 0, render_size - 1)
         return int(pixel_pos[0]), int(pixel_pos[1])
 
+    def rotate_vector_2d(vector, angle_rad):
+        c = np.cos(angle_rad)
+        s = np.sin(angle_rad)
+        rotation = np.array([[c, -s], [s, c]])
+        return rotation @ vector
+
+    def draw_arrowed_line(
+            img_: np.ndarray, pos_: tuple[int, int], direction, length,
+            color: tuple[int, int, int], thickness=1, tip_length=0.1
+    ):
+        end = (
+            pos[0] + int(length * direction[0]),
+            pos[1] - int(length * direction[1])
+        )
+        cv2.arrowedLine(img_, pos_, end, color, thickness, tipLength=tip_length)
+
     buffer = np.zeros(
         (
             settings.Render.RENDER_HEIGHT,
@@ -151,23 +167,20 @@ def input_animation(settings: Settings, debug_info: list[DebugInfo], file_path: 
             pos = world_to_pixel(robot_pos)
             cv2.circle(buffer, pos, 5, (200, 0, 0), -1)
 
-            arrow_length = 20
-            arrow_end = (
-                pos[0] + int(arrow_length * robot_dir[0]),
-                pos[1] - int(arrow_length * robot_dir[1])
-            )
-            cv2.arrowedLine(buffer, pos, arrow_end, (255, 0, 0), 2, tipLength=0.3)
+            # Draw the robot direction
+            draw_arrowed_line(buffer, pos, robot_dir, 20, (200, 0, 0), thickness=2, tip_length=0.3)
+
+            # Draw the nest direction by robot sight.
+            angle_degrees = inputs[5] * (np.pi * 0.5) - 0.5 * np.pi
+            nest_direction = rotate_vector_2d(robot_dir, angle_degrees)
+            draw_arrowed_line(buffer, pos, nest_direction, 20, (255, 100, 0), thickness=2, tip_length=0.3)
 
         for food_pos, food_dir in zip(di.food_positions, di.food_directions):
             pos = world_to_pixel(food_pos)
             cv2.circle(buffer, pos, 5, (0, 200, 0), -1)
 
-            arrow_length = 20
-            arrow_end = (
-                pos[0] + int(arrow_length * food_dir[0]),
-                pos[1] - int(arrow_length * food_dir[1])
-            )
-            cv2.arrowedLine(buffer, pos, arrow_end, (0, 255, 0), 2, tipLength=0.3)
+            # Draw the food direction
+            draw_arrowed_line(buffer, pos, food_dir, 20, (0, 200, 0), thickness=2, tip_length=0.3)
 
         img = cv2.cvtColor(buffer, cv2.COLOR_RGB2BGR)
         writer.write(img)
