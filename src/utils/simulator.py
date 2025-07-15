@@ -112,6 +112,7 @@ class Simulator(MujocoSTL, abc.ABC):
         food_joint.qpos[1] = new_position.y
         food_joint.qpos[2] = 1
         food_joint.qvel[:] = 0.0
+        food_joint.qacc[:] = 0.0
 
     def check_and_respawn_food(self):
         for food in self.food_values:
