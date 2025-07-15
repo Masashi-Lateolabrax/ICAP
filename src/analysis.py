@@ -1,3 +1,4 @@
+import dataclasses
 import math
 import os.path
 import time
@@ -9,6 +10,31 @@ import cv2
 from framework.prelude import *
 
 from client import MySettings, Simulator
+
+
+@dataclasses.dataclass
+class DebugInfo:
+    time: float
+    robot_positions: list[np.ndarray]
+    food_positions: list[np.ndarray]
+
+
+class SimulatorForDebugging(Simulator):
+    def __init__(self, settings: Settings, parameters: Individual, render: bool = False):
+        super().__init__(settings, parameters, render)
+
+        self.timer = 0
+        self.debug_data = []
+
+    def step(self):
+        super().step()
+
+        self.timer += self.settings.Simulation.TIME_STEP
+        self.debug_data.append(DebugInfo(
+            time=self.timer,
+            robot_positions=[np.copy(r.xpos) for r in self.robot_values],
+            food_positions=[np.copy(f.xpos) for f in self.food_values]
+        ))
 
 
 def get_latest_folder(base_directory: str) -> str:
@@ -45,7 +71,7 @@ def latest_saved_individual_file(directory: str) -> str:
         raise FileNotFoundError("No generation files found in directory")
 
 
-def record(settings: Settings, parameters: Individual, file_path: str):
+def record(settings: Settings, parameters: Individual, file_path: str) -> list[DebugInfo]:
     buffer = np.zeros(
         (
             settings.Render.RENDER_HEIGHT,
@@ -55,7 +81,7 @@ def record(settings: Settings, parameters: Individual, file_path: str):
         dtype=np.uint8
     )
 
-    simulator = Simulator(settings, parameters, render=True)
+    simulator = SimulatorForDebugging(settings, parameters, render=True)
 
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     writer = cv2.VideoWriter(
@@ -78,6 +104,8 @@ def record(settings: Settings, parameters: Individual, file_path: str):
 
     writer.release()
 
+    return simulator.debug_data
+
 
 def main():
     settings = MySettings()
@@ -91,7 +119,7 @@ def main():
 
     best_rec: Rec = saved_individuals.get_best_rec()
     best_individual: Individual = best_rec.best_individual
-    record(
+    debug_info = record(
         settings,
         best_individual,
         os.path.join(save_dir, f"generation_{best_rec.generation}.mp4")
