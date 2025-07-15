@@ -38,10 +38,10 @@ class FoodValues:
     @property
     def direction(self):
         res = np.zeros(3)
-        mujoco.mju_mulMatVec3(res, self._center_site.xmat, np.array([0, 0, 0]))
+        mujoco.mju_mulMatVec3(res, self._center_site.xmat, np.array([0, 0, 1]))
         res = res[0:2]
         d = np.linalg.norm(res)
-        res /= d if d > 1e-6 else 1.0
+        res /= d if d != 0 else 1.0
         return res
 
 
