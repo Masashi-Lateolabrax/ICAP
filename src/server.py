@@ -172,7 +172,9 @@ def main():
     except Exception as e:
         print(f"\nServer error: {e}")
 
-    IndividualRecorder.load_from_recs_folder(handler.save_directory).save("optimization_log.pkl")
+    IndividualRecorder.load_from_recs_folder(handler.save_directory).save(
+        os.path.join(handler.save_directory, "optimization_log.pkl")
+    )
 
     # Remove generation pkl files (generation_{number}.pkl)
     generation_pattern = re.compile(r"^generation_\d+\.pkl$")

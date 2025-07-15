@@ -63,7 +63,7 @@ MySettings.Robot.FOOD_SENSOR_GAIN = 1.0
 
 MySettings.Robot.NUM = 1
 MySettings.Robot.INITIAL_POSITION = [
-    RobotLocation(0, 0, np.pi / 2),
+    RobotLocation(0, 0, np.pi),
 ]
 ###################################################################################
 

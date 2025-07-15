@@ -1,4 +1,6 @@
 import mujoco
+from mujoco._structs import (_MjDataSiteViews, _MjDataJointViews, _MjDataSensorViews)
+import numpy as np
 
 from .position import Position
 
@@ -17,9 +19,9 @@ class FoodSpec:
 
 class FoodValues:
     def __init__(self, data: mujoco.MjData, spec: FoodSpec):
-        self._center_site = data.site(spec.center_site.name)
-        self.joint = data.joint(spec.free_joint.name)
-        self._velocimeter = data.sensor(spec.velocimeter.name)
+        self._center_site: _MjDataSiteViews = data.site(spec.center_site.name)
+        self.joint: _MjDataJointViews = data.joint(spec.free_joint.name)
+        self._velocimeter: _MjDataSensorViews = data.sensor(spec.velocimeter.name)
 
     @property
     def site(self):
@@ -32,6 +34,15 @@ class FoodValues:
     @property
     def position(self) -> Position:
         return Position(self.xpos[0], self.xpos[1])
+
+    @property
+    def direction(self):
+        res = np.zeros(3)
+        mujoco.mju_mulMatVec3(res, self._center_site.xmat, np.array([0, 0, 1]))
+        res = res[0:2]
+        d = np.linalg.norm(res)
+        res /= d if d != 0 else 1.0
+        return res
 
 
 class DummyFoodValues:

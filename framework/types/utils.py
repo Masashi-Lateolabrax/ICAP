@@ -95,3 +95,6 @@ class IndividualRecorder:
         recorder = IndividualRecorder()
         recorder.recs = recs
         return recorder
+
+    def get_best_rec(self) -> Rec:
+        return min(self.recs.values(), key=lambda rec: rec.best_fitness)
