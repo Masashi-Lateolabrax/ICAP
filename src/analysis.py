@@ -17,6 +17,8 @@ from client import MySettings, Simulator
 class DebugInfo:
     time: float
     robot_positions: list[np.ndarray]
+    robot_inputs: np.ndarray
+    robot_directions: list[np.ndarray]
     food_positions: list[np.ndarray]
     food_directions: list[np.ndarray]
 
@@ -35,6 +37,8 @@ class SimulatorForDebugging(Simulator):
         self.debug_data.append(DebugInfo(
             time=self.timer,
             robot_positions=[np.copy(r.xpos) for r in self.robot_values],
+            robot_inputs=self.input_ndarray.copy(),
+            robot_directions=[np.copy(r.xdirection) for r in self.robot_values],
             food_positions=[np.copy(f.xpos) for f in self.food_values],
             food_directions=[np.copy(f.direction) for f in self.food_values]
         ))
@@ -130,6 +134,22 @@ def input_animation(settings: Settings, debug_info: list[DebugInfo], file_path: 
         pixel_pos = np.clip(pixel_pos, 0, render_size - 1)
         return int(pixel_pos[0]), int(pixel_pos[1])
 
+    def rotate_vector_2d(vector, angle_rad):
+        c = np.cos(angle_rad)
+        s = np.sin(angle_rad)
+        rotation = np.array([[c, -s], [s, c]])
+        return rotation @ vector
+
+    def draw_arrowed_line(
+            img_: np.ndarray, pos_: tuple[int, int], direction, length,
+            color: tuple[int, int, int], thickness=1, tip_length=0.1
+    ):
+        end = (
+            pos[0] + int(length * direction[0]),
+            pos[1] - int(length * direction[1])
+        )
+        cv2.arrowedLine(img_, pos_, end, color, thickness, tipLength=tip_length)
+
     buffer = np.zeros(
         (
             settings.Render.RENDER_HEIGHT,
@@ -143,19 +163,24 @@ def input_animation(settings: Settings, debug_info: list[DebugInfo], file_path: 
     for i, di in enumerate(debug_info):
         buffer.fill(255)
 
-        for robot_pos in di.robot_positions:
+        for robot_pos, robot_dir, inputs in zip(di.robot_positions, di.robot_directions, di.robot_inputs):
             pos = world_to_pixel(robot_pos)
-            cv2.circle(buffer, pos, 5, (255, 0, 0), -1)
+            cv2.circle(buffer, pos, 5, (200, 0, 0), -1)
+
+            # Draw the robot direction
+            draw_arrowed_line(buffer, pos, robot_dir, 20, (200, 0, 0), thickness=2, tip_length=0.3)
+
+            # Draw the nest direction by robot sight.
+            angle_degrees = inputs[5] * (np.pi * 0.5) - 0.5 * np.pi
+            nest_direction = rotate_vector_2d(robot_dir, angle_degrees)
+            draw_arrowed_line(buffer, pos, nest_direction, 20, (255, 100, 0), thickness=2, tip_length=0.3)
+
         for food_pos, food_dir in zip(di.food_positions, di.food_directions):
             pos = world_to_pixel(food_pos)
-            cv2.circle(buffer, pos, 5, (0, 255, 0), -1)
+            cv2.circle(buffer, pos, 5, (0, 200, 0), -1)
 
-            arrow_length = 20
-            arrow_end = (
-                pos[0] + int(arrow_length * food_dir[0]),
-                pos[1] - int(arrow_length * food_dir[1])
-            )
-            cv2.arrowedLine(buffer, pos, arrow_end, (0, 0, 255), 2, tipLength=0.3)
+            # Draw the food direction
+            draw_arrowed_line(buffer, pos, food_dir, 20, (0, 200, 0), thickness=2, tip_length=0.3)
 
         img = cv2.cvtColor(buffer, cv2.COLOR_RGB2BGR)
         writer.write(img)
