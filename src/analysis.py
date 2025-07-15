@@ -35,7 +35,8 @@ class SimulatorForDebugging(Simulator):
         self.debug_data.append(DebugInfo(
             time=self.timer,
             robot_positions=[np.copy(r.xpos) for r in self.robot_values],
-            food_positions=[np.copy(f.xpos) for f in self.food_values]
+            food_positions=[np.copy(f.xpos) for f in self.food_values],
+            food_directions=[np.copy(f.direction) for f in self.food_values]
         ))
 
 
