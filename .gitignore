@@ -1,5 +1,6 @@
 /.idea/
 /RESULTS/
+/.run
 
 /report.md
 /poetry.toml
