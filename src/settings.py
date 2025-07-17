@@ -63,9 +63,9 @@ MySettings.Robot.FOOD_SENSOR_GAIN = 1.0
 
 MySettings.Robot.NUM = 9
 MySettings.Robot.INITIAL_POSITION = [
-    RobotLocation(-0.125, 0.5, np.pi), RobotLocation(0.0, 0.5, np.pi), RobotLocation(0.255, 0.5, np.pi),
-    RobotLocation(-0.125, 0, np.pi), RobotLocation(0.0, 0, np.pi), RobotLocation(0.255, 0, np.pi),
-    RobotLocation(-0.125, -0.5, np.pi), RobotLocation(0.0, -0.5, np.pi), RobotLocation(0.255, -0.5, np.pi),
+    RobotLocation(-0.175*2-0.1, 0.5, np.pi), RobotLocation(0, 0.5, np.pi), RobotLocation(0.175*2+0.1, 0.5, np.pi),
+    RobotLocation(-0.175*2-0.1, 0, np.pi), RobotLocation(0, 0, np.pi), RobotLocation(0.175*2+0.1, 0, np.pi),
+    RobotLocation(-0.175*2-0.1, -0.5, np.pi), RobotLocation(0, -0.5, np.pi), RobotLocation(0.175*2+0.1, -0.5, np.pi),
 ]
 ###################################################################################
 
