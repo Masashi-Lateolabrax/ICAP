@@ -98,3 +98,15 @@ class IndividualRecorder:
 
     def get_best_rec(self) -> Rec:
         return min(self.recs.values(), key=lambda rec: rec.best_fitness)
+
+    def __len__(self):
+        return len(self.recs)
+
+    def __getitem__(self, generation: int) -> Rec:
+        if generation not in self.recs:
+            raise KeyError(f"Generation {generation} not found in records.")
+        return self.recs[generation]
+
+    def __iter__(self):
+        for generation in sorted(self.recs.keys()):
+            yield self.recs[generation]
