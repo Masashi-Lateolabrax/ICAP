@@ -223,6 +223,33 @@ def plot_best_fitness(saved_individuals: IndividualRecorder, filepath: str):
     plt.savefig(filepath)
 
 
+def plot_max_value_in_parameters(saved_individuals: IndividualRecorder, filepath: str, top_n=1):
+    generations = np.arange(len(saved_individuals))
+    values = np.zeros((top_n, len(saved_individuals)), dtype=float)
+    index = np.zeros((top_n, len(saved_individuals)), dtype=int)
+
+    for i, rec in enumerate(saved_individuals):
+        abs_best_individual = [(i, abs(v), v) for i, v in enumerate(rec.best_individual)]
+        sored_parameters = sorted(abs_best_individual, key=lambda x: x[1], reverse=True)
+
+        for j in range(min(top_n, len(sored_parameters))):
+            values[j, i] = sored_parameters[j][2]
+            index[j, i] = sored_parameters[j][0]
+
+    fig = plt.figure()
+    ax1 = fig.add_subplot(1, 1, 1)
+    ax2 = ax1.twinx()
+
+    for i in range(top_n):
+        if i < values.shape[0]:
+            ax1.plot(generations, values[i], label=f'Value {i}')
+            ax2.scatter(generations, index[i], label=f'Index {i}')
+
+    plt.savefig(filepath)
+
+    return np.abs(values[0, :])
+
+
 def main():
     settings = MySettings()
 
@@ -269,6 +296,11 @@ def main():
     file_path = os.path.join(save_dir, "fitness_plot.png")
     if not os.path.exists(file_path):
         plot_best_fitness(saved_individuals, file_path)
+
+    # Plot the max value in parameters.
+    file_path = os.path.join(save_dir, "max_value_in_parameters.png")
+    if not os.path.exists(file_path):
+        plot_max_value_in_parameters(saved_individuals, file_path, 1)
 
 
 if __name__ == '__main__':
