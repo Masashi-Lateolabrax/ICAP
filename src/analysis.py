@@ -7,6 +7,7 @@ import re
 
 import numpy as np
 import cv2
+import matplotlib.pyplot as plt
 
 from framework.prelude import *
 
@@ -201,6 +202,27 @@ def input_animation(settings: Settings, debug_info: list[DebugInfo], file_path: 
     writer.release()
 
 
+def plot_best_fitness(saved_individuals: IndividualRecorder, filepath: str):
+    generations = []
+    fitnesses = []
+
+    for rec in saved_individuals:
+        generations.append(rec.generation)
+        fitnesses.append(rec.best_fitness)
+
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+
+    ax.plot(generations, fitnesses)
+
+    ax.set_title('Best Fitness Over Generations')
+    ax.set_xlabel('Generation')
+    ax.set_ylabel('Best Fitness')
+    ax.grid()
+
+    plt.savefig(filepath)
+
+
 def main():
     settings = MySettings()
 
@@ -242,6 +264,11 @@ def main():
             debug_info,
             file_path
         )
+
+    # Save the fitness plot.
+    file_path = os.path.join(save_dir, "fitness_plot.png")
+    if not os.path.exists(file_path):
+        plot_best_fitness(saved_individuals, file_path)
 
 
 if __name__ == '__main__':
