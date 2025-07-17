@@ -142,5 +142,5 @@ MySettings.Simulation.WALL_HEIGHT = 1
 MySettings.Storage.SAVE_INDIVIDUALS = True
 MySettings.Storage.SAVE_DIRECTORY = "results"
 MySettings.Storage.SAVE_INTERVAL = 1
-MySettings.Storage.TOP_N = 1
+MySettings.Storage.TOP_N = 5
 ###################################################################################
