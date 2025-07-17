@@ -61,10 +61,11 @@ MySettings.Robot.ACTUATOR_ROT_KV = 10
 MySettings.Robot.ROBOT_SENSOR_GAIN = 1.0
 MySettings.Robot.FOOD_SENSOR_GAIN = 1.0
 
-MySettings.Robot.NUM = 2
+MySettings.Robot.NUM = 9
 MySettings.Robot.INITIAL_POSITION = [
-    RobotLocation(-0.2, 0, np.pi),
-    RobotLocation(0.2, 0, np.pi),
+    RobotLocation(-0.125, 0.5, np.pi), RobotLocation(0.0, 0.5, np.pi), RobotLocation(0.255, 0.5, np.pi),
+    RobotLocation(-0.125, 0, np.pi), RobotLocation(0.0, 0, np.pi), RobotLocation(0.255, 0, np.pi),
+    RobotLocation(-0.125, -0.5, np.pi), RobotLocation(0.0, -0.5, np.pi), RobotLocation(0.255, -0.5, np.pi),
 ]
 ###################################################################################
 
