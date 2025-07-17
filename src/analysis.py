@@ -7,6 +7,7 @@ import re
 
 import numpy as np
 import cv2
+import matplotlib.pyplot as plt
 
 from framework.prelude import *
 
@@ -174,6 +175,14 @@ def input_animation(settings: Settings, debug_info: list[DebugInfo], file_path: 
             nest_direction = rotate_vector_2d(robot_dir, inputs[5] * np.pi)
             draw_arrowed_line(buffer, pos, nest_direction, 20, (255, 100, 0), thickness=2, tip_length=0.3)
 
+            # Draw the food direction
+            food_direction = rotate_vector_2d(robot_dir, inputs[3] * np.pi)
+            draw_arrowed_line(buffer, pos, food_direction, 20, (255, 0, 100), thickness=2, tip_length=0.3)
+
+            # Draw the other robot direction
+            food_direction = rotate_vector_2d(robot_dir, inputs[1] * np.pi)
+            draw_arrowed_line(buffer, pos, food_direction, 20, (255, 100, 100), thickness=2, tip_length=0.3)
+
         for food_pos, food_dir in zip(di.food_positions, di.food_directions):
             pos = world_to_pixel(food_pos)
             cv2.circle(buffer, pos, 5, (0, 200, 0), -1)
@@ -189,6 +198,79 @@ def input_animation(settings: Settings, debug_info: list[DebugInfo], file_path: 
             timer = time.time()
 
     writer.release()
+
+
+def plot_best_fitness(saved_individuals: IndividualRecorder, filepath: str):
+    generations = []
+    fitnesses = []
+
+    for rec in saved_individuals:
+        generations.append(rec.generation)
+        fitnesses.append(rec.best_fitness)
+
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+
+    ax.plot(generations, fitnesses)
+
+    ax.set_title('Best Fitness Over Generations')
+    ax.set_xlabel('Generation')
+    ax.set_ylabel('Best Fitness')
+    ax.grid()
+
+    plt.savefig(filepath)
+
+
+def plot_max_value_in_parameters(saved_individuals: IndividualRecorder, filepath: str, top_n=1):
+    generations = np.arange(len(saved_individuals))
+    values = np.zeros((top_n, len(saved_individuals)), dtype=float)
+    index = np.zeros((top_n, len(saved_individuals)), dtype=int)
+
+    for i, rec in enumerate(saved_individuals):
+        abs_best_individual = [(i, abs(v), v) for i, v in enumerate(rec.best_individual)]
+        sored_parameters = sorted(abs_best_individual, key=lambda x: x[1], reverse=True)
+
+        for j in range(min(top_n, len(sored_parameters))):
+            values[j, i] = sored_parameters[j][2]
+            index[j, i] = sored_parameters[j][0]
+
+    fig = plt.figure()
+    ax1 = fig.add_subplot(1, 1, 1)
+    ax2 = ax1.twinx()
+
+    for i in range(top_n):
+        if i < values.shape[0]:
+            ax1.plot(generations, values[i], label=f'Value {i}')
+            ax2.scatter(generations, index[i], label=f'Index {i}')
+
+    plt.savefig(filepath)
+
+
+def parameter_heatmap(saved_individuals: IndividualRecorder, filepath: str):
+    generations = np.arange(len(saved_individuals))
+    num_parameters = len(saved_individuals[0].best_individual)
+
+    heatmap_data = np.zeros((num_parameters, len(saved_individuals)), dtype=float)
+
+    for i, rec in enumerate(saved_individuals):
+        best_ind = rec.best_individual
+        max_value = np.max(best_ind)
+        for j in range(num_parameters):
+            heatmap_data[j, i] = best_ind[j] / max_value
+
+    fig, ax = plt.subplots()
+    cax = ax.imshow(heatmap_data, aspect='auto', cmap='hot', interpolation='nearest')
+
+    ax.set_title('Parameter Heatmap Over Generations')
+    ax.set_xlabel('Generation')
+    ax.set_ylabel('Parameter Index')
+    ax.set_xticks(np.arange(len(generations)))
+    ax.set_yticks(np.arange(num_parameters))
+    ax.set_xticklabels(generations)
+    ax.set_yticklabels(np.arange(num_parameters))
+
+    fig.colorbar(cax)
+    plt.savefig(filepath)
 
 
 def main():
@@ -232,6 +314,21 @@ def main():
             debug_info,
             file_path
         )
+
+    # Save the fitness plot.
+    file_path = os.path.join(save_dir, "fitness_plot.png")
+    if not os.path.exists(file_path):
+        plot_best_fitness(saved_individuals, file_path)
+
+    # Plot the maximum values in parameters.
+    file_path = os.path.join(save_dir, "max_value_in_parameters.png")
+    if not os.path.exists(file_path):
+        plot_max_value_in_parameters(saved_individuals, file_path, 1)
+
+    # Create a heatmap of the parameters.
+    file_path = os.path.join(save_dir, "parameter_heatmap.png")
+    if not os.path.exists(file_path):
+        parameter_heatmap(saved_individuals, file_path)
 
 
 if __name__ == '__main__':

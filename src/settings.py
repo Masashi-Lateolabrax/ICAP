@@ -38,9 +38,9 @@ MySettings.Render.CAMERA_LOOKAT = (0.0, 0.0, 0.0)
 # Optimization settings
 ###################################################################################
 MySettings.Optimization.DIMENSION = None  # Will be set later based on the neural network dimension
-MySettings.Optimization.POPULATION = 1000
+MySettings.Optimization.POPULATION = 100
 MySettings.Optimization.GENERATION = 500
-MySettings.Optimization.SIGMA = 0.5
+MySettings.Optimization.SIGMA = 0.01
 ###################################################################################
 
 
@@ -55,6 +55,8 @@ MySettings.Robot.MASS = 10
 
 MySettings.Robot.COLOR = (1, 1, 0, 1)
 
+MySettings.Robot.THINK_INTERVAL = 0.05
+
 MySettings.Robot.ACTUATOR_MOVE_KV = 100
 MySettings.Robot.ACTUATOR_ROT_KV = 10
 
@@ -63,9 +65,17 @@ MySettings.Robot.FOOD_SENSOR_GAIN = 1.0
 
 MySettings.Robot.NUM = 9
 MySettings.Robot.INITIAL_POSITION = [
-    RobotLocation(-0.125, 0.5, np.pi), RobotLocation(0.0, 0.5, np.pi), RobotLocation(0.255, 0.5, np.pi),
-    RobotLocation(-0.125, 0, np.pi), RobotLocation(0.0, 0, np.pi), RobotLocation(0.255, 0, np.pi),
-    RobotLocation(-0.125, -0.5, np.pi), RobotLocation(0.0, -0.5, np.pi), RobotLocation(0.255, -0.5, np.pi),
+    RobotLocation(-0.175 * 2 - 0.1, 0.5, np.pi),
+    RobotLocation(0, 0.5, np.pi),
+    RobotLocation(0.175 * 2 + 0.1, 0.5, np.pi),
+
+    RobotLocation(-0.175 * 2 - 0.1, 0, np.pi),
+    RobotLocation(0, 0, np.pi),
+    RobotLocation(0.175 * 2 + 0.1, 0, np.pi),
+
+    RobotLocation(-0.175 * 2 - 0.1, -0.5, np.pi),
+    RobotLocation(0, -0.5, np.pi),
+    RobotLocation(0.175 * 2 + 0.1, -0.5, np.pi),
 ]
 ###################################################################################
 
@@ -79,9 +89,10 @@ MySettings.Food.HEIGHT = 0.07
 MySettings.Food.DENSITY = 80
 MySettings.Food.COLOR = (0, 1, 1, 1)
 
-MySettings.Food.NUM = 1
+MySettings.Food.NUM = 2
 MySettings.Food.INITIAL_POSITION = [
-    Position(0, 2),
+    Position(2, 2),
+    Position(-2, 2),
 ]
 ###################################################################################
 
@@ -115,7 +126,7 @@ MySettings.Loss.REGULARIZATION_COEFFICIENT = 0
 # Simulation settings
 ###################################################################################
 MySettings.Simulation.TIME_STEP = 0.01
-MySettings.Simulation.TIME_LENGTH = 60
+MySettings.Simulation.TIME_LENGTH = 45
 
 MySettings.Simulation.WORLD_WIDTH = 10.0
 MySettings.Simulation.WORLD_HEIGHT = 10.0
@@ -131,5 +142,5 @@ MySettings.Simulation.WALL_HEIGHT = 1
 MySettings.Storage.SAVE_INDIVIDUALS = True
 MySettings.Storage.SAVE_DIRECTORY = "results"
 MySettings.Storage.SAVE_INTERVAL = 1
-MySettings.Storage.TOP_N = 1
+MySettings.Storage.TOP_N = 5
 ###################################################################################
