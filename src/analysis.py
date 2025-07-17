@@ -247,7 +247,32 @@ def plot_max_value_in_parameters(saved_individuals: IndividualRecorder, filepath
 
     plt.savefig(filepath)
 
-    return np.abs(values[0, :])
+
+def parameter_heatmap(saved_individuals: IndividualRecorder, filepath: str):
+    generations = np.arange(len(saved_individuals))
+    num_parameters = len(saved_individuals[0].best_individual)
+
+    heatmap_data = np.zeros((num_parameters, len(saved_individuals)), dtype=float)
+
+    for i, rec in enumerate(saved_individuals):
+        best_ind = rec.best_individual
+        max_value = np.max(best_ind)
+        for j in range(num_parameters):
+            heatmap_data[j, i] = best_ind[j] / max_value
+
+    fig, ax = plt.subplots()
+    cax = ax.imshow(heatmap_data, aspect='auto', cmap='hot', interpolation='nearest')
+
+    ax.set_title('Parameter Heatmap Over Generations')
+    ax.set_xlabel('Generation')
+    ax.set_ylabel('Parameter Index')
+    ax.set_xticks(np.arange(len(generations)))
+    ax.set_yticks(np.arange(num_parameters))
+    ax.set_xticklabels(generations)
+    ax.set_yticklabels(np.arange(num_parameters))
+
+    fig.colorbar(cax)
+    plt.savefig(filepath)
 
 
 def main():
@@ -297,10 +322,15 @@ def main():
     if not os.path.exists(file_path):
         plot_best_fitness(saved_individuals, file_path)
 
-    # Plot the max value in parameters.
+    # Plot the maximum values in parameters.
     file_path = os.path.join(save_dir, "max_value_in_parameters.png")
     if not os.path.exists(file_path):
         plot_max_value_in_parameters(saved_individuals, file_path, 1)
+
+    # Create a heatmap of the parameters.
+    file_path = os.path.join(save_dir, "parameter_heatmap.png")
+    if not os.path.exists(file_path):
+        parameter_heatmap(saved_individuals, file_path)
 
 
 if __name__ == '__main__':
