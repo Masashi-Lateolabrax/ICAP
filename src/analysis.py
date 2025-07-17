@@ -179,6 +179,11 @@ def input_animation(settings: Settings, debug_info: list[DebugInfo], file_path: 
             food_direction = rotate_vector_2d(robot_dir, angle)
             draw_arrowed_line(buffer, pos, food_direction, 20, (255, 0, 100), thickness=2, tip_length=0.3)
 
+            # Draw the other robot direction
+            angle = inputs[1] * (np.pi * 0.5) - (np.pi * 0.5)
+            food_direction = rotate_vector_2d(robot_dir, angle)
+            draw_arrowed_line(buffer, pos, food_direction, 20, (255, 100, 100), thickness=2, tip_length=0.3)
+
         for food_pos, food_dir in zip(di.food_positions, di.food_directions):
             pos = world_to_pixel(food_pos)
             cv2.circle(buffer, pos, 5, (0, 200, 0), -1)
