@@ -19,5 +19,5 @@ class PreprocessedOmniSensor(OmniSensor):
     def get(self) -> np.ndarray:
         raw = super().get()
         magnitude = 1 / (np.linalg.norm(raw) + 1)
-        angle = np.arctan2(raw[1], raw[0]) / (np.pi * 0.5)
+        angle = np.arctan2(-raw[0], raw[1]) / np.pi
         return np.array([magnitude, angle])
