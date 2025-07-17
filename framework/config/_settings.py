@@ -43,6 +43,8 @@ class Robot:
 
     COLOR = (1, 1, 0, 1)
 
+    THINK_INTERVAL = 0.05
+
     ACTUATOR_MOVE_KV = 100
     ACTUATOR_ROT_KV = 10
 
