@@ -7,6 +7,7 @@ import mujoco
 from framework.prelude import *
 from framework.environment import rand_food_pos
 from framework.backends import MujocoSTL
+from framework.utils import Timer
 
 
 class Loss(metaclass=abc.ABCMeta):
@@ -23,6 +24,8 @@ class Simulator(MujocoSTL, abc.ABC):
     def __init__(self, settings: Settings, parameters: Individual, controller: torch.nn.Module, render: bool = False):
         super().__init__(settings, render)
 
+        self.timer = Timer(settings.Robot.THINK_INTERVAL / settings.Simulation.TIME_STEP)
+
         self.parameters = parameters
         self.scores: list[Loss] = []
         self.sensors: list[list[SensorInterface]] = self.create_sensors()
@@ -31,6 +34,7 @@ class Simulator(MujocoSTL, abc.ABC):
 
         self.controller = controller
         self.input_ndarray = np.zeros((settings.Robot.NUM, 2 * 3), dtype=np.float32)
+        self.output_ndarray = np.zeros((settings.Robot.NUM, 2), dtype=np.float32)
         self.input_tensor = torch.from_numpy(self.input_ndarray)
 
         torch.nn.utils.vector_to_parameters(
@@ -57,15 +61,16 @@ class Simulator(MujocoSTL, abc.ABC):
         raise NotImplementedError("Subclasses should implement this method.")
 
     def step(self):
-        with torch.no_grad():
-            input_ = self.create_input_for_controller()
-            output = self.controller(input_)
-            output_ndarray = output.numpy()
+        if not self.timer.tick():
+            with torch.no_grad():
+                input_ = self.create_input_for_controller()
+                output = self.controller(input_)
+                self.output_ndarray = output.numpy()
 
         for i, robot in enumerate(self.robot_values):
             robot.act(
-                right_wheel=output_ndarray[i, 0],
-                left_wheel=output_ndarray[i, 1]
+                right_wheel=self.output_ndarray[i, 0],
+                left_wheel=self.output_ndarray[i, 1]
             )
 
         self.check_and_respawn_food()
