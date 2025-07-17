@@ -79,9 +79,10 @@ MySettings.Food.HEIGHT = 0.07
 MySettings.Food.DENSITY = 80
 MySettings.Food.COLOR = (0, 1, 1, 1)
 
-MySettings.Food.NUM = 1
+MySettings.Food.NUM = 2
 MySettings.Food.INITIAL_POSITION = [
-    Position(0, 2),
+    Position(2, 2),
+    Position(-2, 2),
 ]
 ###################################################################################
 
