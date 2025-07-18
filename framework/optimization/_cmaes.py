@@ -22,7 +22,7 @@ class _IndividualManager:
         self.assigned_individuals = []
         for _ in range(cmaes.population_size):
             x = cmaes.ask()
-            individual = Individual(x)
+            individual = Individual(x, cmaes.generation)
             self.ready_individuals.append(individual)
 
     def arrange_individuals(self):
