@@ -1,4 +1,5 @@
 import logging
+from typing import List, Optional
 
 import numpy as np
 
@@ -11,105 +12,105 @@ def calc_loss_sigma(point, value):
 
 class Server:
     def __init__(self):
-        self.HOST = 'localhost'
-        self.PORT = 5000
-        self.SOCKET_BACKLOG = 10
+        self.HOST: str = 'localhost'
+        self.PORT: int = 5000
+        self.SOCKET_BACKLOG: int = 10
 
 
 class Render:
     def __init__(self):
-        self.RENDER_WIDTH = 500
-        self.RENDER_HEIGHT = 500
+        self.RENDER_WIDTH: int = 500
+        self.RENDER_HEIGHT: int = 500
 
-        self.LIGHT_AMBIENT = 1.0
-        self.LIGHT_DIFFUSE = 1.0
-        self.LIGHT_SPECULAR = 1.0
+        self.LIGHT_AMBIENT: float = 1.0
+        self.LIGHT_DIFFUSE: float = 1.0
+        self.LIGHT_SPECULAR: float = 1.0
 
-        self.CAMERA_POS = (0.0, -1e-3, 13.0)
-        self.CAMERA_LOOKAT = (0.0, 0.0, 0.0)
+        self.CAMERA_POS: tuple = (0.0, -1e-3, 13.0)
+        self.CAMERA_LOOKAT: tuple = (0.0, 0.0, 0.0)
 
 
 class Optimization:
     def __init__(self):
-        self.DIMENSION = None
-        self.POPULATION = 1000
-        self.GENERATION = 100
-        self.SIGMA = 0.5
+        self.DIMENSION: Optional[int] = None
+        self.POPULATION: int = 1000
+        self.GENERATION: int = 100
+        self.SIGMA: float = 0.5
 
 
 class Robot:
     def __init__(self):
-        self.HEIGHT = 0.1
-        self.RADIUS = 0.175
-        self.DISTANCE_BETWEEN_WHEELS = 0.175 * 2 * 0.8
-        self.MAX_SPEED = 0.8
-        self.MASS = 10
+        self.HEIGHT: float = 0.1
+        self.RADIUS: float = 0.175
+        self.DISTANCE_BETWEEN_WHEELS: float = 0.175 * 2 * 0.8
+        self.MAX_SPEED: float = 0.8
+        self.MASS: float = 10
 
-        self.COLOR = (1, 1, 0, 1)
+        self.COLOR: tuple = (1, 1, 0, 1)
 
-        self.THINK_INTERVAL = 0.05
+        self.THINK_INTERVAL: float = 0.05
 
-        self.ACTUATOR_MOVE_KV = 100
-        self.ACTUATOR_ROT_KV = 10
+        self.ACTUATOR_MOVE_KV: float = 100
+        self.ACTUATOR_ROT_KV: float = 10
 
-        self.ROBOT_SENSOR_GAIN = 1.0
-        self.FOOD_SENSOR_GAIN = 1.0
+        self.ROBOT_SENSOR_GAIN: float = 1.0
+        self.FOOD_SENSOR_GAIN: float = 1.0
 
-        self.NUM = 1
-        self.INITIAL_POSITION = []
+        self.NUM: int = 1
+        self.INITIAL_POSITION: List[RobotLocation] = []
 
 
 class Food:
     def __init__(self):
-        self.RADIUS = 0.5
-        self.HEIGHT = 0.07
+        self.RADIUS: float = 0.5
+        self.HEIGHT: float = 0.07
 
-        self.DENSITY = 80
-        self.COLOR = (0, 1, 1, 1)
+        self.DENSITY: float = 80
+        self.COLOR: tuple = (0, 1, 1, 1)
 
-        self.NUM = 1
-        self.INITIAL_POSITION = [Position(0.0, 0.0)]
+        self.NUM: int = 1
+        self.INITIAL_POSITION: List[Position] = [Position(0.0, 0.0)]
 
 
 class Nest:
     def __init__(self):
-        self.POSITION = Position(0.0, 0.0)
-        self.RADIUS = 1.0
-        self.HEIGHT = 0.01
-        self.COLOR = (0, 1, 0, 1)
+        self.POSITION: Position = Position(0.0, 0.0)
+        self.RADIUS: float = 1.0
+        self.HEIGHT: float = 0.01
+        self.COLOR: tuple = (0, 1, 0, 1)
 
 
 class Loss:
     def __init__(self):
-        self.OFFSET_NEST_AND_FOOD = 0
-        self.SIGMA_NEST_AND_FOOD = calc_loss_sigma(4, 0.01)
-        self.GAIN_NEST_AND_FOOD = 1
+        self.OFFSET_NEST_AND_FOOD: float = 0
+        self.SIGMA_NEST_AND_FOOD: float = calc_loss_sigma(4, 0.01)
+        self.GAIN_NEST_AND_FOOD: float = 1
 
-        self.OFFSET_ROBOT_AND_FOOD = 0.175 + 0.5  # Will be set properly in Settings
-        self.SIGMA_ROBOT_AND_FOOD = calc_loss_sigma(1, 0.3)
-        self.GAIN_ROBOT_AND_FOOD = 0.01
-        self.REGULARIZATION_COEFFICIENT = 0
+        self.OFFSET_ROBOT_AND_FOOD: float = 0.175 + 0.5  # Will be set properly in Settings
+        self.SIGMA_ROBOT_AND_FOOD: float = calc_loss_sigma(1, 0.3)
+        self.GAIN_ROBOT_AND_FOOD: float = 0.01
+        self.REGULARIZATION_COEFFICIENT: float = 0
 
 
 class Simulation:
     def __init__(self):
-        self.TIME_STEP = 0.01
-        self.TIME_LENGTH = 60  # Unit is Seconds
+        self.TIME_STEP: float = 0.01
+        self.TIME_LENGTH: int = 60  # Unit is Seconds
 
-        self.WORLD_WIDTH = 10.0
-        self.WORLD_HEIGHT = 10.0
+        self.WORLD_WIDTH: float = 10.0
+        self.WORLD_HEIGHT: float = 10.0
 
-        self.WALL_THICKNESS = 1
-        self.WALL_HEIGHT = 1
+        self.WALL_THICKNESS: float = 1
+        self.WALL_HEIGHT: float = 1
 
 
 class Storage:
     def __init__(self):
-        self.SAVE_INDIVIDUALS = True
-        self.SAVE_DIRECTORY = "./results"
-        self.SAVE_INTERVAL = 10  # Save every N generations
-        self.TOP_N = 0  # Save top N individuals, 0 means save all
-        self.ASSET_DIRECTORY = "./assets"
+        self.SAVE_INDIVIDUALS: bool = True
+        self.SAVE_DIRECTORY: str = "./results"
+        self.SAVE_INTERVAL: int = 10  # Save every N generations
+        self.TOP_N: int = 0  # Save top N individuals, 0 means save all
+        self.ASSET_DIRECTORY: str = "./assets"
 
 
 class Settings:
