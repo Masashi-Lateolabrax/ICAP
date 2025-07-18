@@ -10,114 +10,137 @@ def calc_loss_sigma(point, value):
 
 
 class Server:
-    HOST: str = 'localhost'
-    PORT: int = 5000
-    SOCKET_BACKLOG: int = 10
+    def __init__(self):
+        self.HOST = 'localhost'
+        self.PORT = 5000
+        self.SOCKET_BACKLOG = 10
 
 
 class Render:
-    RENDER_WIDTH = 500
-    RENDER_HEIGHT = 500
+    def __init__(self):
+        self.RENDER_WIDTH = 500
+        self.RENDER_HEIGHT = 500
 
-    LIGHT_AMBIENT = 1.0
-    LIGHT_DIFFUSE = 1.0
-    LIGHT_SPECULAR = 1.0
+        self.LIGHT_AMBIENT = 1.0
+        self.LIGHT_DIFFUSE = 1.0
+        self.LIGHT_SPECULAR = 1.0
 
-    CAMERA_POS = (0.0, -1e-3, 13.0)
-    CAMERA_LOOKAT = (0.0, 0.0, 0.0)
+        self.CAMERA_POS = (0.0, -1e-3, 13.0)
+        self.CAMERA_LOOKAT = (0.0, 0.0, 0.0)
 
 
 class Optimization:
-    DIMENSION: int = None
-    POPULATION: int = 1000
-    GENERATION: int = 100
-    SIGMA: float = 0.5
+    def __init__(self):
+        self.DIMENSION = None
+        self.POPULATION = 1000
+        self.GENERATION = 100
+        self.SIGMA = 0.5
 
 
 class Robot:
-    HEIGHT = 0.1
-    RADIUS = 0.175
-    DISTANCE_BETWEEN_WHEELS = 0.175 * 2 * 0.8
-    MAX_SPEED = 0.8
-    MASS = 10
+    def __init__(self):
+        self.HEIGHT = 0.1
+        self.RADIUS = 0.175
+        self.DISTANCE_BETWEEN_WHEELS = 0.175 * 2 * 0.8
+        self.MAX_SPEED = 0.8
+        self.MASS = 10
 
-    COLOR = (1, 1, 0, 1)
+        self.COLOR = (1, 1, 0, 1)
 
-    THINK_INTERVAL = 0.05
+        self.THINK_INTERVAL = 0.05
 
-    ACTUATOR_MOVE_KV = 100
-    ACTUATOR_ROT_KV = 10
+        self.ACTUATOR_MOVE_KV = 100
+        self.ACTUATOR_ROT_KV = 10
 
-    ROBOT_SENSOR_GAIN = 1.0
-    FOOD_SENSOR_GAIN = 1.0
+        self.ROBOT_SENSOR_GAIN = 1.0
+        self.FOOD_SENSOR_GAIN = 1.0
 
-    NUM = 1
-    INITIAL_POSITION: list[RobotLocation] = []
+        self.NUM = 1
+        self.INITIAL_POSITION = []
 
 
 class Food:
-    RADIUS = 0.5
-    HEIGHT = 0.07
+    def __init__(self):
+        self.RADIUS = 0.5
+        self.HEIGHT = 0.07
 
-    DENSITY = 80
-    COLOR = (0, 1, 1, 1)
+        self.DENSITY = 80
+        self.COLOR = (0, 1, 1, 1)
 
-    NUM: int = 1
-    INITIAL_POSITION: list[Position] = [Position(0.0, 0.0)]
+        self.NUM = 1
+        self.INITIAL_POSITION = [Position(0.0, 0.0)]
 
 
 class Nest:
-    POSITION: Position = Position(0.0, 0.0)
-    RADIUS = 1.0
-    HEIGHT = 0.01
-    COLOR = (0, 1, 0, 1)
+    def __init__(self):
+        self.POSITION = Position(0.0, 0.0)
+        self.RADIUS = 1.0
+        self.HEIGHT = 0.01
+        self.COLOR = (0, 1, 0, 1)
 
 
 class Loss:
-    OFFSET_NEST_AND_FOOD = 0
-    SIGMA_NEST_AND_FOOD = calc_loss_sigma(4, 0.01)
-    GAIN_NEST_AND_FOOD = 1
+    def __init__(self):
+        self.OFFSET_NEST_AND_FOOD = 0
+        self.SIGMA_NEST_AND_FOOD = calc_loss_sigma(4, 0.01)
+        self.GAIN_NEST_AND_FOOD = 1
 
-    OFFSET_ROBOT_AND_FOOD = Robot.RADIUS + Food.RADIUS
-    SIGMA_ROBOT_AND_FOOD = calc_loss_sigma(1, 0.3)
-    GAIN_ROBOT_AND_FOOD = 0.01
-
-    REGULARIZATION_COEFFICIENT = 0
+        self.OFFSET_ROBOT_AND_FOOD = 0.175 + 0.5  # Will be set properly in Settings
+        self.SIGMA_ROBOT_AND_FOOD = calc_loss_sigma(1, 0.3)
+        self.GAIN_ROBOT_AND_FOOD = 0.01
+        self.REGULARIZATION_COEFFICIENT = 0
 
 
 class Simulation:
-    TIME_STEP: float = 0.01
-    TIME_LENGTH: int = 60  # Unit is Seconds
+    def __init__(self):
+        self.TIME_STEP = 0.01
+        self.TIME_LENGTH = 60  # Unit is Seconds
 
-    WORLD_WIDTH: float = 10.0
-    WORLD_HEIGHT: float = 10.0
+        self.WORLD_WIDTH = 10.0
+        self.WORLD_HEIGHT = 10.0
 
-    WALL_THICKNESS: float = 1
-    WALL_HEIGHT: float = 1
+        self.WALL_THICKNESS = 1
+        self.WALL_HEIGHT = 1
 
 
 class Storage:
-    SAVE_INDIVIDUALS = True
-    SAVE_DIRECTORY = "./results"
-    SAVE_INTERVAL = 10  # Save every N generations
-    TOP_N = 0  # Save top N individuals, 0 means save all
-    ASSET_DIRECTORY = "./assets"
+    def __init__(self):
+        self.SAVE_INDIVIDUALS = True
+        self.SAVE_DIRECTORY = "./results"
+        self.SAVE_INTERVAL = 10  # Save every N generations
+        self.TOP_N = 0  # Save top N individuals, 0 means save all
+        self.ASSET_DIRECTORY = "./assets"
 
 
 class Settings:
     """
     Basically, the attributes' unit is meter.
     """
+    _instance = None
 
-    Server = Server
-    Optimization = Optimization
-    Loss = Loss
-    Simulation = Simulation
-    Render = Render
-    Robot = Robot
-    Food = Food
-    Nest = Nest
-    Storage = Storage
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance._initialized = False
+        return cls._instance
+
+    def __init__(self):
+        if self._initialized:
+            return
+
+        self.Server = Server()
+        self.Optimization = Optimization()
+        self.Robot = Robot()
+        self.Food = Food()
+        self.Nest = Nest()
+        self.Loss = Loss()
+        self.Simulation = Simulation()
+        self.Render = Render()
+        self.Storage = Storage()
+
+        # Fix Loss dependencies after instances are created
+        self.Loss.OFFSET_ROBOT_AND_FOOD = self.Robot.RADIUS + self.Food.RADIUS
+        self._initialized = True
 
     def as_dict(self):
         def as_dict(obj):
