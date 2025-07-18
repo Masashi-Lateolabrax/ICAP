@@ -93,8 +93,8 @@ class MujocoSTL(MujocoBackend):
 
         return spec, nest_spec, robot_specs, food_specs
 
-    def __init__(self, settings: Settings, render: bool = False):
-        super().__init__(settings, render)
+    def __init__(self, settings: Settings, generation: int, render: bool = False):
+        super().__init__(settings, generation, render)
 
     def step(self):
         mujoco.mj_step(self.model, self.data)
