@@ -99,7 +99,8 @@ def rand_robot_pos(settings: Settings, invalid_area: list[tuple[Position, float]
     return RobotLocation(pos[0], pos[1], angle)
 
 
-def rand_food_pos(settings: Settings, invalid_area: list[tuple[Position, float]] = None) -> Position:
+def rand_food_pos(settings: Settings, invalid_area: list[tuple[Position, float]] = None,
+                  rng: np.random.Generator = None) -> Position:
     """
     フードのランダムな位置を生成する関数。
 
@@ -108,6 +109,8 @@ def rand_food_pos(settings: Settings, invalid_area: list[tuple[Position, float]]
 
         invalid_area (list[tuple[Position, float]]): 無効エリアのリスト. 各タプルはPosition（x, y座標）と
             半径（float）を含みます。
+        
+        rng (np.random.Generator): 乱数生成器。Noneの場合はデフォルトの乱数生成器を使用。
 
     Returns:
         Position: フードの位置
@@ -117,6 +120,7 @@ def rand_food_pos(settings: Settings, invalid_area: list[tuple[Position, float]]
         (settings.Simulation.WORLD_WIDTH * 0.5, settings.Simulation.WORLD_HEIGHT * -0.5),
         settings.Food.RADIUS,
         invalid_area if invalid_area is not None else [],
-        padding=settings.Food.RADIUS
+        padding=settings.Food.RADIUS,
+        rng=rng
     )
     return Position(pos[0], pos[1])
