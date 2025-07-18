@@ -17,7 +17,8 @@ def random_point_avoiding_invalid_areas(
         size: float,
         invalid_area: list[tuple[Position, float]],
         retry: int = -1,
-        padding: float = 0
+        padding: float = 0,
+        rng: np.random.Generator = None
 ) -> np.ndarray | None:
     """
     Generates a random point within a specified rectangular area while avoiding designated invalid regions.
@@ -43,6 +44,8 @@ def random_point_avoiding_invalid_areas(
         until a valid point is found. The default value is -1.
     padding : float, optional
         The padding around the rectangular area. The default value is 0.
+    rng : np.random.Generator, optional
+        Random number generator to use. If None, uses the default numpy random generator.
 
     Returns
     -------
@@ -51,13 +54,15 @@ def random_point_avoiding_invalid_areas(
         invalid area. If a valid point is not found within the specified number of retries, the function returns
         `None`.
     """
+    if rng is None:
+        rng = np.random.default_rng()
 
     pos = np.zeros(2)
     while retry < 0 or retry > 0:
-        pos[0] = np.random.uniform(
+        pos[0] = rng.uniform(
             left_upper_point[0] + size + padding, right_lower_point[0] - size - padding
         )
-        pos[1] = np.random.uniform(
+        pos[1] = rng.uniform(
             right_lower_point[1] + size + padding, left_upper_point[1] - size - padding
         )
 
