@@ -12,17 +12,24 @@ class CalculationState(enum.Enum):
 
 
 class Individual(np.ndarray):
-    def __new__(cls, input_array):
+    def __new__(cls, input_array, generation: int):
         obj = np.asarray(input_array).view(cls)
         obj._fitness = float("inf")
         obj._calculation_state = CalculationState.NOT_STARTED
+        obj._generation = generation
         return obj
+
+    @property
+    def generation(self) -> int:
+        return self._generation
 
     def __array_finalize__(self, obj):
         if obj is None:
             return
-        self._fitness = getattr(obj, '_fitness', None)
-        self._calculation_state = getattr(obj, '_calculation_state', CalculationState.NOT_STARTED)
+
+        self._fitness = getattr(obj, "_fitness", None)
+        self._calculation_state = getattr(obj, "_calculation_state", CalculationState.NOT_STARTED)
+        self._generation = getattr(obj, "_generation", -1)
 
     def set_fitness(self, fitness: float):
         self._fitness = fitness
@@ -42,20 +49,23 @@ class Individual(np.ndarray):
         self[:] = other[:]
         self._fitness = other._fitness
         self._calculation_state = other._calculation_state
+        self._generation = other._generation
 
     def __reduce__(self):
         return (
             Individual,
-            (self.to_ndarray(),),
+            (self.to_ndarray(), self._generation),
             (
                 self._fitness,
                 self._calculation_state,
+                self._generation
             )
         )
 
     def __setstate__(self, state):
         self._fitness = state[0]
         self._calculation_state = state[1]
+        self._generation = state[2]
 
     @property
     def is_ready(self) -> bool:
