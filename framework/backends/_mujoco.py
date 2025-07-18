@@ -74,11 +74,10 @@ class MujocoBackend(SimulatorBackend, abc.ABC):
 
         return spec, nest_spec, robot_specs, food_specs
 
-    def __init__(self, settings: Settings, generation: int, render: bool = False):
+    def __init__(self, settings: Settings, render: bool = False):
         self.settings = settings
         self.do_render = render
         self.render_shape = self.settings.Render.RENDER_WIDTH, self.settings.Render.RENDER_HEIGHT
-        self.generation = generation
 
         self.spec, nest_spec, robot_specs, food_specs = self._generate_mjspec(self.settings)
 
