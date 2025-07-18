@@ -25,6 +25,7 @@ class Simulator(MujocoSTL, abc.ABC):
         super().__init__(settings, parameters.generation, render)
 
         self.timer = Timer(settings.Robot.THINK_INTERVAL / settings.Simulation.TIME_STEP)
+        self.rng = np.random.default_rng(parameters.generation)
 
         self.parameters = parameters
         self.scores: list[Loss] = []
