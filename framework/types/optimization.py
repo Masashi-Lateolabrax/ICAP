@@ -19,6 +19,10 @@ class Individual(np.ndarray):
         obj._generation = generation
         return obj
 
+    @property
+    def generation(self) -> int:
+        return self._generation
+
     def __array_finalize__(self, obj):
         if obj is None:
             return
