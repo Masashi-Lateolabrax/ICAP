@@ -28,15 +28,15 @@ class SimulatorForDebugging(Simulator):
     def __init__(self, settings: Settings, parameters: Individual, render: bool = False):
         super().__init__(settings, parameters, render)
 
-        self.timer = 0
+        self.step_time = 0
         self.debug_data = []
 
     def step(self):
         super().step()
 
-        self.timer += self.settings.Simulation.TIME_STEP
+        self.step_time += self.settings.Simulation.TIME_STEP
         self.debug_data.append(DebugInfo(
-            time=self.timer,
+            time=self.step_time,
             robot_positions=[np.copy(r.xpos) for r in self.robot_values],
             robot_inputs=self.input_ndarray.copy(),
             robot_directions=[np.copy(r.xdirection) for r in self.robot_values],
