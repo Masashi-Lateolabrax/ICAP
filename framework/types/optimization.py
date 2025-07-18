@@ -33,13 +33,11 @@ class Individual(np.ndarray):
     def __array_finalize__(self, obj):
         if obj is None:
             return
-        if not isinstance(obj, Individual):
-            raise TypeError("Individual can only be created from another Individual or ndarray")
 
-        self._fitness = obj._fitness
-        self._calculation_state = obj._calculation_state
-        self._generation = obj._generation
-        self._settings = obj._settings
+        self._fitness = getattr(obj, "_fitness", None)
+        self._calculation_state = getattr(obj, "_calculation_state", CalculationState.NOT_STARTED)
+        self._generation = getattr(obj, "_generation", -1)
+        self._settings = getattr(obj, "_settings", None)
 
     def set_fitness(self, fitness: float):
         self._fitness = fitness
