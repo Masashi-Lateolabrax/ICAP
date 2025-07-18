@@ -25,6 +25,7 @@ class Simulator(MujocoSTL, abc.ABC):
         super().__init__(settings, parameters.generation, render)
 
         self.timer = Timer(settings.Robot.THINK_INTERVAL / settings.Simulation.TIME_STEP)
+        self.rng = np.random.default_rng(parameters.generation)
 
         self.parameters = parameters
         self.scores: list[Loss] = []
@@ -109,7 +110,7 @@ class Simulator(MujocoSTL, abc.ABC):
                     (food.position, self.settings.Food.RADIUS)
                 )
 
-        new_position = rand_food_pos(self.settings, invalid_area)
+        new_position = rand_food_pos(self.settings, invalid_area, self.rng)
 
         food_joint = food_values.joint
 
