@@ -22,7 +22,7 @@ class Loss(metaclass=abc.ABCMeta):
 
 class Simulator(MujocoSTL, abc.ABC):
     def __init__(self, settings: Settings, parameters: Individual, controller: torch.nn.Module, render: bool = False):
-        super().__init__(settings, render)
+        super().__init__(settings, parameters.generation, render)
 
         self.timer = Timer(settings.Robot.THINK_INTERVAL / settings.Simulation.TIME_STEP)
 
