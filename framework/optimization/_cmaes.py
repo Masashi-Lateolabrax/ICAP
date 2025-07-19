@@ -88,6 +88,7 @@ class CMAES:
             mean=mean,
             sigma=sigma,
             population_size=population_size,
+            lr_adapt=True,
         )
 
         self._individual_manager = _IndividualManager()
