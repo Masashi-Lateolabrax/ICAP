@@ -63,7 +63,7 @@ class RobotNeuralNetwork(torch.nn.Module):
 
         self.sequential = torch.nn.Sequential(
             torch.nn.Linear(6, 3),
-            torch.nn.Tanhshrink(),
+            torch.nn.GELU(),
             torch.nn.Linear(3, 2),
             torch.nn.Sigmoid()
         )
