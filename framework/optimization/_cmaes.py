@@ -17,12 +17,12 @@ class _IndividualManager:
     def num_ready_individuals(self) -> int:
         return len(self.ready_individuals)
 
-    def init(self, cmaes: CMA):
+    def init(self, cmaes: CMA, settings: Settings):
         self.ready_individuals = []
         self.assigned_individuals = []
         for _ in range(cmaes.population_size):
             x = cmaes.ask()
-            individual = Individual(x, cmaes.generation)
+            individual = Individual(x, cmaes.generation, settings)
             self.ready_individuals.append(individual)
 
     def arrange_individuals(self):
@@ -91,7 +91,9 @@ class CMAES:
         )
 
         self._individual_manager = _IndividualManager()
-        self._individual_manager.init(self._optimizer)
+
+    def init_individuals(self, settings: Settings):
+        self._individual_manager.init(self._optimizer, settings)
 
     @property
     def population_size(self) -> int:
@@ -101,16 +103,16 @@ class CMAES:
     def generation(self) -> int:
         return self._optimizer.generation
 
-    def update(self) -> tuple[bool, list[Individual]]:
+    def update(self, settings: Settings) -> tuple[bool, list[Individual]]:
         self._individual_manager.arrange_individuals()
         if not ic(self._individual_manager.all_individuals_finished()):
             return False, self._individual_manager.ready_individuals
 
         individuals = self._individual_manager.assigned_individuals
-        solutions = [(i.to_ndarray(), i.get_fitness()) for i in individuals]
+        solutions = [(i.as_ndarray, i.get_fitness()) for i in individuals]
 
         self._optimizer.tell(solutions)
-        self._individual_manager.init(self._optimizer)
+        self._individual_manager.init(self._optimizer, settings)
 
         return True, individuals
 

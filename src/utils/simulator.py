@@ -39,7 +39,7 @@ class Simulator(MujocoSTL, abc.ABC):
         self.input_tensor = torch.from_numpy(self.input_ndarray)
 
         torch.nn.utils.vector_to_parameters(
-            torch.tensor(parameters, dtype=torch.float32),
+            torch.tensor(parameters.as_ndarray, dtype=torch.float32),
             self.controller.parameters()
         )
 
@@ -85,7 +85,7 @@ class Simulator(MujocoSTL, abc.ABC):
         return [s.as_float() for s in self.scores]
 
     def calc_total_score(self) -> float:
-        regularization_loss = self.settings.Loss.REGULARIZATION_COEFFICIENT * self.parameters.norm
+        regularization_loss = self.settings.Loss.REGULARIZATION_COEFFICIENT * np.linalg.norm(self.parameters.as_ndarray)
         return sum(s.as_float() for s in self.scores) + regularization_loss
 
     def _is_food_in_nest(self, food_values: FoodValues) -> bool:

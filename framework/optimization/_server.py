@@ -35,6 +35,7 @@ class _Server:
             sigma=self.settings.Optimization.SIGMA,
             population_size=self.settings.Optimization.POPULATION,
         )
+        self.cmaes.init_individuals(self.settings)
 
         self.socket_queue = socket_queue
         self.stop_event = stop_event
@@ -213,7 +214,7 @@ class _Server:
                 self._drop_socket(sock)
             self._mut_drop_dead_sockets()
 
-            result, individuals = self.cmaes.update()
+            result, individuals = self.cmaes.update(self.settings)
             ic(result, len(individuals))
 
             if self.handler:
