@@ -37,7 +37,7 @@ def mujoco_stl_example():
 
     viewer = GenericTkinterViewer(
         settings,
-        MujocoSTL(settings, -1, render=True),
+        MujocoSTL(settings, render=True),
     )
     viewer.run()
 
