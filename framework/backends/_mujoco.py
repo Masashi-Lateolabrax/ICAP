@@ -8,26 +8,63 @@ from ..prelude import *
 
 from ..environment import (
     add_geom,
-    setup_option, setup_visual, setup_textures, add_nest, add_wall, add_robot, add_food_object,
+    add_texture, add_material,
+    add_nest, add_wall, add_robot, add_food_object,
     rand_robot_pos, rand_food_pos
 )
 
 
 class MujocoBackend(SimulatorBackend, abc.ABC):
     @staticmethod
-    def _generate_mjspec(
+    def _generate_base_mjspec(
             settings: Settings
-    ) -> tuple[mujoco.MjSpec, mujoco._specs.MjsSite, list[RobotSpec], list[FoodSpec]]:
+    ) -> mujoco.MjSpec:
         spec = mujoco.MjSpec()
 
-        setup_option(spec, settings)
-        setup_visual(spec, settings)
-        setup_textures(spec, settings)
+        # Simulation settings
+        spec.option.timestep = settings.Simulation.TIME_STEP
+        spec.option.integrator = mujoco.mjtIntegrator.mjINT_RK4
+        spec.option.cone = mujoco.mjtCone.mjCONE_ELLIPTIC
 
-        add_wall(spec, settings)
+        # Visual settings
+        visual: mujoco._specs.MjVisual = spec.visual
+        visual.global_.offwidth = settings.Render.RENDER_WIDTH
+        visual.global_.offheight = settings.Render.RENDER_HEIGHT
+
+        # Texture and material setup
+        add_texture(
+            spec,
+            name="simple_checker",
+            type_=mujoco.mjtTexture.mjTEXTURE_2D,
+            builtin=mujoco.mjtBuiltin.mjBUILTIN_CHECKER,
+            width=CHECKER_TEXTURE_SIZE,
+            height=CHECKER_TEXTURE_SIZE,
+            rgb1=CHECKER_RGB_WHITE,
+            rgb2=CHECKER_RGB_GRAY
+        )
+        add_material(
+            spec,
+            name="ground",
+            texture="simple_checker",
+            texrepeat=(
+                settings.Simulation.WORLD_WIDTH * 0.5,
+                settings.Simulation.WORLD_HEIGHT * 0.5
+            )
+        )
+
+        return spec
+
+    def __init__(self, settings: Settings, render: bool = False):
+        self.settings = settings
+        self.do_render = render
+        self.render_shape = self.settings.Render.RENDER_WIDTH, self.settings.Render.RENDER_HEIGHT
+
+        self.spec = self._generate_base_mjspec(self.settings)
+
+        add_wall(self.spec, settings)
 
         add_geom(
-            spec.worldbody,
+            self.spec.worldbody,
             geom_type=mujoco.mjtGeom.mjGEOM_PLANE,
             pos=(0, 0, 0),
             size=(
@@ -40,7 +77,7 @@ class MujocoBackend(SimulatorBackend, abc.ABC):
             condim=GROUND_COLLISION_CONDIM
         )
 
-        nest_spec = add_nest(spec, settings)
+        nest_spec = add_nest(self.spec, settings)
 
         invalid_area: list[tuple[Position, float]] = []
 
@@ -59,7 +96,7 @@ class MujocoBackend(SimulatorBackend, abc.ABC):
                 (position, settings.Food.RADIUS)
             )
             food_specs.append(
-                add_food_object(spec, settings, i, position)
+                add_food_object(self.spec, settings, i, position)
             )
 
         # Create robots
@@ -77,22 +114,14 @@ class MujocoBackend(SimulatorBackend, abc.ABC):
                 (position.position, settings.Robot.RADIUS)
             )
             robot_specs.append(
-                add_robot(spec, settings, i, position)
+                add_robot(self.spec, settings, i, position)
             )
 
-        return spec, nest_spec, robot_specs, food_specs
-
-    def __init__(self, settings: Settings, render: bool = False):
-        self.settings = settings
-        self.do_render = render
-        self.render_shape = self.settings.Render.RENDER_WIDTH, self.settings.Render.RENDER_HEIGHT
-
-        self.spec, nest_spec, robot_specs, food_specs = self._generate_mjspec(self.settings)
-
+        # Instantiate the MuJoCo model and data
         self.model: mujoco.MjModel = self.spec.compile()
-        # self.model: mujoco.MjModel = mujoco.MjModel.from_xml_string(self.spec.to_xml())
         self.data: mujoco.MjData = mujoco.MjData(self.model)
 
+        # Extract important value references
         self.nest_site = self.data.site(nest_spec.name)
         self.robot_values = [
             RobotValues(settings.Robot.DISTANCE_BETWEEN_WHEELS, settings.Robot.MAX_SPEED, self.data, s)
@@ -100,6 +129,7 @@ class MujocoBackend(SimulatorBackend, abc.ABC):
         ]
         self.food_values = [FoodValues(self.data, s) for s in food_specs]
 
+        # Miscellaneous initializations
         self.camera = mujoco.MjvCamera()
 
     def reset(self):
