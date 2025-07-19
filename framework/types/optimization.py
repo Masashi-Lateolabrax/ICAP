@@ -1,5 +1,5 @@
 import enum
-from typing import Callable, Optional
+from typing import Callable
 
 import numpy as np
 
@@ -13,31 +13,25 @@ class CalculationState(enum.Enum):
     CORRUPTED = 3
 
 
-class Individual(np.ndarray):
-    def __new__(cls, input_array, generation: int, settings: Optional['Settings'] = None):
-        obj = np.asarray(input_array).view(cls)
-        obj._fitness = float("inf")
-        obj._calculation_state = CalculationState.NOT_STARTED
-        obj._generation = generation
-        obj._settings = settings
-        return obj
+class Individual:
+    def __init__(self, input_array, generation: int, settings: Settings):
+        self._parameter = np.asarray(input_array)
+        self._fitness = float("inf")
+        self._calculation_state = CalculationState.NOT_STARTED
+        self._generation = generation
+        self._settings = settings
+
+    @property
+    def as_ndarray(self) -> np.ndarray:
+        return self._parameter
 
     @property
     def generation(self) -> int:
         return self._generation
 
     @property
-    def settings(self) -> Optional['Settings']:
+    def settings(self) -> Settings:
         return self._settings
-
-    def __array_finalize__(self, obj):
-        if obj is None:
-            return
-
-        self._fitness = getattr(obj, "_fitness", None)
-        self._calculation_state = getattr(obj, "_calculation_state", CalculationState.NOT_STARTED)
-        self._generation = getattr(obj, "_generation", -1)
-        self._settings = getattr(obj, "_settings", None)
 
     def set_fitness(self, fitness: float):
         self._fitness = fitness
@@ -54,7 +48,7 @@ class Individual(np.ndarray):
     def copy_from(self, other: 'Individual'):
         if not isinstance(other, Individual):
             raise TypeError("Can only copy from another Individual")
-        self[:] = other[:]
+        self._parameter[:] = other._parameter[:]
         self._fitness = other._fitness
         self._calculation_state = other._calculation_state
         self._generation = other._generation
@@ -63,20 +57,16 @@ class Individual(np.ndarray):
     def __reduce__(self):
         return (
             Individual,
-            (self.to_ndarray(), self._generation, self._settings),
+            (self._parameter, self._generation, self._settings),
             (
                 self._fitness,
                 self._calculation_state,
-                self._generation,
-                self._settings
             )
         )
 
     def __setstate__(self, state):
         self._fitness = state[0]
         self._calculation_state = state[1]
-        self._generation = state[2]
-        self._settings = state[3]
 
     @property
     def is_ready(self) -> bool:
@@ -95,11 +85,8 @@ class Individual(np.ndarray):
         return self._calculation_state == CalculationState.FINISHED
 
     @property
-    def norm(self):
-        return np.linalg.norm(self)
-
-    def to_ndarray(self) -> np.ndarray:
-        return self.view(np.ndarray)
+    def shape(self):
+        return self._parameter.shape
 
 
 EvaluationFunction = Callable[[Individual], float]
