@@ -14,7 +14,6 @@ from framework.sensor import PreprocessedOmniSensor, DirectionSensor
 from framework.optimization import connect_to_server
 
 import utils
-from settings import MySettings
 
 ic.configureOutput(
     prefix=lambda: f'[{datetime.now().strftime("%H:%M:%S.%f")[:-3]}][PID:{os.getpid()}][TID:{threading.get_ident()}] CLIENT| ',
@@ -84,8 +83,10 @@ class RobotNeuralNetwork(torch.nn.Module):
 
 
 class Simulator(utils.Simulator):
-    def __init__(self, settings: Settings, individual: Individual, render: bool):
-        super().__init__(settings, individual, RobotNeuralNetwork(), render)
+    def __init__(self, individual: Individual, render: bool):
+        if not hasattr(individual, 'settings') or individual.settings is None:
+            raise ValueError("Individual object missing required settings")
+        super().__init__(individual.settings, individual, RobotNeuralNetwork(), render)
 
     def create_sensors(self) -> list[list[SensorInterface]]:
         sensors = []
@@ -150,15 +151,13 @@ class Handler:
 
 def main():
     parser = argparse.ArgumentParser(description="ICAP Optimization Client")
-    parser.add_argument("--host", type=str, help="Server host address")
-    parser.add_argument("--port", type=int, help="Server port number")
+    parser.add_argument("--host", type=str, default="localhost", help="Server host address")
+    parser.add_argument("--port", type=int, default=5000, help="Server port number")
     parser.add_argument("--num-processes", type=int, default=1, help="Number of evaluation processes")
     args = parser.parse_args()
 
-    settings = MySettings()
-
-    host = args.host if args.host is not None else settings.Server.HOST
-    port = args.port if args.port is not None else settings.Server.PORT
+    host = args.host
+    port = args.port
 
     print("=" * 50)
     print("OPTIMIZATION CLIENT")
@@ -175,7 +174,7 @@ def main():
         host,
         port,
         evaluation_function=utils.EvaluationFunction(
-            settings, lambda ind: Simulator(settings, ind, False)
+            lambda ind: Simulator(ind, False)
         ).run,
         handler=handler.run,
         num_processes=args.num_processes,
