@@ -50,7 +50,11 @@ class MujocoBackend(SimulatorBackend, abc.ABC):
             if i < len(settings.Food.INITIAL_POSITION):
                 position: Position = settings.Food.INITIAL_POSITION[i]
             else:
-                position: Position = rand_food_pos(settings, invalid_area)
+                position: Position = rand_food_pos(
+                    settings.Simulation.WORLD_WIDTH, settings.Simulation.WORLD_HEIGHT,
+                    settings.Food.RADIUS,
+                    invalid_area
+                )
             invalid_area.append(
                 (position, settings.Food.RADIUS)
             )
@@ -64,7 +68,11 @@ class MujocoBackend(SimulatorBackend, abc.ABC):
             if i < len(settings.Robot.INITIAL_POSITION):
                 position: RobotLocation = settings.Robot.INITIAL_POSITION[i]
             else:
-                position: RobotLocation = rand_robot_pos(settings, invalid_area)
+                position: RobotLocation = rand_robot_pos(
+                    settings.Simulation.WORLD_WIDTH, settings.Simulation.WORLD_HEIGHT,
+                    settings.Robot.RADIUS,
+                    invalid_area
+                )
             invalid_area.append(
                 (position.position, settings.Robot.RADIUS)
             )
