@@ -110,7 +110,7 @@ class Simulator(MujocoSTL, abc.ABC):
                     (food.position, self.settings.Food.RADIUS)
                 )
 
-        new_position = rand_food_pos(self.settings, invalid_area)
+        new_position = rand_food_pos(self.settings, invalid_area, self.rng)
 
         food_joint = food_values.joint
 
