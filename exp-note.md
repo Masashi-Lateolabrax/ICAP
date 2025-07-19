@@ -1,5 +1,33 @@
 # Memo
 
+## 2025/07/19 21:03 c2fbdac5
+
+### Loss Function Trajectory Analysis
+
+- **Phase 1 (0-250 generations)**: Steady loss function decrease
+- **Phase 2 (250-350 generations)**: Loss function increase (exploration diversification)
+- **Phase 3 (370-500 generations)**: Oscillating downward trend, incomplete convergence
+
+### Best Solution Characteristics (Generation 389)
+
+- **Behavior Confirmation**: Food transportation behavior achieved
+- **Adaptation Limitations**: Response only to initially placed food, insufficient adaptation to repositioned food
+- **Implications**: Room for improvement in generalization capability
+
+### Parameter Dynamics
+
+- **Up to Generation 250**: Parameter A ≈ 4.0 dominates
+- **Generations 250-300**: Parameter B ≈ -5.0 takes over
+- **Around Generation 300**: Primary parameter role switching phenomenon observed
+
+### Future Analysis Ideas
+
+Quantitative evaluation of parameter magnitude relationships and role switching patterns could enable deeper understanding of the optimization process.
+
+### Improvement Proposals
+
+Increasing episode length or number of generations might enable more stable convergence.
+
 ## 2025/07/19 15:52 8228d5a1
 
 In this experiment, we employed Learning Rate Adaptation CMA-ES [Nomura et al., 2023].
