@@ -125,8 +125,8 @@ MySettings.Loss.REGULARIZATION_COEFFICIENT = 0
 ###################################################################################
 # Simulation settings
 ###################################################################################
-MySettings.Simulation.TIME_STEP = 0.01
-MySettings.Simulation.TIME_LENGTH = 45
+MySettings.Simulation.TIME_STEP = 0.02
+MySettings.Simulation.TIME_LENGTH = 90
 
 MySettings.Simulation.WORLD_WIDTH = 10.0
 MySettings.Simulation.WORLD_HEIGHT = 10.0
