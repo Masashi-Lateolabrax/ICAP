@@ -3,7 +3,7 @@ from typing import Callable
 
 import numpy as np
 
-from ..prelude import Settings
+from ..config import Settings
 
 
 class CalculationState(enum.Enum):
