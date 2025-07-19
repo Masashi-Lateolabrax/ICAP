@@ -1,5 +1,36 @@
 # Memo
 
+## 2025/07/19 19:22 - Food Relocation Pattern Study
+
+**Experimental Design**: Two food relocation mechanisms have been implemented to investigate the impact of food
+relocation patterns on robotic collective behavior learning.
+
+### Food Relocation Mechanism Classification
+
+- **Pattern-type Relocation**: All individuals within the same generation experience identical food placement patterns.
+  Patterns change randomly between generations.
+- **Random-type Relocation**: Individuals within the same generation experience different food placement patterns. Food
+  is randomly relocated whenever carried to the nest.
+
+### Experimental History and Comparative Study
+
+- **Previous Experiment** (commit c2fbdac5): Pattern-type relocation
+- **Current Experiment**: Changed to random-type relocation
+- **Key Changes**:
+    - Food placement: Pattern-type → Random-type (introduction of environmental stochasticity)
+
+**Objective**: Through comparative experiments between pattern-type and random-type relocations, verify the potential
+impact of inter-individual randomness on collective behavior emergence.
+
+### Implementation Status
+
+**Completed:**
+- [x] Food relocation mechanism implementation (both pattern-type and random-type)
+- [x] Configuration switch to random-type relocation
+
+**New Tasks:**
+- [ ] None
+
 ## 2025/07/17 17:40
 
 We have implemented several features for analysis and changed the settings to be
