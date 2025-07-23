@@ -34,7 +34,7 @@ class Simulator(MujocoSTL, abc.ABC):
         self.dummy_foods: list[DummyFoodValues] = []
 
         self.controller = controller
-        self.device = settings.Device.DEVICE
+        self.device = settings.Device.USE_DEVICE
 
         self.output_ndarray = np.zeros((settings.Robot.NUM, 2), dtype=np.float32)
 
