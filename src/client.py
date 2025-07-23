@@ -58,7 +58,7 @@ class Loss(utils.Loss):
 
 
 class RobotNeuralNetwork(torch.nn.Module):
-    def __init__(self, parameters: Individual = None):
+    def __init__(self, parameters: Individual = None, device: torch.device = torch.device('cpu')):
         super(RobotNeuralNetwork, self).__init__()
 
         self.sequential = torch.nn.Sequential(
@@ -68,10 +68,12 @@ class RobotNeuralNetwork(torch.nn.Module):
             torch.nn.Sigmoid()
         )
 
+        self.to(device)
+
         if parameters is not None:
             assert len(parameters) == self.dim, "Parameter length does not match the network's parameter count."
             torch.nn.utils.vector_to_parameters(
-                torch.tensor(parameters, dtype=torch.float32),
+                torch.tensor(parameters, dtype=torch.float32, device=device),
                 self.parameters()
             )
 
@@ -85,7 +87,16 @@ class RobotNeuralNetwork(torch.nn.Module):
 
 class Simulator(utils.Simulator):
     def __init__(self, settings: Settings, individual: Individual, render: bool):
-        super().__init__(settings, individual, RobotNeuralNetwork(), render)
+        nn = RobotNeuralNetwork(device=settings.Device.USE_DEVICE)
+        super().__init__(settings, individual, nn, render)
+
+        self.input_ndarray = np.zeros((self.settings.Robot.NUM, 2 * 3), dtype=np.float32)
+        self.input_tensor = torch.from_numpy(self.input_ndarray)
+
+        if settings.Device.USE_DEVICE.type != 'cpu':
+            self.input_tensor_device = torch.from_numpy(self.input_ndarray).to(settings.Device.USE_DEVICE)
+        else:
+            self.input_tensor_device = self.input_tensor
 
     def create_sensors(self) -> list[list[SensorInterface]]:
         sensors = []
@@ -115,7 +126,11 @@ class Simulator(utils.Simulator):
             self.input_ndarray[i, 0:2] = sensors[0].get()
             self.input_ndarray[i, 2:4] = sensors[1].get()
             self.input_ndarray[i, 4:6] = sensors[2].get()
-        return self.input_tensor
+
+        if self.input_tensor_device.device != "cpu":
+            self.input_tensor_device.copy_(self.input_tensor)
+
+        return self.input_tensor_device
 
     def evaluation(self) -> Loss:
         robot_positions = [r.xpos for r in self.robot_values]
