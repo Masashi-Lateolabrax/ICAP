@@ -1,6 +1,7 @@
 import logging
 
 import numpy as np
+import torch
 
 from ..types import RobotLocation, Position
 
@@ -104,6 +105,10 @@ class Storage:
     ASSET_DIRECTORY = "./assets"
 
 
+class Device:
+    USE_DEVICE = torch.device('cpu')  # torch.device('cuda')
+
+
 class Settings:
     """
     Basically, the attributes' unit is meter.
@@ -118,6 +123,7 @@ class Settings:
     Food = Food
     Nest = Nest
     Storage = Storage
+    Device = Device
 
     def as_dict(self):
         def as_dict(obj):

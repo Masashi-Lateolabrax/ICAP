@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 from framework.prelude import Settings, calc_loss_sigma, Position, RobotLocation
 
 
@@ -143,4 +144,11 @@ MySettings.Storage.SAVE_INDIVIDUALS = True
 MySettings.Storage.SAVE_DIRECTORY = "results"
 MySettings.Storage.SAVE_INTERVAL = 1
 MySettings.Storage.TOP_N = 5
+###################################################################################
+
+
+###################################################################################
+# Device settings
+###################################################################################
+MySettings.Device.USE_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 ###################################################################################
