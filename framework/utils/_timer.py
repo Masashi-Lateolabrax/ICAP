@@ -6,6 +6,6 @@ class Timer:
     def tick(self):
         self.time += 1
         if self.time >= self.interval:
-            self.time = 0
+            self.time -= self.interval
             return True
         return False
