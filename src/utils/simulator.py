@@ -34,12 +34,12 @@ class Simulator(MujocoSTL, abc.ABC):
         self.dummy_foods: list[DummyFoodValues] = []
 
         self.controller = controller
-        self.input_ndarray = np.zeros((settings.Robot.NUM, 2 * 3), dtype=np.float32)
+        self.device = settings.Device.DEVICE
+
         self.output_ndarray = np.zeros((settings.Robot.NUM, 2), dtype=np.float32)
-        self.input_tensor = torch.from_numpy(self.input_ndarray)
 
         torch.nn.utils.vector_to_parameters(
-            torch.tensor(parameters, dtype=torch.float32),
+            torch.tensor(parameters, dtype=torch.float32, device=self.device),
             self.controller.parameters()
         )
 
@@ -64,8 +64,12 @@ class Simulator(MujocoSTL, abc.ABC):
     def step(self):
         if not self.timer.tick():
             with torch.no_grad():
-                input_ = self.create_input_for_controller()
-                output = self.controller(input_)
+                input_: torch.Tensor = self.create_input_for_controller()
+
+                input_device = input_.to(self.device)
+                output_device = self.controller(input_device)
+                output = output_device.cpu()
+
                 self.output_ndarray = output.numpy()
 
         for i, robot in enumerate(self.robot_values):
