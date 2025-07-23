@@ -62,7 +62,7 @@ class Simulator(MujocoSTL, abc.ABC):
         raise NotImplementedError("Subclasses should implement this method.")
 
     def step(self):
-        if not self.timer.tick():
+        if self.timer.tick():
             with torch.no_grad():
                 input_: torch.Tensor = self.create_input_for_controller()
 
