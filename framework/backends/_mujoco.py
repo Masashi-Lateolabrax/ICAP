@@ -139,7 +139,8 @@ class MujocoGpuBackend(MujocoBackend, abc.ABC):
         self._step_on_gpu = jax.jit(mjx.step)
 
     def step_on_gpu(self):
-        self.data = self._step_on_gpu(self.mjx_model, self.mjx_data)
+        self.mjx_data = self._step_on_gpu(self.mjx_model, self.mjx_data)
+        self.data = mjx.get_data(self.model, self.mjx_data)
 
     def reset(self):
         mujoco.mj_resetData(self.model, self.data)
