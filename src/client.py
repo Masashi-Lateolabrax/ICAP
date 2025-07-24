@@ -163,6 +163,14 @@ class Handler:
         )
 
 
+class SimulatorBuilder:
+    def __init__(self, settings):
+        self.settings = settings
+
+    def build(self, individual: Individual):
+        return Simulator(self.settings, individual, False)
+
+
 def main():
     parser = argparse.ArgumentParser(description="ICAP Optimization Client")
     parser.add_argument("--host", type=str, help="Server host address")
@@ -185,12 +193,13 @@ def main():
     print("=" * 50)
 
     handler = Handler()
+    builder = SimulatorBuilder(settings)
 
     connect_to_server(
         host,
         port,
         evaluation_function=utils.EvaluationFunction(
-            settings, lambda ind: Simulator(settings, ind, False)
+            settings, builder.build
         ).run,
         handler=handler.run,
         num_processes=args.num_processes,
