@@ -1,6 +1,10 @@
 import abc
 
+import jax
+
 import mujoco
+from mujoco import mjx
+
 import numpy as np
 
 from icecream import ic
@@ -123,3 +127,20 @@ class MujocoBackend(SimulatorBackend, abc.ABC):
         except Exception as e:
             ic("MuJoCo render error:", e)
             img_buf.fill(0)
+
+
+class MujocoGpuBackend(MujocoBackend, abc.ABC):
+    def __init__(self, settings: Settings, render: bool = False):
+        super().__init__(settings, render)
+
+        self.mjx_model = mjx.put_model(self.model)
+        self.mjx_data = mjx.put_data(self.model, self.data)
+
+        self._step_on_gpu = jax.jit(mjx.step)
+
+    def step_on_gpu(self):
+        self.data = self._step_on_gpu(self.mjx_model, self.mjx_data)
+
+    def reset(self):
+        mujoco.mj_resetData(self.model, self.data)
+        self.mjx_data = mjx.put_data(self.model, self.data)
