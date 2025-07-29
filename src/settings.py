@@ -118,7 +118,7 @@ MySettings.Loss.OFFSET_ROBOT_AND_FOOD = Settings.Robot.RADIUS + Settings.Food.RA
 MySettings.Loss.SIGMA_ROBOT_AND_FOOD = calc_loss_sigma(1, 0.3)
 MySettings.Loss.GAIN_ROBOT_AND_FOOD = 0.01
 
-MySettings.Loss.REGULARIZATION_COEFFICIENT = 0
+MySettings.Loss.REGULARIZATION_COEFFICIENT = 1e-3
 ###################################################################################
 
 
