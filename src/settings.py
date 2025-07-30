@@ -41,7 +41,7 @@ MySettings.Optimization.DIMENSION = None  # Will be set later based on the neura
 MySettings.Optimization.POPULATION = 300
 MySettings.Optimization.GENERATION = 1000
 MySettings.Optimization.SIGMA = 0.1
-MySettings.Optimization.CLIP = (-1.0, 1.0)
+MySettings.Optimization.CLIP = (-1.0, 1.0)  # Clip from -1.0 to 1.0
 ###################################################################################
 
 
