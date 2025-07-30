@@ -1,38 +1,61 @@
-[tool.poetry]
-name = "interpretable-controller-for-analyzing-pheromone-effects"
+[project]
+name = "icap"
 version = "0.1.0"
-description = ""
-authors = ["MasashiSUZUKI <masashi.lateolabrax@gmail.com>"]
-readme = "README.md"
-package-mode = false
+description = "Add your description here"
+requires-python = "==3.12.10"
+dependencies = [
+    "genesis-world",
+    "pillow==11.2.1",
+    "glfw==2.9.0",
+    "mujoco==3.3.3",
+    "cmaes==0.11.1",
+    "scipy==1.16.0",
+    "icecream==2.1.5",
+]
 
-[tool.poetry.dependencies]
-python = "^3.11"
-numpy = "1.26.4"
-mujoco-xml-generator = { git = "https://github.com/Masashi-Lateolabrax/mujoco-xml-generator.git", rev = "dev" }
-torch = { version = "2.2.2+cpu", source = "torch" }
-torchvision = { version = "0.17.2+cpu", source = "torch" }
-torchaudio = { version = "2.2.2+cpu", source = "torch" }
-opencv-python = "4.10.0.84"
-mujoco = "3.1.6"
-deap = "1.4.1"
-psutil = "6.0.0"
-scipy = "1.13.1"
-pyyaml = "6.0.1"
-pytk = "^0.0.2.1"
+[tool.uv.sources]
+# Failed to check out commit 963687e7be174dd7dfcb46623d2fb410c9444c8a in the genesis-world repository.
+# 8a26cd410b37a6ef6edb50d0adcd03fcdfa3da3b is OK.
+genesis-world = { git = "https://github.com/Genesis-Embodied-AI/Genesis.git", rev = "7cf9efe7b32ae76df602475ed6cb580c1477f89f" }
 
-[tool.poetry.extras]
-cuda = ["cupy-cuda12x"]
+torch = [
+    { index = "pytorch-cpu", extra = "cpu" },
+    { index = "pytorch-cu124", extra = "cu124" },
+    { index = "pytorch-cu128", extra = "cu128" },
+]
 
-[[tool.poetry.source]]
-name = "torch"
+[project.optional-dependencies]
+cpu = [
+    "torch",
+]
+cu124 = [
+    "torch",
+]
+cu128 = [
+    "torch",
+]
+
+[tool.uv]
+conflicts = [
+    [
+        { extra = "cpu" },
+        { extra = "cu124" },
+        { extra = "cu128" },
+    ],
+]
+
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
 url = "https://download.pytorch.org/whl/cpu"
-priority = "explicit"
+explicit = true
 
+[[tool.uv.index]]
+name = "pytorch-cu124"
+url = "https://download.pytorch.org/whl/cu124"
+explicit = true
 
-[tool.poetry.group.dev.dependencies]
-matplotlib = "^3.8.4"
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true

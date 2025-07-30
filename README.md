@@ -1,123 +1,162 @@
-# Study Note
+# Self-Organized Robotic Behavior with Pheromones
 
-## Theme
+Experimental code for training robots to learn self-organized behavior using pheromone mechanisms in simulation environments.
 
-Training robots to learn self-organized behavior using pheromones.
+## Overview
 
-## Motivation
+This project explores how robots can develop self-organized behaviors through pheromone-based communication, mimicking natural swarm intelligence patterns found in biological systems.
 
-The study of self-organized behaviors in robots is crucial for developing autonomous systems that
-can operate efficiently in complex environments.
-By understanding the role pheromones play in behavior regulation,
-we can design systems that mimic natural swarm intelligence,
-leading to advancements in robotics, logistics, and communication.
+### Objectives
 
-## Contribution
+- Train robots to learn self-organized behavior through collective intelligence
+- Evaluate the contribution of pheromone mechanisms to robotic behavior
+- Analyze the relationship between environmental parameters and emergent behaviors
 
-- Developing a framework for training robots to achieve self-organized behavior.
-- Evaluating the impact of pheromone mechanisms on robotic behavior.
-- Providing insights into how environmental and systemic variables influence collective behavior in robotic systems.
+### Key Contributions
 
-## Objective
+- Experimental platform for training self-organized robotic behavior
+- Evaluation of pheromone impact on collective behavior
+- Analysis of environmental and systemic variables in robotic swarms
 
-- Train robots to learn self-organised behavior.
-- Evaluate how much pheromone contributes to the behavior.
+## Environment Setup
 
-## Road Map
+This project uses [uv](https://github.com/astral-sh/uv) as the Python package manager. Run the following commands to set
+up the environment for running experiments:
 
-1. Create simulation program.
-2. Find settings for successful training.
-3. Collect trained behaviors with various settings.
-    - Test difference: sensor sensitivity, number of robots, number of food sources, environment size, loss function,
-      hyperparameters of optimizer, robot's controller.
-4. Define the index that represents how well robots are organized.
-5. Analyze the relationship between settings and the organized indexes.
-6. Convert the trained models into explainable models.
-7. Analyze the effect of pheromones.
+### CUDA Support
 
-## Method
+```bash
+uv sync --extra cu128
+# or 
+uv sync --extra cu124
+```
 
-### Simulation
+### CPU Only
 
-Use MuJoCo simulator.
+```bash
+uv sync --extra cpu
+```
 
-Robots have two omni-sensors, pheromone secretion organ, two wheels, artificial neural network controller.
+Note: The extras are mutually exclusive due to UV conflict resolution.
 
-The omni-sensor is defined by the following formula.
+> **Troubleshooting**: If you encounter PIL-related errors, see the [Pillow Compatibility Note](#pillow-compatibility-note) at the end of this document.
 
-$$
-\mathrm{OmniSensor} = \frac{1}{N_\mathrm{O}} \sum^{}_{o \in \mathrm{Objects}}
-\frac{1}{d_o + 1}
-\begin{bmatrix}
-\cos \theta_o \\
-\sin \theta_o
-\end{bmatrix} \,.
-$$
+## Usage
 
-Here,
-*Objects* denote a set of sensing targets,
-$N_\mathrm{O}$ denote the number of *Objects*,
-$d_o$ denote a distance between the robot and $o$, and
-$\theta_o$ denote a relative angle from the robot to $o$.
+This project implements a distributed optimization system using CMA-ES (Covariance Matrix Adaptation Evolution Strategy) with a client-server architecture for training robotic behaviors.
 
-Note that I mean above *the robot* is observer.
+### Running the Optimization System
 
-Each robot has two omni-sensors because of allowing robots to observe the positions of other robots and food.
-Namely, a robot has one with a set of robots and one with a set of food.
+**Important**: All commands must be executed from the project root directory (`/path/to/ICAP/`).
 
-### Task
+#### 1. Start the Optimization Server
 
-Robots work in the rectangle area, referred to as the field.
+The server manages the CMA-ES optimization process and coordinates multiple client connections:
 
-When create the field, Food are placed on the field randomly and
-the nest is set at center of the field.
+```bash
+# Navigate to project root directory first
+cd /path/to/ICAP
 
-When food enters the nest, it is replaced randomly.
+# For CUDA 12.8 support
+PYTHONPATH=. uv run --extra cu128 src/server.py
 
-Robots are trained to transport food to the nest.
+# For CUDA 12.4 support  
+PYTHONPATH=. uv run --extra cu124 src/server.py
 
-### Optimization Method
+# For CPU-only execution
+PYTHONPATH=. uv run --extra cpu src/server.py
+```
 
-Use CMA-ES.
+#### 2. Connect Optimization Clients
 
-### Explainable Model
+Clients perform the actual robot simulation evaluations using multiprocessing for parallel evaluation.
 
-TODO
+```bash
+# Navigate to project root directory first
+cd /path/to/ICAP
 
-# Progress
+# Single evaluation process (default)
+PYTHONPATH=. uv run --extra cu128 src/client.py
 
-1. Create simulation program.
-    - [x] Create framework.
-    - [x] Create the simplest environment example.
-    - [ ] Refactor the framework for debugging.
-    - [ ] Implement a function to record the loss function output.
-    - [ ] Examine CMA-ES applying to robots which take discrete actions.
-2. Find settings for successful training.
-3. Collect trained behaviors with various settings.
-4. Define the index that represents how well robots are organized.
-5. Analyze the relationship between settings and the organized indexes.
-6. Convert the trained models into explainable models.
-7. Analyze the effect of pheromones.
+# Multiple evaluation processes for parallel simulation
+PYTHONPATH=. uv run --extra cu128 src/client.py --num-processes 4
 
-# For developers
+# With custom server settings
+PYTHONPATH=. uv run --extra cu128 src/client.py --host 192.168.1.100 --port 5001 --num-processes 4
+```
 
-## Git prefix
+Replace `cu128` with `cu124` or `cpu` depending on your environment setup.
 
-| Prefix | Definition                                                                                 |
-|--------|--------------------------------------------------------------------------------------------|
-| add    | Indicates that something has been added, such as files, directories, functions, and so on. |
-| exp    | Indicates setup done for experiments.                                                      |
-| mod    | Indicates changes with alternation of interfaces.                                          |
-| doc    | Indicates that documentation has been added or modified.                                   |
 
-## Branching strategy
+## Project Structure
 
-| Name     | Description                                         | source       | merge to       |
-|----------|-----------------------------------------------------|--------------|----------------|
-| main     | Main branch                                         | -            | -              |
-| develop  | Manage shared codes in scheme branches              | initial main | main, scheme/* |
-| scheme/* | Manage codes of experiments for specific conditions | develop      | main           |
+- **`src/`**: Main application entry points (client.py, server.py, analysis.py)
+- **`framework/`**: Core framework implementation
+  - `optimization/`: CMA-ES server and client with packet-based communication
+  - `backends/`: Physics simulation backends (MuJoCo, Genesis-World)
+  - `sensor/`: Robot sensor implementations (omni-sensor, direction sensor)
+  - `types/`: Data structures and type definitions
+  - `environment/`: Environment setup and object positioning
+- **`examples/`**: Example implementations and test scripts
+- **`assets/`**: 3D models for robots and food objects
+- **`results/`**: Experiment results organized by timestamp
 
-# Reference
 
-Nothing yet.
+## Development Guidelines
+
+### Git Commit Prefixes
+
+| Prefix | Description                          |
+|--------|--------------------------------------|
+| `add`  | New files, directories, or functions |
+| `exp`  | Experimental setup                   |
+| `mod`  | Interface modifications              |
+| `doc`  | Documentation changes                |
+
+### Branch Strategy
+
+| Branch     | Purpose             | Source    | Merge Target       |
+|------------|---------------------|-----------|--------------------|
+| `main`     | Production code     | -         | -                  |
+| `develop`  | Shared development  | `main`    | `main`, `scheme/*` |
+| `scheme/*` | Experiment-specific | `develop` | `main`             |
+
+## Pillow Compatibility Note
+
+By default, `uv` uses a standalone Python environment, which may cause errors when importing `PIL._imagingtk`:
+
+```
+TypeError: bad argument type for built-in operation
+```
+
+This happens because the `_imagingtk` C extension isn't properly built.
+
+This issue is known to occur with uv when it auto-installs python-build-standalone, which lacks full support for certain
+C extensions. See also:
+[astral-sh/python-build-standalone#533](https://github.com/astral-sh/python-build-standalone/issues/533)
+
+### Solution
+
+1. Install dependencies:
+
+   ```bash
+   sudo apt install tk-dev tcl-dev
+   ```
+
+2. Install Python via `pyenv`:
+
+   ```bash
+   pyenv install 3.12.10
+   ```
+
+3. Remove uv's standalone Python if not needed:
+
+   ```bash
+   rm -rf ~/.local/share/uv/python
+   ```
+
+This ensures full Pillow functionality, including `ImageTk`.
+
+## References
+
+To be added as research progresses.
