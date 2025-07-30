@@ -32,6 +32,7 @@ class Optimization:
     POPULATION: int = 1000
     GENERATION: int = 100
     SIGMA: float = 0.5
+    CLIP: tuple[float, float] | None = None  # CLIP[0] is the lower bound, CLIP[1] is the upper bound.
 
 
 class Robot:
