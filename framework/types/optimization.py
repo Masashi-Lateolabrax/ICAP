@@ -43,13 +43,18 @@ class Individual(np.ndarray):
     def set_calculation_state(self, state: CalculationState):
         self._calculation_state = state
 
+    def copy_info_data_from(self, other: 'Individual'):
+        if not isinstance(other, Individual):
+            raise TypeError("Can only copy info data from another Individual")
+        self._fitness = other._fitness
+        self._calculation_state = other._calculation_state
+
     def copy_from(self, other: 'Individual'):
         if not isinstance(other, Individual):
             raise TypeError("Can only copy from another Individual")
         self[:] = other[:]
-        self._fitness = other._fitness
-        self._calculation_state = other._calculation_state
         self._generation = other._generation
+        self.copy_info_data_from(other)
 
     def __reduce__(self):
         return (

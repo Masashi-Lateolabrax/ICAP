@@ -38,11 +38,6 @@ class Simulator(MujocoSTL, abc.ABC):
         self.output_ndarray = np.zeros((settings.Robot.NUM, 2), dtype=np.float32)
         self.input_tensor = torch.from_numpy(self.input_ndarray)
 
-        torch.nn.utils.vector_to_parameters(
-            torch.tensor(parameters, dtype=torch.float32),
-            self.controller.parameters()
-        )
-
         mujoco.mj_step(self.model, self.data)
 
     def reset(self):
