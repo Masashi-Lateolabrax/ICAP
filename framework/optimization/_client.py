@@ -97,6 +97,11 @@ def _evaluation_worker_process(
             logging.error(f"Error putting result to response queue: {e}")
             continue
 
+    if not stop_event.is_set():
+        logging.info("Worker process stopping unexpectedly")
+    else:
+        logging.info("Worker process stopping gracefully")
+
 
 class _EvaluationWorker:
     def __init__(
