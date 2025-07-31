@@ -17,15 +17,34 @@ HEARTBEAT_INTERVAL = 20
 
 
 @dataclasses.dataclass
-class ClientCalculationState:
-    idle: bool
-    throughput: Optional[float] = None
-    individuals: Optional[list[Individual]] = None
-    error: Optional[str] = None
+class ClientTask:
+    def __init__(self, individual: Individual, id_: int):
+        self.individual = individual
+        self._id = id_
 
     @property
-    def is_idle(self) -> bool:
-        return self.idle
+    def id(self) -> int:
+        return self._id
+
+    @property
+    def state(self) -> CalculationState:
+        return self.individual.get_calculation_state()
+
+    def set_fitness(self, fitness: float) -> None:
+        self.individual.set_fitness(fitness)
+
+    def set_state(self, state: CalculationState) -> None:
+        self.individual.set_calculation_state(state)
+
+    def copy_from(self, other: 'ClientTask') -> None:
+        if not isinstance(other, ClientTask):
+            raise TypeError("Can only copy from another ClientTask")
+        if not self.id == other.id:
+            raise ValueError("Cannot copy from a different ClientTask")
+        self.individual.copy_info_data_from(other.individual)
+
+    def __repr__(self) -> str:
+        return f"ClientTask(id={self.id}, array={self.individual})"
 
 
 def _connect_to_server(server_address: str, port: int) -> socket.socket:
@@ -65,22 +84,42 @@ def _evaluation_worker_process(
 
     while not stop_event.is_set():
         try:
-            individual = task_queue.get(timeout=1)
+            task = task_queue.get(timeout=1)
 
         except queue.Empty:
             continue
-
-        try:
-            fitness = evaluation_function(individual)
-            individual.set_fitness(fitness)
-            individual.set_calculation_state(CalculationState.FINISHED)
-
         except Exception as e:
-            logging.error(f"Error during evaluation function execution: {e}")
-            individual.set_fitness(float('inf'))
+            logging.error(f"Error getting task from queue: {e}")
             continue
 
-        response_queue.put(individual)
+        if not isinstance(task, ClientTask):
+            raise TypeError("Expected ClientTask object")
+
+        try:
+            fitness = evaluation_function(task.individual)
+            task.set_fitness(fitness)
+            task.set_state(CalculationState.FINISHED)
+
+        except KeyboardInterrupt:
+            logging.info("Evaluation interrupted by user")
+            stop_event.set()
+            break
+        except MemoryError:
+            logging.error("Out of memory during evaluation")
+            stop_event.set()
+            break
+        except Exception as e:
+            logging.error(f"Error during evaluation function execution: {e}")
+            stop_event.set()
+            break
+
+        try:
+            response_queue.put(task)
+        except Exception as e:
+            logging.error(f"Error putting result to response queue: {e}")
+            continue
+
+    print(f"Process {multiprocessing.current_process().pid} stopping... (stop_event:{stop_event.is_set()})")
 
 
 class _EvaluationWorker:
@@ -135,22 +174,22 @@ class _EvaluationWorker:
         else:
             logging.warning("Evaluation worker is not running, cannot stop it")
 
-    def add_task(self, individuals: list[Individual]) -> None:
+    def add_task(self, tasks: list[ClientTask]) -> None:
         if not self.is_alive():
             raise RuntimeError("Evaluation worker is not running")
-        ic(len(individuals))
-        for individual in individuals:
-            self.task_queue.put(individual)
+        ic(len(tasks))
+        for task in tasks:
+            self.task_queue.put(task)
 
-    def get_response(self) -> list[Individual]:
+    def get_response(self) -> list[ClientTask]:
         if not self.is_alive():
             raise RuntimeError("Evaluation worker is not running")
-        individuals = []
+        tasks = []
         while not self.response_queue.empty():
-            individuals.append(
+            tasks.append(
                 self.response_queue.get_nowait()
             )
-        return individuals
+        return tasks
 
 
 class _CommunicationWorker:
@@ -158,32 +197,37 @@ class _CommunicationWorker:
         self.sock = sock
         self.last_heartbeat = time.time()
         self.last_request = 0.0
-        self.task: Optional[list[Individual]] = None
-        self.calculating_task: list[Individual] = []
+        self._assigned_individuals: Optional[list[Individual]] = None
+        self.calculating_task: list[ClientTask] = []
 
     def is_alive(self) -> bool:
         return self.sock is not None
 
     def is_assigned(self) -> bool:
-        return bool(self.task)
+        return bool(self._assigned_individuals)
 
     def calculation_finished(self) -> bool:
         return len(self.calculating_task) == 0
 
-    def set_evaluated_task(self, individuals: list[Individual]) -> None:
+    def set_evaluated_task(self, tasks: list[ClientTask]) -> list[Individual]:
         if not self.is_assigned():
-            logging.error("Not assigned to any task, cannot set evaluated individuals")
-            return
+            logging.error("Not assigned to any task, cannot set evaluated tasks")
+            return []
         if self.calculation_finished():
-            logging.error("All tasks are already finished, cannot set evaluated individuals")
-            return
+            logging.error("All tasks are already finished, cannot set evaluated tasks")
+            return []
 
-        for ind in individuals:
+        moved_tasks = []
+
+        for task in tasks:
             for idx, t in enumerate(self.calculating_task):
-                if np.array_equal(t.view(), ind.view()):
+                if task.id == t.id:
                     self.calculating_task.pop(idx)
-                    t.copy_from(ind)
+                    t.copy_from(task)
+                    moved_tasks.append(t.individual)
                     break
+
+        return moved_tasks
 
     def _heartbeat(self) -> CommunicationResult:
         if not self.is_alive():
@@ -221,9 +265,15 @@ class _CommunicationWorker:
             return result
 
         self.last_request = time.time()
-        self.task = packet.data
-        self.calculating_task = [ind for ind in self.task] if self.task else []
-        ic(len(self.task) if self.task else None)
+
+        self._assigned_individuals = packet.data
+
+        if bool(self._assigned_individuals):
+            self.calculating_task = [ClientTask(ind, i) for i, ind in enumerate(self._assigned_individuals)]
+        else:
+            self.calculating_task = []
+
+        ic(len(self._assigned_individuals) if self._assigned_individuals else None)
 
         return CommunicationResult.SUCCESS
 
@@ -240,18 +290,18 @@ class _CommunicationWorker:
             logging.error("Some tasks are still being calculated, cannot send response")
             return CommunicationResult.SUCCESS
 
-        packet = Packet(_packet_type=PacketType.RESPONSE, data=self.task)
+        packet = Packet(_packet_type=PacketType.RESPONSE, data=self._assigned_individuals)
         result, packet = communicate(self.sock, packet)
 
         if result != CommunicationResult.SUCCESS:
             logging.error("Failed to send response packet with individuals")
             return result
 
-        self.task = None
+        self._assigned_individuals = None
 
         return CommunicationResult.SUCCESS
 
-    def run(self) -> tuple[CommunicationResult, Optional[list[Individual]]]:
+    def run(self) -> tuple[CommunicationResult, Optional[list[ClientTask]]]:
         if not self.is_alive():
             raise RuntimeError("Communication worker is not running")
 
@@ -263,7 +313,7 @@ class _CommunicationWorker:
 
         if not self.is_assigned():
             result = ic(self._mut_request())
-            task = self.task
+            task = self.calculating_task
         elif self.calculation_finished():
             result = ic(self._mut_return())
 
@@ -293,11 +343,11 @@ def connect_to_server(
     communication_worker = _CommunicationWorker(sock)
 
     while not stop_event.is_set():
-        evaluated_individuals = ic(evaluation_worker.get_response())
-        if evaluated_individuals:
-            communication_worker.set_evaluated_task(evaluated_individuals)
+        evaluated_tasks: list[ClientTask] = ic(evaluation_worker.get_response())
+        if evaluated_tasks:
+            evaluated_inds: list[Individual] = communication_worker.set_evaluated_task(evaluated_tasks)
             if handler:
-                handler(evaluated_individuals)
+                handler(evaluated_inds)
 
         try:
             result, new_task = communication_worker.run()

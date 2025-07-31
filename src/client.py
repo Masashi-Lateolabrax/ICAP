@@ -1,4 +1,5 @@
 import argparse
+import math
 import os
 import threading
 import time
@@ -156,6 +157,17 @@ class Handler:
         )
 
 
+class EvaluationFunction:
+    def __init__(self, settings: Settings):
+        self.settings = settings
+
+    def run(self, individual: Individual):
+        backend = Simulator(self.settings, individual, render=False)
+        for _ in range(math.ceil(self.settings.Simulation.TIME_LENGTH / self.settings.Simulation.TIME_STEP)):
+            backend.step()
+        return backend.calc_total_score()
+
+
 def main():
     parser = argparse.ArgumentParser(description="ICAP Optimization Client")
     parser.add_argument("--host", type=str, help="Server host address")
@@ -178,13 +190,12 @@ def main():
     print("=" * 50)
 
     handler = Handler()
+    evaluation_func = EvaluationFunction(settings)
 
     connect_to_server(
         host,
         port,
-        evaluation_function=utils.EvaluationFunction(
-            settings, lambda ind: Simulator(settings, ind, False)
-        ).run,
+        evaluation_function=evaluation_func.run,
         handler=handler.run,
         num_processes=args.num_processes,
     )
