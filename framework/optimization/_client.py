@@ -17,15 +17,34 @@ HEARTBEAT_INTERVAL = 20
 
 
 @dataclasses.dataclass
-class ClientCalculationState:
-    idle: bool
-    throughput: Optional[float] = None
-    individuals: Optional[list[Individual]] = None
-    error: Optional[str] = None
+class ClientTask:
+    def __init__(self, individual: Individual, id_: int):
+        self.individual = individual
+        self._id = id_
 
     @property
-    def is_idle(self) -> bool:
-        return self.idle
+    def id(self) -> int:
+        return self._id
+
+    @property
+    def state(self) -> CalculationState:
+        return self.individual.get_calculation_state()
+
+    def set_fitness(self, fitness: float) -> None:
+        self.individual.set_fitness(fitness)
+
+    def set_state(self, state: CalculationState) -> None:
+        self.individual.set_calculation_state(state)
+
+    def copy_from(self, other: 'ClientTask') -> None:
+        if not isinstance(other, ClientTask):
+            raise TypeError("Can only copy from another ClientTask")
+        if not self.id == other.id:
+            raise ValueError("Cannot copy from a different ClientTask")
+        self.individual.copy_info_data_from(other.individual)
+
+    def __repr__(self) -> str:
+        return f"ClientTask(id={self.id}, array={self.individual})"
 
 
 def _connect_to_server(server_address: str, port: int) -> socket.socket:
