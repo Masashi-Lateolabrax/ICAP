@@ -69,18 +69,33 @@ def _evaluation_worker_process(
 
         except queue.Empty:
             continue
+        except Exception as e:
+            logging.error(f"Error getting task from queue: {e}")
+            continue
 
         try:
             fitness = evaluation_function(individual)
             individual.set_fitness(fitness)
             individual.set_calculation_state(CalculationState.FINISHED)
 
+        except KeyboardInterrupt:
+            logging.info("Evaluation interrupted by user")
+            stop_event.set()
+            break
+        except MemoryError:
+            logging.error("Out of memory during evaluation")
+            stop_event.set()
+            break
         except Exception as e:
             logging.error(f"Error during evaluation function execution: {e}")
-            individual.set_fitness(float('inf'))
-            continue
+            stop_event.set()
+            break
 
-        response_queue.put(individual)
+        try:
+            response_queue.put(individual)
+        except Exception as e:
+            logging.error(f"Error putting result to response queue: {e}")
+            continue
 
 
 class _EvaluationWorker:
