@@ -86,14 +86,10 @@ class RobotNeuralNetwork(torch.nn.Module):
 
 class Simulator(utils.Simulator):
     def __init__(self, settings: Settings, individual: Individual, render: bool):
-        if settings.Optimization.CLIP is not None:
-            np.clip(
-                settings.Optimization.CLIP[0],
-                settings.Optimization.CLIP[1],
-                individual,
-                out=individual
-            )
+        if callable(settings.Optimization.CLIP):
+            individual[:] = settings.Optimization.CLIP(individual)
         controller = RobotNeuralNetwork(individual)
+
         super().__init__(settings, individual, controller, render)
 
     def create_sensors(self) -> list[list[SensorInterface]]:
