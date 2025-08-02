@@ -87,10 +87,10 @@ class Handler:
             individuals_to_save = sorted_individuals[:num_to_save]
 
             avg_fitness = sum(ind.get_fitness() for ind in individuals) / len(individuals)
-            worst_fitness = min(ind.get_fitness() for ind in individuals)
-            best_fitness = max(ind.get_fitness() for ind in individuals)
+            worst_fitness = max(ind.get_fitness() for ind in individuals)
+            best_fitness = min(ind.get_fitness() for ind in individuals)
             variance = sum((ind.get_fitness() - avg_fitness) ** 2 for ind in individuals) / len(individuals)
-            median = sorted(ind.get_fitness() for ind in individuals)[len(individuals) // 2]
+            median = sorted_individuals[len(individuals) // 2].get_fitness()
 
             Rec(
                 generation=generation,

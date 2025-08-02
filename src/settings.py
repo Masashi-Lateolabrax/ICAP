@@ -1,5 +1,5 @@
 import numpy as np
-from framework.prelude import Settings, calc_loss_sigma, Position, RobotLocation
+from framework.prelude import Settings, calc_loss_sigma, Position, RobotLocation, ClippingFunctions
 
 
 class MySettings(Settings):
@@ -41,7 +41,9 @@ MySettings.Optimization.DIMENSION = None  # Will be set later based on the neura
 MySettings.Optimization.POPULATION = 300
 MySettings.Optimization.GENERATION = 1000
 MySettings.Optimization.SIGMA = 0.1
-MySettings.Optimization.CLIP = (-1.0, 1.0)  # Clip from -1.0 to 1.0
+
+ClippingFunctions.SIN_AND_EXP_SIGMA = 10
+MySettings.Optimization.CLIP = ClippingFunctions.sin_and_exp
 ###################################################################################
 
 
