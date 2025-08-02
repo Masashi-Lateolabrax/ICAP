@@ -9,4 +9,4 @@ from ._viewer_consts import (
     DEFAULT_CAMERA_ELEVATION
 )
 from ._server_client_settings import ATTEMPT_COUNT
-from ._settings import Settings, calc_loss_sigma
+from ._settings import Settings, calc_loss_sigma, ClippingFunctions
