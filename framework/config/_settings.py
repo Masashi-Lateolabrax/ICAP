@@ -1,8 +1,25 @@
 import logging
+from typing import Callable
 
 import numpy as np
 
 from ..types import RobotLocation, Position
+
+
+class ClippingFunctions:
+    SIN_AND_EXP_SIGMA = 10
+
+    @staticmethod
+    def none(x: np.ndarray) -> np.ndarray:
+        return x
+
+    @staticmethod
+    def sin_and_exp(x: np.ndarray) -> np.ndarray:
+        return np.sin(x) * np.exp(-(x ** 2) / (ClippingFunctions.SIN_AND_EXP_SIGMA ** 2))
+
+    @staticmethod
+    def hard_clip(x: np.ndarray) -> np.ndarray:
+        return np.clip(x, -1.0, 1.0)
 
 
 def calc_loss_sigma(point, value):
@@ -32,7 +49,7 @@ class Optimization:
     POPULATION: int = 1000
     GENERATION: int = 100
     SIGMA: float = 0.5
-    CLIP: tuple[float, float] | None = None  # CLIP[0] is the lower bound, CLIP[1] is the upper bound.
+    CLIP: Callable[[np.ndarray], np.ndarray] = ClippingFunctions.none
 
 
 class Robot:
