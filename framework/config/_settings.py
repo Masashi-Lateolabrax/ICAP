@@ -7,7 +7,7 @@ from ..types import RobotLocation, Position
 
 
 class ClippingFunctions:
-    SIN_AND_EXP_SIGMA = 10
+    SIN_AND_EXP_PARMS = {"sigma": 10, "gain": 1.0}
 
     @staticmethod
     def none(x: np.ndarray) -> np.ndarray:
@@ -15,7 +15,9 @@ class ClippingFunctions:
 
     @staticmethod
     def sin_and_exp(x: np.ndarray) -> np.ndarray:
-        return np.sin(x) * np.exp(-(x ** 2) / (ClippingFunctions.SIN_AND_EXP_SIGMA ** 2))
+        gain = ClippingFunctions.SIN_AND_EXP_PARMS["gain"]
+        sigma = ClippingFunctions.SIN_AND_EXP_PARMS["sigma"]
+        return np.sin(x) * np.exp(-(x ** 2) / (sigma ** 2)) * gain
 
     @staticmethod
     def hard_clip(x: np.ndarray) -> np.ndarray:
