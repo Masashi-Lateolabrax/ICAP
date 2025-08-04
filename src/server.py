@@ -17,7 +17,7 @@ from icecream import ic
 from framework.prelude import *
 from framework.optimization import OptimizationServer, CMAES
 
-from client import MySettings, RobotNeuralNetwork
+from client import RobotNeuralNetwork
 
 # Configure icecream for distributed system debugging
 ic.configureOutput(
@@ -129,10 +129,8 @@ class Handler:
         self._last_call_time = self._current_time
 
 
-def main():
+def main(settings: Settings):
     dim = RobotNeuralNetwork().dim
-
-    settings = MySettings()
 
     settings.Server.HOST = "0.0.0.0"
     settings.Optimization.DIMENSION = dim
@@ -195,4 +193,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    from settings import MySettings
+
+    main(
+        MySettings()
+    )

@@ -15,7 +15,6 @@ from framework.sensor import PreprocessedOmniSensor, DirectionSensor
 from framework.optimization import connect_to_server
 
 import utils
-from settings import MySettings
 
 ic.configureOutput(
     prefix=lambda: f'[{datetime.now().strftime("%H:%M:%S.%f")[:-3]}][PID:{os.getpid()}][TID:{threading.get_ident()}] CLIENT| ',
@@ -164,14 +163,12 @@ class EvaluationFunction:
         return backend.calc_total_score()
 
 
-def main():
+def main(settings: Settings):
     parser = argparse.ArgumentParser(description="ICAP Optimization Client")
     parser.add_argument("--host", type=str, help="Server host address")
     parser.add_argument("--port", type=int, help="Server port number")
     parser.add_argument("--num-processes", type=int, default=1, help="Number of evaluation processes")
     args = parser.parse_args()
-
-    settings = MySettings()
 
     host = args.host if args.host is not None else settings.Server.HOST
     port = args.port if args.port is not None else settings.Server.PORT
@@ -198,4 +195,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    from settings import MySettings
+
+    main(
+        MySettings()
+    )
