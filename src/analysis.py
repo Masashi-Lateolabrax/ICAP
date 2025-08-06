@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 from framework.prelude import *
 
-from client import MySettings, Simulator
+from client import Simulator
 
 
 @dataclasses.dataclass
@@ -273,9 +273,7 @@ def parameter_heatmap(saved_individuals: IndividualRecorder, filepath: str):
     plt.savefig(filepath)
 
 
-def main():
-    settings = MySettings()
-
+def main(settings: Settings):
     save_dir = os.path.abspath(
         get_latest_folder(settings.Storage.SAVE_DIRECTORY)
     )
@@ -332,4 +330,8 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    from settings import MySettings
+
+    main(
+        MySettings()
+    )
