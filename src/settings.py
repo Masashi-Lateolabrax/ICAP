@@ -42,9 +42,7 @@ MySettings.Optimization.POPULATION = 300
 MySettings.Optimization.GENERATION = 500
 MySettings.Optimization.SIGMA = 0.1
 
-ClippingFunctions.SIN_AND_EXP_PARMS["sigma"] = 10
-ClippingFunctions.SIN_AND_EXP_PARMS["gain"] = 2
-MySettings.Optimization.CLIP = ClippingFunctions.sin_and_exp
+MySettings.Optimization.CLIP = ClippingFunctions.none
 ###################################################################################
 
 
