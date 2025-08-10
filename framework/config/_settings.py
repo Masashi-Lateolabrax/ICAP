@@ -3,7 +3,7 @@ from typing import Callable
 
 import numpy as np
 
-from ..types import RobotLocation, Position
+from ..types import RobotLocation, Position, ETHANOL
 
 
 class ClippingFunctions:
@@ -124,6 +124,18 @@ class Storage:
     ASSET_DIRECTORY = "./assets"
 
 
+class Pheromone:
+    CELL_SIZE = 1
+    WIDTH_NUM = Simulation.WORLD_WIDTH // CELL_SIZE
+    HEIGHT_NUM = Simulation.WORLD_HEIGHT // CELL_SIZE
+    ITERATIONS_PER_STEP = 1
+    DIFFUSION_COEFFICIENT = 0.1
+    EVAPORATION_RATE = 0.1
+    DECREASE_RATE = 0.1
+    TEMPERATURE = 300
+    MATERIAL = ETHANOL
+
+
 class Settings:
     """
     Basically, the attributes' unit is meter.
@@ -138,6 +150,7 @@ class Settings:
     Food = Food
     Nest = Nest
     Storage = Storage
+    Pheromone = Pheromone
 
     def as_dict(self):
         def as_dict(obj):
