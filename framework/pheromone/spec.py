@@ -41,8 +41,8 @@ def add_pheromone_cell(
         spec.worldbody,
         name=name,
         pos=pos,
-        size=[size, size, 1],
+        size=[size, size, 1e-6],
         rgba=(1.0, 1.0, 1.0, alpha),
-        type_=mujoco.mjtGeom.mjGEOM_PLANE
+        type_=mujoco.mjtGeom.mjGEOM_BOX
     )
     return PheromoneFieldCellSpec(site_spec, index_x, index_y)
