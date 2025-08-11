@@ -34,7 +34,6 @@ def add_pheromone_cell(
         index_y: int,
         size: float,
         pos: tuple[float, float, float],
-        alpha: float,
 ) -> PheromoneFieldCellSpec:
     name = f"pheromone_cell_{index_x}_{index_y}"
     site_spec = add_site(
@@ -42,7 +41,7 @@ def add_pheromone_cell(
         name=name,
         pos=pos,
         size=[size, size, 1e-6],
-        rgba=(1.0, 1.0, 1.0, alpha),
+        rgba=(1.0, 1.0, 1.0, 1.0),
         type_=mujoco.mjtGeom.mjGEOM_BOX
     )
     return PheromoneFieldCellSpec(site_spec, index_x, index_y)
