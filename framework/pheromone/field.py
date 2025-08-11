@@ -36,7 +36,7 @@ def dEvaporation_dt(
         evaporation_rate: float,
 ) -> jnp.ndarray:
     c_sat = material.saturation_pressure(temperature)
-    evaporation = (c_sat - gas_values) * evaporation_rate
+    evaporation = (c_sat - gas_values[1:-1, 1:-1]) * evaporation_rate
     evaporation = jnp.minimum(evaporation, liquid_values)
     return evaporation
 
@@ -60,6 +60,7 @@ def d_dt(
         diffusion_coefficient: float,
         evaporation_rate: float,
         decrease_rate: float,
+        padding_value: float,
 ) -> tuple[jnp.ndarray, jnp.ndarray]:
     d_evaporation = dEvaporation_dt(
         material=material,
@@ -72,14 +73,16 @@ def d_dt(
         gas_values=gas_values,
         mask=mask,
         diffusion_coefficient=diffusion_coefficient,
-        dx=dx
+        dx=dx,
+        padding_value=padding_value
     )
     d_decrease = dDecrease_dt(
         gas_values=gas_values,
         decrease_rate=decrease_rate
     )
 
-    d_gas = d_evaporation + d_distribution - d_decrease
+    d_gas = (-d_decrease).at[1:-1, 1:-1].add(d_distribution)
+    d_gas = d_gas.at[1:-1, 1:-1].add(d_evaporation)
     d_liquid = -d_evaporation
 
     return d_gas, d_liquid
@@ -197,12 +200,25 @@ class PheromoneField:
         self.iter_ = iter_
 
         self._values_liquid = jnp.zeros(self.shape, dtype=jnp.float32)
-        self._values_gas = jnp.zeros(self.shape, dtype=jnp.float32)
-        self.mask = jnp.ones(self.shape, dtype=jnp.bool_)
+        self._values_gas = jnp.zeros(self.shape + 2, dtype=jnp.float32)
+        self.mask = jnp.ones(self.shape + 2, dtype=jnp.bool_)
+
+    def set_neumann_boundary(self):
+        self.mask = self.mask.at[0, :].set(0)
+        self.mask = self.mask.at[-1, :].set(0)
+        self.mask = self.mask.at[:, 0].set(0)
+        self.mask = self.mask.at[:, -1].set(0)
+
+    def set_dirichlet_boundary(self, value: float):
+        self.padding_value = value
+        self.mask = self.mask.at[0, :].set(1)
+        self.mask = self.mask.at[-1, :].set(1)
+        self.mask = self.mask.at[:, 0].set(1)
+        self.mask = self.mask.at[:, -1].set(1)
 
     def get_gas(self, xs, ys) -> np.ndarray:
-        xs = jnp.clip(xs, 0, self.shape[1] - 1)
-        ys = jnp.clip(ys, 0, self.shape[0] - 1)
+        xs = jnp.clip(xs, 0, self.shape[1]) + 1
+        ys = jnp.clip(ys, 0, self.shape[0]) + 1
         return np.array(self._values_gas[ys, xs])
 
     def get_liquid(self, xs, ys) -> np.ndarray:
@@ -211,7 +227,7 @@ class PheromoneField:
         return np.array(self._values_liquid[ys, xs])
 
     def get_gas_all(self) -> np.ndarray:
-        return np.array(self._values_gas)
+        return np.array(self._values_gas[1:-1, 1:-1])
 
     def get_liquid_all(self) -> np.ndarray:
         return np.array(self._values_liquid)
