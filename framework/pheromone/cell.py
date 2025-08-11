@@ -1,14 +1,12 @@
 from mujoco._structs import _MjModelSiteViews
 
 
-class PheromoneFieldCell(_MjModelSiteViews):
-    def __new__(cls, site: _MjModelSiteViews, index_x: int, index_y: int):
-        site.__class__ = cls
-        return site
+class PheromoneFieldCell:
+    def __init__(self, site: _MjModelSiteViews, index_x: int, index_y: int):
+        self._site = site
+        self.index_x = index_x
+        self.index_y = index_y
+        self.add_value = 0.0
 
-    def __init__(self, _site: _MjModelSiteViews, index_x: int, index_y: int):
-        if not hasattr(self, '_is_pheromone_field_cell_initialized'):
-            self._is_pheromone_field_cell_initialized = True
-            self.index_x = index_x
-            self.index_y = index_y
-            self.add_value = 0.0
+    def set_color(self, r: float, g: float, b: float, a: float):
+        self._site.rgba = [r, g, b, a]
