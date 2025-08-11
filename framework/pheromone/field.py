@@ -12,7 +12,13 @@ def dDistribution_dt(
         mask: jnp.ndarray,
         diffusion_coefficient: float,
         dx: float,
+        padding_value: float,
 ) -> jnp.ndarray:
+    gas_values = gas_values.at[0, :].set(padding_value)
+    gas_values = gas_values.at[-1, :].set(padding_value)
+    gas_values = gas_values.at[:, 0].set(padding_value)
+    gas_values = gas_values.at[:, -1].set(padding_value)
+
     center = gas_values[1:-1, 1:-1]
     d_left = (gas_values[1:-1, 0:-2] - center) * mask[1:-1, 0:-2]
     d_right = (gas_values[1:-1, 2:] - center) * mask[1:-1, 2:]
@@ -91,6 +97,7 @@ def update_with_rk4(
         evaporation_rate: float,
         decrease_rate: float,
         dt: float,
+        padding_value: float,
         iter_: int = 1
 ) -> tuple[jnp.ndarray, jnp.ndarray]:
     for _ in range(iter_):
@@ -103,7 +110,8 @@ def update_with_rk4(
             temperature=temperature,
             diffusion_coefficient=diffusion_coefficient,
             evaporation_rate=evaporation_rate,
-            decrease_rate=decrease_rate
+            decrease_rate=decrease_rate,
+            padding_value=padding_value,
         )
 
         k2_gas, k2_liquid = d_dt(
@@ -115,7 +123,8 @@ def update_with_rk4(
             temperature=temperature,
             diffusion_coefficient=diffusion_coefficient,
             evaporation_rate=evaporation_rate,
-            decrease_rate=decrease_rate
+            decrease_rate=decrease_rate,
+            padding_value=padding_value,
         )
 
         k3_gas, k3_liquid = d_dt(
@@ -127,7 +136,8 @@ def update_with_rk4(
             temperature=temperature,
             diffusion_coefficient=diffusion_coefficient,
             evaporation_rate=evaporation_rate,
-            decrease_rate=decrease_rate
+            decrease_rate=decrease_rate,
+            padding_value=padding_value,
         )
 
         k4_gas, k4_liquid = d_dt(
@@ -139,7 +149,8 @@ def update_with_rk4(
             temperature=temperature,
             diffusion_coefficient=diffusion_coefficient,
             evaporation_rate=evaporation_rate,
-            decrease_rate=decrease_rate
+            decrease_rate=decrease_rate,
+            padding_value=padding_value,
         )
 
         gas_values = jnp.maximum(0.0, gas_values + (k1_gas + 2 * k2_gas + 2 * k3_gas + k4_gas) / 6)
@@ -183,6 +194,7 @@ class PheromoneField:
         self.evaporation_rate = evaporation_rate
         self.decrease_rate = decrease_rate
         self.temperature = temperature
+        self.padding_value = 0.0
 
         self.iter_ = iter_
 
@@ -235,6 +247,7 @@ class PheromoneField:
             evaporation_rate=self.evaporation_rate,
             decrease_rate=self.decrease_rate,
             dt=dt,
+            padding_value=self.padding_value,
             iter_=self.iter_
         )
 
