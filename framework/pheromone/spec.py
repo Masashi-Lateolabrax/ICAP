@@ -5,20 +5,27 @@ from ..environment import add_site
 from .cell import PheromoneFieldCell
 
 
-class PheromoneFieldCellSpec(MjsSite):
-    def __new__(cls, site: MjsSite, name: str, index_x: int, index_y: int):
-        site.__class__ = cls
-        return site
+class PheromoneFieldCellSpec:
+    def __init__(self, _site: MjsSite, index_x: int, index_y: int):
+        self._site = _site
+        self._index_x = index_x
+        self._index_y = index_y
 
-    def __init__(self, _site: MjsSite, name: str, index_x: int, index_y: int):
-        if not hasattr(self, '_is_pheromone_field_cell_spec_initialized'):
-            self._is_pheromone_field_cell_spec_initialized = True
-            self.index_x = index_x
-            self.index_y = index_y
+    @property
+    def name(self) -> str:
+        return self._site.name
+
+    @property
+    def index_x(self) -> int:
+        return self._index_x
+
+    @property
+    def index_y(self) -> int:
+        return self._index_y
 
     def get_cell(self, model: mujoco.MjModel) -> PheromoneFieldCell:
         site = model.site(self.name)
-        return PheromoneFieldCell(site, self.index_x, self.index_y)
+        return PheromoneFieldCell(site, self._index_x, self._index_y)
 
 
 def add_pheromone_cell(
@@ -38,4 +45,4 @@ def add_pheromone_cell(
         rgba=(1.0, 1.0, 1.0, alpha),
         type_=mujoco.mjtGeom.mjGEOM_PLANE
     )
-    return PheromoneFieldCellSpec(site_spec, name, index_x, index_y)
+    return PheromoneFieldCellSpec(site_spec, index_x, index_y)
