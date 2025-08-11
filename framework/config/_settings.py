@@ -126,8 +126,8 @@ class Storage:
 
 class Pheromone:
     CELL_SIZE = 1
-    WIDTH_NUM = Simulation.WORLD_WIDTH // CELL_SIZE
-    HEIGHT_NUM = Simulation.WORLD_HEIGHT // CELL_SIZE
+    WIDTH_NUM = int(Simulation.WORLD_WIDTH / CELL_SIZE)
+    HEIGHT_NUM = int(Simulation.WORLD_HEIGHT / CELL_SIZE)
     ITERATIONS_PER_STEP = 1
     DIFFUSION_COEFFICIENT = 0.1
     EVAPORATION_RATE = 0.1
