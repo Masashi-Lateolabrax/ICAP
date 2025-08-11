@@ -98,63 +98,61 @@ def update_with_rk4(
         decrease_rate: float,
         dt: float,
         padding_value: float,
-        iter_: int = 1
 ) -> tuple[jnp.ndarray, jnp.ndarray]:
-    for _ in range(iter_):
-        k1_gas, k1_liquid = d_dt(
-            material=material,
-            liquid_values=liquid_values,
-            gas_values=gas_values,
-            mask=mask,
-            dx=dx,
-            temperature=temperature,
-            diffusion_coefficient=diffusion_coefficient,
-            evaporation_rate=evaporation_rate,
-            decrease_rate=decrease_rate,
-            padding_value=padding_value,
-        )
+    k1_gas, k1_liquid = d_dt(
+        material=material,
+        liquid_values=liquid_values,
+        gas_values=gas_values,
+        mask=mask,
+        dx=dx,
+        temperature=temperature,
+        diffusion_coefficient=diffusion_coefficient,
+        evaporation_rate=evaporation_rate,
+        decrease_rate=decrease_rate,
+        padding_value=padding_value,
+    )
 
-        k2_gas, k2_liquid = d_dt(
-            material=material,
-            liquid_values=liquid_values + 0.5 * dt * k1_liquid,
-            gas_values=gas_values + 0.5 * dt * k1_gas,
-            mask=mask,
-            dx=dx,
-            temperature=temperature,
-            diffusion_coefficient=diffusion_coefficient,
-            evaporation_rate=evaporation_rate,
-            decrease_rate=decrease_rate,
-            padding_value=padding_value,
-        )
+    k2_gas, k2_liquid = d_dt(
+        material=material,
+        liquid_values=liquid_values + 0.5 * dt * k1_liquid,
+        gas_values=gas_values + 0.5 * dt * k1_gas,
+        mask=mask,
+        dx=dx,
+        temperature=temperature,
+        diffusion_coefficient=diffusion_coefficient,
+        evaporation_rate=evaporation_rate,
+        decrease_rate=decrease_rate,
+        padding_value=padding_value
+    )
 
-        k3_gas, k3_liquid = d_dt(
-            material=material,
-            liquid_values=liquid_values + 0.5 * dt * k2_liquid,
-            gas_values=gas_values + 0.5 * dt * k2_gas,
-            mask=mask,
-            dx=dx,
-            temperature=temperature,
-            diffusion_coefficient=diffusion_coefficient,
-            evaporation_rate=evaporation_rate,
-            decrease_rate=decrease_rate,
-            padding_value=padding_value,
-        )
+    k3_gas, k3_liquid = d_dt(
+        material=material,
+        liquid_values=liquid_values + 0.5 * dt * k2_liquid,
+        gas_values=gas_values + 0.5 * dt * k2_gas,
+        mask=mask,
+        dx=dx,
+        temperature=temperature,
+        diffusion_coefficient=diffusion_coefficient,
+        evaporation_rate=evaporation_rate,
+        decrease_rate=decrease_rate,
+        padding_value=padding_value
+    )
 
-        k4_gas, k4_liquid = d_dt(
-            material=material,
-            liquid_values=liquid_values + dt * k3_liquid,
-            gas_values=gas_values + dt * k3_gas,
-            mask=mask,
-            dx=dx,
-            temperature=temperature,
-            diffusion_coefficient=diffusion_coefficient,
-            evaporation_rate=evaporation_rate,
-            decrease_rate=decrease_rate,
-            padding_value=padding_value,
-        )
+    k4_gas, k4_liquid = d_dt(
+        material=material,
+        liquid_values=liquid_values + dt * k3_liquid,
+        gas_values=gas_values + dt * k3_gas,
+        mask=mask,
+        dx=dx,
+        temperature=temperature,
+        diffusion_coefficient=diffusion_coefficient,
+        evaporation_rate=evaporation_rate,
+        decrease_rate=decrease_rate,
+        padding_value=padding_value
+    )
 
-        gas_values = jnp.maximum(0.0, gas_values + (k1_gas + 2 * k2_gas + 2 * k3_gas + k4_gas) / 6)
-        liquid_values = jnp.maximum(0.0, liquid_values + (k1_liquid + 2 * k2_liquid + 2 * k3_liquid + k4_liquid) / 6)
+    gas_values = jnp.maximum(0.0, gas_values + (k1_gas + 2 * k2_gas + 2 * k3_gas + k4_gas) / 6)
+    liquid_values = jnp.maximum(0.0, liquid_values + (k1_liquid + 2 * k2_liquid + 2 * k3_liquid + k4_liquid) / 6)
 
     return gas_values, liquid_values
 
@@ -240,20 +238,21 @@ class PheromoneField:
             c.add_value = 0.0
 
     def _update_with_rk4(self, dt: float):
-        self._values_gas, self._values_liquid = update_with_rk4(
-            material=self.material,
-            liquid_values=self._values_liquid,
-            gas_values=self._values_gas,
-            mask=self.mask,
-            dx=self.dx,
-            temperature=self.temperature,
-            diffusion_coefficient=self.diffusion_coefficient,
-            evaporation_rate=self.evaporation_rate,
-            decrease_rate=self.decrease_rate,
-            dt=dt,
-            padding_value=self.padding_value,
-            iter_=self.iter_
-        )
+        dt = dt / self.iter_
+        for _ in range(self.iter_):
+            self._values_gas, self._values_liquid = update_with_rk4(
+                material=self.material,
+                liquid_values=self._values_liquid,
+                gas_values=self._values_gas,
+                mask=self.mask,
+                dx=self.dx,
+                temperature=self.temperature,
+                diffusion_coefficient=self.diffusion_coefficient,
+                evaporation_rate=self.evaporation_rate,
+                decrease_rate=self.decrease_rate,
+                dt=dt,
+                padding_value=self.padding_value,
+            )
 
     def update(self, dt: float):
         self._update_with_rk4(dt)
