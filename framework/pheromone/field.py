@@ -228,8 +228,12 @@ class PheromoneField:
         ys = jnp.array([c.index_y for c in cell if c.add_value > 0])
         vs = jnp.array([c.add_value for c in cell if c.add_value > 0])
 
+        if xs.size == 0 or ys.size == 0 or vs.size == 0:
+            return
+
         xs = jnp.clip(xs, 0, self.shape[1] - 1)
         ys = jnp.clip(ys, 0, self.shape[0] - 1)
+
         self._values_liquid = self._values_liquid.at[ys, xs].add(vs)
 
         for c in cell:
