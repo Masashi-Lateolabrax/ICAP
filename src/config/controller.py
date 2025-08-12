@@ -12,6 +12,8 @@ class Controller(torch.nn.Module):
             torch.nn.Mish(),
             torch.nn.Linear(12, 12),
             torch.nn.Mish(),
+            torch.nn.Linear(12, 12),
+            torch.nn.Mish(),
             torch.nn.Linear(12, 6),
             torch.nn.Mish(),
             torch.nn.Linear(6, 2),
