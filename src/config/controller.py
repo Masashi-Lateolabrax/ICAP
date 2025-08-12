@@ -8,11 +8,13 @@ class Controller(torch.nn.Module):
         super(Controller, self).__init__()
 
         self.sequential = torch.nn.Sequential(
-            torch.nn.Linear(6, 4),
+            torch.nn.Linear(6, 12),
             torch.nn.Mish(),
-            torch.nn.Linear(4, 3),
+            torch.nn.Linear(12, 12),
             torch.nn.Mish(),
-            torch.nn.Linear(3, 2),
+            torch.nn.Linear(12, 6),
+            torch.nn.Mish(),
+            torch.nn.Linear(6, 2),
             torch.nn.Sigmoid()
         )
 
