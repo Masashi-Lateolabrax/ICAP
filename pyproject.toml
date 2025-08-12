@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Add your description here"
 requires-python = "==3.12.10"
 dependencies = [
-    "genesis-world",
+#    "genesis-world",
     "pillow==11.2.1",
     "glfw==2.9.0",
     "mujoco==3.3.3",
