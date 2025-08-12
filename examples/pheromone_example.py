@@ -90,6 +90,7 @@ class Simulator(BasicMuJoCoSimulator):
 
     def reset(self):
         mujoco.mj_resetData(self.model, self.data)
+        self.pheromone_field.reset()
 
     def get_scores(self) -> list[float]:
         return []
