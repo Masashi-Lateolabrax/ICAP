@@ -14,8 +14,6 @@ from framework.interfaces import SensorInterface
 from framework.sensor import PreprocessedOmniSensor, DirectionSensor
 from framework.optimization import connect_to_server
 
-import utils
-
 ic.configureOutput(
     prefix=lambda: f'[{datetime.now().strftime("%H:%M:%S.%f")[:-3]}][PID:{os.getpid()}][TID:{threading.get_ident()}] CLIENT| ',
     includeContext=True
@@ -24,7 +22,7 @@ ic.configureOutput(
 ic.disable()
 
 
-class Loss(utils.Loss):
+class Loss(config.Loss):
     def __init__(self, settings: Settings, robot_positions, food_positions, nest_position):
         self.settings = settings
         robot_pos_array = np.array(robot_positions)
@@ -85,7 +83,7 @@ class RobotNeuralNetwork(torch.nn.Module):
         return self.sequential(input_)
 
 
-class Simulator(utils.Simulator):
+class Simulator(config.Simulator):
     def __init__(self, settings: Settings, individual: Individual, render: bool):
         if callable(settings.Optimization.CLIP):
             individual[:] = settings.Optimization.CLIP(individual)
