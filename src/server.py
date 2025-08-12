@@ -17,7 +17,7 @@ from icecream import ic
 from framework.prelude import *
 from framework.optimization import OptimizationServer, CMAES
 
-from client import RobotNeuralNetwork
+from config import Controller
 
 # Configure icecream for distributed system debugging
 ic.configureOutput(
@@ -130,7 +130,7 @@ class Handler:
 
 
 def main(settings: Settings):
-    dim = RobotNeuralNetwork().dim
+    dim = Controller().dim
 
     settings.Server.HOST = "0.0.0.0"
     settings.Optimization.DIMENSION = dim
@@ -179,17 +179,6 @@ def main(settings: Settings):
     for filename in os.listdir(handler.save_directory):
         if generation_pattern.match(filename):
             os.remove(os.path.join(handler.save_directory, filename))
-
-    # from analysis import record, latest_saved_individual_file, get_latest_folder
-    #
-    # save_dir = get_latest_folder(settings.Storage.SAVE_DIRECTORY)
-    # saved_individual = SavedIndividual.load(latest_saved_individual_file(save_dir))
-    #
-    # record(
-    #     settings,
-    #     saved_individual.best_individual,
-    #     os.path.join(save_dir, "movie.mp4")
-    # )
 
 
 if __name__ == "__main__":

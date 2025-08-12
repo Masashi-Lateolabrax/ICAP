@@ -1,1 +1,2 @@
-from .simulator import Loss, Simulator
+from .controller import Controller
+from .simulator import Simulator
