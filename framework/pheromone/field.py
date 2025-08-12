@@ -203,6 +203,10 @@ class PheromoneField:
         self._values_gas = jnp.zeros(self.shape + 2, dtype=jnp.float32)
         self.mask = jnp.ones(self.shape + 2, dtype=jnp.bool_)
 
+    def reset(self):
+        self._values_liquid = jnp.zeros(self.shape, dtype=jnp.float32)
+        self._values_gas = jnp.zeros(self.shape + 2, dtype=jnp.float32)
+
     def set_neumann_boundary(self):
         self.mask = self.mask.at[0, :].set(0)
         self.mask = self.mask.at[-1, :].set(0)
