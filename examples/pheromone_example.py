@@ -3,6 +3,7 @@ import mujoco
 from icecream import ic
 
 from framework.prelude import *
+from framework.backends import BasicMuJoCoSimulator
 from framework.utils import GenericTkinterViewer
 from framework.environment import setup_option, setup_visual, setup_textures, add_geom
 from framework.pheromone import add_pheromone_cell, PheromoneFieldCellSpec, PheromoneFieldCell, PheromoneField
@@ -50,31 +51,25 @@ def _generate_mjspec(
     return spec, sites
 
 
-class Simulator(SimulatorBackend):
-    def __init__(self, settings):
+class Simulator(BasicMuJoCoSimulator):
+    def __init__(self, settings: Settings):
+        spec, pheromone_site_spec = _generate_mjspec(settings)
+        super().__init__(settings, spec, render=True)
+
         self.settings = settings
-        self.render_shape = self.settings.Render.RENDER_WIDTH, self.settings.Render.RENDER_HEIGHT
-
-        spec, pheromone_site_spec = _generate_mjspec(self.settings)
-
-        self.spec: mujoco.MjSpec = spec
-        self.model: mujoco.MjModel = self.spec.compile()
-        self.data: mujoco.MjData = mujoco.MjData(self.model)
 
         self.pheromone_cells: list[PheromoneFieldCell] = [s.get_cell(self.model) for s in pheromone_site_spec]
         self.pheromone_field: PheromoneField = PheromoneField(
-            nx=self.settings.Pheromone.WIDTH_NUM,
-            ny=self.settings.Pheromone.HEIGHT_NUM,
-            dx=self.settings.Pheromone.CELL_SIZE,
-            material=self.settings.Pheromone.MATERIAL,
-            diffusion_coefficient=self.settings.Pheromone.DIFFUSION_COEFFICIENT,
-            evaporation_rate=self.settings.Pheromone.EVAPORATION_RATE,
-            decrease_rate=self.settings.Pheromone.DECREASE_RATE,
-            temperature=self.settings.Pheromone.TEMPERATURE,
-            iter_=self.settings.Pheromone.ITERATIONS_PER_STEP,
+            nx=settings.Pheromone.WIDTH_NUM,
+            ny=settings.Pheromone.HEIGHT_NUM,
+            dx=settings.Pheromone.CELL_SIZE,
+            material=settings.Pheromone.MATERIAL,
+            diffusion_coefficient=settings.Pheromone.DIFFUSION_COEFFICIENT,
+            evaporation_rate=settings.Pheromone.EVAPORATION_RATE,
+            decrease_rate=settings.Pheromone.DECREASE_RATE,
+            temperature=settings.Pheromone.TEMPERATURE,
+            iter_=settings.Pheromone.ITERATIONS_PER_STEP,
         )
-
-        self.camera = mujoco.MjvCamera()
 
     def step(self):
         [c for c in self.pheromone_cells if c.index_x == 5 and c.index_y == 5][0].add_value = 1.0
@@ -84,46 +79,23 @@ class Simulator(SimulatorBackend):
         mujoco.mj_step(self.model, self.data)
 
     def render(self, img_buf: np.ndarray, pos: tuple[float, float, float], lookat: tuple[float, float, float]):
-        if img_buf is None:
-            return
-
         color_max = 1.0
         pheromone: np.ndarray = self.pheromone_field.get_gas_all()
-        print(pheromone)
         for i, cell in enumerate(self.pheromone_cells):
             pheromone_value = float(pheromone[cell.index_y, cell.index_x])
             rgba: tuple[float, float, float] = (pheromone_value / color_max, 0.0, 1 - pheromone_value / color_max)
             cell.set_color(*rgba, 0.5)
 
-        try:
-            pos = np.array(pos)
-            lookat = np.array(lookat)
-            sub = pos - lookat
-            self.camera.lookat[:] = lookat
-            self.camera.distance = np.linalg.norm(sub)
-            self.camera.azimuth = np.arctan2(
-                sub[1], sub[0]
-            ) * 180 / mujoco.mjPI + 180
-            self.camera.elevation = -np.arcsin(
-                sub[2] / self.camera.distance
-            ) * 180 / mujoco.mjPI
-
-            with mujoco.Renderer(self.model, width=self.render_shape[0], height=self.render_shape[1]) as renderer:
-                renderer.update_scene(self.data, self.camera)
-                renderer.render(out=img_buf)
-
-        except Exception as e:
-            ic("MuJoCo render error:", e)
-            img_buf.fill(0)
+        super().render(img_buf, pos, lookat)
 
     def reset(self):
-        raise NotImplementedError
+        mujoco.mj_resetData(self.model, self.data)
 
     def get_scores(self) -> list[float]:
-        raise NotImplementedError
+        return []
 
     def calc_total_score(self) -> float:
-        raise NotImplementedError
+        return 0.0
 
 
 def viewer_example():
