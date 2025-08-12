@@ -23,22 +23,6 @@ def generate_mjspec(
     setup_visual(spec, settings)
     setup_textures(spec, settings)
 
-    food_mesh = add_mesh_in_asset(
-        spec,
-        name="food_mesh",
-        file=os.path.abspath(os.path.join(settings.Storage.ASSET_DIRECTORY, "food-object.stl")),
-        content_type=MeshContentType.STL,
-        inertia=mujoco.mjtMeshInertia.mjMESH_INERTIA_CONVEX
-    )
-
-    robot_mesh = add_mesh_in_asset(
-        spec,
-        name="robot_mesh",
-        file=os.path.abspath(os.path.join(settings.Storage.ASSET_DIRECTORY, "robot-object.stl")),
-        content_type=MeshContentType.STL,
-        inertia=mujoco.mjtMeshInertia.mjMESH_INERTIA_CONVEX
-    )
-
     add_wall(spec, settings)
 
     add_geom(
@@ -61,31 +45,49 @@ def generate_mjspec(
 
     # Create food objects
     food_specs = []
-    for i in range(settings.Food.NUM):
-        if i < len(settings.Food.INITIAL_POSITION):
-            position: Position = settings.Food.INITIAL_POSITION[i]
-        else:
-            position: Position = rand_food_pos(settings, invalid_area)
-        invalid_area.append(
-            (position, settings.Food.RADIUS)
+    if settings.Food.NUM > 0:
+        food_mesh = add_mesh_in_asset(
+            spec,
+            name="food_mesh",
+            file=os.path.abspath(os.path.join(settings.Storage.ASSET_DIRECTORY, "food-object.stl")),
+            content_type=MeshContentType.STL,
+            inertia=mujoco.mjtMeshInertia.mjMESH_INERTIA_CONVEX
         )
-        food_specs.append(
-            add_food_object_with_mesh(spec, settings, food_mesh, i, position)
-        )
+
+        for i in range(settings.Food.NUM):
+            if i < len(settings.Food.INITIAL_POSITION):
+                position: Position = settings.Food.INITIAL_POSITION[i]
+            else:
+                position: Position = rand_food_pos(settings, invalid_area)
+            invalid_area.append(
+                (position, settings.Food.RADIUS)
+            )
+            food_specs.append(
+                add_food_object_with_mesh(spec, settings, food_mesh, i, position)
+            )
 
     # Create robots
     robot_specs = []
-    for i in range(settings.Robot.NUM):
-        if i < len(settings.Robot.INITIAL_POSITION):
-            position: RobotLocation = settings.Robot.INITIAL_POSITION[i]
-        else:
-            position: RobotLocation = rand_robot_pos(settings, invalid_area)
-        invalid_area.append(
-            (position.position, settings.Robot.RADIUS)
+    if settings.Robot.NUM > 0:
+        robot_mesh = add_mesh_in_asset(
+            spec,
+            name="robot_mesh",
+            file=os.path.abspath(os.path.join(settings.Storage.ASSET_DIRECTORY, "robot-object.stl")),
+            content_type=MeshContentType.STL,
+            inertia=mujoco.mjtMeshInertia.mjMESH_INERTIA_CONVEX
         )
-        robot_specs.append(
-            add_robot_with_mesh(spec, settings, robot_mesh, i, position)
-        )
+
+        for i in range(settings.Robot.NUM):
+            if i < len(settings.Robot.INITIAL_POSITION):
+                position: RobotLocation = settings.Robot.INITIAL_POSITION[i]
+            else:
+                position: RobotLocation = rand_robot_pos(settings, invalid_area)
+            invalid_area.append(
+                (position.position, settings.Robot.RADIUS)
+            )
+            robot_specs.append(
+                add_robot_with_mesh(spec, settings, robot_mesh, i, position)
+            )
 
     return spec, nest_spec, robot_specs, food_specs
 
