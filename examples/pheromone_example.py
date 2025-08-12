@@ -1,6 +1,5 @@
 import numpy as np
 import mujoco
-from icecream import ic
 
 from framework.prelude import *
 from framework.backends import BasicMuJoCoSimulator
