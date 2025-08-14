@@ -30,4 +30,11 @@ class Controller(torch.nn.Module):
         return sum(p.numel() for p in self.parameters())
 
     def forward(self, input_):
-        return self.sequential(input_)
+        x = self.sequential(input_)
+
+        # clip_to_one_indexes = x > 0.99
+        # clip_to_zero_indexes = x < 0.01
+        # x[clip_to_one_indexes] = 0.99
+        # x[clip_to_zero_indexes] = 0.01
+
+        return x
