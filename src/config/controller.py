@@ -10,15 +10,9 @@ class Controller(torch.nn.Module):
         self.sequential = torch.nn.Sequential(
             torch.nn.Linear(6, 12),
             torch.nn.Mish(),
-            torch.nn.Linear(12, 12),
+            torch.nn.Linear(12, 4),
             torch.nn.Mish(),
-            torch.nn.Linear(12, 12),
-            torch.nn.Mish(),
-            torch.nn.Linear(12, 12),
-            torch.nn.Mish(),
-            torch.nn.Linear(12, 6),
-            torch.nn.Mish(),
-            torch.nn.Linear(6, 2),
+            torch.nn.Linear(4, 2),
             torch.nn.Sigmoid()
         )
 
@@ -34,4 +28,11 @@ class Controller(torch.nn.Module):
         return sum(p.numel() for p in self.parameters())
 
     def forward(self, input_):
-        return self.sequential(input_)
+        x = self.sequential(input_)
+
+        clip_to_one_indexes = x > 0.99
+        clip_to_zero_indexes = x < 0.01
+        x[clip_to_one_indexes] = 0.99
+        x[clip_to_zero_indexes] = 0.01
+
+        return x
