@@ -45,6 +45,8 @@ class Render:
     CAMERA_POS = (0.0, -1e-3, 13.0)
     CAMERA_LOOKAT = (0.0, 0.0, 0.0)
 
+    MAX_GEOM = 10001
+
 
 class Optimization:
     DIMENSION: int = None
