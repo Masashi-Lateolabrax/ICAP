@@ -34,3 +34,17 @@ class BasicSimulator(BasicEnvironment, ABC):
 
         cell = self._pheromone_cells[int(index_x * rd_cell.index_y + index_y)]
         cell.add_value += value
+
+    def render(self, img_buf: np.ndarray, pos: tuple[float, float, float], lookat: tuple[float, float, float]):
+        if not self._do_render:
+            return
+
+        if self._pheromone_field:
+            color_max = 1.0
+            pheromone: np.ndarray = self._pheromone_field.get_gas_all()
+            for cell in self._pheromone_cells:
+                pheromone_value = float(pheromone[cell.index_y, cell.index_x])
+                rgba: tuple[float, float, float] = (pheromone_value / color_max, 0.0, 1 - pheromone_value / color_max)
+                cell.set_color(*rgba, 0.5)
+
+        super().render(img_buf, pos, lookat)
