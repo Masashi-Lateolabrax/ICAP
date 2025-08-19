@@ -138,7 +138,7 @@ class BasicEnvironment(BasicMuJoCoSimulator, ABC):
         self.food_specs = food_specs
         self.pheromone_cell_specs = pheromone_cell_specs
 
-        self.pheromone_field: Optional[PheromoneField] = None if not settings.Pheromone.ACTIVE else PheromoneField(
+        self._pheromone_field: Optional[PheromoneField] = None if not settings.Pheromone.ACTIVE else PheromoneField(
             nx=settings.Pheromone.WIDTH_NUM,
             ny=settings.Pheromone.HEIGHT_NUM,
             dx=settings.Pheromone.CELL_SIZE,
