@@ -167,7 +167,6 @@ class PheromoneField:
             ny: int,
             dx: float,
             material: Material,
-            diffusion_coefficient: float,
             evaporation_rate: float,
             decrease_rate: float,
             temperature: float,
@@ -178,8 +177,6 @@ class PheromoneField:
             raise ValueError("Grid dimensions must be positive")
         if dx <= 0:
             raise ValueError("Grid spacing dx must be positive")
-        if diffusion_coefficient < 0:
-            raise ValueError("Diffusion coefficient must be non-negative")
         if evaporation_rate < 0 or decrease_rate < 0:
             raise ValueError("Rates must be non-negative")
         if temperature <= 0:
@@ -191,7 +188,7 @@ class PheromoneField:
         self.dx = dx
 
         self.material = material
-        self.diffusion_coefficient = diffusion_coefficient
+        self.diffusion_coefficient = material.diffusion_coefficient(temperature)
         self.evaporation_rate = evaporation_rate
         self.decrease_rate = decrease_rate
         self.temperature = temperature

@@ -148,7 +148,6 @@ class BasicEnvironment(BasicMuJoCoSimulator, ABC):
                 ny=settings.Pheromone.HEIGHT_NUM,
                 dx=settings.Pheromone.CELL_SIZE,
                 material=settings.Pheromone.MATERIAL,
-                diffusion_coefficient=settings.Pheromone.DIFFUSION_COEFFICIENT,
                 evaporation_rate=settings.Pheromone.EVAPORATION_RATE,
                 decrease_rate=settings.Pheromone.DECREASE_RATE,
                 temperature=settings.Pheromone.TEMPERATURE,
