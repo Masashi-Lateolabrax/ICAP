@@ -45,7 +45,7 @@ class Render:
     CAMERA_POS = (0.0, -1e-3, 13.0)
     CAMERA_LOOKAT = (0.0, 0.0, 0.0)
 
-    MAX_GEOM = 500
+    MAX_GEOM = 11000
 
 
 class Optimization:
@@ -128,7 +128,7 @@ class Storage:
 
 class Pheromone:
     ACTIVE: bool = False
-    CELL_SIZE = 0.5
+    CELL_SIZE = 0.1
     WIDTH_NUM = int(Simulation.WORLD_WIDTH / CELL_SIZE)
     HEIGHT_NUM = int(Simulation.WORLD_HEIGHT / CELL_SIZE)
     ITERATIONS_PER_STEP = 1
