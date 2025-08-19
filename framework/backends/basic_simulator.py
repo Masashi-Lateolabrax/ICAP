@@ -8,7 +8,6 @@ class BasicSimulator(BasicEnvironment, ABC):
     def __init__(self, settings, render: bool = False):
         super().__init__(settings, render)
 
-        self.nest_site = self.data.site(self.nest_spec.name)
         self.robot_values = [
             RobotValues(settings.Robot.DISTANCE_BETWEEN_WHEELS, settings.Robot.MAX_SPEED, self.data, s)
             for s in self.robot_specs

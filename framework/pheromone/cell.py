@@ -1,3 +1,5 @@
+import numpy as np
+
 from mujoco._structs import _MjModelSiteViews
 
 
@@ -10,3 +12,7 @@ class PheromoneFieldCell:
 
     def set_color(self, r: float, g: float, b: float, a: float):
         self._site.rgba = [r, g, b, a]
+
+    @property
+    def pos(self) -> np.ndarray:
+        return self._site.pos
