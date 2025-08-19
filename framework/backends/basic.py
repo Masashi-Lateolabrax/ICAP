@@ -10,8 +10,9 @@ from ..prelude import *
 
 class BasicMuJoCoSimulator(SimulatorBackend, ABC):
     def __init__(self, settings: Settings, mj_spec: mujoco.MjSpec, render: bool = False):
-        self.model = mj_spec.compile()
-        self.data = mujoco.MjData(self.model)
+        self.model: mujoco.MjModel = mj_spec.compile()
+        self.data: mujoco.MjData = mujoco.MjData(self.model)
+        self._max_geom = settings.Render.MAX_GEOM
 
         self._do_render = render
         self.render_shape = settings.Render.RENDER_WIDTH, settings.Render.RENDER_HEIGHT
@@ -37,10 +38,15 @@ class BasicMuJoCoSimulator(SimulatorBackend, ABC):
                 sub[2] / self.camera.distance
             ) * 180 / mujoco.mjPI
 
-            with mujoco.Renderer(self.model, width=self.render_shape[0], height=self.render_shape[1]) as renderer:
+            with mujoco.Renderer(
+                    self.model, width=self.render_shape[0], height=self.render_shape[1], max_geom=self._max_geom
+            ) as renderer:
                 renderer.update_scene(self.data, self.camera)
                 renderer.render(out=img_buf)
 
         except Exception as e:
             ic("MuJoCo render error:", e)
             img_buf.fill(0)
+
+    def reset(self):
+        mujoco.mj_resetData(self.model, self.data)

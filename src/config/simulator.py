@@ -61,8 +61,8 @@ class Simulator(BasicSimulator):
 
         self.dummy_foods: list[DummyFoodValues] = []
 
-        self.input_ndarray = np.zeros((settings.Robot.NUM, 2 * 3), dtype=np.float32)
-        self.output_ndarray = np.zeros((settings.Robot.NUM, 2), dtype=np.float32)
+        self.input_ndarray = np.zeros((settings.Robot.NUM, 2 * 3 + 1), dtype=np.float32)
+        self.output_ndarray = np.zeros((settings.Robot.NUM, 3), dtype=np.float32)
         self.input_tensor = torch.from_numpy(self.input_ndarray)
 
         mujoco.mj_step(self.model, self.data)
@@ -99,12 +99,18 @@ class Simulator(BasicSimulator):
             self.input_ndarray[i, 0:2] = sensors[0].get()
             self.input_ndarray[i, 2:4] = sensors[1].get()
             self.input_ndarray[i, 4:6] = sensors[2].get()
+
         return self.input_tensor
 
     def step(self):
+        robot_positions = np.array([robot.xpos for robot in self.robot_values])
+
         if self.timer.tick():
             with torch.no_grad():
                 input_ = self.create_input_for_controller()
+                if self._pheromone_field is not None:
+                    self.input_ndarray[:, 6] = self.get_pheromone(robot_positions)
+
                 output = self.controller.forward(input_)
                 self.output_ndarray = output.numpy()
 
@@ -113,6 +119,9 @@ class Simulator(BasicSimulator):
                 right_wheel=self.output_ndarray[i, 0],
                 left_wheel=self.output_ndarray[i, 1]
             )
+
+        if self._pheromone_field is not None:
+            self.add_pheromone(robot_positions, self.output_ndarray[:, 2])
 
         for food in self.food_values:
             if np.linalg.norm(food.xpos - self.nest_site.xpos[0:2]) <= self.settings.Nest.RADIUS:
