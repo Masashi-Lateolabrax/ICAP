@@ -141,6 +141,7 @@ class BasicEnvironment(BasicMuJoCoSimulator, ABC):
 
         self._pheromone_field: Optional[PheromoneField] = None
         self._pheromone_cells: list[PheromoneFieldCell] = []
+        self._pheromone_cell_pos: Optional[np.ndarray] = None
         if settings.Pheromone.ACTIVE:
             self._pheromone_field = PheromoneField(
                 nx=settings.Pheromone.WIDTH_NUM,
@@ -153,36 +154,24 @@ class BasicEnvironment(BasicMuJoCoSimulator, ABC):
                 temperature=settings.Pheromone.TEMPERATURE,
                 iter_=settings.Pheromone.ITERATIONS_PER_STEP,
             )
-            self._pheromone_cells: list[PheromoneFieldCell] = [s.get_cell(self.model) for s in pheromone_cell_specs]
+            self._pheromone_cells = [s.get_cell(self.model) for s in pheromone_cell_specs]
+            self._pheromone_cell_pos = np.array(
+                [cell.pos[:2] for cell in self._pheromone_cells], dtype=np.float32
+            )
 
     def _get_pheromone_cells(self, positions: np.ndarray) -> list[PheromoneFieldCell]:
         if positions.ndim != 2 or positions.shape[1] < 2:
             logging.warning(f"Invalid position shape: expected (N, >=2), got {positions.shape}")
-
-        if len(self._pheromone_cells) == 0:
+        if self._pheromone_cell_pos is None:
+            logging.warning("Pheromone cell positions are not initialized.")
             return []
 
-        lu_cell = self._pheromone_cells[0]
-        rd_cell = self._pheromone_cells[-1]
-        rpos = (positions[:, :2] - lu_cell.pos[:2]) / (rd_cell.pos[:2] - lu_cell.pos[:2])
-        indexes_x = np.clip(
-            rpos[:, 0] * rd_cell.index_x,
-            0, rd_cell.index_x
+        distance = np.linalg.norm(
+            positions[:, None, :2] - self._pheromone_cell_pos[None, :, :2],
+            axis=2
         )
-        indexes_y = np.clip(
-            rpos[:, 1] * rd_cell.index_y,
-            0, rd_cell.index_y
-        )
-
-        cells = []
-        for index_x, index_y in zip(indexes_x, indexes_y):
-            index_x = int(index_x)
-            index_y = int(index_y)
-            cells.append(
-                self._pheromone_cells[int(index_x * rd_cell.index_y + index_y)]
-            )
-
-        return cells
+        closest_indices = np.argmin(distance, axis=1)
+        return [self._pheromone_cells[i] for i in closest_indices]
 
     def add_pheromone(self, positions: np.ndarray, values: np.ndarray):
         for cell, v in zip(self._get_pheromone_cells(positions), values):
