@@ -1,6 +1,7 @@
 from abc import ABC
 import os
 from typing import Optional
+import logging
 
 import mujoco
 import numpy as np
@@ -155,6 +156,9 @@ class BasicEnvironment(BasicMuJoCoSimulator, ABC):
             self._pheromone_cells: list[PheromoneFieldCell] = [s.get_cell(self.model) for s in pheromone_cell_specs]
 
     def _get_pheromone_cells(self, positions: np.ndarray) -> list[PheromoneFieldCell]:
+        if positions.ndim != 2 or positions.shape[1] < 2:
+            logging.warning(f"Invalid position shape: expected (N, >=2), got {positions.shape}")
+
         if len(self._pheromone_cells) == 0:
             return []
 
