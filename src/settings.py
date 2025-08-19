@@ -1,5 +1,5 @@
 import numpy as np
-from framework.prelude import Settings, calc_loss_sigma, Position, RobotLocation, ClippingFunctions
+from framework.prelude import Settings, calc_loss_sigma, Position, RobotLocation, ClippingFunctions, ETHANOL
 
 
 class MySettings(Settings):
@@ -135,6 +135,24 @@ MySettings.Simulation.WORLD_HEIGHT = 10.0
 
 MySettings.Simulation.WALL_THICKNESS = 1
 MySettings.Simulation.WALL_HEIGHT = 1
+###################################################################################
+
+
+###################################################################################
+# Pheromone settings
+###################################################################################
+MySettings.Pheromone.ACTIVE = True
+
+MySettings.Pheromone.CELL_SIZE = 0.1
+MySettings.Pheromone.WIDTH_NUM = int(MySettings.Simulation.WORLD_WIDTH / MySettings.Pheromone.CELL_SIZE)
+MySettings.Pheromone.HEIGHT_NUM = int(MySettings.Simulation.WORLD_HEIGHT / MySettings.Pheromone.CELL_SIZE)
+
+MySettings.Pheromone.ITERATIONS_PER_STEP = 1
+
+MySettings.Pheromone.EVAPORATION_RATE = 0.1
+MySettings.Pheromone.DECREASE_RATE = 0.0
+MySettings.Pheromone.TEMPERATURE = 300
+MySettings.Pheromone.MATERIAL = ETHANOL
 ###################################################################################
 
 
