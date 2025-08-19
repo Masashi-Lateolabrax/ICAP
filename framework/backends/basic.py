@@ -10,8 +10,8 @@ from ..prelude import *
 
 class BasicMuJoCoSimulator(SimulatorBackend, ABC):
     def __init__(self, settings: Settings, mj_spec: mujoco.MjSpec, render: bool = False):
-        self.model = mj_spec.compile()
-        self.data = mujoco.MjData(self.model)
+        self.model: mujoco.MjModel = mj_spec.compile()
+        self.data: mujoco.MjData = mujoco.MjData(self.model)
         self._max_geom = settings.Render.MAX_GEOM
 
         self._do_render = render
