@@ -29,14 +29,12 @@ def dDistribution_dt(
 
 @jit
 def dEvaporation_dt(
-        material: Material,
         gas_values: jnp.ndarray,
         liquid_values: jnp.ndarray,
-        temperature: float,
+        saturation_pressure: float,
         evaporation_rate: float,
 ) -> jnp.ndarray:
-    c_sat = material.saturation_pressure(temperature)
-    evaporation = (c_sat - gas_values[1:-1, 1:-1]) * evaporation_rate
+    evaporation = (saturation_pressure - gas_values[1:-1, 1:-1]) * evaporation_rate
     evaporation = jnp.minimum(evaporation, liquid_values)
     return evaporation
 
@@ -51,22 +49,20 @@ def dDecrease_dt(
 
 @jit
 def d_dt(
-        material: Material,
         liquid_values: jnp.ndarray,
         gas_values: jnp.ndarray,
         mask: jnp.ndarray,
         dx: float,
-        temperature: float,
+        saturation_pressure: float,
         diffusion_coefficient: float,
         evaporation_rate: float,
         decrease_rate: float,
         padding_value: float,
 ) -> tuple[jnp.ndarray, jnp.ndarray]:
     d_evaporation = dEvaporation_dt(
-        material=material,
         gas_values=gas_values,
         liquid_values=liquid_values,
-        temperature=temperature,
+        saturation_pressure=saturation_pressure,
         evaporation_rate=evaporation_rate
     )
     d_distribution = dDistribution_dt(
@@ -90,12 +86,11 @@ def d_dt(
 
 @jit
 def update_with_rk4(
-        material: Material,
         liquid_values: jnp.ndarray,
         gas_values: jnp.ndarray,
         mask: jnp.ndarray,
         dx: float,
-        temperature: float,
+        saturation_pressure: float,
         diffusion_coefficient: float,
         evaporation_rate: float,
         decrease_rate: float,
@@ -103,12 +98,11 @@ def update_with_rk4(
         padding_value: float,
 ) -> tuple[jnp.ndarray, jnp.ndarray]:
     k1_gas, k1_liquid = d_dt(
-        material=material,
         liquid_values=liquid_values,
         gas_values=gas_values,
         mask=mask,
         dx=dx,
-        temperature=temperature,
+        saturation_pressure=saturation_pressure,
         diffusion_coefficient=diffusion_coefficient,
         evaporation_rate=evaporation_rate,
         decrease_rate=decrease_rate,
@@ -116,12 +110,11 @@ def update_with_rk4(
     )
 
     k2_gas, k2_liquid = d_dt(
-        material=material,
         liquid_values=liquid_values + 0.5 * dt * k1_liquid,
         gas_values=gas_values + 0.5 * dt * k1_gas,
         mask=mask,
         dx=dx,
-        temperature=temperature,
+        saturation_pressure=saturation_pressure,
         diffusion_coefficient=diffusion_coefficient,
         evaporation_rate=evaporation_rate,
         decrease_rate=decrease_rate,
@@ -129,12 +122,11 @@ def update_with_rk4(
     )
 
     k3_gas, k3_liquid = d_dt(
-        material=material,
         liquid_values=liquid_values + 0.5 * dt * k2_liquid,
         gas_values=gas_values + 0.5 * dt * k2_gas,
         mask=mask,
         dx=dx,
-        temperature=temperature,
+        saturation_pressure=saturation_pressure,
         diffusion_coefficient=diffusion_coefficient,
         evaporation_rate=evaporation_rate,
         decrease_rate=decrease_rate,
@@ -142,12 +134,11 @@ def update_with_rk4(
     )
 
     k4_gas, k4_liquid = d_dt(
-        material=material,
         liquid_values=liquid_values + dt * k3_liquid,
         gas_values=gas_values + dt * k3_gas,
         mask=mask,
         dx=dx,
-        temperature=temperature,
+        saturation_pressure=saturation_pressure,
         diffusion_coefficient=diffusion_coefficient,
         evaporation_rate=evaporation_rate,
         decrease_rate=decrease_rate,
@@ -187,7 +178,7 @@ class PheromoneField:
         self.shape = jnp.array((ny, nx), dtype=jnp.int32)
         self.dx = dx
 
-        self.material = material
+        self.saturation_pressure = material.saturation_pressure(temperature)
         self.diffusion_coefficient = material.diffusion_coefficient(temperature)
         self.evaporation_rate = evaporation_rate
         self.decrease_rate = decrease_rate
@@ -258,12 +249,11 @@ class PheromoneField:
         dt = dt / self.iter_
         for _ in range(self.iter_):
             self._values_gas, self._values_liquid = update_with_rk4(
-                material=self.material,
                 liquid_values=self._values_liquid,
                 gas_values=self._values_gas,
                 mask=self.mask,
                 dx=self.dx,
-                temperature=self.temperature,
+                saturation_pressure=self.saturation_pressure,
                 diffusion_coefficient=self.diffusion_coefficient,
                 evaporation_rate=self.evaporation_rate,
                 decrease_rate=self.decrease_rate,
