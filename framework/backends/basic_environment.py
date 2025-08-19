@@ -132,7 +132,9 @@ class BasicEnvironment(BasicMuJoCoSimulator, ABC):
     def __init__(self, settings, render: bool = False):
         mj_spec, nest_spec, robot_specs, food_specs, pheromone_cell_specs = generate_mjspec(settings)
         super().__init__(settings, mj_spec, render)
-        self.nest_spec = nest_spec
+
+        self.nest_site = self.data.site(nest_spec.name)
+
         self.robot_specs = robot_specs
         self.food_specs = food_specs
 
