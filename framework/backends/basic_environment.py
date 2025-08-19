@@ -152,7 +152,7 @@ class BasicEnvironment(BasicMuJoCoSimulator, ABC):
                 temperature=settings.Pheromone.TEMPERATURE,
                 iter_=settings.Pheromone.ITERATIONS_PER_STEP,
             )
-            self._pheromone_cells = [s.get_cell(self.model) for s in pheromone_cell_specs]
+            self._pheromone_cells: list[PheromoneFieldCell] = [s.get_cell(self.model) for s in pheromone_cell_specs]
 
     def _get_pheromone_cells(self, positions: np.ndarray) -> list[PheromoneFieldCell]:
         if len(self._pheromone_cells) == 0:
@@ -201,3 +201,11 @@ class BasicEnvironment(BasicMuJoCoSimulator, ABC):
                 cell.set_color(*rgba, 0.5)
 
         super().render(img_buf, pos, lookat)
+
+    def reset(self):
+        if self._pheromone_field:
+            self._pheromone_field.reset()
+            for cell in self._pheromone_cells:
+                cell.add_value = 0.0
+
+        super().reset()

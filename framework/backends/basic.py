@@ -47,3 +47,6 @@ class BasicMuJoCoSimulator(SimulatorBackend, ABC):
         except Exception as e:
             ic("MuJoCo render error:", e)
             img_buf.fill(0)
+
+    def reset(self):
+        mujoco.mj_resetData(self.model, self.data)
