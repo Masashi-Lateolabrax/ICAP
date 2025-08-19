@@ -127,6 +127,7 @@ class Storage:
 
 
 class Pheromone:
+    ACTIVE: bool = False
     CELL_SIZE = 0.5
     WIDTH_NUM = int(Simulation.WORLD_WIDTH / CELL_SIZE)
     HEIGHT_NUM = int(Simulation.WORLD_HEIGHT / CELL_SIZE)
