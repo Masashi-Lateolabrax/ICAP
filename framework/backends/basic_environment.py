@@ -3,18 +3,17 @@ import os
 from typing import Optional
 
 import mujoco
+import numpy as np
 
 from ..prelude import *
-from .basic import BasicMuJoCoSimulator
-
 from ..environment import (
     add_geom,
     setup_option, setup_visual, setup_textures, add_nest, add_wall,
     rand_robot_pos, rand_food_pos, add_mesh_in_asset, MeshContentType,
     add_food_object_with_mesh, add_robot_with_mesh
 )
-
-from ..pheromone import PheromoneFieldCellSpec, PheromoneField
+from ..pheromone import PheromoneFieldCellSpec, PheromoneField, PheromoneFieldCell
+from .basic import BasicMuJoCoSimulator
 
 
 def add_pheromone_cells_in_mjspec(
@@ -136,16 +135,33 @@ class BasicEnvironment(BasicMuJoCoSimulator, ABC):
         self.nest_spec = nest_spec
         self.robot_specs = robot_specs
         self.food_specs = food_specs
-        self.pheromone_cell_specs = pheromone_cell_specs
 
-        self._pheromone_field: Optional[PheromoneField] = None if not settings.Pheromone.ACTIVE else PheromoneField(
-            nx=settings.Pheromone.WIDTH_NUM,
-            ny=settings.Pheromone.HEIGHT_NUM,
-            dx=settings.Pheromone.CELL_SIZE,
-            material=settings.Pheromone.MATERIAL,
-            diffusion_coefficient=settings.Pheromone.DIFFUSION_COEFFICIENT,
-            evaporation_rate=settings.Pheromone.EVAPORATION_RATE,
-            decrease_rate=settings.Pheromone.DECREASE_RATE,
-            temperature=settings.Pheromone.TEMPERATURE,
-            iter_=settings.Pheromone.ITERATIONS_PER_STEP,
-        )
+        self._pheromone_field: Optional[PheromoneField] = None
+        self._pheromone_cells: list[PheromoneFieldCell] = []
+        if settings.Pheromone.ACTIVE:
+            self._pheromone_field = PheromoneField(
+                nx=settings.Pheromone.WIDTH_NUM,
+                ny=settings.Pheromone.HEIGHT_NUM,
+                dx=settings.Pheromone.CELL_SIZE,
+                material=settings.Pheromone.MATERIAL,
+                diffusion_coefficient=settings.Pheromone.DIFFUSION_COEFFICIENT,
+                evaporation_rate=settings.Pheromone.EVAPORATION_RATE,
+                decrease_rate=settings.Pheromone.DECREASE_RATE,
+                temperature=settings.Pheromone.TEMPERATURE,
+                iter_=settings.Pheromone.ITERATIONS_PER_STEP,
+            )
+            self._pheromone_cells = [s.get_cell(self.model) for s in pheromone_cell_specs]
+
+    def render(self, img_buf: np.ndarray, pos: tuple[float, float, float], lookat: tuple[float, float, float]):
+        if not self._do_render:
+            return
+
+        if self._pheromone_field:
+            color_max = 1.0
+            pheromone: np.ndarray = self._pheromone_field.get_gas_all()
+            for cell in self._pheromone_cells:
+                pheromone_value = float(pheromone[cell.index_y, cell.index_x])
+                rgba: tuple[float, float, float] = (pheromone_value / color_max, 0.0, 1 - pheromone_value / color_max)
+                cell.set_color(*rgba, 0.5)
+
+        super().render(img_buf, pos, lookat)
