@@ -45,7 +45,7 @@ class Render:
     CAMERA_POS = (0.0, -1e-3, 13.0)
     CAMERA_LOOKAT = (0.0, 0.0, 0.0)
 
-    MAX_GEOM = 10001
+    MAX_GEOM = 500
 
 
 class Optimization:
@@ -127,13 +127,13 @@ class Storage:
 
 
 class Pheromone:
-    CELL_SIZE = 1
+    CELL_SIZE = 0.5
     WIDTH_NUM = int(Simulation.WORLD_WIDTH / CELL_SIZE)
     HEIGHT_NUM = int(Simulation.WORLD_HEIGHT / CELL_SIZE)
     ITERATIONS_PER_STEP = 1
-    DIFFUSION_COEFFICIENT = 0.1
+    DIFFUSION_COEFFICIENT = 0.001
     EVAPORATION_RATE = 0.1
-    DECREASE_RATE = 0.1
+    DECREASE_RATE = 0.001
     TEMPERATURE = 300
     MATERIAL = ETHANOL
 

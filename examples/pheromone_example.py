@@ -71,7 +71,11 @@ class Simulator(BasicMuJoCoSimulator):
         )
 
     def step(self):
-        [c for c in self.pheromone_cells if c.index_x == 5 and c.index_y == 5][0].add_value = 1.0
+        center_cell = sorted(
+            [(c, np.linalg.norm(c.pos)) for i, c in enumerate(self.pheromone_cells)],
+            key=lambda x: x[1]
+        )[0][0]
+        center_cell.add_value = 1.0
 
         self.pheromone_field.add_liquid_by_cell(self.pheromone_cells)
         self.pheromone_field.update(self.settings.Simulation.TIME_STEP)
