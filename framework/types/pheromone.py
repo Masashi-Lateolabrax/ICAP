@@ -40,7 +40,8 @@ class Material:
 
         a = (10 ** -3) * (temperature ** 1.75) * (1 / self.molar_mass + 1 / self.AIR_MOLAR_MASS) ** 0.5
         b = normal_pressure * (self.diffusion_volume ** 0.3 + self.AIR_DIFFUSION_VOLUME ** 0.3) ** 2
-        return a / b
+        diffusion = a / b  # cm^2/s
+        return diffusion * 1e-4  # m^2/s
 
 
 # Reference(Ethanol): https://webbook.nist.gov/cgi/cbook.cgi?ID=C64175&Mask=4&Type=ANTOINE&Plot=on#ANTOINE
