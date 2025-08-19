@@ -13,10 +13,45 @@ from ..environment import (
     add_food_object_with_mesh, add_robot_with_mesh
 )
 
+from ..pheromone import PheromoneFieldCellSpec
+
+
+def add_pheromone_cells_in_mjspec(
+        spec: mujoco.MjSpec,
+        settings: Settings
+) -> list[PheromoneFieldCellSpec]:
+    from ..pheromone import add_pheromone_cell
+
+    if settings.Pheromone.ACTIVE is False:
+        return []
+
+    sites = []
+    for x in range(settings.Pheromone.WIDTH_NUM):
+        for y in range(settings.Pheromone.HEIGHT_NUM):
+            pos_x = settings.Pheromone.CELL_SIZE * (x - (settings.Pheromone.WIDTH_NUM - 1) * 0.5)
+            pos_y = settings.Pheromone.CELL_SIZE * (-y + (settings.Pheromone.HEIGHT_NUM - 1) * 0.5)
+
+            sites.append(
+                add_pheromone_cell(
+                    spec,
+                    index_x=x,
+                    index_y=y,
+                    size=settings.Pheromone.CELL_SIZE * 0.5,
+                    pos=(pos_x, pos_y, 0),
+                )
+            )
+    return sites
+
 
 def generate_mjspec(
         settings: Settings
-) -> tuple[mujoco.MjSpec, mujoco._specs.MjsSite, list[RobotSpec], list[FoodSpec]]:
+) -> tuple[
+    mujoco.MjSpec,
+    mujoco._specs.MjsSite,
+    list[RobotSpec],
+    list[FoodSpec],
+    list[PheromoneFieldCellSpec]
+]:
     spec = mujoco.MjSpec()
 
     setup_option(spec, settings)
@@ -24,6 +59,7 @@ def generate_mjspec(
     setup_textures(spec, settings)
 
     add_wall(spec, settings)
+    pheromone_cell_specs = add_pheromone_cells_in_mjspec(spec, settings)
 
     add_geom(
         spec.worldbody,
@@ -89,13 +125,14 @@ def generate_mjspec(
                 add_robot_with_mesh(spec, settings, robot_mesh, i, position)
             )
 
-    return spec, nest_spec, robot_specs, food_specs
+    return spec, nest_spec, robot_specs, food_specs, pheromone_cell_specs
 
 
 class BasicEnvironment(BasicMuJoCoSimulator, ABC):
     def __init__(self, settings, render: bool = False):
-        mj_spec, nest_spec, robot_specs, food_specs = generate_mjspec(settings)
+        mj_spec, nest_spec, robot_specs, food_specs, pheromone_cell_specs = generate_mjspec(settings)
         super().__init__(settings, mj_spec, render)
         self.nest_spec = nest_spec
         self.robot_specs = robot_specs
         self.food_specs = food_specs
+        self.pheromone_cell_specs = pheromone_cell_specs
