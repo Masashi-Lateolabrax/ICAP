@@ -152,21 +152,39 @@ class BasicEnvironment(BasicMuJoCoSimulator, ABC):
             )
             self._pheromone_cells = [s.get_cell(self.model) for s in pheromone_cell_specs]
 
-    def add_pheromone(self, x: float, y: float, value: float):
+    def _get_pheromone_cells(self, positions: np.ndarray) -> list[PheromoneFieldCell]:
         if len(self._pheromone_cells) == 0:
-            return
+            return []
 
         lu_cell = self._pheromone_cells[0]
         rd_cell = self._pheromone_cells[-1]
-        pos = np.array([x, y])
-        rpos = (pos - lu_cell.pos[:2]) / (rd_cell.pos[:2] - lu_cell.pos[:2])
-        index_x = rd_cell.index_x * rpos[0]
-        index_y = rd_cell.index_y * rpos[1]
-        index_x = np.clip(index_x, 0, rd_cell.index_x)
-        index_y = np.clip(index_y, 0, rd_cell.index_y)
+        rpos = (positions[:, :2] - lu_cell.pos[:2]) / (rd_cell.pos[:2] - lu_cell.pos[:2])
+        indexes_x = np.clip(
+            rpos[:, 0] * rd_cell.index_x,
+            0, rd_cell.index_x
+        )
+        indexes_y = np.clip(
+            rpos[:, 1] * rd_cell.index_y,
+            0, rd_cell.index_y
+        )
 
-        cell = self._pheromone_cells[int(index_x * rd_cell.index_y + index_y)]
-        cell.add_value += value
+        cells = []
+        for index_x, index_y in zip(indexes_x, indexes_y):
+            index_x = int(index_x)
+            index_y = int(index_y)
+            cells.append(
+                self._pheromone_cells[int(index_x * rd_cell.index_y + index_y)]
+            )
+
+        return cells
+
+    def add_pheromone(self, positions: np.ndarray, values: np.ndarray):
+        for cell, v in zip(self._get_pheromone_cells(positions), values):
+            cell.add_value += v
+
+    def get_pheromone(self, positions: np.ndarray) -> np.ndarray:
+        indexes = np.array([(cell.index_x, cell.index_y) for cell in self._get_pheromone_cells(positions)])
+        return self._pheromone_field.get_gas(indexes[:, 0], indexes[:, 1])
 
     def render(self, img_buf: np.ndarray, pos: tuple[float, float, float], lookat: tuple[float, float, float]):
         if not self._do_render:
