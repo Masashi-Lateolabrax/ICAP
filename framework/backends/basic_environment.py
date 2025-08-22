@@ -5,6 +5,7 @@ import logging
 
 import mujoco
 import numpy as np
+import jax.numpy as jnp
 
 from ..prelude import *
 from ..environment import (
@@ -129,19 +130,25 @@ def generate_mjspec(
     return spec, nest_spec, robot_specs, food_specs, pheromone_cell_specs
 
 
-class BasicEnvironment(BasicMuJoCoSimulator, ABC):
+class BasicMuJoCoSimulatorWithEnv(BasicMuJoCoSimulator, ABC):
     def __init__(self, settings, render: bool = False):
         mj_spec, nest_spec, robot_specs, food_specs, pheromone_cell_specs = generate_mjspec(settings)
         super().__init__(settings, mj_spec, render)
 
-        self.nest_site = self.data.site(nest_spec.name)
+        self.nest_id: int = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_SITE, nest_spec.name)
 
-        self.robot_specs = robot_specs
-        self.food_specs = food_specs
+        self.batched_robot_id: BatchedRobotIDs = BatchedRobotIDs.from_specs(self.model, robot_specs)
+        self.batched_food_id: BatchedFoodIDs = BatchedFoodIDs.from_specs(self.model, food_specs)
+
+        distance_between_wheels = settings.Robot.DISTANCE_BETWEEN_WHEELS
+        max_speed = settings.Robot.MAX_SPEED
+        self.robots = BatchedRobots(self.data, self.batched_robot_id, distance_between_wheels, max_speed)
+
+        self.food_items: BatchedFood = BatchedFood(self.data, self.batched_food_id)
 
         self._pheromone_field: Optional[PheromoneField] = None
         self._pheromone_cells: list[PheromoneFieldCell] = []
-        self._pheromone_cell_pos: Optional[np.ndarray] = None
+        self._pheromone_cell_pos: Optional[jnp.ndarray] = None
         if settings.Pheromone.ACTIVE:
             self._pheromone_field = PheromoneField(
                 nx=settings.Pheromone.WIDTH_NUM,
@@ -150,34 +157,34 @@ class BasicEnvironment(BasicMuJoCoSimulator, ABC):
                 material=settings.Pheromone.MATERIAL,
                 evaporation_rate=settings.Pheromone.EVAPORATION_RATE,
                 decrease_rate=settings.Pheromone.DECREASE_RATE,
-                temperature=settings.Pheromone.TEMPERATURE,
+                temperature=settings.Simulation.TEMPERATURE,
                 iter_=settings.Pheromone.ITERATIONS_PER_STEP,
             )
             self._pheromone_cells = [s.get_cell(self.model) for s in pheromone_cell_specs]
-            self._pheromone_cell_pos = np.array(
+            self._pheromone_cell_pos = jnp.array(
                 [cell.pos[:2] for cell in self._pheromone_cells], dtype=np.float32
             )
 
-    def _get_pheromone_cells(self, positions: np.ndarray) -> list[PheromoneFieldCell]:
+    def _get_pheromone_cells(self, positions: jnp.ndarray) -> list[PheromoneFieldCell]:
         if positions.ndim != 2 or positions.shape[1] < 2:
             logging.warning(f"Invalid position shape: expected (N, >=2), got {positions.shape}")
         if self._pheromone_cell_pos is None:
             logging.warning("Pheromone cell positions are not initialized.")
             return []
 
-        distance = np.linalg.norm(
+        distance = jnp.linalg.norm(
             positions[:, None, :2] - self._pheromone_cell_pos[None, :, :2],
             axis=2
         )
-        closest_indices = np.argmin(distance, axis=1)
+        closest_indices = jnp.argmin(distance, axis=1)
         return [self._pheromone_cells[i] for i in closest_indices]
 
-    def add_pheromone(self, positions: np.ndarray, values: np.ndarray):
+    def add_pheromone(self, positions: jnp.ndarray, values: jnp.ndarray):
         for cell, v in zip(self._get_pheromone_cells(positions), values):
             cell.add_value += v
 
-    def get_pheromone(self, positions: np.ndarray) -> np.ndarray:
-        indexes = np.array([(cell.index_x, cell.index_y) for cell in self._get_pheromone_cells(positions)])
+    def get_pheromone(self, positions: jnp.ndarray) -> jnp.ndarray:
+        indexes = jnp.array([(cell.index_x, cell.index_y) for cell in self._get_pheromone_cells(positions)])
         return self._pheromone_field.get_gas(indexes[:, 0], indexes[:, 1])
 
     def render(self, img_buf: np.ndarray, pos: tuple[float, float, float], lookat: tuple[float, float, float]):
@@ -186,7 +193,7 @@ class BasicEnvironment(BasicMuJoCoSimulator, ABC):
 
         if self._pheromone_field:
             color_max = 1.0
-            pheromone: np.ndarray = self._pheromone_field.get_gas_all()
+            pheromone: jnp.ndarray = self._pheromone_field.values_gas
             for cell in self._pheromone_cells:
                 pheromone_value = float(pheromone[cell.index_y, cell.index_x])
                 rgba: tuple[float, float, float] = (pheromone_value / color_max, 0.0, 1 - pheromone_value / color_max)
