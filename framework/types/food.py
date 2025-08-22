@@ -1,68 +1,129 @@
-import mujoco
-from mujoco._structs import (_MjDataSiteViews, _MjDataJointViews, _MjDataSensorViews)
-import numpy as np
+import dataclasses
+from functools import partial
 
-from .position import Position
+import numpy as np
+from mujoco import mjx
+import mujoco
+
+import jax
+import jax.numpy as jnp
 
 
 class FoodSpec:
     def __init__(
             self,
+            body: mujoco._specs.MjsBody,
             center_site: mujoco._specs.MjsSite,
             free_joint: mujoco._specs.MjsJoint,
             velocimeter: mujoco._specs.MjsSensor
     ):
+        self.body = body
         self.center_site = center_site
         self.free_joint = free_joint
         self.velocimeter = velocimeter
 
 
-class FoodValues:
-    def __init__(self, data: mujoco.MjData, spec: FoodSpec):
-        self._center_site: _MjDataSiteViews = data.site(spec.center_site.name)
-        self.joint: _MjDataJointViews = data.joint(spec.free_joint.name)
-        self._velocimeter: _MjDataSensorViews = data.sensor(spec.velocimeter.name)
-
-    @property
-    def site(self):
-        return self._center_site
-
-    @property
-    def xpos(self):
-        return self._center_site.xpos[0:2]
-
-    @property
-    def position(self) -> Position:
-        return Position(self.xpos[0], self.xpos[1])
-
-    @property
-    def direction(self):
-        res = np.zeros(3)
-        mujoco.mju_mulMatVec3(res, self._center_site.xmat, np.array([0, 0, 1]))
-        res = res[0:2]
-        d = np.linalg.norm(res)
-        res /= d if d != 0 else 1.0
-        return res
+@dataclasses.dataclass
+class FoodIDs:
+    body_ids: jnp.ndarray
+    center_site_id: jnp.ndarray
+    free_joint_id: jnp.ndarray
+    velocimeter_id: jnp.ndarray
 
 
-class DummyFoodValues:
-    """
-    A dummy food values class that preserves evaluation continuity 
-    when real food is respawned. Stores frozen position data.
-    """
+@dataclasses.dataclass
+class BatchedFoodIDs:
+    body_ids: jnp.ndarray
+    center_site_ids: jnp.ndarray
+    free_joint_ids: jnp.ndarray
+    velocimeter_ids: jnp.ndarray
 
-    def __init__(self, original_food_values: FoodValues):
-        """
-        Create a dummy food values instance that preserves the position
-        of the original food at the moment of respawning.
+    @classmethod
+    def from_specs(cls, model: mujoco.MjModel | mjx.Model, specs: list[FoodSpec]) -> 'BatchedFoodIDs':
+        body_ids = [mjx.name2id(model, mujoco.mjtObj.mjOBJ_SITE, spec.body.name) for spec in specs]
+        center_site_ids = [mjx.name2id(model, mujoco.mjtObj.mjOBJ_SITE, spec.center_site.name) for spec in specs]
+        free_joint_ids = [mjx.name2id(model, mujoco.mjtObj.mjOBJ_JOINT, spec.free_joint.name) for spec in specs]
+        velocimeter_ids = [mjx.name2id(model, mujoco.mjtObj.mjOBJ_SENSOR, spec.velocimeter.name) for spec in specs]
+
+        return cls(
+            body_ids=jnp.array(body_ids, dtype=jnp.int32),
+            center_site_ids=jnp.array(center_site_ids, dtype=jnp.int32),
+            free_joint_ids=jnp.array(free_joint_ids, dtype=jnp.int32),
+            velocimeter_ids=jnp.array(velocimeter_ids, dtype=jnp.int32)
+        )
+
+    def __getitem__(self, index: int) -> FoodIDs:
+        return FoodIDs(
+            body_ids=self.body_ids[index],
+            center_site_id=self.center_site_ids[index],
+            free_joint_id=self.free_joint_ids[index],
+            velocimeter_id=self.velocimeter_ids[index]
+        )
+
+
+class BatchedFood:
+    @staticmethod
+    def __extract_from_data(
+            data: mjx.Data,
+            batched_food_ids: BatchedFoodIDs
+    ):
+        return data.site_xpos[batched_food_ids.center_site_ids, :2]
+
+    def __init__(
+            self,
+            data: mujoco.MjData | mjx.Data,
+            batched_food_ids: BatchedFoodIDs,
+    ):
+        self.ids = batched_food_ids
+        self.positions = data.site_xpos[batched_food_ids.center_site_ids, :2]
+
+        self._extract_from_data = partial(
+            BatchedFood.__extract_from_data,
+            batched_food_ids=batched_food_ids
+        )
+        self._jit_extract_from_data = jax.jit(self._extract_from_data)
+
+    def update(self, data: mjx.Data | mujoco.MjData):
+        if isinstance(data, mjx.Data):
+            self.positions = self._jit_extract_from_data(data)
+
+        elif isinstance(data, mujoco.MjData):
+            self.positions = self._extract_from_data(data)
+
+    @staticmethod
+    def set_pos(data: mujoco.MjData | mjx.Data, body_id: jax.Array, pos: jax.Array):
+        if isinstance(data, mjx.Data):
+            data.xpos = data.xpos.at[body_id].set(pos)
+
+        elif isinstance(data, mujoco.MjData):
+            data.xpos[body_id] = np.array(pos)
+
+        return data
+
+    def tree_flatten(self):
+        aux_data = {
+            'ids': self.ids,
+            'extract_from_data': self._extract_from_data,
+            'jit_extract_from_data': self._jit_extract_from_data
+        }
+        return (self.positions,), aux_data
+
+    @classmethod
+    def tree_unflatten(cls, aux_data, children):
+        positions, = children
+
+        instance = cls.__new__(cls)
+        instance.ids = aux_data['ids']
+        instance.positions = positions
+        instance._extract_from_data = aux_data['extract_from_data']
+        instance._jit_extract_from_data = aux_data['jit_extract_from_data']
         
-        Args:
-            original_food_values: The original FoodValues instance to preserve
-        """
-        # Store the position at the moment of respawning
-        self._frozen_xpos = original_food_values.xpos.copy()
+        return instance
 
-    @property
-    def xpos(self):
-        """Return the frozen position from when the food was respawned"""
-        return self._frozen_xpos
+
+# Register BatchedFood as JAX PyTree
+jax.tree_util.register_pytree_node(
+    BatchedFood,
+    BatchedFood.tree_flatten,
+    BatchedFood.tree_unflatten
+)
