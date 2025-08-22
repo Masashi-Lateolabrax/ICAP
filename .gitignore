@@ -1,6 +1,9 @@
 /.idea/
 /RESULTS/
 /.run
+/data
+/.serena
+
 
 /report.md
 /poetry.toml
@@ -17,3 +20,4 @@
 *.tmp.*
 *.log.*
 *.pkl
+
