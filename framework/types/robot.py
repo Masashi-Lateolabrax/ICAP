@@ -32,6 +32,7 @@ class RobotSpec:
 
 @dataclasses.dataclass
 class RobotIDs:
+    body_id: jnp.ndarray
     center_site_id: jnp.ndarray
     front_site_id: jnp.ndarray
     free_joint_id: jnp.ndarray
@@ -43,6 +44,7 @@ class RobotIDs:
 
 @dataclasses.dataclass
 class BatchedRobotIDs:
+    body_ids: jnp.ndarray
     center_site_ids: jnp.ndarray
     front_site_ids: jnp.ndarray
     free_joint_ids: jnp.ndarray
@@ -53,6 +55,7 @@ class BatchedRobotIDs:
 
     @classmethod
     def from_specs(cls, model: mujoco.MjModel | mjx.Model, specs: list[RobotSpec]) -> 'BatchedRobotIDs':
+        body_ids = [mjx.name2id(model, mujoco.mjtObj.mjOBJ_BODY, spec.body.name) for spec in specs]
         center_site_ids = [mjx.name2id(model, mujoco.mjtObj.mjOBJ_SITE, spec.center_site.name) for spec in specs]
         front_site_ids = [mjx.name2id(model, mujoco.mjtObj.mjOBJ_SITE, spec.front_site.name) for spec in specs]
         free_joint_ids = [mjx.name2id(model, mujoco.mjtObj.mjOBJ_JOINT, spec.free_joint.name) for spec in specs]
@@ -62,6 +65,7 @@ class BatchedRobotIDs:
         r_actuator_ids = [mjx.name2id(model, mujoco.mjtObj.mjOBJ_ACTUATOR, spec.r_act.name) for spec in specs]
 
         return cls(
+            body_ids=jnp.array(body_ids, dtype=jnp.int32),
             center_site_ids=jnp.array(center_site_ids, dtype=jnp.int32),
             front_site_ids=jnp.array(front_site_ids, dtype=jnp.int32),
             free_joint_ids=jnp.array(free_joint_ids, dtype=jnp.int32),
@@ -73,6 +77,7 @@ class BatchedRobotIDs:
 
     def __getitem__(self, index: int):
         return RobotIDs(
+            body_id=self.body_ids[index],
             center_site_id=self.center_site_ids[index],
             front_site_id=self.front_site_ids[index],
             free_joint_id=self.free_joint_ids[index],
@@ -114,9 +119,9 @@ class BatchedRobots:
             front_site_ids: jax.Array
     ) -> tuple[jax.Array, jax.Array]:
         """Extract positions and directions from mujoco data."""
-        positions = data.site_xpos[center_site_ids, :2]
+        positions = data.site_xpos[center_site_ids]
         front_pos = data.site_xpos[front_site_ids, :2]
-        sub = front_pos - positions
+        sub = front_pos - positions[:, :2]
         xdirections = sub / (jnp.linalg.norm(sub, axis=1, keepdims=True) + 1e-6)
         return positions, xdirections
 
@@ -127,10 +132,10 @@ class BatchedRobots:
             d: float,
             velocity: float,
     ):
-        self.positions = data.site_xpos[batched_ids.center_site_ids, :2]
+        self.positions = data.site_xpos[batched_ids.center_site_ids, :]
 
         front_site_pos = data.site_xpos[batched_ids.front_site_ids, :2]
-        sub = front_site_pos - self.positions
+        sub = front_site_pos - self.positions[:, :2]
         self.xdirections = sub / (jnp.linalg.norm(sub, axis=1, keepdims=True) + 1e-6)
 
         matrix_T = jnp.array([
