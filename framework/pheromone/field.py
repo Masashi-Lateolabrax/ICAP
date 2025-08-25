@@ -254,20 +254,11 @@ class PheromoneField:
             self.values_liquid, self._values_gas
         )
 
-    @staticmethod
-    @jax.jit
-    def _set_boundary(mask, value):
-        mask = mask.at[0, :].set(value)
-        mask = mask.at[-1, :].set(value)
-        mask = mask.at[:, 0].set(value)
-        mask = mask.at[:, -1].set(value)
-        return mask
-
     def set_neumann_boundary(self):
-        self.mask = self._set_boundary(self.mask, 0)
+        self.mask = _set_boundary(self.mask, 0)
 
     def set_dirichlet_boundary(self):
-        self.mask = self._set_boundary(self.mask, 1)
+        self.mask = _set_boundary(self.mask, 1)
 
     @staticmethod
     @jax.jit
