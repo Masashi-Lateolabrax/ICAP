@@ -3,7 +3,7 @@ import jax.numpy as jnp
 from flax import nnx
 
 from framework.prelude import *
-from framework.types import JaxableController
+from framework.backends import JaxableController
 
 modules = [
     (nnx.Linear, {"in_features": 6, "out_features": 3}, {"kernel_init": 6 * 3, "bias_init": 6}),
