@@ -1,37 +1,49 @@
-import torch
+import jax
+import jax.numpy as jnp
+from flax import nnx
 
 from framework.prelude import *
+from framework.types import JaxableController
+
+modules = [
+    (nnx.Linear, {"in_features": 6, "out_features": 3}, {"kernel_init": 6 * 3, "bias_init": 6}),
+    (nnx.Linear, {"in_features": 3, "out_features": 2}, {"kernel_init": 3 * 2, "bias_init": 2}),
+]
 
 
-class Controller(torch.nn.Module):
-    def __init__(self, parameters: Individual = None):
-        super(Controller, self).__init__()
+def gen_module(layer_index: int, parameters: Individual, offset: int, rngs: nnx.Rngs):
+    module = modules[layer_index][0]
+    keywags = modules[layer_index][1]
 
-        self.sequential = torch.nn.Sequential(
-            torch.nn.Linear(7, 12),
-            torch.nn.Mish(),
-            torch.nn.Linear(12, 12),
-            torch.nn.Mish(),
-            torch.nn.Linear(12, 6),
-            torch.nn.Mish(),
-            torch.nn.Linear(6, 3),
-        )
+    divided_parameters = {}
+    for name, num_parms in modules[layer_index][2].items():
+        start_idx = offset
+        end_idx = start_idx + num_parms
+        divided_parameters[name] = jnp.array(parameters[start_idx:end_idx])
+        offset += num_parms
 
-        if parameters is not None:
-            assert len(parameters) == self.dim, "Parameter length does not match the network's parameter count."
-            torch.nn.utils.vector_to_parameters(
-                torch.tensor(parameters, dtype=torch.float32),
-                self.parameters()
-            )
+    inits = {
+        name: lambda key, shape, dtype, p=param: p.reshape(shape).astype(dtype)
+        for name, param in divided_parameters.items()
+    }
+
+    return module(**keywags, **inits, rngs=rngs), offset
+
+
+class Controller(JaxableController):
+    def __init__(self, parameters: Individual):
+        dummy_rngs = nnx.Rngs(params=0)
+        self.dense1, offset = gen_module(0, parameters, 0, dummy_rngs)
+        self.dense2, offset = gen_module(1, parameters, offset, dummy_rngs)
+        self._dim = offset
+
+    def forward(self, x: jax.Array) -> jax.Array:
+        x = self.dense1(x)
+        x = nnx.silu(x)
+        x = self.dense2(x)
+        x = nnx.sigmoid(x)
+        return x
 
     @property
     def dim(self):
-        return sum(p.numel() for p in self.parameters())
-
-    def forward(self, input_):
-        x = self.sequential(input_)
-
-        x[:, 0:2] = torch.clip(x[:, 0:2], -0.3, 1)
-        x[:, 2] = torch.sigmoid(x[:, 2])
-
-        return x
+        return self._dim
