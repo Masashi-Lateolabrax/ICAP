@@ -11,6 +11,7 @@ from mujoco import mjx
 class RobotSpec:
     def __init__(
             self,
+            body: mujoco._specs.MjsBody,
             center_site: mujoco._specs.MjsSite,
             front_site: mujoco._specs.MjsSite,
             free_joint: mujoco._specs.MjsJoint,
@@ -19,6 +20,7 @@ class RobotSpec:
             z_act: mujoco._specs.MjsActuator,
             r_act: mujoco._specs.MjsActuator
     ):
+        self.body = body
         self.center_site = center_site
         self.front_site = front_site
         self.free_joint = free_joint
