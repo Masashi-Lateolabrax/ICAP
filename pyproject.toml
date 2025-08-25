@@ -34,9 +34,11 @@ cpu = [
 ]
 cu124 = [
     "torch",
+    "jax[cuda]==0.7.0",
 ]
 cu128 = [
     "torch",
+    "jax[cuda]==0.7.0",
 ]
 
 [tool.uv]
