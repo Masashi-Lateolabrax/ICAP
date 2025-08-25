@@ -7,6 +7,15 @@ from ..prelude import *
 from .cell import PheromoneFieldCell
 
 
+@jax.jit
+def _set_boundary(values, fill):
+    values = values.at[0, :].set(fill)
+    values = values.at[-1, :].set(fill)
+    values = values.at[:, 0].set(fill)
+    values = values.at[:, -1].set(fill)
+    return values
+
+
 def _dDistribution_dt(
         gas_values: jnp.ndarray,
         mask: jnp.ndarray,
@@ -14,10 +23,7 @@ def _dDistribution_dt(
         dx: float,
         padding_value: float,
 ) -> jnp.ndarray:
-    gas_values = gas_values.at[0, :].set(padding_value)
-    gas_values = gas_values.at[-1, :].set(padding_value)
-    gas_values = gas_values.at[:, 0].set(padding_value)
-    gas_values = gas_values.at[:, -1].set(padding_value)
+    gas_values = _set_boundary(gas_values, padding_value)
 
     center = gas_values[1:-1, 1:-1]
     d_left = (gas_values[1:-1, 0:-2] - center) * mask[1:-1, 0:-2]
@@ -155,7 +161,6 @@ class PheromoneField:
         aux_data = {
             'update_func': self._update,
             'reset_func': self._reset,
-            'set_boundary_func': self._set_boundary,
             'get_func': self._get,
             'add_func': self._add
         }
@@ -176,7 +181,6 @@ class PheromoneField:
         # Restore JIT functions
         obj._update = aux_data['update_func']
         obj._reset = aux_data['reset_func']
-        obj._set_boundary = aux_data['set_boundary_func']
         obj._get = aux_data['get_func']
         obj._add = aux_data['add_func']
 
