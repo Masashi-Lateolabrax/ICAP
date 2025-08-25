@@ -48,32 +48,15 @@ def _ray_plane(
     vec: jax.Array,
 ) -> jax.Array:
   """Returns the distance at which a ray intersects with a plane."""
-  if size.shape != (3,) or pnt.shape != (3,) or vec.shape != (3,):
-    raise ValueError(
-        f'Expected inputs with shape (3,), got size: {size.shape}, pnt:'
-        f' {pnt.shape}, vec: {vec.shape}'
-    )
+  x = -pnt[2] / vec[2]
 
-  # Collision point: p = pnt + t*vec
-  # Plane equation: point[i]*normal[i] = size[i]
+  valid = vec[2] <= -mujoco.mjMINVAL  # z-vec pointing towards front face
+  valid &= x >= 0
+  # only within rendered rectangle
+  p = pnt[0:2] + x * vec[0:2]
+  valid &= jp.all((size[0:2] <= 0) | (jp.abs(p) <= size[0:2]))
 
-  # test if the ray is parallel to the surface
-  # collision if |vec[i]*size[i]| < mjMINVAL
-
-  # solve for collision distance t=d/vec_n where:
-  #   d = size[i] - pnt[i]
-  #   vec_n = vec[i]*normal[i]
-  # and normal[i] is the sign of size[i] to handle double-sided planes
-
-  d = size - jp.where(size >= 0, pnt, -pnt)
-  vec_n = jp.where(size >= 0, vec, -vec)
-
-  collision_dist = jp.where(
-      jp.abs(vec_n) < mujoco.mjMINVAL, jp.inf, jp.where(d < 0, jp.inf, d / vec_n)
-  )
-
-  # find closest collision point
-  return jp.min(collision_dist)
+  return jp.where(valid, x, jp.inf)
 
 
 def _ray_sphere(
@@ -82,20 +65,10 @@ def _ray_sphere(
     vec: jax.Array,
 ) -> jax.Array:
   """Returns the distance at which a ray intersects with a sphere."""
-  if size.shape != (3,) or pnt.shape != (3,) or vec.shape != (3,):
-    raise ValueError(
-        f'Expected inputs with shape (3,), got size: {size.shape}, pnt:'
-        f' {pnt.shape}, vec: {vec.shape}'
-    )
+  x0, x1 = _ray_quad(vec @ vec, vec @ pnt, pnt @ pnt - size[0] * size[0])
+  x = jp.where(jp.isinf(x0), x1, x0)
 
-  r = size[0]
-  a = jp.sum(vec * vec)
-  b = jp.sum(pnt * vec)
-  c = jp.sum(pnt * pnt) - r * r
-
-  x0, x1 = _ray_quad(a, b, c)
-
-  return jp.min(jp.array([x0, x1]))
+  return x
 
 
 def _ray_capsule(
@@ -104,44 +77,58 @@ def _ray_capsule(
     vec: jax.Array,
 ) -> jax.Array:
   """Returns the distance at which a ray intersects with a capsule."""
-  if size.shape != (3,) or pnt.shape != (3,) or vec.shape != (3,):
-    raise ValueError(
-        f'Expected inputs with shape (3,), got size: {size.shape}, pnt:'
-        f' {pnt.shape}, vec: {vec.shape}'
-    )
 
-  r = size[0]
-  z = jp.abs(size[2])
+  # cylinder round side: (x*lvec+lpnt)'*(x*lvec+lpnt) = size[0]*size[0]
+  a = vec[0:2] @ vec[0:2]
+  b = vec[0:2] @ pnt[0:2]
+  c = pnt[0:2] @ pnt[0:2] - size[0] * size[0]
 
-  # collision distance is the shortest of:
-  # 1. sphere centered on (0, 0, z)
-  # 2. sphere centered on (0, 0, -z)
-  # 3. cylinder with infinite height
-
-  # collision with cylinder: pnt[0:1] + t*vec[0:1], r = size[0]
-  pnt_01 = pnt[:2]
-  vec_01 = vec[:2]
-
-  a = jp.sum(vec_01 * vec_01)
-  b = jp.sum(pnt_01 * vec_01)
-  c = jp.sum(pnt_01 * pnt_01) - r * r
-
+  # solve a*x^2 + 2*b*x + c = 0
   x0, x1 = _ray_quad(a, b, c)
+  x = jp.where(jp.isinf(x0), x1, x0)
 
-  # check if the collision point is within the cylinder
-  z0, z1 = pnt[2] + x0 * vec[2], pnt[2] + x1 * vec[2]
-  cyl_0 = jp.where(jp.abs(z0) < z, x0, jp.inf)
-  cyl_1 = jp.where(jp.abs(z1) < z, x1, jp.inf)
+  # make sure round solution is between flat sides
+  x = jp.where(jp.abs(pnt[2] + x * vec[2]) <= size[1], x, jp.inf)
 
-  # collision with upper cap
-  pnt_upper = pnt - jp.array([0.0, 0.0, z])
-  cap_upper = _ray_sphere(jp.array([r, r, r]), pnt_upper, vec)
+  # top cap
+  dif = pnt - jp.array([0, 0, size[1]])
+  x0, x1 = _ray_quad(vec @ vec, vec @ dif, dif @ dif - size[0] * size[0])
+  # accept only top half of sphere
+  x = jp.where((pnt[2] + x0 * vec[2] >= size[1]) & (x0 < x), x0, x)
+  x = jp.where((pnt[2] + x1 * vec[2] >= size[1]) & (x1 < x), x1, x)
 
-  # collision with lower cap
-  pnt_lower = pnt - jp.array([0.0, 0.0, -z])
-  cap_lower = _ray_sphere(jp.array([r, r, r]), pnt_lower, vec)
+  # bottom cap
+  dif = pnt + jp.array([0, 0, size[1]])
+  x0, x1 = _ray_quad(vec @ vec, vec @ dif, dif @ dif - size[0] * size[0])
 
-  return jp.min(jp.array([cyl_0, cyl_1, cap_upper, cap_lower]))
+  # accept only bottom half of sphere
+  x = jp.where((pnt[2] + x0 * vec[2] <= -size[1]) & (x0 < x), x0, x)
+  x = jp.where((pnt[2] + x1 * vec[2] <= -size[1]) & (x1 < x), x1, x)
+
+  return x
+
+
+def _ray_ellipsoid(
+    size: jax.Array,
+    pnt: jax.Array,
+    vec: jax.Array,
+) -> jax.Array:
+  """Returns the distance at which a ray intersects with an ellipsoid."""
+
+  # invert size^2
+  s = 1 / jp.square(size)
+
+  # (x*lvec+lpnt)' * diag(1/size^2) * (x*lvec+lpnt) = 1
+  svec = s * vec
+  a = svec @ vec
+  b = svec @ pnt
+  c = (s * pnt) @ pnt - 1
+
+  # solve a*x^2 + 2*b*x + c = 0
+  x0, x1 = _ray_quad(a, b, c)
+  x = jp.where(jp.isinf(x0), x1, x0)
+
+  return x
 
 
 def _ray_box(
@@ -150,44 +137,97 @@ def _ray_box(
     vec: jax.Array,
 ) -> jax.Array:
   """Returns the distance at which a ray intersects with a box."""
-  if size.shape != (3,) or pnt.shape != (3,) or vec.shape != (3,):
-    raise ValueError(
-        f'Expected inputs with shape (3,), got size: {size.shape}, pnt:'
-        f' {pnt.shape}, vec: {vec.shape}'
+
+  iface = jp.array([(1, 2), (0, 2), (0, 1), (1, 2), (0, 2), (0, 1)])
+
+  # side +1, -1
+  # solution of pnt[i] + x * vec[i] = side * size[i]
+  x = jp.concatenate([(size - pnt) / vec, (-size - pnt) / vec])
+
+  # intersection with face
+  p0 = pnt[iface[:, 0]] + x * vec[iface[:, 0]]
+  p1 = pnt[iface[:, 1]] + x * vec[iface[:, 1]]
+  valid = jp.abs(p0) <= size[iface[:, 0]]
+  valid &= jp.abs(p1) <= size[iface[:, 1]]
+  valid &= x >= 0
+
+  return jp.min(jp.where(valid, x, jp.inf))
+
+
+def _ray_triangle(
+    vert: jax.Array,
+    pnt: jax.Array,
+    vec: jax.Array,
+    basis: jax.Array,
+) -> jax.Array:
+  """Returns the distance at which a ray intersects with a triangle."""
+  # project difference vectors in ray normal plane
+  planar = jp.dot(vert - pnt, basis)
+
+  # determine if origin is inside planar projection of triangle
+  # A = (p0-p2, p1-p2), b = -p2, solve A*t = b
+  A = planar[0:2] - planar[2]  # pylint: disable=invalid-name
+  b = -planar[2]
+  det = A[0, 0] * A[1, 1] - A[1, 0] * A[0, 1]
+
+  t0 = (A[1, 1] * b[0] - A[1, 0] * b[1]) / det
+  t1 = (-A[0, 1] * b[0] + A[0, 0] * b[1]) / det
+  valid = (t0 >= 0) & (t1 >= 0) & (t0 + t1 <= 1)
+
+  # intersect ray with plane of triangle
+  nrm = jp.cross(vert[0] - vert[2], vert[1] - vert[2])
+  dist = jp.dot(vert[2] - pnt, nrm) / jp.dot(vec, nrm)
+  valid &= dist >= 0
+  dist = jp.where(valid, dist, jp.inf)
+
+  return dist
+
+
+def _ray_mesh(
+    m: Model,
+    geom_id: np.ndarray,
+    unused_size: jax.Array,
+    pnt: jax.Array,
+    vec: jax.Array,
+) -> Tuple[jax.Array, jax.Array]:
+  """Returns the best distance and geom_id for ray mesh intersections."""
+  data_id = m.geom_dataid[geom_id]
+
+  ray_basis = lambda x: jp.array(math.orthogonals(math.normalize(x))).T
+  basis = jax.vmap(ray_basis)(vec)
+
+  faceadr = np.append(m.mesh_faceadr, m.nmeshface)
+  vertadr = np.append(m.mesh_vertadr, m.nmeshvert)
+
+  dists, geom_ids = [], []
+  for i, id_ in enumerate(data_id):
+    face = m.mesh_face[faceadr[id_] : faceadr[id_ + 1]]
+    vert = m.mesh_vert[vertadr[id_] : vertadr[id_ + 1]]
+    vert = jp.array(vert[face])
+    dist = jax.vmap(_ray_triangle, in_axes=(0, None, None, None))(
+        vert, pnt[i], vec[i], basis[i]
     )
+    dists.append(dist)
+    geom_ids.append(np.repeat(geom_id[i], dist.size))
 
-  # if the ray starts inside the box, we want to trace to the edge
-  inside = jp.all(jp.abs(pnt) < size)
+  dists = jp.concatenate(dists)
+  min_id = jp.argmin(dists)
+  # Grab the best distance amongst all meshes, bypassing the argmin in `ray`.
+  # This avoids having to compute the best distance per mesh.
+  dist = dists[min_id, None]
+  id_ = jp.array(np.concatenate(geom_ids))[min_id, None]
 
-  # collision point: p = pnt + t*vec
-  # box faces: |x| < size[0], |y| < size[1], |z| < size[2]
+  return dist, id_
 
-  # solve for all 6 faces
-  # ray to positive faces: pnt + t*vec = size -> t = (size - pnt) / vec
-  # ray to negative faces: pnt + t*vec = -size -> t = (-size - pnt) / vec
 
-  t_pos = (size - pnt) / vec
-  t_neg = (-size - pnt) / vec
-
-  # check collision at faces by testing the other dims
-  def collision_at_face(t: jax.Array, ax: int) -> jax.Array:
-    pos = pnt + t * vec
-    p_ax = jp.roll(pos, -ax)[:2]  # pos except position ax
-    s_ax = jp.roll(size, -ax)[:2]  # size except position ax
-    return jp.where(jp.all(jp.abs(p_ax) <= s_ax), t, jp.inf)
-
-  t_hit = jp.concatenate([
-      jp.array([collision_at_face(t_pos[i], i) for i in range(3)]),
-      jp.array([collision_at_face(t_neg[i], i) for i in range(3)]),
-  ])
-
-  # filter collisions that go backwards
-  t_hit = jp.where(t_hit <= 0, jp.inf, t_hit)
-
-  if inside:
-    return jp.where(jp.all(jp.isinf(t_hit)), 0.0, jp.min(t_hit))
-  else:
-    return jp.min(t_hit)
+_RAY_FUNC = {
+    GeomType.PLANE: _ray_plane,
+    GeomType.SPHERE: _ray_sphere,
+    GeomType.CAPSULE: _ray_capsule,
+    GeomType.ELLIPSOID: _ray_ellipsoid,
+    GeomType.BOX: _ray_box,
+    GeomType.MESH: _ray_mesh,
+}
 
 
 def ray(
@@ -195,87 +235,79 @@ def ray(
     d: Data,
     pnt: jax.Array,
     vec: jax.Array,
-    geom_group: Sequence[int] = (),
+    geomgroup: Sequence[int] = (),
     flg_static: bool = True,
     bodyexclude: int = -1,
-    geomexclude: int = -1,
-) -> Tuple[jax.Array, int, jax.Array]:
-  """Intersect ray with nearest geom, get distance and 3D coordinates of point.
-
-  This function casts a ray into the scene and returns the distance to the
-  nearest collision, the id of the geom that was hit, and the coordinates
-  of the collision point.
-
-  Note that this function does not perform collision detection between the
-  ray and any geom that is attached to the excluded body.
+) -> Tuple[jax.Array, jax.Array]:
+  """Returns the geom id and distance at which a ray intersects with a geom.
 
   Args:
-    m: The MuJoCo model.
-    d: The MuJoCo data.
-    pnt: The origin of the ray in global coordinates.
-    vec: The direction of the ray in global coordinates.
-    geom_group: Only geoms in this group will be checked. If empty, no group
-      filtering is done.
-    flg_static: Whether to check static geoms.
-    bodyexclude: Body whose geoms will be excluded from the ray cast.
-    geomexclude: Geom that will be excluded from the ray cast.
+    m: MJX model
+    d: MJX data
+    pnt: ray origin point (3,)
+    vec: ray direction    (3,)
+    geomgroup: group inclusion/exclusion mask, or empty to ignore
+    flg_static: if True, allows rays to intersect with static geoms
+    bodyexclude: ignore geoms on specified body id
 
   Returns:
-    The distance to the nearest collision, the id of the geom that was hit,
-    and the coordinates of the collision point. If no geom was hit, returns
-    (-1, -1, pnt).
+    dist: distance from ray origin to geom surface (or -1.0 for no intersection)
+    id: id of intersected geom (or -1 for no intersection)
   """
-  # defaults for no collision case
-  geom_hit = -1
-  collision_pos = jp.array([0., 0., 0.])
-  collision_dist = -1.0
 
-  for geom_id in range(m.ngeom):
-    # Check for exclusions
-    if geom_id == geomexclude:
+  dists, ids = [], []
+  geom_filter = m.geom_bodyid != bodyexclude
+  geom_filter &= flg_static | (m.body_weldid[m.geom_bodyid] != 0)
+  if geomgroup:
+    geomgroup = jp.array(geomgroup, dtype=bool)
+    geom_filter &= geomgroup[jp.clip(m.geom_group, 0, mujoco.mjNGROUP)]
+
+  # map ray to local geom frames
+  geom_pnts = jax.vmap(lambda x, y: x.T @ (pnt - y))(d.geom_xmat, d.geom_xpos)
+  geom_vecs = jax.vmap(lambda x: x.T @ vec)(d.geom_xmat)
+
+  geom_filter_dyn = (m.geom_matid != -1) | (m.geom_rgba[:, 3] != 0)
+  geom_filter_dyn &= (m.geom_matid == -1) | (m.mat_rgba[m.geom_matid, 3] != 0)
+  for geom_type, fn in _RAY_FUNC.items():
+    (id_,) = jp.nonzero(geom_filter & (m.geom_type == geom_type), size=m.ngeom)
+
+    if id_.size == 0:
       continue
 
-    if (bodyexclude >= 0) and (m.geom_bodyid[geom_id] == bodyexclude):
-      continue
+    args = m.geom_size[id_], geom_pnts[id_], geom_vecs[id_]
 
-    # Check group filtering
-    if geom_group and (m.geom_group[geom_id] not in geom_group):
-      continue
-
-    # Check if it's a static geom
-    if not flg_static and (m.body_parentid[m.geom_bodyid[geom_id]] == 0):
-      continue
-
-    # Get collision distance
-    geom_pos = d.geom_xpos[geom_id]
-    geom_mat = d.geom_xmat[geom_id].reshape((3, 3))
-
-    # Transform ray to geom-local coordinates
-    pnt_local = math.rotate(pnt - geom_pos, geom_mat.T)
-    vec_local = math.rotate(vec, geom_mat.T)
-
-    geom_type = m.geom_type[geom_id]
-    geom_size = m.geom_size[geom_id]
-
-    if geom_type == GeomType.mjGEOM_PLANE:
-      dist = _ray_plane(geom_size, pnt_local, vec_local)
-    elif geom_type == GeomType.mjGEOM_SPHERE:
-      dist = _ray_sphere(geom_size, pnt_local, vec_local)
-    elif geom_type == GeomType.mjGEOM_CAPSULE:
-      dist = _ray_capsule(geom_size, pnt_local, vec_local)
-    elif geom_type == GeomType.mjGEOM_BOX:
-      dist = _ray_box(geom_size, pnt_local, vec_local)
+    if geom_type == GeomType.MESH:
+      dist, id_ = fn(m, id_, *args)
     else:
-      # Unsupported geom type, skip
-      continue
+      dist = jax.vmap(fn)(*args)
 
-    # Update collision if this is closer
-    is_closer = (collision_dist == -1.0) or (
-        (dist < collision_dist) and not jp.isinf(dist)
-    )
-    geom_hit = jp.where(is_closer, geom_id, geom_hit)
-    collision_dist = jp.where(is_closer, dist, collision_dist)
-    collision_pos_candidate = pnt + dist * vec
-    collision_pos = jp.where(is_closer, collision_pos_candidate, collision_pos)
+    dist = jp.where(geom_filter_dyn[id_], dist, jp.inf)
+    dists, ids = dists + [dist], ids + [id_]
 
-  return collision_dist, geom_hit, collision_pos
+  if not ids:
+    return jp.array(-1), jp.array(-1.0)
+
+  dists = jp.concatenate(dists)
+  ids = jp.concatenate(ids)
+  min_id = jp.argmin(dists)
+  dist = jp.where(jp.isinf(dists[min_id]), -1, dists[min_id])
+  id_ = jp.where(jp.isinf(dists[min_id]), -1, ids[min_id])
+
+  return dist, id_
+
+
+def ray_geom(
+    size: jax.Array, pnt: jax.Array, vec: jax.Array, geomtype: GeomType
+) -> jax.Array:
+  """Returns the distance at which a ray intersects with a primitive geom.
+
+  Args:
+    size: geom size (1,), (2,), or (3,)
+    pnt: ray origin point (3,)
+    vec: ray direction    (3,)
+    geomtype: type of geom
+
+  Returns:
+    dist: distance from ray origin to geom surface
+  """
+  return _RAY_FUNC[geomtype](size, pnt, vec)
