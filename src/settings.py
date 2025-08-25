@@ -94,7 +94,7 @@ MySettings.Food.COLOR = (0, 1, 1, 1)
 MySettings.Food.NUM = 2
 MySettings.Food.INITIAL_POSITION = [
     Position(2, 2),
-    Position(-2, 2),
+    Position(-2, -2),
 ]
 ###################################################################################
 
