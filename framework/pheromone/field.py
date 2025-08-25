@@ -286,12 +286,17 @@ class PheromoneField:
         self.values_liquid = self._add(self.values_liquid, xs, ys, additions)
 
     def add_liquid_by_cell(self, cell: list[PheromoneFieldCell]):
-        updated_cells = jnp.array(
-            [[c.index_x, c.index_y, c.add_value] for c in cell if c.add_value > 0], dtype=jnp.float32
-        )
-        xs = updated_cells[:, 0]
-        ys = updated_cells[:, 1]
-        vs = updated_cells[:, 2]
+        indexes = []
+        values = []
+        for c in cell:
+            if c.add_value > 0:
+                indexes.append((c.index_x, c.index_y))
+                values.append(c.add_value)
+
+        indexes = jnp.array(indexes, dtype=jnp.int32)
+        xs = indexes[:, 0]
+        ys = indexes[:, 1]
+        vs = jnp.array(values, dtype=jnp.float32)
 
         if xs.size == 0 or ys.size == 0 or vs.size == 0:
             return
