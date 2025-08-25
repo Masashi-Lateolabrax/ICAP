@@ -2,6 +2,7 @@ import logging
 from typing import Callable
 
 import numpy as np
+import torch
 
 from ..types import RobotLocation, Position, ETHANOL
 
@@ -85,7 +86,7 @@ class Food:
     COLOR = (0, 1, 1, 1)
 
     NUM: int = 1
-    INITIAL_POSITION: list[Position] = [Position(0.0, 0.0)]
+    INITIAL_POSITION: list[Position] = []
 
 
 class Nest:
@@ -117,6 +118,8 @@ class Simulation:
     WALL_THICKNESS: float = 1
     WALL_HEIGHT: float = 1
 
+    TEMPERATURE: float = 300.0  # Kelvin
+
 
 class Storage:
     SAVE_INDIVIDUALS = True
@@ -124,6 +127,10 @@ class Storage:
     SAVE_INTERVAL = 10  # Save every N generations
     TOP_N = 0  # Save top N individuals, 0 means save all
     ASSET_DIRECTORY = "./assets"
+
+
+class Device:
+    USE_DEVICE = torch.device('cpu')  # torch.device('cuda')
 
 
 class Pheromone:
@@ -134,7 +141,6 @@ class Pheromone:
     ITERATIONS_PER_STEP = 1
     EVAPORATION_RATE = 0.1
     DECREASE_RATE = 0.0
-    TEMPERATURE = 300
     MATERIAL = ETHANOL
 
 
@@ -152,6 +158,7 @@ class Settings:
     Food = Food
     Nest = Nest
     Storage = Storage
+    Device = Device
     Pheromone = Pheromone
 
     def as_dict(self):
