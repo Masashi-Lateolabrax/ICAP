@@ -162,7 +162,7 @@ class BasicMuJoCoSimulatorWithEnv(BasicMuJoCoSimulator, ABC):
             )
             self._pheromone_cells = [s.get_cell(self.model) for s in pheromone_cell_specs]
             self._pheromone_cell_pos = jnp.array(
-                [cell.pos[:2] for cell in self._pheromone_cells], dtype=np.float32
+                [cell.pos[:2] for cell in self._pheromone_cells], dtype=jnp.float32
             )
 
     def _get_pheromone_cells(self, positions: jnp.ndarray) -> list[PheromoneFieldCell]:
