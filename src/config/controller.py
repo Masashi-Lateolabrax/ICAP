@@ -3,6 +3,7 @@ import jax.numpy as jnp
 from flax import nnx
 
 from framework.prelude import *
+from framework.types.jaxable import JaxableController
 
 modules = [
     (nnx.Linear, {"in_features": 6, "out_features": 3}, {"kernel_init": 6 * 3, "bias_init": 6}),
@@ -29,7 +30,7 @@ def gen_module(layer_index: int, parameters: Individual, offset: int, rngs: nnx.
     return module(**keywags, **inits, rngs=rngs), offset
 
 
-class Controller(nnx.Module):
+class Controller(JaxableController):
     def __init__(self, parameters: Individual):
         dummy_rngs = nnx.Rngs(params=0)
         self.dense1, offset = gen_module(0, parameters, 0, dummy_rngs)
