@@ -9,7 +9,7 @@ from ..prelude import *
 class PreprocessedOmniSensor(OmniSensor):
     def __init__(
             self,
-            robot: RobotValues,
+            robot, #: RobotValues,
             d_gain: float,
             offset: float,
             target_sites: list[_MjDataSiteViews]

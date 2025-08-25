@@ -6,7 +6,12 @@ from ..prelude import *
 
 
 class DirectionSensor(SensorInterface):
-    def __init__(self, robot: RobotValues, target_site: _MjDataSiteViews, target_radius: float):
+    def __init__(
+            self,
+            robot,  #: RobotValues,
+            target_site: _MjDataSiteViews,
+            target_radius: float
+    ):
         self.robot_values = robot
         self.target = target_site
         self.target_radius = target_radius

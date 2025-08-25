@@ -15,7 +15,7 @@ class OmniSensor(SensorInterface):
 
     def __init__(
             self,
-            robot: RobotValues,
+            robot, #: RobotValues,
             o_gain: float,
             d_gain: float,
             offset: float,
