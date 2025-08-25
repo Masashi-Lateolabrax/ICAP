@@ -112,6 +112,7 @@ def add_food_object(spec: mujoco.MjSpec, settings: Settings, id_: int, position:
     )
 
     return FoodSpec(
+        body=food_body,
         center_site=center_site,
         free_joint=free_joint,
         velocimeter=velocimeter
@@ -158,6 +159,7 @@ def add_food_object_with_mesh(
     )
 
     return FoodSpec(
+        body=food_body,
         center_site=center_site,
         free_joint=free_joint,
         velocimeter=velocimeter
@@ -235,7 +237,7 @@ def add_robot(
         type_=mujoco.mjtGeom.mjGEOM_SPHERE
     )
 
-    free_join = add_joint(
+    free_joint = add_joint(
         robot_body,
         name=f"robot{id_}_joint",
         joint_type=mujoco.mjtJoint.mjJNT_FREE,
@@ -244,7 +246,7 @@ def add_robot(
     x_act = add_velocity_actuator(
         spec,
         name=f"robot{id_}_x_act",
-        joint=free_join,
+        joint=free_joint,
         kv=settings.Robot.ACTUATOR_MOVE_KV,
         gear=(1, 0, 0, 0, 0, 0)
     )
@@ -252,14 +254,14 @@ def add_robot(
     y_act = add_velocity_actuator(
         spec,
         name=f"robot{id_}_y_act",
-        joint=free_join,
+        joint=free_joint,
         kv=settings.Robot.ACTUATOR_MOVE_KV,
         gear=(0, 1, 0, 0, 0, 0)
     )
 
     z_act = add_position_actuator(
         spec,
-        joint=free_join,
+        joint=free_joint,
         kp=50,
         kv=1,
         name=f"robot{id_}_z_act",
@@ -269,15 +271,16 @@ def add_robot(
     r_act = add_velocity_actuator(
         spec,
         name=f"robot{id_}_r_act",
-        joint=free_join,
+        joint=free_joint,
         kv=settings.Robot.ACTUATOR_ROT_KV,
         gear=(0, 0, 0, 0, 0, 1)
     )
 
     return RobotSpec(
+        body=robot_body,
         center_site=center_site,
         front_site=front_site,
-        free_join=free_join,
+        free_joint=free_joint,
         x_act=x_act,
         y_act=y_act,
         z_act=z_act,
@@ -335,7 +338,7 @@ def add_robot_with_mesh(
         type_=mujoco.mjtGeom.mjGEOM_SPHERE
     )
 
-    free_join = add_joint(
+    free_joint = add_joint(
         robot_body,
         name=f"robot{id_}_joint",
         joint_type=mujoco.mjtJoint.mjJNT_FREE,
@@ -344,7 +347,7 @@ def add_robot_with_mesh(
     x_act = add_velocity_actuator(
         spec,
         name=f"robot{id_}_x_act",
-        joint=free_join,
+        joint=free_joint,
         kv=settings.Robot.ACTUATOR_MOVE_KV,
         gear=(1.0, 0.0, 0.0, 0.0, 0.0, 0.0)
     )
@@ -352,14 +355,14 @@ def add_robot_with_mesh(
     y_act = add_velocity_actuator(
         spec,
         name=f"robot{id_}_y_act",
-        joint=free_join,
+        joint=free_joint,
         kv=settings.Robot.ACTUATOR_MOVE_KV,
         gear=(0.0, 1.0, 0.0, 0.0, 0.0, 0.0)
     )
 
     z_act = add_position_actuator(
         spec,
-        joint=free_join,
+        joint=free_joint,
         kp=50,
         kv=1,
         name=f"robot{id_}_z_act",
@@ -369,15 +372,16 @@ def add_robot_with_mesh(
     r_act = add_velocity_actuator(
         spec,
         name=f"robot{id_}_r_act",
-        joint=free_join,
+        joint=free_joint,
         kv=settings.Robot.ACTUATOR_ROT_KV,
         gear=(0.0, 0.0, 0.0, 0.0, 0.0, 1.0)
     )
 
     return RobotSpec(
+        body=robot_body,
         center_site=center_site,
         front_site=front_site,
-        free_join=free_join,
+        free_joint=free_joint,
         x_act=x_act,
         y_act=y_act,
         z_act=z_act,

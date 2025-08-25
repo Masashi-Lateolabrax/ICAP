@@ -17,7 +17,7 @@ def setup_option(spec: mujoco.MjSpec, settings: Settings) -> None:
     """
     spec.option.timestep = settings.Simulation.TIME_STEP
     spec.option.integrator = mujoco.mjtIntegrator.mjINT_RK4  # Runge-Kutta 4th order integrator
-    spec.option.cone = mujoco.mjtCone.mjCONE_ELLIPTIC
+    spec.option.cone = mujoco.mjtCone.mjCONE_PYRAMIDAL
 
 
 def setup_textures(spec: mujoco.MjSpec, settings: Settings) -> None:
