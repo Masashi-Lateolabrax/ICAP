@@ -76,12 +76,20 @@ class BatchedFood:
     ):
         self.ids = batched_food_ids
         self.positions = data.site_xpos[batched_food_ids.center_site_ids, :2]
+        self.dummy_positions = jnp.zeros((0, 2), dtype=jnp.float32)
 
         self._extract_from_data = partial(
             BatchedFood.__extract_from_data,
             batched_food_ids=batched_food_ids
         )
         self._jit_extract_from_data = jax.jit(self._extract_from_data)
+
+    @property
+    def positions_with_dummies(self):
+        return jnp.vstack([self.positions, self.dummy_positions])
+
+    def register_dummy_position(self, position: jax.Array):
+        self.dummy_positions = jnp.vstack([self.dummy_positions, position])
 
     def update(self, data: mjx.Data | mujoco.MjData):
         if isinstance(data, mjx.Data):
@@ -93,7 +101,8 @@ class BatchedFood:
     @staticmethod
     def set_pos(data: mujoco.MjData | mjx.Data, body_id: jax.Array, pos: jax.Array):
         if isinstance(data, mjx.Data):
-            data.xpos = data.xpos.at[body_id].set(pos)
+            new_xpos = data.xpos.at[body_id, :2].set(pos)
+            data = data.replace(xpos=new_xpos)
 
         elif isinstance(data, mujoco.MjData):
             data.xpos[body_id] = np.array(pos)
@@ -101,23 +110,28 @@ class BatchedFood:
         return data
 
     def tree_flatten(self):
+        leaves = (
+            self.positions,
+            self.dummy_positions
+        )
         aux_data = {
             'ids': self.ids,
             'extract_from_data': self._extract_from_data,
             'jit_extract_from_data': self._jit_extract_from_data
         }
-        return (self.positions,), aux_data
+        return leaves, aux_data
 
     @classmethod
     def tree_unflatten(cls, aux_data, children):
-        positions, = children
+        positions, dummy_positions = children
 
         instance = cls.__new__(cls)
         instance.ids = aux_data['ids']
         instance.positions = positions
+        instance.dummy_positions = dummy_positions
         instance._extract_from_data = aux_data['extract_from_data']
         instance._jit_extract_from_data = aux_data['jit_extract_from_data']
-        
+
         return instance
 
 
