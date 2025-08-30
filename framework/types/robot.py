@@ -106,162 +106,204 @@ class BatchedRobots:
             velocity: float
     ) -> 'BatchedRobots':
         this = cls.__new__(cls)
-
-        center_site_positions = data.site_xpos[batched_ids.center_site_ids, :]
-        front_site_positions = data.site_xpos[batched_ids.front_site_ids, :2]
-        sub = front_site_positions - center_site_positions[:, :2]
-        n = jnp.linalg.norm(sub, axis=1, keepdims=True) + 1e-6
-        xdirections = sub / n
-
-        this.replace(
+        this = this.replace(
             ids=batched_ids,
-            positions=center_site_positions,
-            xdirections=xdirections,
+            positions=jnp.zeros((0, 3)),
+            xdirections=jnp.zeros((0, 2)),
             two_wheel_differential_move_matrix_T=jnp.array([
                 [velocity * 0.5, velocity * 0.5],
                 [- velocity / d, velocity / d]
             ]).T
         )
-
+        this = this.update(data)
         return this
-
-
-class BatchedRobots_old:
-    @staticmethod
-    def __calc_power_and_torque(
-            xdirections: jax.Array, ctrl: jax.Array,
-            matrix_T: jax.Array
-    ):
-        power_and_torque = ctrl @ matrix_T
-        move = xdirections * power_and_torque[:, 0]
-        torque = power_and_torque[:, 1]
-        return move, torque
-
-    @staticmethod
-    def __update_mjx_data_ctrl(
-            data_: mjx.Data, xdirections: jax.Array, ctrl: jax.Array,
-            matrix_T: jax.Array, x_actuator_ids: jax.Array, y_actuator_ids: jax.Array, r_actuator_ids: jax.Array,
-    ):
-        move, torque = BatchedRobots.__calc_power_and_torque(xdirections, ctrl, matrix_T)
-
-        new_ctrl = data_.ctrl.at[x_actuator_ids].set(move[:, 0])
-        new_ctrl = new_ctrl.at[y_actuator_ids].set(move[:, 1])
-        new_ctrl = new_ctrl.at[r_actuator_ids].set(torque)
-
-        return data_.replace(ctrl=new_ctrl)
-
-    @staticmethod
-    def __extract_state(
-            data: mujoco.MjData | mjx.Data,
-            center_site_ids: jax.Array,
-            front_site_ids: jax.Array
-    ) -> tuple[jax.Array, jax.Array]:
-        """Extract positions and directions from mujoco data."""
-        positions = data.site_xpos[center_site_ids]
-        front_pos = data.site_xpos[front_site_ids, :2]
-        sub = front_pos - positions[:, :2]
-        xdirections = sub / (jnp.linalg.norm(sub, axis=1, keepdims=True) + 1e-6)
-        return positions, xdirections
-
-    def __init__(
-            self,
-            data: mujoco.MjData | mjx.Data,
-            batched_ids: BatchedRobotIDs,
-            d: float,
-            velocity: float,
-    ):
-        self.positions = data.site_xpos[batched_ids.center_site_ids, :]
-
-        front_site_pos = data.site_xpos[batched_ids.front_site_ids, :2]
-        sub = front_site_pos - self.positions[:, :2]
-        self.xdirections = sub / (jnp.linalg.norm(sub, axis=1, keepdims=True) + 1e-6)
-
-        matrix_T = jnp.array([
-            [velocity * 0.5, velocity * 0.5],
-            [- velocity / d, velocity / d]
-        ]).T
-        self._calc_power_and_torque = jax.jit(partial(
-            BatchedRobots.__calc_power_and_torque,
-            matrix_T=matrix_T
-        ))
-
-        self.x_actuator_ids = batched_ids.x_actuator_ids.copy()
-        self.y_actuator_ids = batched_ids.y_actuator_ids.copy()
-        self.r_actuator_ids = batched_ids.r_actuator_ids.copy()
-
-        self._update_mjx_data_ctrl = jax.jit(partial(
-            BatchedRobots.__update_mjx_data_ctrl,
-            matrix_T=matrix_T,
-            x_actuator_ids=self.x_actuator_ids,
-            y_actuator_ids=self.y_actuator_ids,
-            r_actuator_ids=self.r_actuator_ids
-        ))
-
-        self._extract_state = partial(
-            BatchedRobots.__extract_state,
-            center_site_ids=batched_ids.center_site_ids,
-            front_site_ids=batched_ids.front_site_ids
-        )
-        self._jit_extract_state = jax.jit(self._extract_state)
 
     @property
     def num_robots(self) -> int:
         return self.positions.shape[0]
 
-    def update(self, data: mujoco.MjData | mjx.Data):
+    @staticmethod
+    @jax.jit
+    def _update(data: mujoco.MjData | mjx.Data, ids: BatchedRobotIDs) -> tuple[jax.Array, jax.Array]:
+        center_site_positions = data.site_xpos[ids.center_site_ids, :]
+        front_site_positions = data.site_xpos[ids.front_site_ids, :2]
+        sub = front_site_positions - center_site_positions[:, :2]
+        n = jnp.linalg.norm(sub, axis=1, keepdims=True) + 1e-6
+        xdirections = sub / n
+        return center_site_positions, xdirections
+
+    def update(self, data: mujoco.MjData | mjx.Data) -> 'BatchedRobots':
+        positions, xdirections = self._update(data, self.ids)
+        return self.replace(
+            positions=positions,
+            xdirections=xdirections
+        )
+
+    @jax.jit
+    def _set_ctrl_mjx(self, data: mjx.Data, ctrl: jax.Array) -> mjx.Data:
+        power_and_torque = ctrl @ self.two_wheel_differential_move_matrix_T
+        move = self.xdirections * power_and_torque[:, 0:1]
+        torque = power_and_torque[:, 1]
+
+        new_ctrl = data.ctrl.at[self.ids.x_actuator_ids].set(move[:, 0])
+        new_ctrl = new_ctrl.at[self.ids.y_actuator_ids].set(move[:, 1])
+        new_ctrl = new_ctrl.at[self.ids.r_actuator_ids].set(torque)
+        return data.replace(ctrl=new_ctrl)
+
+    def set_ctrl(self, data: mujoco.MjData | mjx.Data, ctrl: jax.Array) -> mujoco.MjData | mjx.Data:
         if isinstance(data, mjx.Data):
-            self.positions, self.xdirections = self._jit_extract_state(data)
-        elif isinstance(data, mujoco.MjData):
-            self.positions, self.xdirections = self._extract_state(data)
-
-    def set_ctrl(self, data: mujoco.MjData | mjx.Data, ctrl: jax.Array):
-        if isinstance(data, mjx.Data):
-            data = self._update_mjx_data_ctrl(data, self.xdirections, ctrl)
+            return self._set_ctrl_mjx(data, ctrl)
 
         elif isinstance(data, mujoco.MjData):
-            move, torque = self._calc_power_and_torque(self.xdirections, ctrl)
-            data.ctrl[self.x_actuator_ids] = move[:, 0]
-            data.ctrl[self.y_actuator_ids] = move[:, 1]
-            data.ctrl[self.r_actuator_ids] = torque
+            power_and_torque = ctrl @ self.two_wheel_differential_move_matrix_T
+            move = self.xdirections * power_and_torque[:, 0:1]
+            torque = power_and_torque[:, 1]
 
-        return data
+            data.ctrl[self.ids.x_actuator_ids] = move[:, 0]
+            data.ctrl[self.ids.y_actuator_ids] = move[:, 1]
+            data.ctrl[self.ids.r_actuator_ids] = torque
 
-    def tree_flatten(self):
-        aux_data = {
-            'x_actuator_ids': self.x_actuator_ids,
-            'y_actuator_ids': self.y_actuator_ids,
-            'r_actuator_ids': self.r_actuator_ids,
-            'calc_power_and_torque': self._calc_power_and_torque,
-            'update_mjx_data_ctrl': self._update_mjx_data_ctrl,
-            'extract_state': self._extract_state,
-            'jit_extract_state': self._jit_extract_state
-        }
-        return (self.positions, self.xdirections), aux_data
+            return data
 
-    @classmethod
-    def tree_unflatten(cls, aux_data, children):
-        positions, xdirections = children
+        raise TypeError("data must be of type mujoco.MjData or mjx.Data")
 
-        # Create instance without calling __init__
-        instance = cls.__new__(cls)
-        instance.x_actuator_ids = aux_data['x_actuator_ids']
-        instance.y_actuator_ids = aux_data['y_actuator_ids']
-        instance.r_actuator_ids = aux_data['r_actuator_ids']
-        instance.positions = positions
-        instance.xdirections = xdirections
 
-        # Restore partial functions
-        instance._calc_power_and_torque = aux_data['calc_power_and_torque']
-        instance._update_mjx_data_ctrl = aux_data['update_mjx_data_ctrl']
-        instance._extract_state = aux_data['extract_state']
-        instance._jit_extract_state = aux_data['jit_extract_state']
-
-        return instance
+# class BatchedRobots_old:
+#     @staticmethod
+#     def __calc_power_and_torque(
+#             xdirections: jax.Array, ctrl: jax.Array,
+#             matrix_T: jax.Array
+#     ):
+#         power_and_torque = ctrl @ matrix_T
+#         move = xdirections * power_and_torque[:, 0]
+#         torque = power_and_torque[:, 1]
+#         return move, torque
+#
+#     @staticmethod
+#     def __update_mjx_data_ctrl(
+#             data_: mjx.Data, xdirections: jax.Array, ctrl: jax.Array,
+#             matrix_T: jax.Array, x_actuator_ids: jax.Array, y_actuator_ids: jax.Array, r_actuator_ids: jax.Array,
+#     ):
+#         move, torque = BatchedRobots.__calc_power_and_torque(xdirections, ctrl, matrix_T)
+#
+#         new_ctrl = data_.ctrl.at[x_actuator_ids].set(move[:, 0])
+#         new_ctrl = new_ctrl.at[y_actuator_ids].set(move[:, 1])
+#         new_ctrl = new_ctrl.at[r_actuator_ids].set(torque)
+#
+#         return data_.replace(ctrl=new_ctrl)
+#
+#     @staticmethod
+#     def __extract_state(
+#             data: mujoco.MjData | mjx.Data,
+#             center_site_ids: jax.Array,
+#             front_site_ids: jax.Array
+#     ) -> tuple[jax.Array, jax.Array]:
+#         """Extract positions and directions from mujoco data."""
+#         positions = data.site_xpos[center_site_ids]
+#         front_pos = data.site_xpos[front_site_ids, :2]
+#         sub = front_pos - positions[:, :2]
+#         xdirections = sub / (jnp.linalg.norm(sub, axis=1, keepdims=True) + 1e-6)
+#         return positions, xdirections
+#
+#     def __init__(
+#             self,
+#             data: mujoco.MjData | mjx.Data,
+#             batched_ids: BatchedRobotIDs,
+#             d: float,
+#             velocity: float,
+#     ):
+#         self.positions = data.site_xpos[batched_ids.center_site_ids, :]
+#
+#         front_site_pos = data.site_xpos[batched_ids.front_site_ids, :2]
+#         sub = front_site_pos - self.positions[:, :2]
+#         self.xdirections = sub / (jnp.linalg.norm(sub, axis=1, keepdims=True) + 1e-6)
+#
+#         matrix_T = jnp.array([
+#             [velocity * 0.5, velocity * 0.5],
+#             [- velocity / d, velocity / d]
+#         ]).T
+#         self._calc_power_and_torque = jax.jit(partial(
+#             BatchedRobots.__calc_power_and_torque,
+#             matrix_T=matrix_T
+#         ))
+#
+#         self.x_actuator_ids = batched_ids.x_actuator_ids.copy()
+#         self.y_actuator_ids = batched_ids.y_actuator_ids.copy()
+#         self.r_actuator_ids = batched_ids.r_actuator_ids.copy()
+#
+#         self._update_mjx_data_ctrl = jax.jit(partial(
+#             BatchedRobots.__update_mjx_data_ctrl,
+#             matrix_T=matrix_T,
+#             x_actuator_ids=self.x_actuator_ids,
+#             y_actuator_ids=self.y_actuator_ids,
+#             r_actuator_ids=self.r_actuator_ids
+#         ))
+#
+#         self._extract_state = partial(
+#             BatchedRobots.__extract_state,
+#             center_site_ids=batched_ids.center_site_ids,
+#             front_site_ids=batched_ids.front_site_ids
+#         )
+#         self._jit_extract_state = jax.jit(self._extract_state)
+#
+#     @property
+#     def num_robots(self) -> int:
+#         return self.positions.shape[0]
+#
+#     def update(self, data: mujoco.MjData | mjx.Data):
+#         if isinstance(data, mjx.Data):
+#             self.positions, self.xdirections = self._jit_extract_state(data)
+#         elif isinstance(data, mujoco.MjData):
+#             self.positions, self.xdirections = self._extract_state(data)
+#
+#     def set_ctrl(self, data: mujoco.MjData | mjx.Data, ctrl: jax.Array):
+#         if isinstance(data, mjx.Data):
+#             data = self._update_mjx_data_ctrl(data, self.xdirections, ctrl)
+#
+#         elif isinstance(data, mujoco.MjData):
+#             move, torque = self._calc_power_and_torque(self.xdirections, ctrl)
+#             data.ctrl[self.x_actuator_ids] = move[:, 0]
+#             data.ctrl[self.y_actuator_ids] = move[:, 1]
+#             data.ctrl[self.r_actuator_ids] = torque
+#
+#         return data
+#
+#     def tree_flatten(self):
+#         aux_data = {
+#             'x_actuator_ids': self.x_actuator_ids,
+#             'y_actuator_ids': self.y_actuator_ids,
+#             'r_actuator_ids': self.r_actuator_ids,
+#             'calc_power_and_torque': self._calc_power_and_torque,
+#             'update_mjx_data_ctrl': self._update_mjx_data_ctrl,
+#             'extract_state': self._extract_state,
+#             'jit_extract_state': self._jit_extract_state
+#         }
+#         return (self.positions, self.xdirections), aux_data
+#
+#     @classmethod
+#     def tree_unflatten(cls, aux_data, children):
+#         positions, xdirections = children
+#
+#         # Create instance without calling __init__
+#         instance = cls.__new__(cls)
+#         instance.x_actuator_ids = aux_data['x_actuator_ids']
+#         instance.y_actuator_ids = aux_data['y_actuator_ids']
+#         instance.r_actuator_ids = aux_data['r_actuator_ids']
+#         instance.positions = positions
+#         instance.xdirections = xdirections
+#
+#         # Restore partial functions
+#         instance._calc_power_and_torque = aux_data['calc_power_and_torque']
+#         instance._update_mjx_data_ctrl = aux_data['update_mjx_data_ctrl']
+#         instance._extract_state = aux_data['extract_state']
+#         instance._jit_extract_state = aux_data['jit_extract_state']
+#
+#         return instance
 
 
 # Register BatchedRobots as JAX PyTree
-jax.tree_util.register_pytree_node(
-    BatchedRobots,
-    BatchedRobots.tree_flatten,
-    BatchedRobots.tree_unflatten
-)
+# jax.tree_util.register_pytree_node(
+#     BatchedRobots,
+#     BatchedRobots.tree_flatten,
+#     BatchedRobots.tree_unflatten
+# )
