@@ -7,6 +7,7 @@ import mujoco
 
 import jax
 import jax.numpy as jnp
+from flax.struct import dataclass as jax_dataclass
 
 
 class FoodSpec:
@@ -23,7 +24,7 @@ class FoodSpec:
         self.velocimeter = velocimeter
 
 
-@dataclasses.dataclass
+@jax_dataclass
 class FoodIDs:
     body_ids: jnp.ndarray
     center_site_id: jnp.ndarray
@@ -31,7 +32,7 @@ class FoodIDs:
     velocimeter_id: jnp.ndarray
 
 
-@dataclasses.dataclass
+@jax_dataclass
 class BatchedFoodIDs:
     body_ids: jnp.ndarray
     center_site_ids: jnp.ndarray
