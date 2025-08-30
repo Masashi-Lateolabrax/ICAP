@@ -389,7 +389,7 @@ class Simulator:
         data = mjx.make_data(model)
         data = mjx.step(model, data)  # Initialize the data
 
-        robots = BatchedRobots(data, robot_ids, settings.Robot.DISTANCE_BETWEEN_WHEELS, settings.Robot.MAX_SPEED)
+        robots = BatchedRobots.new(data, robot_ids, settings.Robot.DISTANCE_BETWEEN_WHEELS, settings.Robot.MAX_SPEED)
         food = BatchedFood(data, food_ids)
 
         pheromone_field = PheromoneField.new(
