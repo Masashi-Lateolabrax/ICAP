@@ -98,3 +98,13 @@ class BasicSimulator:
         mj_data = mjx.get_data(mj_model, self.data)
 
         render(mj_model, mj_data, mj_model.cam_resolution, max_geom, img_buf, pos, lookat)
+
+    def reset(self, rngs: jax.Array = None) -> 'BasicSimulator':
+        new_data = mjx.make_data(self.model)
+        new_data = mjx.step(self.model, new_data)
+
+        new_pheromone = self.pheromone.reset()
+
+        rngs = self.rngs if rngs is None else rngs
+
+        return self.replace(rngs=rngs, data=new_data, pheromone=new_pheromone)
