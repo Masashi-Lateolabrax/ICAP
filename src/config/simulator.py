@@ -172,7 +172,7 @@ class SimulationCore:
             axis=2
         )
         closest_indices = jnp.argmin(distance, axis=1)
-        pheromone.add_liquid(
+        pheromone = pheromone.add_liquid(
             xs=pheromone_cell_ind[closest_indices, 0],
             ys=pheromone_cell_ind[closest_indices, 1],
             additions=jnp.ones((num_robots,), dtype=jnp.float32)
@@ -182,7 +182,7 @@ class SimulationCore:
         # Step the simulation and the pheromone field
         ###########################################################################################
         data = mjx.step(model, data)
-        pheromone.update(time_step)
+        pheromone = pheromone.update(time_step, settings.Pheromone.ITERATIONS_PER_STEP)
 
         ###########################################################################################
         # Relocate food items
@@ -437,7 +437,7 @@ class Simulator:
         robots = BatchedRobots(data, robot_ids, settings.Robot.DISTANCE_BETWEEN_WHEELS, settings.Robot.MAX_SPEED)
         food = BatchedFood(data, food_ids)
 
-        pheromone_field = PheromoneField(
+        pheromone_field = PheromoneField.new(
             nx=settings.Pheromone.WIDTH_NUM,
             ny=settings.Pheromone.HEIGHT_NUM,
             dx=settings.Pheromone.CELL_SIZE,
@@ -445,7 +445,6 @@ class Simulator:
             evaporation_rate=settings.Pheromone.EVAPORATION_RATE,
             decrease_rate=settings.Pheromone.DECREASE_RATE,
             temperature=settings.Simulation.TEMPERATURE,
-            iter_=settings.Pheromone.ITERATIONS_PER_STEP,
         )
 
         return SimulationCore(
