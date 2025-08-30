@@ -1,4 +1,3 @@
-import dataclasses
 from functools import partial
 
 import numpy as np
@@ -10,6 +9,7 @@ import jax.numpy as jnp
 from flax import nnx
 
 from framework.prelude import *
+from framework.utils import ParaStock
 from framework.pheromone import PheromoneField
 from framework.backends.basic_environment import generate_mjspec
 
@@ -54,24 +54,6 @@ def single_robot_rays_with_functions(
     dists = jax.vmap(compute_single_ray)(rotated_dirs)
 
     return jnp.reciprocal(dists)
-
-
-@dataclasses.dataclass
-class ParaStock:
-    index: int
-    parameter: jax.Array
-
-    def consume(self, n: int) -> jax.Array:
-        para = self.parameter[self.index:self.index + n]
-        self.index += n
-        return para
-
-    @staticmethod
-    def _raw_initializer(_key, shape, dtype, default_parameter: jax.Array) -> jax.Array:
-        return default_parameter.reshape(shape).astype(dtype)
-
-    def gen_initializer(self, n: int):
-        return partial(self._raw_initializer, default_parameter=self.consume(n))
 
 
 class Controller(nnx.Module):
