@@ -74,9 +74,9 @@ class BatchedFood:
             data: mujoco.MjData | mjx.Data,
             batched_food_ids: BatchedFoodIDs,
     ):
-        this = cls.__new__(cls)
-        this = this.replace(
+        this = cls(
             ids=batched_food_ids,
+            positions=jnp.zeros((0, 3), dtype=jnp.float32),
             dummy_positions=jnp.zeros((0, 3), dtype=jnp.float32)
         )
         this = this.update(data)
