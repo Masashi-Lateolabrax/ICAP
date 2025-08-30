@@ -59,7 +59,7 @@ def single_robot_rays_with_functions(
 class Controller(nnx.Module):
     def __init__(self, parameter: jax.Array):
         rngs = nnx.Rngs(0)
-        parameter = ParaStock(0, parameter)
+        parameter = ParaStock(parameter)
 
         self.layer1 = nnx.Linear(
             in_features=8,
