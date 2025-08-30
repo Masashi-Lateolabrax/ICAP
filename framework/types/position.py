@@ -1,3 +1,4 @@
+import jax
 from flax.struct import dataclass as jax_dataclass
 
 
@@ -5,6 +6,9 @@ from flax.struct import dataclass as jax_dataclass
 class Position:
     x: float
     y: float
+
+    def as_array(self) -> jax.Array:
+        return jax.numpy.array([self.x, self.y])
 
 
 @jax_dataclass
