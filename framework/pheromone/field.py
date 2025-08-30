@@ -223,8 +223,7 @@ class PheromoneField:
         saturation_pressure = material.saturation_pressure(temperature)
         diffusion_coefficient = material.diffusion_coefficient(temperature)
 
-        this: PheromoneField = cls.__new__(cls)
-        this = this.replace(
+        return cls(
             nx=nx,
             ny=ny,
             dx=dx,
@@ -240,7 +239,6 @@ class PheromoneField:
 
             padding_value=padding_value
         )
-        return this
 
     def update(self, dt: float, iter_: int) -> "PheromoneField":
         new_gas, new_liquid = _iter_update_with_rk4(
