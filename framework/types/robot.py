@@ -105,8 +105,7 @@ class BatchedRobots:
             d: float,
             velocity: float
     ) -> 'BatchedRobots':
-        this = cls.__new__(cls)
-        this = this.replace(
+        this = cls(
             ids=batched_ids,
             positions=jnp.zeros((0, 3)),
             xdirections=jnp.zeros((0, 2)),
