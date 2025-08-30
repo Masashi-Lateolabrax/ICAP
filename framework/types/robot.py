@@ -88,7 +88,45 @@ class BatchedRobotIDs:
         )
 
 
+@jax_dataclass
 class BatchedRobots:
+    ids: BatchedRobotIDs
+
+    positions: jax.Array
+    xdirections: jax.Array
+
+    two_wheel_differential_move_matrix_T: jax.Array
+
+    @classmethod
+    def new(
+            cls,
+            data: mujoco.MjData | mjx.Data,
+            batched_ids: BatchedRobotIDs,
+            d: float,
+            velocity: float
+    ) -> 'BatchedRobots':
+        this = cls.__new__(cls)
+
+        center_site_positions = data.site_xpos[batched_ids.center_site_ids, :]
+        front_site_positions = data.site_xpos[batched_ids.front_site_ids, :2]
+        sub = front_site_positions - center_site_positions[:, :2]
+        n = jnp.linalg.norm(sub, axis=1, keepdims=True) + 1e-6
+        xdirections = sub / n
+
+        this.replace(
+            ids=batched_ids,
+            positions=center_site_positions,
+            xdirections=xdirections,
+            two_wheel_differential_move_matrix_T=jnp.array([
+                [velocity * 0.5, velocity * 0.5],
+                [- velocity / d, velocity / d]
+            ]).T
+        )
+
+        return this
+
+
+class BatchedRobots_old:
     @staticmethod
     def __calc_power_and_torque(
             xdirections: jax.Array, ctrl: jax.Array,
