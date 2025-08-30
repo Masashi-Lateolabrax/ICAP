@@ -1,8 +1,8 @@
-import dataclasses
 from functools import partial
 
 import jax
 import jax.numpy as jnp
+from flax.struct import dataclass as jax_dataclass
 
 import mujoco
 from mujoco import mjx
@@ -30,7 +30,7 @@ class RobotSpec:
         self.r_act = r_act
 
 
-@dataclasses.dataclass
+@jax_dataclass
 class RobotIDs:
     body_id: jnp.ndarray
     center_site_id: jnp.ndarray
@@ -42,7 +42,7 @@ class RobotIDs:
     r_actuator_id: jnp.ndarray
 
 
-@dataclasses.dataclass
+@jax_dataclass
 class BatchedRobotIDs:
     body_ids: jnp.ndarray
     center_site_ids: jnp.ndarray
