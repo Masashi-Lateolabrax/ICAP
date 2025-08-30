@@ -202,6 +202,7 @@ class PheromoneField:
     mask: jnp.ndarray  # Shape: (x+2, y+2)
 
     padding_value: float = 0.0
+    iter_: int = 1
 
     @property
     def values_gas(self) -> jnp.ndarray:
@@ -218,6 +219,7 @@ class PheromoneField:
             evaporation_rate: float,
             decrease_rate: float,
             padding_value: float = 0.0,
+            iter_: int = 1,
     ) -> "PheromoneField":
         shape = jnp.array([ny, nx], dtype=jnp.int32)
         saturation_pressure = material.saturation_pressure(temperature)
@@ -237,10 +239,11 @@ class PheromoneField:
             _values_gas=jnp.zeros(shape + 2, dtype=jnp.float32),
             mask=jnp.ones(shape + 2, dtype=jnp.bool_),
 
-            padding_value=padding_value
+            padding_value=padding_value,
+            iter_=iter_
         )
 
-    def update(self, dt: float, iter_: int) -> "PheromoneField":
+    def update(self, dt: float) -> "PheromoneField":
         new_gas, new_liquid = _iter_update_with_rk4(
             liquid_values=self.values_liquid,
             gas_values=self._values_gas,
@@ -252,7 +255,7 @@ class PheromoneField:
             decrease_rate=self.decrease_rate,
             dt=dt,
             padding_value=self.padding_value,
-            iter_=iter_,
+            iter_=self.iter_,
         )
         return self.replace(
             values_liquid=new_liquid,
