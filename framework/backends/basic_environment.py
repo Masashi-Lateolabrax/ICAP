@@ -61,7 +61,6 @@ def generate_mjspec(
     setup_textures(spec, settings)
 
     add_wall(spec, settings)
-    pheromone_cell_specs = add_pheromone_cells_in_mjspec(spec, settings)
 
     add_geom(
         spec.worldbody,
