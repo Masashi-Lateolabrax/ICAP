@@ -6,8 +6,9 @@ import jax
 import jax.numpy as jnp
 from flax.struct import dataclass as jax_dataclass
 
-from framework.prelude import Settings
-from framework.pheromone import PheromoneField
+from ..prelude import Settings
+from ..pheromone import PheromoneField, PheromoneFieldCellSpec
+from .basic_environment import add_pheromone_cells_in_mjspec
 
 
 @jax_dataclass
@@ -23,9 +24,6 @@ class BasicSimulator:
 
     @classmethod
     def new(cls, spec: mujoco.MjSpec, settings: Settings, rngs: jax.Array) -> 'BasicSimulator':
-        from framework.backends.basic_environment import add_pheromone_cells_in_mjspec
-        from framework.pheromone import PheromoneFieldCellSpec
-
         p_cell_specs: list[PheromoneFieldCellSpec] = add_pheromone_cells_in_mjspec(spec, settings)
 
         mj_model: mujoco.MjModel = spec.compile()
