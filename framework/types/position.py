@@ -1,13 +1,13 @@
-import dataclasses
+from flax.struct import dataclass as jax_dataclass
 
 
-@dataclasses.dataclass
+@jax_dataclass
 class Position:
     x: float
     y: float
 
 
-@dataclasses.dataclass
+@jax_dataclass
 class Position3d:
     x: float
     y: float
@@ -17,16 +17,16 @@ class Position3d:
         return self.x, self.y, self.z
 
 
-@dataclasses.dataclass
+@jax_dataclass
 class RobotLocation:
     x: float
     y: float
     angle: float
-    
+
     @property
     def position(self) -> Position:
         return Position(self.x, self.y)
-    
+
     @property
     def theta(self) -> float:
         return self.angle
