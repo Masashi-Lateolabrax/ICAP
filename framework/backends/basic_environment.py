@@ -51,8 +51,7 @@ def generate_mjspec(
     mujoco.MjSpec,
     mujoco._specs.MjsSite,
     list[RobotSpec],
-    list[FoodSpec],
-    list[PheromoneFieldCellSpec]
+    list[FoodSpec]
 ]:
     spec = mujoco.MjSpec()
 
@@ -126,12 +125,13 @@ def generate_mjspec(
                 add_robot_with_mesh(spec, settings, robot_mesh, i, position)
             )
 
-    return spec, nest_spec, robot_specs, food_specs, pheromone_cell_specs
+    return spec, nest_spec, robot_specs, food_specs
 
 
 class BasicMuJoCoSimulatorWithEnv(BasicMuJoCoSimulator, ABC):
     def __init__(self, settings, render: bool = False):
-        mj_spec, nest_spec, robot_specs, food_specs, pheromone_cell_specs = generate_mjspec(settings)
+        mj_spec, nest_spec, robot_specs, food_specs = generate_mjspec(settings)
+        pheromone_cell_specs: list[PheromoneFieldCellSpec] = add_pheromone_cells_in_mjspec(mj_spec, settings)
         super().__init__(settings, mj_spec, render)
 
         self.nest_id: int = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_SITE, nest_spec.name)
