@@ -1,13 +1,14 @@
 from functools import partial
+import dataclasses
 
 import jax
-from flax import struct
+from flax.typing import Initializer
 
 
-@struct.dataclass
+@dataclasses.dataclass
 class ParaStock:
-    index: int
     parameter: jax.Array
+    index: int = 0
 
     def consume(self, n: int) -> jax.Array:
         para = self.parameter[self.index:self.index + n]
@@ -18,5 +19,5 @@ class ParaStock:
     def _raw_initializer(_key, shape, dtype, default_parameter: jax.Array) -> jax.Array:
         return default_parameter.reshape(shape).astype(dtype)
 
-    def gen_initializer(self, n: int):
+    def gen_initializer(self, n: int) -> Initializer:
         return partial(self._raw_initializer, default_parameter=self.consume(n))
