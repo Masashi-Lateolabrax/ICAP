@@ -56,33 +56,6 @@ def single_robot_rays_with_functions(
     return jnp.reciprocal(dists)
 
 
-def single_robot_rays(
-        model, data, robot_pos, robot_xdir, robot_body_id
-):
-    """Fallback using static body ID 0 (for backward compatibility)."""
-    num_rays = 8  # Match controller input size
-    angles = jnp.arange(num_rays) * (2 * jnp.pi / num_rays)  # Shape (num_rays,)
-    cos_theta = jnp.cos(angles)  # Shape (num_rays,)
-    sin_theta = jnp.sin(angles)  # Shape (num_rays,)
-
-    horizontal_elements = cos_theta * robot_xdir[0] - sin_theta * robot_xdir[1]  # Shape (num_rays,)
-    vertical_elements = sin_theta * robot_xdir[0] + cos_theta * robot_xdir[1]  # Shape (num_rays,)
-
-    rotated_dirs = jnp.stack(
-        [horizontal_elements, vertical_elements, jnp.zeros(num_rays)],
-        axis=1
-    )  # Shape (num_rays, 3)
-
-    # Use static body ID 0 as fallback
-    jit_ray = jax.jit(
-        lambda vec, id_: mjx.ray(model, data, robot_pos, vec, (), True, id_)[0],
-        static_argnames=("id_",)
-    )
-    dists = jax.vmap(jit_ray, in_axes=(0, None))(rotated_dirs, 0)
-
-    return jnp.reciprocal(dists)
-
-
 @dataclasses.dataclass
 class ParaStock:
     index: int
