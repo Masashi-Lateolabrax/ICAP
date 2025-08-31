@@ -13,8 +13,6 @@ from .basic_environment import add_pheromone_cells_in_mjspec
 
 @jax_dataclass
 class BasicSimulator:
-    rngs: jax.Array
-
     model: mjx.Model
     data: mjx.Data
     pheromone: PheromoneField
@@ -24,7 +22,6 @@ class BasicSimulator:
 
     def update(
             self,
-            rngs: jax.Array = None,
             model: mjx.Model = None,
             data: mjx.Data = None,
             pheromone: PheromoneField = None,
@@ -32,7 +29,6 @@ class BasicSimulator:
             pheromone_cell_pos: jax.Array = None
     ) -> 'BasicSimulator':
         kwargs = {
-            "rngs": rngs,
             "model": model,
             "data": data,
             "pheromone": pheromone,
@@ -45,7 +41,7 @@ class BasicSimulator:
         return self.replace(**kwargs)
 
     @classmethod
-    def new(cls, spec: mujoco.MjSpec, settings: Settings, rngs: jax.Array) -> 'BasicSimulator':
+    def new(cls, spec: mujoco.MjSpec, settings: Settings) -> 'BasicSimulator':
         p_cell_specs: list[PheromoneFieldCellSpec] = add_pheromone_cells_in_mjspec(spec, settings)
 
         mj_model: mujoco.MjModel = spec.compile()
@@ -72,7 +68,6 @@ class BasicSimulator:
         )
 
         return cls(
-            rngs=rngs,
             model=model,
             data=data,
             pheromone=pheromone,
@@ -151,12 +146,10 @@ class BasicSimulator:
 
         render(mj_model, mj_data, mj_model.cam_resolution, max_geom, img_buf, pos, lookat)
 
-    def reset(self, rngs: jax.Array = None) -> 'BasicSimulator':
+    def reset(self) -> 'BasicSimulator':
         new_data = mjx.make_data(self.model)
         new_data = mjx.step(self.model, new_data)
 
         new_pheromone = self.pheromone.reset()
 
-        rngs = self.rngs if rngs is None else rngs
-
-        return self.update(rngs=rngs, data=new_data, pheromone=new_pheromone)
+        return self.update(data=new_data, pheromone=new_pheromone)
