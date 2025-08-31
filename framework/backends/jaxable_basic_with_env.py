@@ -91,14 +91,27 @@ class BasicSimulatorWithEnv:
     robot_inputs: jax.Array  # shape (num_robots, NUM_RAYS)
     food_items: BatchedFood
 
+    @property
+    def rngs(self) -> jax.Array:
+        return self._basic_sim.rngs
+
+    @property
+    def model(self) -> mjx.Model:
+        return self._basic_sim.model
+
+    @property
+    def data(self) -> mjx.Data:
+        return self._basic_sim.data
+
+    @property
+    def pheromone(self) -> PheromoneField:
+        return self._basic_sim.pheromone
+
     def update(
             self,
             rngs: jax.Array = None,
             model: mjx.Model = None,
             data: mjx.Data = None,
-            pheromone: PheromoneField = None,
-            pheromone_cell_ind: jax.Array = None,
-            pheromone_cell_pos: jax.Array = None,
 
             nest: dict = None,
             robots: BatchedRobots = None,
@@ -109,9 +122,6 @@ class BasicSimulatorWithEnv:
             "rngs": rngs,
             "model": model,
             "data": data,
-            "pheromone": pheromone,
-            "pheromone_cell_ind": pheromone_cell_ind,
-            "pheromone_cell_pos": pheromone_cell_pos
         }
         basic_sim = self._basic_sim.update(**parent_kwargs)
 
@@ -160,18 +170,6 @@ class BasicSimulatorWithEnv:
             food_items=food_items,
         )
 
-    @property
-    def model(self) -> mjx.Model:
-        return self._basic_sim.model
-
-    @property
-    def data(self) -> mjx.Data:
-        return self._basic_sim.data
-
-    @property
-    def pheromone(self) -> PheromoneField:
-        return self._basic_sim.pheromone
-
     def get_pheromone(self, positions: jax.Array) -> jax.Array:
         return self._basic_sim.get_pheromone(positions)
 
@@ -182,18 +180,17 @@ class BasicSimulatorWithEnv:
     @staticmethod
     @jax.jit
     def _step(this: "BasicSimulatorWithEnv", dt) -> "BasicSimulatorWithEnv":
-        new_basic_sim: BasicSimulator = this._basic_sim.step(dt)
+        this = this.replace(_basic_sim=this._basic_sim.step(dt))
 
-        new_robots = this.robots.update(new_basic_sim.data)
-        new_food_items = this.food_items.update(new_basic_sim.data)
+        new_robots = this.robots.update(this.data)
+        new_food_items = this.food_items.update(this.data)
 
         depth_sensor: tuple[jax.Array, jax.Array] = emit_rays(
-            new_basic_sim.model, new_basic_sim.data, new_robots
+            this.model, this.data, new_robots
         )
         depths, _ = depth_sensor  # shape (num_robots, NUM_RAYS)
         inputs = jnp.reciprocal(depths + 1e-6)
 
-        this = this.replace(_basic_sim=new_basic_sim)
         return this.update(
             robots=new_robots,
             robot_inputs=inputs,
