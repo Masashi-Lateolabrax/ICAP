@@ -178,6 +178,50 @@ class BasicSimulatorWithEnv:
 
     @staticmethod
     @jax.jit
+    def _relocate_food_items(
+            this: "BasicSimulatorWithEnv",
+    ) -> "BasicSimulatorWithEnv":
+        new_rngs, rngs = jax.random.split(this.rngs_for_relocating_food)
+
+        distance_between_food_and_nest = jnp.linalg.norm(
+            this.food_items.positions[:, :2] - this.nest_position,
+            axis=1
+        )
+        mask = distance_between_food_and_nest < this.nest_radius
+
+        key, rngs = jax.random.split(rngs)
+        random_xy = jax.random.uniform(
+            key,
+            shape=(mask.shape[0], 2),
+            minval=this.nest_radius,
+            maxval=jnp.array([this.world_width, this.world_height]) - this.food_radius
+        )
+
+        key, rngs = jax.random.split(rngs)
+        sign = 2 * jax.random.randint(key, shape=random_xy.shape, minval=0, maxval=2) - 1
+        random_xy = sign * random_xy
+        random_xy = jnp.hstack([random_xy, 5 * jnp.ones((mask.shape[0], 1), dtype=jnp.float32)])
+
+        new_positions = jnp.where(
+            jnp.repeat(mask[:, None], 3, axis=1),
+            random_xy,
+            this.food_items.positions[:, :3]
+        )
+
+        new_food_items = this.food_items.register_dummy_position(
+            this.food_items.positions[jnp.logical_not(mask), :3]
+        )
+
+        new_data = new_food_items.set_pos(this.data, new_positions)
+
+        return this.update(
+            data=new_data,
+            food_items=new_food_items,
+            rngs_for_relocating_food=new_rngs
+        )
+
+    @staticmethod
+    @jax.jit
     def _step(this: "BasicSimulatorWithEnv", dt) -> "BasicSimulatorWithEnv":
         this = this.replace(_basic_sim=this._basic_sim.step(dt))
 
