@@ -67,12 +67,15 @@ class BasicSimulator:
         nearest_indices = jnp.argmin(dists, axis=1)
         return nearest_indices
 
+    def calc_nearest_pheromone_cell_indices(self, positions: jax.Array) -> jax.Array:
+        return BasicSimulator._calc_nearest_pheromone_cell_indices(self, positions)
+
     def get_pheromone(self, positions: jax.Array) -> jax.Array:
-        nearest_indices = BasicSimulator._calc_nearest_pheromone_cell_indices(self, positions)
+        nearest_indices = self.calc_nearest_pheromone_cell_indices(positions)
         return self.pheromone.get_gas(nearest_indices[:, 0], nearest_indices[:, 1])
 
     def add_pheromone(self, positions: jax.Array, values: jax.Array) -> 'BasicSimulator':
-        nearest_indices = BasicSimulator._calc_nearest_pheromone_cell_indices(self, positions)
+        nearest_indices = self.calc_nearest_pheromone_cell_indices(positions)
         new_pheromone = self.pheromone.add_liquid(nearest_indices[:, 0], nearest_indices[:, 1], values)
         new_simulator = self.replace(pheromone=new_pheromone)
         return new_simulator
