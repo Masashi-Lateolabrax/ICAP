@@ -1,4 +1,5 @@
 from typing import Callable, Any
+from dataclasses import field
 
 import jax
 import jax.numpy as jnp
@@ -77,7 +78,8 @@ class Robot:
     FOOD_SENSOR_GAIN: float = 1.0
 
     NUM: int = 1
-    INITIAL_POSITION: list[RobotLocation] = []
+    INITIAL_POSITION: list[RobotLocation] = field(default_factory=lambda: [
+    ])
 
 
 @jax_dataclass
@@ -89,7 +91,8 @@ class Food:
     COLOR: tuple[float, float, float, float] = (0, 1, 1, 1)
 
     NUM: int = 1
-    INITIAL_POSITION: list[Position] = []
+    INITIAL_POSITION: list[RobotLocation] = field(default_factory=lambda: [
+    ])
 
 
 @jax_dataclass
@@ -103,11 +106,11 @@ class Nest:
 @jax_dataclass
 class Loss:
     OFFSET_NEST_AND_FOOD: float = 0
-    SIGMA_NEST_AND_FOOD: jnp.ndarray = calc_loss_sigma(4, 0.01)
+    SIGMA_NEST_AND_FOOD: jnp.ndarray = field(default_factory=lambda: calc_loss_sigma(4, 0.01))
     GAIN_NEST_AND_FOOD: int = 1
 
     OFFSET_ROBOT_AND_FOOD: float = Robot.RADIUS + Food.RADIUS
-    SIGMA_ROBOT_AND_FOOD: jnp.ndarray = calc_loss_sigma(1, 0.3)
+    SIGMA_ROBOT_AND_FOOD: jnp.ndarray = field(default_factory=lambda: calc_loss_sigma(1, 0.3))
     GAIN_ROBOT_AND_FOOD: float = 0.01
 
     REGULARIZATION_COEFFICIENT: int = 0
