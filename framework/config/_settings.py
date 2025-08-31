@@ -1,11 +1,9 @@
-from typing import Callable, Any
-from dataclasses import field
+from typing import Callable
+import logging
 
-import jax
 import jax.numpy as jnp
-from flax.struct import dataclass as jax_dataclass
 
-from ..types import RobotLocation, Position, ETHANOL
+from ..types import RobotLocation, Position, Material, ETHANOL
 
 
 class ClippingFunctions:
@@ -30,7 +28,6 @@ def calc_loss_sigma(point: float, value: float) -> jnp.ndarray:
     return -(point ** 2) / jnp.log(value)
 
 
-@jax_dataclass
 class Render:
     RENDER_WIDTH: int = 500
     RENDER_HEIGHT: int = 500
@@ -45,7 +42,6 @@ class Render:
     MAX_GEOM: int = 11000
 
 
-@jax_dataclass
 class Optimization:
     DIMENSION: int | None = None
     POPULATION: int = 1000
@@ -53,11 +49,7 @@ class Optimization:
     SIGMA: float = 0.5
     CLIP: Callable[[jnp.ndarray], jnp.ndarray] = ClippingFunctions.none
 
-    def __post_init__(self) -> None:
-        object.__setattr__(self, 'CLIP', jax.jit(self.CLIP))
 
-
-@jax_dataclass
 class Robot:
     HEIGHT: float = 0.1
     RADIUS: float = 0.175
@@ -78,11 +70,9 @@ class Robot:
     FOOD_SENSOR_GAIN: float = 1.0
 
     NUM: int = 1
-    INITIAL_POSITION: list[RobotLocation] = field(default_factory=lambda: [
-    ])
+    INITIAL_POSITION: list[RobotLocation] = []
 
 
-@jax_dataclass
 class Food:
     RADIUS: float = 0.5
     HEIGHT: float = 0.07
@@ -91,11 +81,9 @@ class Food:
     COLOR: tuple[float, float, float, float] = (0, 1, 1, 1)
 
     NUM: int = 1
-    INITIAL_POSITION: list[RobotLocation] = field(default_factory=lambda: [
-    ])
+    INITIAL_POSITION: list[RobotLocation] = []
 
 
-@jax_dataclass
 class Nest:
     POSITION: Position = Position(0.0, 0.0)
     RADIUS: float = 1.0
@@ -103,20 +91,18 @@ class Nest:
     COLOR: tuple[float, float, float, float] = (0, 1, 0, 1)
 
 
-@jax_dataclass
 class Loss:
     OFFSET_NEST_AND_FOOD: float = 0
-    SIGMA_NEST_AND_FOOD: jnp.ndarray = field(default_factory=lambda: calc_loss_sigma(4, 0.01))
+    SIGMA_NEST_AND_FOOD: jnp.ndarray = calc_loss_sigma(4, 0.01)
     GAIN_NEST_AND_FOOD: int = 1
 
     OFFSET_ROBOT_AND_FOOD: float = Robot.RADIUS + Food.RADIUS
-    SIGMA_ROBOT_AND_FOOD: jnp.ndarray = field(default_factory=lambda: calc_loss_sigma(1, 0.3))
+    SIGMA_ROBOT_AND_FOOD: jnp.ndarray = calc_loss_sigma(1, 0.3)
     GAIN_ROBOT_AND_FOOD: float = 0.01
 
     REGULARIZATION_COEFFICIENT: int = 0
 
 
-@jax_dataclass
 class Simulation:
     TIME_STEP: float = 0.01
     TIME_LENGTH: int = 60  # Unit is Seconds
@@ -130,7 +116,6 @@ class Simulation:
     TEMPERATURE: float = 300.0  # Kelvin
 
 
-@jax_dataclass
 class Storage:
     SAVE_INDIVIDUALS: bool = True
     SAVE_DIRECTORY: str = "./results"
@@ -139,12 +124,10 @@ class Storage:
     ASSET_DIRECTORY: str = "./assets"
 
 
-@jax_dataclass
 class Device:
     ENABLE_CUDA: bool = False
 
 
-@jax_dataclass
 class Pheromone:
     ACTIVE: bool = False
     CELL_SIZE: float = 0.1
@@ -153,16 +136,10 @@ class Pheromone:
     ITERATIONS_PER_STEP: int = 1
     EVAPORATION_RATE: float = 0.1
     DECREASE_RATE: float = 0.0
-    MATERIAL: Any = ETHANOL
+    MATERIAL: Material = ETHANOL
 
 
-@jax_dataclass
 class Settings:
-    """
-    Basically, the attributes' unit is meter.
-    JAX-compatible configuration dataclass.
-    """
-
     Optimization: type[Optimization] = Optimization
     Loss: type[Loss] = Loss
     Simulation: type[Simulation] = Simulation
@@ -174,37 +151,76 @@ class Settings:
     Device: type[Device] = Device
     Pheromone: type[Pheromone] = Pheromone
 
+    @staticmethod
+    def as_dict(this: type['Settings']) -> dict:
+        def as_dict(obj):
+            ALLOWED_TYPES = (str, int, float, bool, Callable, Material, Position, RobotLocation)
+            attributes = {}
 
-def settings_to_dict(settings: Settings) -> dict[str, Any]:
-    """JAX-compatible function to convert settings to dictionary."""
-    import jax.tree_util as jtu
-    return jtu.tree_map(lambda x: x, settings)
+            for attr_name in dir(obj):
+                if attr_name.startswith('_') or attr_name == 'as_dict' or attr_name == 'compare_settings':
+                    continue
 
+                attr_value = getattr(obj, attr_name)
 
-def compare_settings(settings1: Settings, settings2: Settings) -> dict[
-    str, list[tuple[str, Any, ...] | tuple[str, Any]]]:
-    """JAX-compatible function to compare two settings objects."""
-    import jax.tree_util as jtu
+                if isinstance(attr_value, type):
+                    res = as_dict(attr_value)
+                    if res is not None:
+                        attributes[attr_name] = res
 
-    def are_equal(x: Any, y: Any) -> bool:
-        try:
-            return jnp.array_equal(x, y) if hasattr(x, 'shape') else x == y
-        except (TypeError, ValueError, AttributeError):
-            return str(x) == str(y)
+                elif isinstance(attr_value, ALLOWED_TYPES):
+                    attributes[attr_name] = attr_value
 
-    differences: list[tuple[str, Any, Any]] = []
-    identical: list[tuple[str, Any]] = []
+                elif isinstance(attr_value, (tuple, list)):
+                    list_ = []
+                    for v in attr_value:
+                        if not isinstance(v, ALLOWED_TYPES):
+                            logging.warning("Skipping non-serializable value in list: %s", v)
+                            continue
+                        list_.append(v)
+                    attributes[attr_name] = list_
 
-    leaves1, tree_def1 = jtu.tree_flatten(settings1)
-    leaves2, tree_def2 = jtu.tree_flatten(settings2)
+                elif isinstance(attr_value, dict):
+                    dict_ = {}
+                    for k, v in attr_value.items():
+                        if not isinstance(k, (str, int)) or not isinstance(v, ALLOWED_TYPES):
+                            logging.warning("Skipping non-serializable key-value pair in dict: %s: %s", k, v)
+                            continue
+                        dict_[k] = v
+                    attributes[attr_name] = dict_
 
-    if tree_def1 != tree_def2:
-        return {"difference": [("structure", "different_structure", "different_structure")], "identical": []}
+            return attributes
 
-    for i, (val1, val2) in enumerate(zip(leaves1, leaves2)):
-        if are_equal(val1, val2):
-            identical.append((f"leaf_{i}", val1))
-        else:
-            differences.append((f"leaf_{i}", val1, val2))
+        return as_dict(this)
 
-    return {"difference": differences, "identical": identical}
+    @staticmethod
+    def compare_settings(this: type["Settings"], other: type["Settings"]):
+        base_attrs = Settings.as_dict(this)
+        app_attrs = Settings.as_dict(other)
+
+        # Find all unique keys
+        all_keys = set(base_attrs.keys()) | set(app_attrs.keys())
+
+        differences = []
+        identical = []
+
+        for key in sorted(all_keys):
+            base_value = base_attrs.get(key, "<NOT SET>")
+            app_value = app_attrs.get(key, "<NOT SET>")
+
+            if base_value != app_value:
+                differences.append((key, base_value, app_value))
+            else:
+                identical.append((key, base_value))
+
+        # Print differences
+        if differences:
+            print(f"\n🔍 DIFFERENCES FOUND ({len(differences)} settings):")
+            print("-" * 60)
+            for key, base_val, app_val in differences:
+                print(f"Setting: {key}")
+                print(f"  self: {base_val}")
+                print(f"  other: {app_val}")
+                print()
+
+        return {"difference": differences, "identical": identical}
