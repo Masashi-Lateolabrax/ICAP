@@ -100,7 +100,7 @@ class BasicSimulator:
     @staticmethod
     @jax.jit
     def _step(simulator: "BasicSimulator", dt: float):
-        new_data = mjx.step(simulator.model, simulator.data, dt=dt)
+        new_data = mjx.step(simulator.model, simulator.data)
         new_pheromone = simulator.pheromone.update(dt)
         new_simulator = simulator.update(data=new_data, pheromone=new_pheromone)
         return new_simulator
