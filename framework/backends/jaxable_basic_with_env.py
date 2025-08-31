@@ -86,14 +86,17 @@ def emit_rays(
 @jax_dataclass
 class BasicSimulatorWithEnv:
     _basic_sim: BasicSimulator
-    nest: dict  # position and radius
+
+    nest_position: jax.Array
+    nest_radius: float
+    food_radius: float
+    world_width: float
+    world_height: float
+
     robots: BatchedRobots
     robot_inputs: jax.Array  # shape (num_robots, NUM_RAYS)
     food_items: BatchedFood
-
-    @property
-    def rngs(self) -> jax.Array:
-        return self._basic_sim.rngs
+    rngs_for_relocating_food: jax.Array
 
     @property
     def model(self) -> mjx.Model:
@@ -103,23 +106,17 @@ class BasicSimulatorWithEnv:
     def data(self) -> mjx.Data:
         return self._basic_sim.data
 
-    @property
-    def pheromone(self) -> PheromoneField:
-        return self._basic_sim.pheromone
-
     def update(
             self,
-            rngs: jax.Array = None,
             model: mjx.Model = None,
             data: mjx.Data = None,
 
-            nest: dict = None,
             robots: BatchedRobots = None,
             robot_inputs: jax.Array = None,
             food_items: BatchedFood = None,
+            rngs_for_relocating_food: jax.Array = None,
     ) -> 'BasicSimulatorWithEnv':
         parent_kwargs = {
-            "rngs": rngs,
             "model": model,
             "data": data,
         }
@@ -127,10 +124,10 @@ class BasicSimulatorWithEnv:
 
         this_kwargs = {
             "_basic_sim": basic_sim,
-            "nest": nest,
             "robots": robots,
             "robot_inputs": robot_inputs,
             "food_items": food_items,
+            "rngs_for_relocating_food": rngs_for_relocating_food,
         }
         kwargs = {k: v for k, v in this_kwargs.items() if v is not None}
         if not kwargs:
@@ -141,12 +138,7 @@ class BasicSimulatorWithEnv:
     @classmethod
     def new(cls, settings: Settings, rngs: jax.Array) -> 'BasicSimulatorWithEnv':
         mj_spec, nest_spec, robot_specs, food_specs = generate_mjspec(settings)
-        basic_sim = BasicSimulator.new(mj_spec, settings, rngs)
-
-        nest = {
-            "pos": settings.Nest.POSITION.as_array(),
-            "radius": settings.Nest.RADIUS
-        }
+        basic_sim = BasicSimulator.new(mj_spec, settings)
 
         batched_robot_id = BatchedRobotIDs.from_specs(basic_sim.model, robot_specs)
         batched_food_id = BatchedFoodIDs.from_specs(basic_sim.model, food_specs)
@@ -164,10 +156,17 @@ class BasicSimulatorWithEnv:
 
         return cls(
             _basic_sim=basic_sim,
-            nest=nest,
+
+            nest_position=settings.Nest.POSITION.as_array(),
+            nest_radius=settings.Nest.RADIUS,
+            food_radius=settings.Food.RADIUS,
+            world_width=settings.Simulation.WORLD_WIDTH,
+            world_height=settings.Simulation.WORLD_HEIGHT,
+
             robots=robots,
             robot_inputs=robot_inputs,
             food_items=food_items,
+            rngs_for_relocating_food=rngs
         )
 
     def get_pheromone(self, positions: jax.Array) -> jax.Array:
