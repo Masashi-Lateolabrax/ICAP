@@ -298,3 +298,7 @@ def opt_gpu_example():
     print(f"  Steps per second: {total_steps_per_sec:.1f}")
     print(f"  Efficiency: {((population_size * simulation_steps) / sim_time) / 1000:.1f}k individual-steps/sec")
     print(f"{'=' * 60}")
+
+
+if __name__ == '__main__':
+    opt_gpu_example()
