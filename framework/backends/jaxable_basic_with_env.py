@@ -62,9 +62,9 @@ def create_emit_rays_functions(num_rays: int, robots: BatchedRobots):
         if id_ in _REGISTERED_ROBOT_IDS:
             continue
 
-        @partial(jax.jit, static_argnames=["body_id_"])
-        def emit_rays_fn(model, data, pos, xdir, body_id=id_):
-            return _emit_n_rays(model, data, pos, xdir, body_id, num_rays)
+        @partial(jax.jit, static_argnames=["body_id_", "num_rays"])
+        def emit_rays_fn(model, data, pos, xdir, body_id=id_, num_rays_=num_rays):
+            return _emit_n_rays(model, data, pos, xdir, body_id, num_rays_)
 
         _REGISTERED_ROBOT_IDS.add(id_)
         _EMIT_RAYS_FUNCTIONS.append(emit_rays_fn)
@@ -117,7 +117,7 @@ class BasicSimulatorWithEnv:
         basic_sim = self._basic_sim.update(**parent_kwargs)
 
         this_kwargs = {
-            "basic_sim": basic_sim,
+            "_basic_sim": basic_sim,
             "nest": nest,
             "robots": robots,
             "robot_inputs": robot_inputs,
@@ -231,7 +231,7 @@ class BasicSimulatorWithEnv:
         new_basic_sim = self._basic_sim.reset(rngs)
         new_robots = self.robots.update(new_basic_sim.data)
         new_food_items = self.food_items.update(new_basic_sim.data)
-        
+
         this = self.replace(_basic_sim=new_basic_sim)
         return this.update(
             robots=new_robots,
