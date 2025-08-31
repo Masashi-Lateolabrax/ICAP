@@ -53,7 +53,7 @@ _REGISTERED_ROBOT_IDS = set()
 
 
 def create_emit_rays_functions(num_rays: int, robots: BatchedRobots):
-    global _EMIT_RAYS_FUNCTIONS
+    global _EMIT_RAYS_FUNCTIONS, _REGISTERED_ROBOT_IDS
 
     body_ids = robots.ids.body_ids.tolist()
 
