@@ -17,6 +17,7 @@
 ### Critical Constraints & Requirements
 - **MuJoCo JAX Ray Casting**: mjx.ray() requires body_id to be static (compile-time constant). This forces architectural decisions like pre-compiled function registries rather than dynamic batching approaches. Never suggest "optimizations" that violate this constraint.
 - **JAX Static Arguments**: Always verify static_argnames requirements before suggesting code changes to JAX-compiled functions.
+- **Performance vs Thread Safety Trade-offs**: The codebase uses global state for pre-compiled JAX functions (e.g., _EMIT_RAYS_FUNCTIONS). While this creates potential race conditions in concurrent scenarios, it's the optimal performance approach for research simulations. Do NOT over-engineer thread-safe solutions that sacrifice performance unless explicitly required for concurrent usage.
 
 ## Architecture & Performance
 [... rest of the existing content remains unchanged ...]
