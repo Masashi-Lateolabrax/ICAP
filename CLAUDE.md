@@ -14,5 +14,9 @@
 ### Development Practices
 - `.venv`等の中は必要に合わせて参考にするのはいい. 例えば関数の使い方とか. でもリファクタリングとかでその中身まで調べるのは無駄すぎるから避けて
 
+### Critical Constraints & Requirements
+- **MuJoCo JAX Ray Casting**: mjx.ray() requires body_id to be static (compile-time constant). This forces architectural decisions like pre-compiled function registries rather than dynamic batching approaches. Never suggest "optimizations" that violate this constraint.
+- **JAX Static Arguments**: Always verify static_argnames requirements before suggesting code changes to JAX-compiled functions.
+
 ## Architecture & Performance
 [... rest of the existing content remains unchanged ...]
