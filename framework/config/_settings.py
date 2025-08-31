@@ -51,7 +51,7 @@ class Optimization:
     GENERATION: int = 100
     SIGMA: float = 0.5
     CLIP: Callable[[jnp.ndarray], jnp.ndarray] = ClippingFunctions.none
-    
+
     def __post_init__(self) -> None:
         object.__setattr__(self, 'CLIP', jax.jit(self.CLIP))
 
@@ -70,6 +70,8 @@ class Robot:
 
     ACTUATOR_MOVE_KV: int = 100
     ACTUATOR_ROT_KV: int = 10
+
+    NUM_RAYS = 16
 
     ROBOT_SENSOR_GAIN: float = 1.0
     FOOD_SENSOR_GAIN: float = 1.0
@@ -176,31 +178,30 @@ def settings_to_dict(settings: Settings) -> dict[str, Any]:
     return jtu.tree_map(lambda x: x, settings)
 
 
-def compare_settings(settings1: Settings, settings2: Settings) -> dict[str, list[tuple[str, Any, ...] | tuple[str, Any]]]:
+def compare_settings(settings1: Settings, settings2: Settings) -> dict[
+    str, list[tuple[str, Any, ...] | tuple[str, Any]]]:
     """JAX-compatible function to compare two settings objects."""
     import jax.tree_util as jtu
-    
+
     def are_equal(x: Any, y: Any) -> bool:
         try:
             return jnp.array_equal(x, y) if hasattr(x, 'shape') else x == y
         except (TypeError, ValueError, AttributeError):
             return str(x) == str(y)
-    
+
     differences: list[tuple[str, Any, Any]] = []
     identical: list[tuple[str, Any]] = []
-    
+
     leaves1, tree_def1 = jtu.tree_flatten(settings1)
     leaves2, tree_def2 = jtu.tree_flatten(settings2)
-    
+
     if tree_def1 != tree_def2:
         return {"difference": [("structure", "different_structure", "different_structure")], "identical": []}
-    
+
     for i, (val1, val2) in enumerate(zip(leaves1, leaves2)):
         if are_equal(val1, val2):
             identical.append((f"leaf_{i}", val1))
         else:
             differences.append((f"leaf_{i}", val1, val2))
-    
+
     return {"difference": differences, "identical": identical}
-
-
