@@ -9,7 +9,6 @@ import jax.numpy as jnp
 from flax.struct import dataclass as jax_dataclass
 
 from ..prelude import *
-from ..pheromone import PheromoneField
 from .basic_environment import generate_mjspec
 from .jaxable_basic import BasicSimulator
 
@@ -234,6 +233,7 @@ class BasicSimulatorWithEnv:
         depths, _ = depth_sensor  # shape (num_robots, NUM_RAYS)
         inputs = jnp.reciprocal(depths + 1e-6)
 
+        this = BasicSimulatorWithEnv._relocate_food_items(this)
         return this.update(
             robots=new_robots,
             robot_inputs=inputs,
