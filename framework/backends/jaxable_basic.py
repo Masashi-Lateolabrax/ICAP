@@ -88,6 +88,7 @@ class BasicSimulator:
             pos: tuple[float, float, float],
             lookat: tuple[float, float, float],
             max_geom=100,
+            max_pheromone=1.0
     ):
         from framework.backends.utils import render
 
@@ -95,6 +96,14 @@ class BasicSimulator:
             return
 
         mj_data = mjx.get_data(mj_model, self.data)
+
+        pheromone: jnp.ndarray = self.pheromone.values_gas
+        for (ix, iy) in zip(self.pheromone_cell_ind[:, 0], self.pheromone_cell_ind[:, 1]):
+            pheromone_value = float(pheromone[iy, ix])
+            rgba: tuple[float, float, float] = (
+                pheromone_value / max_pheromone, 0.0, 1 - pheromone_value / max_pheromone
+            )
+            mj_model.geom(f"pheromone_cell_{ix}_{iy}").rgba = np.array((*rgba, 0.5), dtype=np.float64)
 
         render(mj_model, mj_data, mj_model.cam_resolution, max_geom, img_buf, pos, lookat)
 
