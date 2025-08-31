@@ -1,5 +1,8 @@
+import time
+
 import numpy as np
 import mujoco
+from cmaes import CMA
 from mujoco import mjx
 
 import jax
@@ -10,6 +13,7 @@ from flax.struct import dataclass as jax_dataclass
 from framework.prelude import *
 from framework.utils import ParaStock
 from framework.backends import BasicSimulatorWithEnv
+from framework.utils import configure_gpu_optimization, monitor_gpu_memory
 
 
 class Controller(nnx.Module):
@@ -51,12 +55,7 @@ class Simulator:
 
     delta_loss: jax.Array
 
-    OFFSET_ROBOT_AND_FOOD: float
-    SIGMA_ROBOT_AND_FOOD: float
     GAIN_ROBOT_AND_FOOD: float
-
-    OFFSET_NEST_AND_FOOD: float
-    SIGMA_NEST_AND_FOOD: float
     GAIN_NEST_AND_FOOD: float
 
     @property
@@ -90,7 +89,7 @@ class Simulator:
 
             individual: jax.Array = None,
             controller: Controller = None,
-            delta_loss: float = None,
+            delta_loss: jax.Array = None,
     ) -> 'Simulator':
         parent_kwargs = {
             "rngs": rngs,
@@ -124,12 +123,7 @@ class Simulator:
             controller=controller,
             delta_loss=jnp.zeros((1,), dtype=jnp.float32),
 
-            OFFSET_ROBOT_AND_FOOD=settings.Loss.OFFSET_ROBOT_AND_FOOD,
-            SIGMA_ROBOT_AND_FOOD=settings.Loss.SIGMA_ROBOT_AND_FOOD,
             GAIN_ROBOT_AND_FOOD=settings.Loss.GAIN_ROBOT_AND_FOOD,
-
-            OFFSET_NEST_AND_FOOD=settings.Loss.OFFSET_NEST_AND_FOOD,
-            SIGMA_NEST_AND_FOOD=settings.Loss.SIGMA_NEST_AND_FOOD,
             GAIN_NEST_AND_FOOD=settings.Loss.GAIN_NEST_AND_FOOD,
         )
 
@@ -143,29 +137,21 @@ class Simulator:
     @staticmethod
     @nnx.jit
     def _calc_loss_between_robots_and_food(this: "Simulator") -> jax.Array:
-        subs = (this.robots.positions[:, None, :2] - this.food_items.positions[None, :, :2]).reshape(-1, 2)
-        distance = jnp.clip(
-            jnp.linalg.norm(subs, axis=1) - this.OFFSET_ROBOT_AND_FOOD,
-            a_min=0
-        )
-        rf_loss = -jnp.sum(jnp.exp(-(distance ** 2) / this.SIGMA_ROBOT_AND_FOOD))
-        rf_loss = rf_loss * this.GAIN_ROBOT_AND_FOOD
-        return rf_loss
+        subs = (this.robots.positions[:, None, :2] - this.food_items.positions[None, :, :2])
+        distance = jnp.linalg.norm(subs, axis=2)
+        distance = jnp.min(distance, axis=1)
+        ave_distance = jnp.mean(distance)
+        return ave_distance * this.GAIN_ROBOT_AND_FOOD
 
     @staticmethod
     @nnx.jit
     def _calc_loss_between_food_and_nest(this: "Simulator") -> jax.Array:
-        distance_between_food_and_nest = jnp.linalg.norm(
+        distance = jnp.linalg.norm(
             this.food_items.positions[:, :2] - this.NEST_POSITION,
             axis=1
         )
-        distance = jnp.clip(
-            distance_between_food_and_nest - this.OFFSET_NEST_AND_FOOD,
-            a_min=0
-        )
-        fn_loss = -jnp.sum(jnp.exp(-(distance ** 2) / this.SIGMA_NEST_AND_FOOD))
-        fn_loss = fn_loss * this.GAIN_NEST_AND_FOOD
-        return fn_loss
+        ave_distance = jnp.mean(distance)
+        return ave_distance * this.GAIN_NEST_AND_FOOD
 
     @staticmethod
     @nnx.jit
@@ -209,7 +195,7 @@ class Simulator:
     ):
         self._env_sim.render(mj_model, img_buf, pos, lookat, max_geom, max_pheromone)
 
-    def reset(self, individual: jax.Array = None, rngs: jax.Array = None) -> 'BasicSimulatorWithEnv':
+    def reset(self, individual: jax.Array = None, rngs: jax.Array = None) -> 'Simulator':
         new_env_sim = self._env_sim.reset(rngs)
 
         controller = Controller(individual) if individual is not None else None
@@ -218,3 +204,97 @@ class Simulator:
             individual=individual,
             controller=controller
         )
+
+
+def opt_gpu_example():
+    gpu_available = configure_gpu_optimization()
+
+    print("Initializing GPU-optimized simulation...")
+
+    settings = Settings()
+
+    population_size = 100
+    simulation_steps = int(90 / settings.Simulation.TIME_STEP)
+    batch_steps = 100  # Number of steps to batch together
+
+    settings.Robot.NUM = 1
+    settings.Food.NUM = 1
+
+    optimizer = CMA(
+        mean=np.zeros((Controller.dim(),), dtype=np.float32),
+        sigma=0.1,
+        population_size=population_size,
+    )
+
+    parameters = jnp.array([optimizer.ask() for _ in range(population_size)])
+    rngs: jax.Array = jax.random.split(jax.random.PRNGKey(0), population_size)
+
+    print("Creating simulator...")
+    init_start = time.perf_counter()
+    simulators = jax.vmap(Simulator.new, in_axes=(None, 0, 0))(settings, parameters, rngs)
+    init_time = time.perf_counter() - init_start
+    print(f"Simulator initialization: {init_time:.2f}s")
+
+    print("\nGPU status after initialization:")
+    monitor_gpu_memory()
+
+    # Warmup run to compile JIT functions
+    print("\nPerforming JIT warmup...")
+    warmup_start = time.perf_counter()
+    simulators = jax.vmap(lambda sim: sim.step(settings.Simulation.TIME_STEP))(simulators)
+    warmup_time = time.perf_counter() - warmup_start
+    print(f"JIT warmup completed: {warmup_time:.2f}s")
+
+    print("\nGPU status after JIT warmup:")
+    monitor_gpu_memory()
+
+    # Main simulation loop using multi-step batching for better performance
+    print(f"\nStarting main simulation ({simulation_steps} steps, {batch_steps} steps per batch)...")
+    sim_start = time.perf_counter()
+
+    completed_steps = 0
+    while completed_steps < simulation_steps:
+        steps_to_run = min(batch_steps, simulation_steps - completed_steps)
+        simulators = jax.vmap(lambda sim: sim.step_n(steps_to_run, settings.Simulation.TIME_STEP))(simulators)
+        completed_steps += steps_to_run
+
+        if completed_steps % 100 == 0 or completed_steps == simulation_steps:
+            elapsed = time.perf_counter() - sim_start
+            steps_per_sec = completed_steps / elapsed
+            print(f"\nStep {completed_steps}/{simulation_steps} - {steps_per_sec:.1f} steps/sec")
+            if gpu_available:
+                monitor_gpu_memory()
+
+    sim_time = time.perf_counter() - sim_start
+    total_steps_per_sec = simulation_steps / sim_time
+    print(f"\nSimulation completed: {sim_time:.2f}s ({total_steps_per_sec:.1f} steps/sec)")
+
+    if gpu_available:
+        print("\nFinal GPU status:")
+        monitor_gpu_memory()
+
+    def extract_loss(sim: Simulator) -> tuple[jax.Array, jax.Array]:
+        total_loss = sim.delta_loss + settings.Loss.REGULARIZATION_COEFFICIENT * jnp.sum(jnp.square(sim.individual))
+        return sim.individual, total_loss
+
+    parameters, losses = jax.vmap(extract_loss)(simulators)
+    parameters = np.array(parameters)
+    losses = np.array(losses)
+
+    results = [(para, float(loss)) for para, loss in zip(parameters, losses)]
+    optimizer.tell(results)
+
+    # Performance summary
+    total_time = init_time + warmup_time + sim_time
+    print(f"\n{'=' * 60}")
+    print(f"PERFORMANCE SUMMARY")
+    print(f"{'=' * 60}")
+    print(f"\nTiming:")
+    print(f"  Initialization: {init_time:.2f}s")
+    print(f"  JIT warmup: {warmup_time:.2f}s")
+    print(f"  Simulation: {sim_time:.2f}s")
+    print(f"  Total: {total_time:.2f}s")
+    print(f"\nThroughput:")
+    print(f"  Steps per second: {total_steps_per_sec:.1f}")
+    print(f"  Efficiency: {((population_size * simulation_steps) / sim_time) / 1000:.1f}k individual-steps/sec")
+    print(f"{'=' * 60}")
