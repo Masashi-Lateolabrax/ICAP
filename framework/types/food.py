@@ -93,12 +93,11 @@ class BatchedFood:
         return self.replace(positions=new_positions)
 
     @staticmethod
-    def set_pos(data: mujoco.MjData | mjx.Data, body_id: jax.Array, pos: jax.Array):
-        if isinstance(data, mjx.Data):
-            new_xpos = data.xpos.at[body_id, :2].set(pos[:2])
-            data = data.replace(xpos=new_xpos)
-
-        elif isinstance(data, mujoco.MjData):
-            data.xpos[body_id, :2] = np.array(pos[:2])
-
+    @jax.jit
+    def _set_pos(data: mjx.Data, body_ids: jax.Array, pos: jax.Array):
+        new_xpos = data.xpos.at[body_ids, :3].set(pos[:, :3])
+        data = data.replace(xpos=new_xpos)
         return data
+
+    def set_pos(self, data: mjx.Data, pos: jax.Array):
+        return BatchedFood._set_pos(data, self.ids.body_ids, pos)
