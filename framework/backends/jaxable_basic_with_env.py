@@ -86,16 +86,16 @@ def emit_rays(
 class BasicSimulatorWithEnv:
     _basic_sim: BasicSimulator
 
-    nest_position: jax.Array
-    nest_radius: float
-    food_radius: float
-    world_width: float
-    world_height: float
-
     robots: BatchedRobots
     robot_inputs: jax.Array  # shape (num_robots, NUM_RAYS)
     food_items: BatchedFood
     rngs_for_relocating_food: jax.Array
+
+    NEST_POSITION: jax.Array
+    NEST_RADIUS: float
+    FOOD_RADIUS: float
+    WORLD_WIDTH: float
+    WORLD_HEIGHT: float
 
     @property
     def model(self) -> mjx.Model:
@@ -156,16 +156,16 @@ class BasicSimulatorWithEnv:
         return cls(
             _basic_sim=basic_sim,
 
-            nest_position=settings.Nest.POSITION.as_array(),
-            nest_radius=settings.Nest.RADIUS,
-            food_radius=settings.Food.RADIUS,
-            world_width=settings.Simulation.WORLD_WIDTH,
-            world_height=settings.Simulation.WORLD_HEIGHT,
-
             robots=robots,
             robot_inputs=robot_inputs,
             food_items=food_items,
-            rngs_for_relocating_food=rngs
+            rngs_for_relocating_food=rngs,
+
+            NEST_POSITION=settings.Nest.POSITION.as_array(),
+            NEST_RADIUS=settings.Nest.RADIUS,
+            FOOD_RADIUS=settings.Food.RADIUS,
+            WORLD_WIDTH=settings.Simulation.WORLD_WIDTH,
+            WORLD_HEIGHT=settings.Simulation.WORLD_HEIGHT,
         )
 
     def get_pheromone(self, positions: jax.Array) -> jax.Array:
@@ -183,17 +183,17 @@ class BasicSimulatorWithEnv:
         new_rngs, rngs = jax.random.split(this.rngs_for_relocating_food)
 
         distance_between_food_and_nest = jnp.linalg.norm(
-            this.food_items.positions[:, :2] - this.nest_position,
+            this.food_items.positions[:, :2] - this.NEST_POSITION,
             axis=1
         )
-        mask = distance_between_food_and_nest < this.nest_radius
+        mask = distance_between_food_and_nest < this.NEST_RADIUS
 
         key, rngs = jax.random.split(rngs)
         random_xy = jax.random.uniform(
             key,
             shape=(mask.shape[0], 2),
-            minval=this.nest_radius,
-            maxval=jnp.array([this.world_width, this.world_height]) - this.food_radius
+            minval=this.NEST_RADIUS,
+            maxval=jnp.array([this.WORLD_WIDTH, this.WORLD_HEIGHT]) - this.FOOD_RADIUS
         )
 
         key, rngs = jax.random.split(rngs)
