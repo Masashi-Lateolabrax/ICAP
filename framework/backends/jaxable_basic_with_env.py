@@ -92,6 +92,45 @@ class BasicSimulatorWithEnv:
     robot_inputs: jax.Array  # shape (num_robots, NUM_RAYS)
     food_items: BatchedFood
 
+    def update(
+            self,
+            rngs: jax.Array = None,
+            model: mjx.Model = None,
+            data: mjx.Data = None,
+            pheromone: PheromoneField = None,
+            pheromone_cell_ind: jax.Array = None,
+            pheromone_cell_pos: jax.Array = None,
+
+            basic_sim: BasicSimulator = None,
+            nest: dict = None,
+            robots: BatchedRobots = None,
+            robot_inputs: jax.Array = None,
+            food_items: BatchedFood = None,
+    ) -> 'BasicSimulatorWithEnv':
+        basic_sim = self._basic_sim if basic_sim is None else basic_sim
+        parent_kwargs = {
+            "rngs": rngs,
+            "model": model,
+            "data": data,
+            "pheromone": pheromone,
+            "pheromone_cell_ind": pheromone_cell_ind,
+            "pheromone_cell_pos": pheromone_cell_pos
+        }
+        basic_sim = basic_sim.update(**parent_kwargs)
+
+        this_kwargs = {
+            "basic_sim": basic_sim,
+            "nest": nest,
+            "robots": robots,
+            "robot_inputs": robot_inputs,
+            "food_items": food_items,
+        }
+        kwargs = {k: v for k, v in this_kwargs.items() if v is not None}
+        if not kwargs:
+            return self
+
+        return self.replace(**kwargs)
+
     @classmethod
     def new(cls, settings: Settings, rngs: jax.Array) -> 'BasicSimulatorWithEnv':
         mj_spec, nest_spec, robot_specs, food_specs = generate_mjspec(settings)
