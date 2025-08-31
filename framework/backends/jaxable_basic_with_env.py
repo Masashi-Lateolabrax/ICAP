@@ -101,13 +101,11 @@ class BasicSimulatorWithEnv:
             pheromone_cell_ind: jax.Array = None,
             pheromone_cell_pos: jax.Array = None,
 
-            basic_sim: BasicSimulator = None,
             nest: dict = None,
             robots: BatchedRobots = None,
             robot_inputs: jax.Array = None,
             food_items: BatchedFood = None,
     ) -> 'BasicSimulatorWithEnv':
-        basic_sim = self._basic_sim if basic_sim is None else basic_sim
         parent_kwargs = {
             "rngs": rngs,
             "model": model,
@@ -116,7 +114,7 @@ class BasicSimulatorWithEnv:
             "pheromone_cell_ind": pheromone_cell_ind,
             "pheromone_cell_pos": pheromone_cell_pos
         }
-        basic_sim = basic_sim.update(**parent_kwargs)
+        basic_sim = self._basic_sim.update(**parent_kwargs)
 
         this_kwargs = {
             "basic_sim": basic_sim,
@@ -196,8 +194,8 @@ class BasicSimulatorWithEnv:
         depths, _ = depth_sensor  # shape (num_robots, NUM_RAYS)
         inputs = jnp.reciprocal(depths + 1e-6)
 
-        return this.replace(
-            _basic_sim=new_basic_sim,
+        this = this.replace(_basic_sim=new_basic_sim)
+        return this.update(
             robots=new_robots,
             robot_inputs=inputs,
             food_items=new_food_items,
@@ -233,8 +231,9 @@ class BasicSimulatorWithEnv:
         new_basic_sim = self._basic_sim.reset(rngs)
         new_robots = self.robots.update(new_basic_sim.data)
         new_food_items = self.food_items.update(new_basic_sim.data)
-        return self.replace(
-            _basic_sim=new_basic_sim,
+        
+        this = self.replace(_basic_sim=new_basic_sim)
+        return this.update(
             robots=new_robots,
             food_items=new_food_items,
         )
