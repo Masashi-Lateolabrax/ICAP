@@ -22,6 +22,28 @@ class BasicSimulator:
     pheromone_cell_ind: jax.Array
     pheromone_cell_pos: jax.Array
 
+    def update(
+            self,
+            rngs: jax.Array = None,
+            model: mjx.Model = None,
+            data: mjx.Data = None,
+            pheromone: PheromoneField = None,
+            pheromone_cell_ind: jax.Array = None,
+            pheromone_cell_pos: jax.Array = None
+    ) -> 'BasicSimulator':
+        kwargs = {
+            "rngs": rngs,
+            "model": model,
+            "data": data,
+            "pheromone": pheromone,
+            "pheromone_cell_ind": pheromone_cell_ind,
+            "pheromone_cell_pos": pheromone_cell_pos
+        }
+        kwargs = {k: v for k, v in kwargs.items() if v is not None}
+        if not kwargs:
+            return self
+        return self.replace(**kwargs)
+
     @classmethod
     def new(cls, spec: mujoco.MjSpec, settings: Settings, rngs: jax.Array) -> 'BasicSimulator':
         p_cell_specs: list[PheromoneFieldCellSpec] = add_pheromone_cells_in_mjspec(spec, settings)
@@ -77,7 +99,7 @@ class BasicSimulator:
     def add_pheromone(self, positions: jax.Array, values: jax.Array) -> 'BasicSimulator':
         nearest_indices = self.calc_nearest_pheromone_cell_indices(positions)
         new_pheromone = self.pheromone.add_liquid(nearest_indices[:, 0], nearest_indices[:, 1], values)
-        new_simulator = self.replace(pheromone=new_pheromone)
+        new_simulator = self.update(pheromone=new_pheromone)
         return new_simulator
 
     @staticmethod
@@ -85,7 +107,7 @@ class BasicSimulator:
     def _step(simulator: "BasicSimulator", dt: float):
         new_data = mjx.step(simulator.model, simulator.data, dt=dt)
         new_pheromone = simulator.pheromone.update(dt)
-        new_simulator = simulator.replace(data=new_data, pheromone=new_pheromone)
+        new_simulator = simulator.update(data=new_data, pheromone=new_pheromone)
         return new_simulator
 
     def step(self, dt: float) -> 'BasicSimulator':
@@ -137,4 +159,4 @@ class BasicSimulator:
 
         rngs = self.rngs if rngs is None else rngs
 
-        return self.replace(rngs=rngs, data=new_data, pheromone=new_pheromone)
+        return self.update(rngs=rngs, data=new_data, pheromone=new_pheromone)
