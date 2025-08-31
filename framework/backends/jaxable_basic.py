@@ -29,7 +29,6 @@ class BasicSimulator:
         mj_model: mujoco.MjModel = spec.compile()
         model = mjx.put_model(mj_model)
         data = mjx.make_data(model)
-        data = mjx.step(model, data)
 
         pheromone = PheromoneField.new(
             nx=settings.Pheromone.WIDTH_NUM,
