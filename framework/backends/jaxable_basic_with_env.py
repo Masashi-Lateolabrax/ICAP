@@ -60,9 +60,9 @@ def create_emit_rays_functions(num_rays: int, robots: BatchedRobots):
         if id_ in _REGISTERED_ROBOT_IDS:
             continue
 
-        @partial(jax.jit, static_argnames=["body_id_", "num_rays"])
-        def emit_rays_fn(model, data, pos, xdir, body_id=id_, num_rays_=num_rays):
-            return _emit_n_rays(model, data, pos, xdir, body_id, num_rays_)
+        @partial(jax.jit, static_argnames=["body_id_", "num_rays_"])
+        def emit_rays_fn(model, data, pos, xdir, body_id_=id_, num_rays_=num_rays):
+            return _emit_n_rays(model, data, pos, xdir, body_id_, num_rays_)
 
         _REGISTERED_ROBOT_IDS.add(id_)
         _EMIT_RAYS_FUNCTIONS.append(emit_rays_fn)
