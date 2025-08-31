@@ -1,5 +1,6 @@
 from typing import Callable
 import logging
+import math
 
 import jax.numpy as jnp
 
@@ -24,8 +25,8 @@ class ClippingFunctions:
         return jnp.clip(x, -1.0, 1.0)
 
 
-def calc_loss_sigma(point: float, value: float) -> jnp.ndarray:
-    return -(point ** 2) / jnp.log(value)
+def calc_loss_sigma(point: float, value: float) -> float:
+    return -(point ** 2) / math.log(value)
 
 
 class Render:
@@ -93,11 +94,11 @@ class Nest:
 
 class Loss:
     OFFSET_NEST_AND_FOOD: float = 0
-    SIGMA_NEST_AND_FOOD: jnp.ndarray = calc_loss_sigma(4, 0.01)
+    SIGMA_NEST_AND_FOOD: float = calc_loss_sigma(4, 0.01)
     GAIN_NEST_AND_FOOD: int = 1
 
     OFFSET_ROBOT_AND_FOOD: float = Robot.RADIUS + Food.RADIUS
-    SIGMA_ROBOT_AND_FOOD: jnp.ndarray = calc_loss_sigma(1, 0.3)
+    SIGMA_ROBOT_AND_FOOD: float = calc_loss_sigma(1, 0.3)
     GAIN_ROBOT_AND_FOOD: float = 0.01
 
     REGULARIZATION_COEFFICIENT: int = 0
