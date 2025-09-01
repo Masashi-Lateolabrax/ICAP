@@ -83,6 +83,25 @@ def emit_rays(
 
 
 @jax_dataclass
+class Consts:
+    WORLD_WIDTH: float
+    WORLD_HEIGHT: float
+
+    NEST_POSITION: jax.Array
+    NEST_RADIUS: float
+
+    FOOD_RADIUS: float
+
+    OFFSET_FOOD_AND_ROBOT: float
+    SIGMA_FOOD_AND_ROBOT: float
+    GAIN_FOOD_AND_ROBOT: float
+
+    OFFSET_NEST_AND_FOOD: float
+    SIGMA_NEST_AND_FOOD: float
+    GAIN_NEST_AND_FOOD: float
+
+
+@jax_dataclass
 class BasicSimulatorWithEnv:
     _basic_sim: BasicSimulator
 
@@ -92,11 +111,7 @@ class BasicSimulatorWithEnv:
     counter_for_relocation: int
     rngs_for_relocating_food: jax.Array
 
-    NEST_POSITION: jax.Array
-    NEST_RADIUS: float
-    FOOD_RADIUS: float
-    WORLD_WIDTH: float
-    WORLD_HEIGHT: float
+    consts: Consts
 
     @property
     def model(self) -> mjx.Model:
@@ -165,11 +180,19 @@ class BasicSimulatorWithEnv:
             counter_for_relocation=0,
             rngs_for_relocating_food=rngs,
 
-            NEST_POSITION=settings.Nest.POSITION.as_array(),
-            NEST_RADIUS=settings.Nest.RADIUS,
-            FOOD_RADIUS=settings.Food.RADIUS,
-            WORLD_WIDTH=settings.Simulation.WORLD_WIDTH,
-            WORLD_HEIGHT=settings.Simulation.WORLD_HEIGHT,
+            consts=Consts(
+                WORLD_WIDTH=settings.Simulation.WORLD_WIDTH,
+                WORLD_HEIGHT=settings.Simulation.WORLD_HEIGHT,
+                NEST_POSITION=settings.Nest.POSITION.as_array(),
+                NEST_RADIUS=settings.Nest.RADIUS,
+                FOOD_RADIUS=settings.Food.RADIUS,
+                OFFSET_FOOD_AND_ROBOT=settings.Loss.OFFSET_FOOD_AND_ROBOT,
+                SIGMA_FOOD_AND_ROBOT=settings.Loss.SIGMA_FOOD_AND_ROBOT,
+                GAIN_FOOD_AND_ROBOT=settings.Loss.GAIN_FOOD_AND_ROBOT,
+                OFFSET_NEST_AND_FOOD=settings.Loss.OFFSET_NEST_AND_FOOD,
+                SIGMA_NEST_AND_FOOD=settings.Loss.SIGMA_NEST_AND_FOOD,
+                GAIN_NEST_AND_FOOD=settings.Loss.GAIN_NEST_AND_FOOD,
+            )
         )
 
     def get_pheromone(self, positions: jax.Array) -> jax.Array:
