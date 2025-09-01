@@ -132,7 +132,7 @@ class Device:
 
 class Pheromone:
     ACTIVE: bool = False
-    CELL_SIZE: float = 0.1
+    CELL_SIZE: float = 0.5
     WIDTH_NUM: int = int(Simulation.WORLD_WIDTH / CELL_SIZE)
     HEIGHT_NUM: int = int(Simulation.WORLD_HEIGHT / CELL_SIZE)
     ITERATIONS_PER_STEP: int = 1
