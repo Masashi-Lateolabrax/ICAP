@@ -112,9 +112,9 @@ MySettings.Nest.COLOR = (0, 1, 0, 1)
 ###################################################################################
 # Loss settings
 ###################################################################################
-MySettings.Loss.OFFSET_NEST_AND_FOOD = 0
-MySettings.Loss.SIGMA_NEST_AND_FOOD = calc_loss_sigma(4, 0.01)
-MySettings.Loss.GAIN_NEST_AND_FOOD = 1
+MySettings.Loss.OFFSET_FOOD_AND_NEST = 0
+MySettings.Loss.SIGMA_FOOD_AND_NEST = calc_loss_sigma(4, 0.01)
+MySettings.Loss.GAIN_FOOD_AND_NEST = 1
 
 MySettings.Loss.OFFSET_ROBOT_AND_FOOD = Settings.Robot.RADIUS + Settings.Food.RADIUS
 MySettings.Loss.SIGMA_ROBOT_AND_FOOD = calc_loss_sigma(1, 0.3)
