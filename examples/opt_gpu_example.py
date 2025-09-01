@@ -122,10 +122,6 @@ class Simulator:
             _env_sim=sim,
             individual=individual,
             controller=controller,
-            delta_loss=jnp.zeros((1,), dtype=jnp.float32),
-
-            GAIN_ROBOT_AND_FOOD=settings.Loss.GAIN_ROBOT_AND_FOOD,
-            GAIN_NEST_AND_FOOD=settings.Loss.GAIN_NEST_AND_FOOD,
         )
 
     def get_pheromone(self, positions: jax.Array) -> jax.Array:
@@ -137,25 +133,6 @@ class Simulator:
 
     @staticmethod
     @nnx.jit
-    def _calc_loss_between_robots_and_food(this: "Simulator") -> jax.Array:
-        subs = (this.robots.positions[:, None, :2] - this.food_items.positions[None, :, :2])
-        distance = jnp.linalg.norm(subs, axis=2)
-        distance = jnp.min(distance, axis=1)
-        ave_distance = jnp.mean(distance)
-        return ave_distance * this.GAIN_ROBOT_AND_FOOD
-
-    @staticmethod
-    @nnx.jit
-    def _calc_loss_between_food_and_nest(this: "Simulator") -> jax.Array:
-        distance = jnp.linalg.norm(
-            this.food_items.positions[:, :2] - this.NEST_POSITION,
-            axis=1
-        )
-        ave_distance = jnp.mean(distance)
-        return ave_distance * this.GAIN_NEST_AND_FOOD
-
-    @staticmethod
-    @nnx.jit
     def _step(this: 'Simulator', dt: float) -> 'Simulator':
         this = this.replace(_env_sim=this._env_sim.step(dt))
 
@@ -164,11 +141,7 @@ class Simulator:
 
         this = this.add_pheromone(this.robots.positions, jnp.ones((this.robots.num_robots,), dtype=jnp.float32))
 
-        rf_loss = Simulator._calc_loss_between_robots_and_food(this)
-        fn_loss = Simulator._calc_loss_between_food_and_nest(this)
-        delta_loss = rf_loss + fn_loss
-
-        return this.update(data=new_data, delta_loss=delta_loss)
+        return this.update(data=new_data)
 
     def step(self, dt: float) -> 'Simulator':
         return Simulator._step(self, dt)
@@ -198,9 +171,9 @@ class Simulator:
 
     def reset(self, individual: jax.Array = None, rngs: jax.Array = None) -> 'Simulator':
         new_env_sim = self._env_sim.reset(rngs)
+        this = self.replace(_env_sim=new_env_sim)
 
         controller = Controller(individual) if individual is not None else None
-        this = self.replace(_env_sim=new_env_sim)
         return this.update(
             individual=individual,
             controller=controller
