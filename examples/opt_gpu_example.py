@@ -108,9 +108,6 @@ class Simulator:
             controller=controller,
         )
 
-    def get_pheromone(self, positions: jax.Array) -> jax.Array:
-        return self._env_sim.get_pheromone(positions)
-
     def add_pheromone(self, positions: jax.Array, amounts: jax.Array) -> 'Simulator':
         new_env_sim = self._env_sim.add_pheromone(positions, amounts)
         return self.replace(_env_sim=new_env_sim)
