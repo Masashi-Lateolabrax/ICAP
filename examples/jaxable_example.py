@@ -139,18 +139,16 @@ class Simulator:
 
 def jaxable_example():
     settings = Settings()
+
     settings.Render.RENDER_WIDTH = 480
     settings.Render.RENDER_HEIGHT = 320
-
-    settings.Pheromone.ACTIVE = True
 
     settings.Robot.NUM = 1
     settings.Food.NUM = 1
 
-    viewer = GenericTkinterViewer(
-        settings,
-        Simulator(settings),
-    )
+    rngs = jax.random.PRNGKey(0)
+    backend = Simulator.new(settings, rngs)
+    viewer = GenericTkinterViewer(settings, backend)
     viewer.run()
 
 
