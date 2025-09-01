@@ -206,10 +206,10 @@ class BasicSimulatorWithEnv:
     @jax.jit
     def _check_food_in_nest(this: "BasicSimulatorWithEnv") -> jax.Array:
         distance_between_food_and_nest = jnp.linalg.norm(
-            this.food_items.positions[:, :2] - this.NEST_POSITION,
+            this.food_items.positions[:, :2] - this.consts.NEST_POSITION,
             axis=1
         )
-        mask = distance_between_food_and_nest < this.NEST_RADIUS
+        mask = distance_between_food_and_nest < this.consts.NEST_RADIUS
         return mask
 
     @staticmethod
