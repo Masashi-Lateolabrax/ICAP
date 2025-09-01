@@ -165,9 +165,9 @@ class BasicSimulatorWithEnv:
         return self.replace(**kwargs)
 
     @classmethod
-    def new(cls, settings: Settings, rngs: jax.Array) -> 'BasicSimulatorWithEnv':
+    def new(cls, settings: Settings, rngs: jax.Array) -> tuple[mujoco.MjModel, 'BasicSimulatorWithEnv']:
         mj_spec, nest_spec, robot_specs, food_specs = generate_mjspec(settings)
-        basic_sim = BasicSimulator.new(mj_spec, settings)
+        mj_model, basic_sim = BasicSimulator.new(mj_spec, settings)
 
         batched_robot_id = BatchedRobotIDs.from_specs(basic_sim.model, robot_specs)
         batched_food_id = BatchedFoodIDs.from_specs(basic_sim.model, food_specs)
@@ -183,7 +183,7 @@ class BasicSimulatorWithEnv:
         )
         robot_inputs = jnp.zeros((robots.num_robots, settings.Robot.NUM_RAYS))
 
-        return cls(
+        return mj_model, cls(
             _basic_sim=basic_sim,
 
             robots=robots,

@@ -43,7 +43,7 @@ class BasicSimulator:
         return self.replace(**kwargs)
 
     @classmethod
-    def new(cls, spec: mujoco.MjSpec, settings: Settings) -> 'BasicSimulator':
+    def new(cls, spec: mujoco.MjSpec, settings: Settings) -> tuple[mujoco.MjModel, 'BasicSimulator']:
         p_cell_specs: list[PheromoneFieldCellSpec] = add_pheromone_cells_in_mjspec(spec, settings)
 
         mj_model: mujoco.MjModel = spec.compile()
@@ -69,7 +69,7 @@ class BasicSimulator:
             [(cell.pos[0], cell.pos[1]) for cell in pheromone_cells], dtype=jnp.float32
         )
 
-        return cls(
+        return mj_model, cls(
             model=model,
             data=data,
             pheromone=pheromone,
