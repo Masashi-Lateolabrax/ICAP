@@ -14,7 +14,7 @@ from framework.backends import BasicSimulatorWithEnv
 
 class Controller(nnx.Module):
     def __init__(self, num_robots: int):
-        self.output = jnp.ones((num_robots,2))
+        self.output = jnp.ones((num_robots, 2))
 
     def __call__(self, x: jax.Array) -> jax.Array:
         return self.output
@@ -74,10 +74,10 @@ class Simulator:
         return self.replace(**kwargs)
 
     @classmethod
-    def new(cls, settings: Settings, rngs: jax.Array) -> 'Simulator':
-        sim = BasicSimulatorWithEnv.new(settings, rngs)
+    def new(cls, settings: Settings, rngs: jax.Array) -> tuple[mujoco.MjModel, 'Simulator']:
+        mj_model, sim = BasicSimulatorWithEnv.new(settings, rngs)
         controller = Controller(settings.Robot.NUM)
-        return cls(
+        return mj_model, cls(
             _env_sim=sim,
             controller=controller,
         )
@@ -139,6 +139,8 @@ class Simulator:
 
 
 def jaxable_example():
+    cpu_device = jax.devices("cpu")[0]
+
     settings = Settings()
 
     settings.Render.RENDER_WIDTH = 480
@@ -148,8 +150,10 @@ def jaxable_example():
     settings.Food.NUM = 1
 
     rngs = jax.random.PRNGKey(0)
-    backend = Simulator.new(settings, rngs)
-    viewer = GenericTkinterViewer(settings, backend)
+    mj_model, backend = Simulator.new(settings, rngs)
+    backend = jax.device_put(backend, cpu_device)
+
+    viewer = GenericTkinterViewer(mj_model, settings, backend)
     viewer.run()
 
 
