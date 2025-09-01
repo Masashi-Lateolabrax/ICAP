@@ -189,24 +189,23 @@ class BasicSimulatorWithEnv:
         mask = distance_between_food_and_nest < this.NEST_RADIUS
         return mask
 
-        key, rngs = jax.random.split(rngs)
+    @staticmethod
+    @jax.jit
+    def _generate_new_food_position(this: "BasicSimulatorWithEnv", rngs: jax.Array) -> jax.Array:
+        key, rngs = jax.random.split(this.rngs_for_relocating_food)
         random_xy = jax.random.uniform(
             key,
-            shape=(mask.shape[0], 2),
+            shape=(2,),
             minval=this.NEST_RADIUS,
             maxval=jnp.array([this.WORLD_WIDTH, this.WORLD_HEIGHT]) - this.FOOD_RADIUS
         )
 
         key, rngs = jax.random.split(rngs)
-        sign = 2 * jax.random.randint(key, shape=random_xy.shape, minval=0, maxval=2) - 1
-        random_xy = sign * random_xy
-        random_xy = jnp.hstack([random_xy, 5 * jnp.ones((mask.shape[0], 1), dtype=jnp.float32)])
+        sign = 2 * jax.random.randint(key, shape=(3,), minval=0, maxval=2) - 1
+        random_xy = sign.at[:2].multiply(random_xy)
+        random_xy = random_xy.at[2].set(5.0)
 
-        new_positions = jnp.where(
-            jnp.repeat(mask[:, None], 3, axis=1),
-            random_xy,
-            this.food_items.positions[:, :3]
-        )
+        return random_xy
 
         new_food_items = this.food_items.register_dummy_position(
             this.food_items.positions[jnp.logical_not(mask), :3]
