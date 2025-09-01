@@ -370,5 +370,7 @@ class BasicSimulatorWithEnv:
         return this.update(
             robots=new_robots,
             food_items=new_food_items,
-            rngs_for_relocating_food=rngs
+            rngs_for_relocating_food=rngs,
+            loss=jnp.zeros((1,), dtype=jnp.float32),
+            loss_offset=jnp.zeros((1,), dtype=jnp.float32)
         )
