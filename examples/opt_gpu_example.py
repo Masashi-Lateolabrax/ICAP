@@ -22,9 +22,9 @@ class Controller(nnx.Module):
         parameter = ParaStock(parameter)
 
         self.layer1 = nnx.Linear(
-            in_features=8,
+            in_features=16,
             out_features=8,
-            kernel_init=parameter.gen_initializer(8 * 8),
+            kernel_init=parameter.gen_initializer(16 * 8),
             bias_init=parameter.gen_initializer(8),
             rngs=rngs,
         )
@@ -43,7 +43,7 @@ class Controller(nnx.Module):
 
     @staticmethod
     def dim():
-        return (8 * 8 + 8) + (8 * 2 + 2)
+        return (16 * 8 + 8) + (8 * 2 + 2)
 
 
 @jax_dataclass
