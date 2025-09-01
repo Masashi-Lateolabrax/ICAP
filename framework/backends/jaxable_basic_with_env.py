@@ -215,12 +215,12 @@ class BasicSimulatorWithEnv:
     @staticmethod
     @jax.jit
     def _generate_new_food_position(this: "BasicSimulatorWithEnv", rngs: jax.Array) -> jax.Array:
-        key, rngs = jax.random.split(this.rngs_for_relocating_food)
+        key, rngs = jax.random.split(rngs)
         random_xy = jax.random.uniform(
             key,
             shape=(2,),
-            minval=this.NEST_RADIUS,
-            maxval=jnp.array([this.WORLD_WIDTH, this.WORLD_HEIGHT]) - this.FOOD_RADIUS
+            minval=this.consts.NEST_RADIUS,
+            maxval=jnp.array([this.consts.WORLD_WIDTH, this.consts.WORLD_HEIGHT]) - this.consts.FOOD_RADIUS
         )
 
         key, rngs = jax.random.split(rngs)
