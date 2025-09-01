@@ -12,28 +12,30 @@ from .basic_environment import add_pheromone_cells_in_mjspec
 
 
 @jax_dataclass
+class Consts:
+    dt: float
+    pheromone_cell_ind: jax.Array
+    pheromone_cell_pos: jax.Array
+
+
+@jax_dataclass
 class BasicSimulator:
     model: mjx.Model
     data: mjx.Data
     pheromone: PheromoneField
 
-    pheromone_cell_ind: jax.Array
-    pheromone_cell_pos: jax.Array
+    consts: Consts
 
     def update(
             self,
             model: mjx.Model = None,
             data: mjx.Data = None,
             pheromone: PheromoneField = None,
-            pheromone_cell_ind: jax.Array = None,
-            pheromone_cell_pos: jax.Array = None
     ) -> 'BasicSimulator':
         kwargs = {
             "model": model,
             "data": data,
             "pheromone": pheromone,
-            "pheromone_cell_ind": pheromone_cell_ind,
-            "pheromone_cell_pos": pheromone_cell_pos
         }
         kwargs = {k: v for k, v in kwargs.items() if v is not None}
         if not kwargs:
@@ -71,16 +73,19 @@ class BasicSimulator:
             model=model,
             data=data,
             pheromone=pheromone,
-            pheromone_cell_ind=pheromone_cell_ind,
-            pheromone_cell_pos=pheromone_cell_pos,
+            consts=Consts(
+                dt=settings.Simulation.TIME_STEP,
+                pheromone_cell_ind=pheromone_cell_ind,
+                pheromone_cell_pos=pheromone_cell_pos,
+            )
         )
 
     @staticmethod
     @jax.jit
     def _calc_nearest_pheromone_cell_indices(
-            simulator: "BasicSimulator", positions: jax.Array
+            this: "BasicSimulator", positions: jax.Array
     ) -> jax.Array:
-        dists = jnp.linalg.norm(positions[:, None, :2] - simulator.pheromone_cell_pos[None, :, :2], axis=2)
+        dists = jnp.linalg.norm(positions[:, None, :2] - this.consts.pheromone_cell_pos[None, :, :2], axis=2)
         nearest_indices = jnp.argmin(dists, axis=1, keepdims=True)
         return nearest_indices
 
@@ -99,26 +104,26 @@ class BasicSimulator:
 
     @staticmethod
     @jax.jit
-    def _step(simulator: "BasicSimulator", dt: float):
-        new_data = mjx.step(simulator.model, simulator.data)
-        new_pheromone = simulator.pheromone.update(dt)
-        new_simulator = simulator.update(data=new_data, pheromone=new_pheromone)
+    def _step(this: "BasicSimulator"):
+        new_data = mjx.step(this.model, this.data)
+        new_pheromone = this.pheromone.update(this.consts.dt)
+        new_simulator = this.update(data=new_data, pheromone=new_pheromone)
         return new_simulator
 
-    def step(self, dt: float) -> 'BasicSimulator':
-        return BasicSimulator._step(self, dt)
+    def step(self) -> 'BasicSimulator':
+        return BasicSimulator._step(self)
 
     @staticmethod
     @jax.jit
-    def _step_n(simulator: "BasicSimulator", n: int, dt: float) -> "BasicSimulator":
+    def _step_n(simulator: "BasicSimulator", n: int) -> "BasicSimulator":
         def body_fn(_i, sim: "BasicSimulator"):
-            return BasicSimulator._step(sim, dt)
+            return BasicSimulator._step(sim)
 
         new_simulator = jax.lax.fori_loop(0, n, body_fn, simulator)
         return new_simulator
 
-    def step_n(self, n: int, dt: float) -> 'BasicSimulator':
-        return BasicSimulator._step_n(self, n, dt)
+    def step_n(self, n: int) -> 'BasicSimulator':
+        return BasicSimulator._step_n(self, n)
 
     def render(
             self,
@@ -137,7 +142,7 @@ class BasicSimulator:
         mj_data = mjx.get_data(mj_model, self.data)
 
         pheromone: jnp.ndarray = self.pheromone.values_gas
-        for (ix, iy) in zip(self.pheromone_cell_ind[:, 0], self.pheromone_cell_ind[:, 1]):
+        for (ix, iy) in zip(self.consts.pheromone_cell_ind[:, 0], self.consts.pheromone_cell_ind[:, 1]):
             pheromone_value = float(pheromone[iy, ix])
             rgba: tuple[float, float, float] = (
                 pheromone_value / max_pheromone, 0.0, 1 - pheromone_value / max_pheromone
