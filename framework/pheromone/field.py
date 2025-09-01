@@ -244,6 +244,7 @@ class PheromoneField:
         )
 
     def update(self, dt: float) -> "PheromoneField":
+        dt = dt / self.iter_
         new_gas, new_liquid = _iter_update_with_rk4(
             liquid_values=self.values_liquid,
             gas_values=self._values_gas,
