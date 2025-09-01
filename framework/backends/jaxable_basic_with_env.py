@@ -118,6 +118,10 @@ class BasicSimulatorWithEnv:
     consts: Consts
 
     @property
+    def NEST_POSITION(self) -> jax.Array:
+        return self.consts.NEST_POSITION
+
+    @property
     def model(self) -> mjx.Model:
         return self._basic_sim.model
 
