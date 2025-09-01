@@ -244,21 +244,20 @@ class BasicSimulatorWithEnv:
     def _step(this: "BasicSimulatorWithEnv", dt) -> "BasicSimulatorWithEnv":
         this = this.replace(_basic_sim=this._basic_sim.step(dt))
 
-        new_robots = this.robots.update(this.data)
-        new_food_items = this.food_items.update(this.data)
+        this = this.update(
+            robots=this.robots.update(this.data),
+            food_items=this.food_items.update(this.data),
+        )
 
         depth_sensor: tuple[jax.Array, jax.Array] = emit_rays(
-            this.model, this.data, new_robots
+            this.model, this.data, this.robots
         )
         depths, _ = depth_sensor  # shape (num_robots, NUM_RAYS)
         inputs = jnp.reciprocal(depths + 1e-6)
 
-        this = BasicSimulatorWithEnv._relocate_food_items(this)
-        return this.update(
-            robots=new_robots,
-            robot_inputs=inputs,
-            food_items=new_food_items,
-        )
+        this, idx, relocation_occurred = BasicSimulatorWithEnv._relocate_food_item(this)
+
+        return this.update(robot_inputs=inputs)
 
     def step(self, dt: float) -> 'BasicSimulatorWithEnv':
         return BasicSimulatorWithEnv._step(self, dt)
