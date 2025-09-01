@@ -1,6 +1,8 @@
 import enum
 import tkinter as tk
 from tkinter import ttk
+
+import mujoco
 import numpy as np
 from typing import Optional
 import time
@@ -79,10 +81,21 @@ class _SimulationState:
 
 
 class _Simulation:
-    def __init__(self, backend: SimulatorBackend, state: _SimulationState):
+    def __init__(
+            self,
+            model: mujoco.MjModel,
+            backend: SimulatorBackend,
+            state: _SimulationState,
+            max_geom: int,
+            max_pheromone: float
+    ):
+        self.model = model
         self.backend = backend
         self.state = state
         self.logger = logging.getLogger(__name__)
+
+        self.max_geom = max_geom
+        self.max_pheromone = max_pheromone
 
         self.thread: Optional[threading.Thread] = None
         self.should_stop = False
@@ -109,9 +122,12 @@ class _Simulation:
     def _render_frame(self):
         try:
             self.backend.render(
+                self.model,
                 self.state.rgb_buffer,
                 self.state.camera_position.to_tuple(),
-                self.state.lookat_position.to_tuple()
+                self.state.lookat_position.to_tuple(),
+                self.max_geom,
+                self.max_pheromone
             )
             self.state.buffer_update_timestamp = time.time()
         except Exception as e:
@@ -147,7 +163,7 @@ class _Simulation:
                     self.state.mode_change_event.set()
 
                 elif running_mode == SimulationRunningMode.RUNNING:
-                    self.backend.step()
+                    self.backend = self.backend.step()
 
                 sleep_time = max(0.0, target_interval - self._average_elapsed)
                 if sleep_time > 0:
@@ -387,7 +403,7 @@ class _TopWindow(tk.Tk):
 
 
 class GenericTkinterViewer:
-    def __init__(self, settings: Settings, backend: SimulatorBackend):
+    def __init__(self, model: mujoco.MjModel, settings: Settings, backend: SimulatorBackend):
         self.backend = backend
         self.logger = logging.getLogger(__name__)
 
@@ -395,7 +411,9 @@ class GenericTkinterViewer:
             settings.Render.RENDER_WIDTH, settings.Render.RENDER_HEIGHT
         )
 
-        self.simulation = _Simulation(backend, self.state)
+        self.simulation = _Simulation(
+            model, backend, self.state, settings.Render.MAX_GEOM, settings.Render.MAX_PHEROMONE
+        )
 
         backend_name = getattr(backend, '__class__', type(backend)).__name__
         self._viewer = _TopWindow(self.state, settings, backend_name)
