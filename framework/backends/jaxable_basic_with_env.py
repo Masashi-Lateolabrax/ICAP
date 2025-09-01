@@ -264,21 +264,57 @@ class BasicSimulatorWithEnv:
 
     @staticmethod
     @jax.jit
-    def _step(this: "BasicSimulatorWithEnv", dt) -> "BasicSimulatorWithEnv":
-        this = this.replace(_basic_sim=this._basic_sim.step(dt))
+    def _calc_loss_between_food_and_robots(
+            food_position: jax.Array,
+            robot_positions: jax.Array,
+            const: Consts
+    ) -> jax.Array:
+        subs = (robot_positions[:, :2] - food_position[None, :2])
+        distance = jnp.clip(
+            jnp.linalg.norm(subs, axis=1) - const.OFFSET_FOOD_AND_ROBOT,
+            a_min=0
+        )
+        return -jnp.sum(jnp.exp(-(distance ** 2) / const.SIGMA_FOOD_AND_ROBOT)) * const.GAIN_FOOD_AND_ROBOT
 
+    @staticmethod
+    @jax.jit
+    def _calc_loss_between_food_and_nest(
+            food_position: jax.Array,
+            nest_position: jax.Array,
+            const: Consts
+    ) -> jax.Array:
+        distance = jnp.linalg.norm(food_position[:2] - nest_position[:2])
+        distance = jnp.clip(distance - const.OFFSET_FOOD_AND_NEST, a_min=0)
+        return -jnp.sum(jnp.exp(-(distance ** 2) / const.SIGMA_FOOD_AND_NEST)) * const.GAIN_FOOD_AND_NEST
+
+    @staticmethod
+    @jax.jit
+    def _step(this: "BasicSimulatorWithEnv", dt) -> "BasicSimulatorWithEnv":
+        # Step the basic simulator
+        this: "BasicSimulatorWithEnv" = this.replace(_basic_sim=this._basic_sim.step(dt))
         this = this.update(
             robots=this.robots.update(this.data),
             food_items=this.food_items.update(this.data),
         )
 
+        # Emit rays and get inputs for robots
         depth_sensor: tuple[jax.Array, jax.Array] = emit_rays(
             this.model, this.data, this.robots
         )
         depths, _ = depth_sensor  # shape (num_robots, NUM_RAYS)
         inputs = jnp.reciprocal(depths + 1e-6)
 
+        # Relocate food items if necessary
         this, idx, relocation_occurred = BasicSimulatorWithEnv._relocate_food_item(this)
+
+        # Calculate losses
+        fr_losses = jax.vmap(lambda x: BasicSimulatorWithEnv._calc_loss_between_food_and_robots(
+            x, this.robots.positions, this.consts
+        ))(this.food_items.positions)
+        fn_losses = jax.vmap(lambda x: BasicSimulatorWithEnv._calc_loss_between_food_and_nest(
+            x, this.consts.NEST_POSITION, this.consts
+        ))(this.food_items.positions)
+        losses = fr_losses + fn_losses
 
         return this.update(robot_inputs=inputs)
 
