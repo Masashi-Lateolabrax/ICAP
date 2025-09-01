@@ -238,8 +238,8 @@ class BasicSimulatorWithEnv:
         idx = new_counter = (this.counter_for_relocation + 1) % this.food_items.positions.shape[0]
 
         position = this.food_items.positions[idx, :]
-        distance = jnp.linalg.norm(position[:2] - this.NEST_POSITION)
-        has_to_relocate = distance < this.NEST_RADIUS
+        distance = jnp.linalg.norm(position[:2] - this.consts.NEST_POSITION)
+        has_to_relocate = distance < this.consts.NEST_RADIUS
 
         def body_fn(sim: "BasicSimulatorWithEnv") -> "BasicSimulatorWithEnv":
             new_rngs, rngs = jax.random.split(this.rngs_for_relocating_food)
