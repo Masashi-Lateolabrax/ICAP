@@ -80,8 +80,8 @@ class BasicSimulator:
     def _calc_nearest_pheromone_cell_indices(
             simulator: "BasicSimulator", positions: jax.Array
     ) -> jax.Array:
-        dists = jnp.linalg.norm(positions[:, :2][:, None, :] - simulator.pheromone_cell_pos[None, :, :], axis=2)
-        nearest_indices = jnp.argmin(dists, axis=1)
+        dists = jnp.linalg.norm(positions[:, None, :2] - simulator.pheromone_cell_pos[None, :, :2], axis=2)
+        nearest_indices = jnp.argmin(dists, axis=1, keepdims=True)
         return nearest_indices
 
     def calc_nearest_pheromone_cell_indices(self, positions: jax.Array) -> jax.Array:
