@@ -108,8 +108,12 @@ class BasicSimulatorWithEnv:
     robots: BatchedRobots
     robot_inputs: jax.Array  # shape (num_robots, NUM_RAYS)
     food_items: BatchedFood
-    counter_for_relocation: int
-    rngs_for_relocating_food: jax.Array
+
+    _counter_for_relocation: int
+    _rngs_for_relocating_food: jax.Array
+
+    loss: jax.Array
+    _loss_offset: jax.Array
 
     consts: Consts
 
@@ -131,6 +135,8 @@ class BasicSimulatorWithEnv:
             food_items: BatchedFood = None,
             counter_for_relocation: int = None,
             rngs_for_relocating_food: jax.Array = None,
+            loss: jax.Array = None,
+            loss_offset: jax.Array = None,
     ) -> 'BasicSimulatorWithEnv':
         parent_kwargs = {
             "model": model,
@@ -143,8 +149,10 @@ class BasicSimulatorWithEnv:
             "robots": robots,
             "robot_inputs": robot_inputs,
             "food_items": food_items,
-            "counter_for_relocation": counter_for_relocation,
-            "rngs_for_relocating_food": rngs_for_relocating_food,
+            "_counter_for_relocation": counter_for_relocation,
+            "_rngs_for_relocating_food": rngs_for_relocating_food,
+            "loss": loss,
+            "_loss_offset": loss_offset,
         }
         kwargs = {k: v for k, v in this_kwargs.items() if v is not None}
         if not kwargs:
@@ -177,8 +185,11 @@ class BasicSimulatorWithEnv:
             robots=robots,
             robot_inputs=robot_inputs,
             food_items=food_items,
-            counter_for_relocation=0,
-            rngs_for_relocating_food=rngs,
+            _counter_for_relocation=0,
+            _rngs_for_relocating_food=rngs,
+
+            loss=jnp.zeros((1,), dtype=jnp.float32),
+            _loss_offset=jnp.zeros((1,), dtype=jnp.float32),
 
             consts=Consts(
                 WORLD_WIDTH=settings.Simulation.WORLD_WIDTH,
@@ -235,14 +246,14 @@ class BasicSimulatorWithEnv:
     def _relocate_food_item(
             this: "BasicSimulatorWithEnv"
     ) -> tuple["BasicSimulatorWithEnv", int, jax.Array]:
-        idx = new_counter = (this.counter_for_relocation + 1) % this.food_items.positions.shape[0]
+        idx = new_counter = (this._counter_for_relocation + 1) % this.food_items.positions.shape[0]
 
         position = this.food_items.positions[idx, :]
         distance = jnp.linalg.norm(position[:2] - this.consts.NEST_POSITION)
         has_to_relocate = distance < this.consts.NEST_RADIUS
 
         def body_fn(sim: "BasicSimulatorWithEnv") -> "BasicSimulatorWithEnv":
-            new_rngs, rngs = jax.random.split(this.rngs_for_relocating_food)
+            new_rngs, rngs = jax.random.split(this._rngs_for_relocating_food)
             new_position = BasicSimulatorWithEnv._generate_new_food_position(sim, rngs)
             new_data = sim.food_items.set_pos(this.data, idx, new_position)
             return sim.update(
@@ -314,9 +325,15 @@ class BasicSimulatorWithEnv:
         fn_losses = jax.vmap(lambda x: BasicSimulatorWithEnv._calc_loss_between_food_and_nest(
             x, this.consts.NEST_POSITION, this.consts
         ))(this.food_items.positions)
-        losses = fr_losses + fn_losses
+        losses = fr_losses + fn_losses + this._loss_offset
 
-        return this.update(robot_inputs=inputs)
+        loss_offset = this._loss_offset + relocation_occurred * losses[idx]
+
+        return this.update(
+            robot_inputs=inputs,
+            loss=jnp.sum(losses),
+            loss_offset=loss_offset
+        )
 
     def step(self, dt: float) -> 'BasicSimulatorWithEnv':
         return BasicSimulatorWithEnv._step(self, dt)
