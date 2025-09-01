@@ -96,9 +96,9 @@ class Consts:
     SIGMA_FOOD_AND_ROBOT: float
     GAIN_FOOD_AND_ROBOT: float
 
-    OFFSET_NEST_AND_FOOD: float
-    SIGMA_NEST_AND_FOOD: float
-    GAIN_NEST_AND_FOOD: float
+    OFFSET_FOOD_AND_NEST: float
+    SIGMA_FOOD_AND_NEST: float
+    GAIN_FOOD_AND_NEST: float
 
 
 @jax_dataclass
@@ -189,9 +189,9 @@ class BasicSimulatorWithEnv:
                 OFFSET_FOOD_AND_ROBOT=settings.Loss.OFFSET_FOOD_AND_ROBOT,
                 SIGMA_FOOD_AND_ROBOT=settings.Loss.SIGMA_FOOD_AND_ROBOT,
                 GAIN_FOOD_AND_ROBOT=settings.Loss.GAIN_FOOD_AND_ROBOT,
-                OFFSET_NEST_AND_FOOD=settings.Loss.OFFSET_NEST_AND_FOOD,
-                SIGMA_NEST_AND_FOOD=settings.Loss.SIGMA_NEST_AND_FOOD,
-                GAIN_NEST_AND_FOOD=settings.Loss.GAIN_NEST_AND_FOOD,
+                OFFSET_FOOD_AND_NEST=settings.Loss.OFFSET_FOOD_AND_NEST,
+                SIGMA_FOOD_AND_NEST=settings.Loss.SIGMA_FOOD_AND_NEST,
+                GAIN_FOOD_AND_NEST=settings.Loss.GAIN_FOOD_AND_NEST,
             )
         )
 
