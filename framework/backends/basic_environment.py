@@ -24,9 +24,6 @@ def add_pheromone_cells_in_mjspec(
 ) -> list[PheromoneFieldCellSpec]:
     from ..pheromone import add_pheromone_cell
 
-    if settings.Pheromone.ACTIVE is False:
-        return []
-
     sites = []
     for x in range(settings.Pheromone.WIDTH_NUM):
         for y in range(settings.Pheromone.HEIGHT_NUM):
