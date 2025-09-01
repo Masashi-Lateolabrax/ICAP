@@ -54,10 +54,6 @@ class Simulator:
     controller: Controller
 
     @property
-    def model(self) -> mjx.Model:
-        return self._env_sim.model
-
-    @property
     def data(self) -> mjx.Data:
         return self._env_sim.data
 
@@ -68,14 +64,6 @@ class Simulator:
     @property
     def robot_inputs(self) -> jax.Array:
         return self._env_sim.robot_inputs
-
-    @property
-    def food_items(self) -> BatchedFood:
-        return self._env_sim.food_items
-
-    @property
-    def NEST_POSITION(self) -> jax.Array:
-        return self._env_sim.NEST_POSITION
 
     def update(
             self,
@@ -134,12 +122,15 @@ class Simulator:
     @staticmethod
     @nnx.jit
     def _step(this: 'Simulator', dt: float) -> 'Simulator':
-        this = this.replace(_env_sim=this._env_sim.step(dt))
+        this: "Simulator" = this.replace(_env_sim=this._env_sim.step(dt))
 
         output = this.controller(this.robot_inputs)
         new_data = this.robots.set_ctrl(this.data, output)
 
-        this = this.add_pheromone(this.robots.positions, jnp.ones((this.robots.num_robots,), dtype=jnp.float32))
+        this = this.add_pheromone(
+            this.robots.positions,
+            jnp.ones((this.robots.num_robots,), dtype=jnp.float32)
+        )
 
         return this.update(data=new_data)
 
