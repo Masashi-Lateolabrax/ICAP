@@ -83,7 +83,7 @@ class Simulator:
     @classmethod
     def new(cls, settings: Settings, rngs: jax.Array) -> tuple[mujoco.MjModel, 'Simulator']:
         mj_model, sim = BasicSimulatorWithEnv.new(settings, rngs)
-        controller = Controller(settings.Robot.NUM)
+        controller = Controller()
         return mj_model, cls(
             _env_sim=sim,
             controller=controller,
