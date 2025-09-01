@@ -23,199 +23,118 @@ class Controller(nnx.Module):
     def dim():
         return 0
 
-class SimulationData:
-    @staticmethod
-    def __step(
-            model_: mjx.Model,
-            data: mjx.Data,
-            pheromone: PheromoneField,
-            robots: BatchedRobots,
-            controller_output: jax.Array,
+@jax_dataclass
+class Simulator:
+    _env_sim: BasicSimulatorWithEnv
 
-            time_step: float,
-            num_robots: int,
-            pheromone_cell_ind: jax.Array,
-            pheromone_cell_pos: jax.Array,
-    ):
-        robots.update(data)
+    controller: Controller
 
-        data = robots.set_ctrl(data, controller_output)
+    @property
+    def data(self) -> mjx.Data:
+        return self._env_sim.data
 
-        distance = jnp.linalg.norm(
-            robots.positions[:, None, :2] - pheromone_cell_pos[None, :, :2],
-            axis=2
-        )
-        closest_indices = jnp.argmin(distance, axis=1)
-        pheromone.add_liquid(
-            xs=pheromone_cell_ind[closest_indices, 0],
-            ys=pheromone_cell_ind[closest_indices, 1],
-            additions=jnp.ones((num_robots,), dtype=jnp.float32)
-        )
+    @property
+    def robots(self) -> BatchedRobots:
+        return self._env_sim.robots
 
-        data = mjx.step(model_, data)
-        pheromone.update(time_step)
+    @property
+    def robot_inputs(self) -> jax.Array:
+        return self._env_sim.robot_inputs
 
-        return robots, pheromone, data
+    @property
+    def loss(self) -> jax.Array:
+        return self._env_sim.loss
 
-    def __init__(
+    def update(
             self,
-            settings: Settings,
-            rngs: nnx.Rngs,
-            data: mjx.Data,
-            robots: BatchedRobots,
-            pheromone: PheromoneField,
-            pheromone_cell_ind: jax.Array,
-            pheromone_cell_pos: jax.Array,
-            controller: Controller
-    ):
-        self.rngs = rngs
-        self.data = data
-        self.robots = robots
-        self.pheromone = pheromone
-        self.controller = controller
-        self.timer = 0
+            data: mjx.Data = None,
+            robots: BatchedRobots = None,
+            robot_inputs: jax.Array = None,
+            loss: jax.Array = None,
 
-        self._jit_step = jax.jit(partial(
-            SimulationData.__step,
-            time_step=settings.Simulation.TIME_STEP,
-            num_robots=robots.num_robots,
-            pheromone_cell_ind=pheromone_cell_ind,
-            pheromone_cell_pos=pheromone_cell_pos,
-        ))
+            controller: Controller = None
+    ) -> 'Simulator':
+        parent_kwargs = {
+            "data": data,
+            "robots": robots,
+            "robot_inputs": robot_inputs,
+            "loss": loss,
+        }
+        env_sim = self._env_sim.update(**parent_kwargs)
 
-    def step(self, model: mjx.Model) -> 'SimulationData':
-        input_ = jnp.zeros((self.robots.num_robots, 2), dtype=jnp.int32)
-        input_ = input_.at[:, 0].set(
-            jax.random.randint(self.rngs(), shape=(self.robots.num_robots,), minval=0, maxval=4, dtype=jnp.int32)
-        )
-        input_ = input_.at[:, 1].set(self.timer)
+        this_kwargs = {
+            "_env_sim": env_sim,
+            "controller": controller,
+        }
+        kwargs = {k: v for k, v in this_kwargs.items() if v is not None}
+        if not kwargs:
+            return self
 
-        controller_output = self.controller.forward(input_)
+        return self.replace(**kwargs)
 
-        updated_robots, updated_pheromone, updated_data = self._jit_step(
-            model, self.data, self.pheromone, self.robots, controller_output
+    @classmethod
+    def new(cls, settings: Settings, rngs: jax.Array) -> 'Simulator':
+        sim = BasicSimulatorWithEnv.new(settings, rngs)
+        controller = Controller(settings.Robot.NUM)
+        return cls(
+            _env_sim=sim,
+            controller=controller,
         )
 
-        self.data = updated_data
-        self.robots = updated_robots
-        self.pheromone = updated_pheromone
-        self.timer += 1
+    def add_pheromone(self, positions: jax.Array, amounts: jax.Array) -> 'Simulator':
+        new_env_sim = self._env_sim.add_pheromone(positions, amounts)
+        return self.replace(_env_sim=new_env_sim)
 
-        return self
+    @staticmethod
+    @nnx.jit
+    def _step(this: 'Simulator') -> 'Simulator':
+        this: "Simulator" = this.replace(_env_sim=this._env_sim.step())
+
+        output = this.controller(this.robot_inputs)
+        new_data = this.robots.set_ctrl(this.data, output)
+
+        this = this.add_pheromone(
+            this.robots.positions,
+            jnp.ones((this.robots.num_robots,), dtype=jnp.float32)
+        )
+
+        return this.update(data=new_data)
+
+    def step(self) -> 'Simulator':
+        return Simulator._step(self)
+
+    @staticmethod
+    @nnx.jit
+    def _step_n(simulator: "Simulator", n: int) -> "Simulator":
+        def body_fn(_i, sim: "Simulator"):
+            return Simulator._step(sim)
+
+        new_simulator = jax.lax.fori_loop(0, n, body_fn, simulator)
+        return new_simulator
+
+    def step_n(self, n: int) -> 'Simulator':
+        return Simulator._step_n(self, n)
 
     def render(
             self,
             mj_model: mujoco.MjModel,
-            render_shape: tuple[int, int],
-            max_geom: int,
             img_buf: np.ndarray,
             pos: tuple[float, float, float],
-            lookat: tuple[float, float, float]
+            lookat: tuple[float, float, float],
+            max_geom=100,
+            max_pheromone=1.0
     ):
-        from framework.backends.utils import render
+        self._env_sim.render(mj_model, img_buf, pos, lookat, max_geom, max_pheromone)
 
-        mj_data = mjx.get_data(mj_model, self.data)
-        render(mj_model, mj_data, render_shape, max_geom, img_buf, pos, lookat)
+    def reset(self, individual: jax.Array = None, rngs: jax.Array = None) -> 'Simulator':
+        new_env_sim = self._env_sim.reset(rngs)
+        this = self.replace(_env_sim=new_env_sim)
 
-    def reset(self, model: mjx.Model):
-        self.data = mjx.make_data(model)
-        self.pheromone.reset()
-        self.robots.update(self.data)
-
-    def get_scores(self) -> list[float]:
-        return []
-
-    def calc_total_score(self) -> float:
-        return 0.0
-
-
-class Simulator(SimulatorBackend):
-    def __init__(self, settings: Settings):
-        mj_spec, nest_spec, robot_specs, food_specs, pheromone_cell_specs = generate_mjspec(settings)
-
-        self.dt = settings.Simulation.TIME_STEP
-        self.render_shape = settings.Render.RENDER_WIDTH, settings.Render.RENDER_HEIGHT
-        self.max_geom = settings.Render.MAX_GEOM
-
-        self.mj_model = mj_spec.compile()
-        mj_data = mujoco.MjData(self.mj_model)
-        mujoco.mj_step(self.mj_model, mj_data)
-
-        self.model = mjx.put_model(self.mj_model)
-        data = mjx.put_data(self.mj_model, mj_data)
-
-        robot_ids = BatchedRobotIDs.from_specs(self.mj_model, robot_specs)
-        robots = BatchedRobots(
-            data,
-            robot_ids,
-            d=settings.Robot.DISTANCE_BETWEEN_WHEELS,
-            velocity=settings.Robot.MAX_SPEED
+        controller = Controller(individual) if individual is not None else None
+        return this.update(
+            individual=individual,
+            controller=controller
         )
-
-        pheromone_field = PheromoneField(
-            nx=settings.Pheromone.WIDTH_NUM,
-            ny=settings.Pheromone.HEIGHT_NUM,
-            dx=settings.Pheromone.CELL_SIZE,
-            material=settings.Pheromone.MATERIAL,
-            evaporation_rate=settings.Pheromone.EVAPORATION_RATE,
-            decrease_rate=settings.Pheromone.DECREASE_RATE,
-            temperature=settings.Simulation.TEMPERATURE,
-            iter_=settings.Pheromone.ITERATIONS_PER_STEP,
-        )
-        self.pheromone_cells = [s.get_cell(self.mj_model) for s in pheromone_cell_specs]
-        pheromone_cell_ind = jnp.array(
-            [(cell.index_x, cell.index_y) for cell in self.pheromone_cells], dtype=jnp.int32
-        )
-        pheromone_cell_pos = jnp.array(
-            [(cell.pos[0], cell.pos[1]) for cell in self.pheromone_cells],
-            dtype=jnp.float32
-        )
-
-        self.simulation_data = SimulationData(
-            settings=settings,
-            rngs=nnx.Rngs(0),
-            data=data,
-            robots=robots,
-            pheromone=pheromone_field,
-            pheromone_cell_ind=pheromone_cell_ind,
-            pheromone_cell_pos=pheromone_cell_pos,
-            controller=Controller(
-                interval=int(1 / settings.Simulation.TIME_STEP),
-                num_robots=settings.Robot.NUM
-            )
-        )
-
-    def step(self):
-        self.simulation_data = self.simulation_data.step(self.model)
-
-    def render(self, img_buf: np.ndarray, pos: tuple[float, float, float], lookat: tuple[float, float, float]):
-        if img_buf is None:
-            return
-
-        color_max = 1.0
-        pheromone: jnp.ndarray = self.simulation_data.pheromone.values_gas
-        for cell in self.pheromone_cells:
-            pheromone_value = float(pheromone[cell.index_y, cell.index_x])
-            rgb: tuple[float, float, float] = (pheromone_value / color_max, 0.0, 1 - pheromone_value / color_max)
-            cell.set_color(*rgb, 0.5)
-
-        self.simulation_data.render(
-            self.mj_model,
-            render_shape=self.render_shape,
-            max_geom=self.max_geom,
-            img_buf=img_buf,
-            pos=pos,
-            lookat=lookat
-        )
-
-    def reset(self):
-        self.simulation_data.reset(self.model)
-
-    def get_scores(self) -> list[float]:
-        return self.simulation_data.get_scores()
-
-    def calc_total_score(self) -> float:
-        return self.simulation_data.calc_total_score()
 
 
 def jaxable_example():
