@@ -367,10 +367,11 @@ class BasicSimulatorWithEnv:
 
     def reset(self, rngs: jax.Array = None) -> 'BasicSimulatorWithEnv':
         new_basic_sim = self._basic_sim.reset()
+        this: "BasicSimulatorWithEnv" = self.replace(_basic_sim=new_basic_sim)
+
         new_robots = self.robots.update(new_basic_sim.data)
         new_food_items = self.food_items.update(new_basic_sim.data)
 
-        this = self.replace(_basic_sim=new_basic_sim)
         return this.update(
             robots=new_robots,
             food_items=new_food_items,
