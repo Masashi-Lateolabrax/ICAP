@@ -1,5 +1,3 @@
-from functools import partial
-
 import numpy as np
 import mujoco
 from mujoco import mjx
@@ -7,35 +5,23 @@ from mujoco import mjx
 import jax
 import jax.numpy as jnp
 from flax import nnx
+from flax.struct import dataclass as jax_dataclass
 
 from framework.prelude import *
-from framework.pheromone import PheromoneField
-from framework.utils import GenericTkinterViewer, Timer
-from framework.backends.basic_environment import generate_mjspec
+from framework.utils import GenericTkinterViewer
+from framework.backends import BasicSimulatorWithEnv
 
 
-class Controller(JaxableController):
-    def __init__(self, interval: int, num_robots: int):
-        self.output = jnp.zeros((num_robots, 2))
+class Controller(nnx.Module):
+    def __init__(self, num_robots: int):
+        self.output = jnp.ones((num_robots,))
 
-        def __forward(output, x: jax.Array) -> jax.Array:
-            action_map = jnp.array([
-                [-1.0, 1.0],  # LEFT
-                [1.0, -1.0],  # RIGHT
-                [1.0, 1.0],  # FORWARD
-                [-0.8, -0.8]  # BACKWARD
-            ])
-            mask = (x[:, 1] % interval) == 0
-            inv_mask = 1 - mask
-            output = output * inv_mask + action_map[x[:, 0]] * mask
-            return output
-
-        self._jit_forward = jax.jit(__forward)
-
-    def forward(self, x: jax.Array) -> jax.Array:
-        self.output = self._jit_forward(self.output, x)
+    def __call__(self, x: jax.Array) -> jax.Array:
         return self.output
 
+    @staticmethod
+    def dim():
+        return 0
 
 class SimulationData:
     @staticmethod
