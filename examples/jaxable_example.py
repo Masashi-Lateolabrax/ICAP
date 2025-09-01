@@ -13,11 +13,18 @@ from framework.backends import BasicSimulatorWithEnv
 
 
 class Controller(nnx.Module):
-    def __init__(self, num_robots: int):
-        self.output = jnp.ones((num_robots, 2))
+    def __init__(self):
+        self.candidates = jnp.array([
+            [1., 0.],
+            [0., 1.],
+            [1., 1.],
+            [-0.5, -0.5],
+        ])
+        self.rngs = nnx.Rngs(0)
 
     def __call__(self, x: jax.Array) -> jax.Array:
-        return self.output
+        select = jax.random.randint(self.rngs(), (x.shape[0],), minval=0, maxval=4)
+        return self.candidates[select, :2]
 
     @staticmethod
     def dim():
