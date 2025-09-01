@@ -53,10 +53,9 @@ class Simulator:
     individual: jax.Array
     controller: Controller
 
-    delta_loss: jax.Array
-
-    GAIN_ROBOT_AND_FOOD: float
-    GAIN_NEST_AND_FOOD: float
+    @property
+    def model(self) -> mjx.Model:
+        return self._env_sim.model
 
     @property
     def data(self) -> mjx.Data:
