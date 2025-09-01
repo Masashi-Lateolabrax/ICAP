@@ -89,6 +89,7 @@ class BasicSimulatorWithEnv:
     robots: BatchedRobots
     robot_inputs: jax.Array  # shape (num_robots, NUM_RAYS)
     food_items: BatchedFood
+    counter_for_relocation: int
     rngs_for_relocating_food: jax.Array
 
     NEST_POSITION: jax.Array
@@ -113,6 +114,7 @@ class BasicSimulatorWithEnv:
             robots: BatchedRobots = None,
             robot_inputs: jax.Array = None,
             food_items: BatchedFood = None,
+            counter_for_relocation: int = None,
             rngs_for_relocating_food: jax.Array = None,
     ) -> 'BasicSimulatorWithEnv':
         parent_kwargs = {
@@ -126,6 +128,7 @@ class BasicSimulatorWithEnv:
             "robots": robots,
             "robot_inputs": robot_inputs,
             "food_items": food_items,
+            "counter_for_relocation": counter_for_relocation,
             "rngs_for_relocating_food": rngs_for_relocating_food,
         }
         kwargs = {k: v for k, v in this_kwargs.items() if v is not None}
@@ -159,6 +162,7 @@ class BasicSimulatorWithEnv:
             robots=robots,
             robot_inputs=robot_inputs,
             food_items=food_items,
+            counter_for_relocation=0,
             rngs_for_relocating_food=rngs,
 
             NEST_POSITION=settings.Nest.POSITION.as_array(),
