@@ -79,24 +79,27 @@ class Simulator:
 
     def update(
             self,
-            rngs: jax.Array = None,
             model: mjx.Model = None,
             data: mjx.Data = None,
             robots: BatchedRobots = None,
             robot_inputs: jax.Array = None,
             food_items: BatchedFood = None,
+            rngs_for_relocating_food: jax.Array = None,
+            loss: jax.Array = None,
+            loss_offset: jax.Array = None,
 
             individual: jax.Array = None,
-            controller: Controller = None,
-            delta_loss: jax.Array = None,
+            controller: Controller = None
     ) -> 'Simulator':
         parent_kwargs = {
-            "rngs": rngs,
             "model": model,
             "data": data,
             "robots": robots,
             "robot_inputs": robot_inputs,
             "food_items": food_items,
+            "rngs_for_relocating_food": rngs_for_relocating_food,
+            "loss": loss,
+            "loss_offset": loss_offset,
         }
         env_sim = self._env_sim.update(**parent_kwargs)
 
@@ -104,7 +107,6 @@ class Simulator:
             "_env_sim": env_sim,
             "individual": individual,
             "controller": controller,
-            "delta_loss": delta_loss,
         }
         kwargs = {k: v for k, v in this_kwargs.items() if v is not None}
         if not kwargs:
