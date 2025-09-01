@@ -79,25 +79,17 @@ class BatchedFood:
         this = this.update(data)
         return this
 
-    @property
-    def positions_with_dummies(self):
-        return jnp.vstack([self.positions, self.dummy_positions])
-
-    def register_dummy_position(self, position: jax.Array) -> "BatchedFood":
-        return self.replace(
-            dummy_positions=jnp.vstack([self.dummy_positions, position]),
-        )
-
     def update(self, data: mjx.Data | mujoco.MjData) -> "BatchedFood":
         new_positions = data.site_xpos[self.ids.center_site_ids, :3]
         return self.replace(positions=new_positions)
 
     @staticmethod
     @jax.jit
-    def _set_pos(data: mjx.Data, body_ids: jax.Array, pos: jax.Array):
-        new_xpos = data.xpos.at[body_ids, :3].set(pos[:, :3])
+    def _set_pos(data: mjx.Data, body_id: jax.Array, pos: jax.Array) -> mjx.Data:
+        new_xpos = data.xpos.at[body_id, :3].set(pos[:3])
         data = data.replace(xpos=new_xpos)
         return data
 
-    def set_pos(self, data: mjx.Data, pos: jax.Array):
-        return BatchedFood._set_pos(data, self.ids.body_ids, pos)
+    def set_pos(self, data: mjx.Data, idx: int, pos: jax.Array) -> mjx.Data:
+        body_id = self.ids.body_ids[idx]
+        return BatchedFood._set_pos(data, body_id, pos)

@@ -267,7 +267,7 @@ class BasicSimulatorWithEnv:
         self._basic_sim.render(mj_model, img_buf, pos, lookat, max_geom, max_pheromone)
 
     def reset(self, rngs: jax.Array = None) -> 'BasicSimulatorWithEnv':
-        new_basic_sim = self._basic_sim.reset(rngs)
+        new_basic_sim = self._basic_sim.reset()
         new_robots = self.robots.update(new_basic_sim.data)
         new_food_items = self.food_items.update(new_basic_sim.data)
 
@@ -275,4 +275,5 @@ class BasicSimulatorWithEnv:
         return this.update(
             robots=new_robots,
             food_items=new_food_items,
+            rngs_for_relocating_food=rngs
         )
