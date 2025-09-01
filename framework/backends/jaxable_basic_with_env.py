@@ -181,16 +181,13 @@ class BasicSimulatorWithEnv:
 
     @staticmethod
     @jax.jit
-    def _relocate_food_items(
-            this: "BasicSimulatorWithEnv",
-    ) -> "BasicSimulatorWithEnv":
-        new_rngs, rngs = jax.random.split(this.rngs_for_relocating_food)
-
+    def _check_food_in_nest(this: "BasicSimulatorWithEnv") -> jax.Array:
         distance_between_food_and_nest = jnp.linalg.norm(
             this.food_items.positions[:, :2] - this.NEST_POSITION,
             axis=1
         )
         mask = distance_between_food_and_nest < this.NEST_RADIUS
+        return mask
 
         key, rngs = jax.random.split(rngs)
         random_xy = jax.random.uniform(
