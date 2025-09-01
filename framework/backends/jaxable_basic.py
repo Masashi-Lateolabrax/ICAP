@@ -147,9 +147,9 @@ class BasicSimulator:
             rgba: tuple[float, float, float] = (
                 pheromone_value / max_pheromone, 0.0, 1 - pheromone_value / max_pheromone
             )
-            mj_model.geom(f"pheromone_cell_{ix}_{iy}").rgba = np.array((*rgba, 0.5), dtype=np.float64)
+            mj_model.site(f"pheromone_cell_{ix}_{iy}").rgba = np.array((*rgba, 0.5), dtype=np.float64)
 
-        render(mj_model, mj_data, mj_model.cam_resolution, max_geom, img_buf, pos, lookat)
+        render(mj_model, mj_data, (img_buf.shape[1], img_buf.shape[0]), max_geom, img_buf, pos, lookat)
 
     def reset(self) -> 'BasicSimulator':
         new_data = mjx.make_data(self.model)
