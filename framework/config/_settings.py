@@ -41,6 +41,7 @@ class Render:
     CAMERA_LOOKAT: tuple[float, float, float] = (0.0, 0.0, 0.0)
 
     MAX_GEOM: int = 11000
+    MAX_PHEROMONE: float = 1.0
 
 
 class Optimization:
