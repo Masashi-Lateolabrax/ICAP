@@ -93,9 +93,9 @@ class Nest:
 
 
 class Loss:
-    OFFSET_NEST_AND_FOOD: float = 0
-    SIGMA_NEST_AND_FOOD: float = calc_loss_sigma(4, 0.01)
-    GAIN_NEST_AND_FOOD: int = 1
+    OFFSET_FOOD_AND_NEST: float = 0
+    SIGMA_FOOD_AND_NEST: float = calc_loss_sigma(4, 0.01)
+    GAIN_FOOD_AND_NEST: int = 1
 
     OFFSET_FOOD_AND_ROBOT: float = Robot.RADIUS + Food.RADIUS
     SIGMA_FOOD_AND_ROBOT: float = calc_loss_sigma(1, 0.3)
