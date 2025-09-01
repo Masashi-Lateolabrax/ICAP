@@ -65,29 +65,25 @@ class Simulator:
     def robot_inputs(self) -> jax.Array:
         return self._env_sim.robot_inputs
 
+    @property
+    def loss(self) -> jax.Array:
+        return self._env_sim.loss
+
     def update(
             self,
-            model: mjx.Model = None,
             data: mjx.Data = None,
             robots: BatchedRobots = None,
             robot_inputs: jax.Array = None,
-            food_items: BatchedFood = None,
-            rngs_for_relocating_food: jax.Array = None,
             loss: jax.Array = None,
-            loss_offset: jax.Array = None,
 
             individual: jax.Array = None,
             controller: Controller = None
     ) -> 'Simulator':
         parent_kwargs = {
-            "model": model,
             "data": data,
             "robots": robots,
             "robot_inputs": robot_inputs,
-            "food_items": food_items,
-            "rngs_for_relocating_food": rngs_for_relocating_food,
             "loss": loss,
-            "loss_offset": loss_offset,
         }
         env_sim = self._env_sim.update(**parent_kwargs)
 
