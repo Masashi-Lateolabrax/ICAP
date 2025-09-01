@@ -221,7 +221,7 @@ def opt_gpu_example():
         monitor_gpu_memory()
 
     def extract_loss(sim: Simulator) -> tuple[jax.Array, jax.Array]:
-        total_loss = sim.delta_loss + settings.Loss.REGULARIZATION_COEFFICIENT * jnp.sum(jnp.square(sim.individual))
+        total_loss = sim.loss + settings.Loss.REGULARIZATION_COEFFICIENT * jnp.sum(jnp.square(sim.individual))
         return sim.individual, total_loss
 
     parameters, losses = jax.vmap(extract_loss)(simulators)
