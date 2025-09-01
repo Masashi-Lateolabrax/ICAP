@@ -100,7 +100,7 @@ class Simulator:
 
     @classmethod
     def new(cls, settings: Settings, individual: jax.Array, rngs: jax.Array) -> 'Simulator':
-        sim = BasicSimulatorWithEnv.new(settings, rngs)
+        _, sim = BasicSimulatorWithEnv.new(settings, rngs)
         controller = Controller(individual)
         return cls(
             _env_sim=sim,
@@ -114,8 +114,8 @@ class Simulator:
 
     @staticmethod
     @nnx.jit
-    def _step(this: 'Simulator', dt: float) -> 'Simulator':
-        this: "Simulator" = this.replace(_env_sim=this._env_sim.step(dt))
+    def _step(this: 'Simulator') -> 'Simulator':
+        this: "Simulator" = this.replace(_env_sim=this._env_sim.step())
 
         output = this.controller(this.robot_inputs)
         new_data = this.robots.set_ctrl(this.data, output)
@@ -127,20 +127,20 @@ class Simulator:
 
         return this.update(data=new_data)
 
-    def step(self, dt: float) -> 'Simulator':
-        return Simulator._step(self, dt)
+    def step(self) -> 'Simulator':
+        return Simulator._step(self)
 
     @staticmethod
     @nnx.jit
-    def _step_n(simulator: "Simulator", n: int, dt: float) -> "Simulator":
+    def _step_n(simulator: "Simulator", n: int) -> "Simulator":
         def body_fn(_i, sim: "Simulator"):
-            return Simulator._step(sim, dt)
+            return Simulator._step(sim)
 
         new_simulator = jax.lax.fori_loop(0, n, body_fn, simulator)
         return new_simulator
 
-    def step_n(self, n: int, dt: float) -> 'Simulator':
-        return Simulator._step_n(self, n, dt)
+    def step_n(self, n: int) -> 'Simulator':
+        return Simulator._step_n(self, n)
 
     def reset(self, individual: jax.Array = None, rngs: jax.Array = None) -> 'Simulator':
         new_env_sim = self._env_sim.reset(rngs)
@@ -188,7 +188,7 @@ def opt_gpu_example():
     # Warmup run to compile JIT functions
     print("\nPerforming JIT warmup...")
     warmup_start = time.perf_counter()
-    simulators = jax.vmap(lambda sim: sim.step(settings.Simulation.TIME_STEP))(simulators)
+    simulators = jax.vmap(lambda sim: sim.step())(simulators)
     warmup_time = time.perf_counter() - warmup_start
     print(f"JIT warmup completed: {warmup_time:.2f}s")
 
@@ -202,7 +202,7 @@ def opt_gpu_example():
     completed_steps = 0
     while completed_steps < simulation_steps:
         steps_to_run = min(batch_steps, simulation_steps - completed_steps)
-        simulators = jax.vmap(lambda sim: sim.step_n(steps_to_run, settings.Simulation.TIME_STEP))(simulators)
+        simulators = jax.vmap(lambda sim: sim.step_n(steps_to_run))(simulators)
         completed_steps += steps_to_run
 
         if completed_steps % 100 == 0 or completed_steps == simulation_steps:
