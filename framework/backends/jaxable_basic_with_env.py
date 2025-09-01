@@ -239,7 +239,7 @@ class BasicSimulatorWithEnv:
         )
 
         key, rngs = jax.random.split(rngs)
-        sign = 2 * jax.random.randint(key, shape=(3,), minval=0, maxval=2) - 1
+        sign = 2 * jax.random.randint(key, shape=(3,), minval=0, maxval=2).astype(jnp.float32) - 1
         random_xy = sign.at[:2].multiply(random_xy)
         random_xy = random_xy.at[2].set(5.0)
 
