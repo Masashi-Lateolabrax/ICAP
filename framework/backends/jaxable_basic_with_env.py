@@ -304,9 +304,9 @@ class BasicSimulatorWithEnv:
 
     @staticmethod
     @jax.jit
-    def _step(this: "BasicSimulatorWithEnv", dt) -> "BasicSimulatorWithEnv":
+    def _step(this: "BasicSimulatorWithEnv") -> "BasicSimulatorWithEnv":
         # Step the basic simulator
-        this: "BasicSimulatorWithEnv" = this.replace(_basic_sim=this._basic_sim.step(dt))
+        this: "BasicSimulatorWithEnv" = this.replace(_basic_sim=this._basic_sim.step())
         this = this.update(
             robots=this.robots.update(this.data),
             food_items=this.food_items.update(this.data),
@@ -339,20 +339,20 @@ class BasicSimulatorWithEnv:
             loss_offset=loss_offset
         )
 
-    def step(self, dt: float) -> 'BasicSimulatorWithEnv':
-        return BasicSimulatorWithEnv._step(self, dt)
+    def step(self) -> 'BasicSimulatorWithEnv':
+        return BasicSimulatorWithEnv._step(self)
 
     @staticmethod
     @jax.jit
-    def _step_n(simulator: "BasicSimulatorWithEnv", n: int, dt: float) -> "BasicSimulatorWithEnv":
+    def _step_n(simulator: "BasicSimulatorWithEnv", n: int) -> "BasicSimulatorWithEnv":
         def body_fn(_i, sim: "BasicSimulatorWithEnv"):
-            return BasicSimulatorWithEnv._step(sim, dt)
+            return BasicSimulatorWithEnv._step(sim)
 
         new_simulator = jax.lax.fori_loop(0, n, body_fn, simulator)
         return new_simulator
 
-    def step_n(self, n: int, dt: float) -> 'BasicSimulatorWithEnv':
-        return BasicSimulatorWithEnv._step_n(self, n, dt)
+    def step_n(self, n: int) -> 'BasicSimulatorWithEnv':
+        return BasicSimulatorWithEnv._step_n(self, n)
 
     def render(
             self,
