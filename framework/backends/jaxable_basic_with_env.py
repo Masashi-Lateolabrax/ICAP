@@ -207,17 +207,37 @@ class BasicSimulatorWithEnv:
 
         return random_xy
 
-        new_food_items = this.food_items.register_dummy_position(
-            this.food_items.positions[jnp.logical_not(mask), :3]
+    @staticmethod
+    @jax.jit
+    def _relocate_food_item(
+            this: "BasicSimulatorWithEnv"
+    ) -> tuple["BasicSimulatorWithEnv", int, jax.Array]:
+        idx = new_counter = (this.counter_for_relocation + 1) % this.food_items.positions.shape[0]
+
+        position = this.food_items.positions[idx, :]
+        distance = jnp.linalg.norm(position[:2] - this.NEST_POSITION)
+        has_to_relocate = distance < this.NEST_RADIUS
+
+        def body_fn(sim: "BasicSimulatorWithEnv") -> "BasicSimulatorWithEnv":
+            new_rngs, rngs = jax.random.split(this.rngs_for_relocating_food)
+            new_position = BasicSimulatorWithEnv._generate_new_food_position(sim, rngs)
+            new_data = sim.food_items.set_pos(this.data, idx, new_position)
+            return sim.update(
+                data=new_data,
+                rngs_for_relocating_food=new_rngs
+            )
+
+        this = jax.lax.cond(
+            has_to_relocate,
+            lambda x: body_fn(x),
+            lambda x: x,
+            this
         )
 
-        new_data = new_food_items.set_pos(this.data, new_positions)
-
-        return this.update(
-            data=new_data,
-            food_items=new_food_items,
-            rngs_for_relocating_food=new_rngs
+        this = this.update(
+            counter_for_relocation=new_counter,
         )
+        return this, idx, has_to_relocate
 
     @staticmethod
     @jax.jit
