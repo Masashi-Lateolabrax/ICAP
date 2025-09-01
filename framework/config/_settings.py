@@ -97,9 +97,9 @@ class Loss:
     SIGMA_NEST_AND_FOOD: float = calc_loss_sigma(4, 0.01)
     GAIN_NEST_AND_FOOD: int = 1
 
-    OFFSET_ROBOT_AND_FOOD: float = Robot.RADIUS + Food.RADIUS
-    SIGMA_ROBOT_AND_FOOD: float = calc_loss_sigma(1, 0.3)
-    GAIN_ROBOT_AND_FOOD: float = 0.01
+    OFFSET_FOOD_AND_ROBOT: float = Robot.RADIUS + Food.RADIUS
+    SIGMA_FOOD_AND_ROBOT: float = calc_loss_sigma(1, 0.3)
+    GAIN_FOOD_AND_ROBOT: float = 0.01
 
     REGULARIZATION_COEFFICIENT: int = 0
 
