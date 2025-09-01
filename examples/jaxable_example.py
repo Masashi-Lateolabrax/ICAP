@@ -14,7 +14,7 @@ from framework.backends import BasicSimulatorWithEnv
 
 class Controller(nnx.Module):
     def __init__(self, num_robots: int):
-        self.output = jnp.ones((num_robots,))
+        self.output = jnp.ones((num_robots,2))
 
     def __call__(self, x: jax.Array) -> jax.Array:
         return self.output
@@ -22,6 +22,7 @@ class Controller(nnx.Module):
     @staticmethod
     def dim():
         return 0
+
 
 @jax_dataclass
 class Simulator:
