@@ -142,17 +142,6 @@ class Simulator:
     def step_n(self, n: int, dt: float) -> 'Simulator':
         return Simulator._step_n(self, n, dt)
 
-    def render(
-            self,
-            mj_model: mujoco.MjModel,
-            img_buf: np.ndarray,
-            pos: tuple[float, float, float],
-            lookat: tuple[float, float, float],
-            max_geom=100,
-            max_pheromone=1.0
-    ):
-        self._env_sim.render(mj_model, img_buf, pos, lookat, max_geom, max_pheromone)
-
     def reset(self, individual: jax.Array = None, rngs: jax.Array = None) -> 'Simulator':
         new_env_sim = self._env_sim.reset(rngs)
         this = self.replace(_env_sim=new_env_sim)
