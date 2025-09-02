@@ -360,6 +360,32 @@ def add_position_actuator(
     return actuator
 
 
+def add_motor_actuator(
+        spec: mujoco.MjSpec,
+        joint: mujoco._specs.MjsJoint,
+        name: str = None,
+        gear: tuple[float, float, float, float, float, float] = None
+) -> mujoco._specs.MjsActuator:
+    if spec is None:
+        raise ValueError("MuJoCo specification cannot be None")
+    if joint is None:
+        raise ValueError("Joint cannot be None")
+    actuator = _create_base_general_actuator(
+        spec,
+        dyntype=mujoco.mjtDyn.mjDYN_NONE,
+        dynprm=(1, 0, 0),
+        gaintype=mujoco.mjtGain.mjGAIN_FIXED,
+        gainprm=(1, 0, 0),
+        biastype=mujoco.mjtBias.mjBIAS_NONE,
+        biasprm=(0, 0, 0),
+        name=name,
+        gear=gear
+    )
+    actuator.trntype = mujoco.mjtTrn.mjTRN_JOINT
+    actuator.target = joint.name
+    return actuator
+
+
 def add_sensor(
         spec: mujoco.MjSpec,
         sensor_type: mujoco.mjtSensor,
