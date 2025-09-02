@@ -60,6 +60,10 @@ class Simulator:
         return self._env_sim.robot_inputs
 
     @property
+    def food_items(self) -> BatchedFood:
+        return self._env_sim.food_items
+
+    @property
     def loss(self) -> jax.Array:
         return self._env_sim.loss
 
@@ -115,6 +119,11 @@ class Simulator:
             this.robots.positions,
             jnp.ones((this.robots.num_robots,), dtype=jnp.float32)
         )
+
+        nest_dir = -this.food_items.positions
+        nest_dir = nest_dir.at[:, 2].set(0.0)
+        force = nest_dir / (jnp.linalg.norm(nest_dir, axis=1, keepdims=True) + 1e-6) * 5.0
+        new_data = this.food_items.set_force(new_data, jnp.arange(force.shape[0]), force)
 
         return this.update(data=new_data)
 
