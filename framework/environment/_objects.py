@@ -158,11 +158,38 @@ def add_food_object_with_mesh(
         site=center_site
     )
 
+    x_act = add_velocity_actuator(
+        spec,
+        name=f"food{id_}_x_act",
+        joint=free_joint,
+        kv=1,
+        gear=(1, 0, 0, 0, 0, 0)
+    )
+
+    y_act = add_velocity_actuator(
+        spec,
+        name=f"food{id_}_y_act",
+        joint=free_joint,
+        kv=1,
+        gear=(1, 1, 0, 0, 0, 0)
+    )
+
+    z_act = add_velocity_actuator(
+        spec,
+        name=f"food{id_}_z_act",
+        joint=free_joint,
+        kv=1,
+        gear=(0, 0, 1, 0, 0, 0)
+    )
+
     return FoodSpec(
         body=food_body,
         center_site=center_site,
         free_joint=free_joint,
-        velocimeter=velocimeter
+        velocimeter=velocimeter,
+        x_act=x_act,
+        y_act=y_act,
+        z_act=z_act
     )
 
 

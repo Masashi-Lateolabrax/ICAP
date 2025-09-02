@@ -13,12 +13,18 @@ class FoodSpec:
             body: mujoco._specs.MjsBody,
             center_site: mujoco._specs.MjsSite,
             free_joint: mujoco._specs.MjsJoint,
-            velocimeter: mujoco._specs.MjsSensor
+            velocimeter: mujoco._specs.MjsSensor,
+            x_act: mujoco._specs.MjsActuator,
+            y_act: mujoco._specs.MjsActuator,
+            z_act: mujoco._specs.MjsActuator,
     ):
         self.body = body
         self.center_site = center_site
         self.free_joint = free_joint
         self.velocimeter = velocimeter
+        self.x_act = x_act
+        self.y_act = y_act
+        self.z_act = z_act
 
 
 @jax_dataclass
