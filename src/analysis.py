@@ -1,9 +1,5 @@
-import dataclasses
-import math
 import os.path
 import pickle
-import time
-import re
 import hashlib
 
 import numpy as np
@@ -126,6 +122,8 @@ def main(settings: Settings):
 
     rec: Rec = saved_individuals.get_best_rec()
     individual: Individual = rec.best_individual
+
+    analysis_mod.collect_loss(save_dir, settings, saved_individuals, SimulatorForDebugging)
 
     analyze_specific_individual(save_dir, settings, individual)
 
