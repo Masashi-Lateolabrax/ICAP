@@ -83,7 +83,7 @@ class Food:
     COLOR: tuple[float, float, float, float] = (0, 1, 1, 1)
 
     NUM: int = 1
-    INITIAL_POSITION: list[RobotLocation] = []
+    INITIAL_POSITION: list[Position] = []
 
 
 class Nest:
