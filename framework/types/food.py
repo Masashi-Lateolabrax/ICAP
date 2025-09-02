@@ -83,6 +83,7 @@ class BatchedFoodIDs:
 @jax_dataclass
 class BatchedFood:
     ids: BatchedFoodIDs
+    xmat: jax.Array
     positions: jax.Array
     dummy_positions: jax.Array
 
@@ -94,15 +95,17 @@ class BatchedFood:
     ):
         this = cls(
             ids=batched_food_ids,
+            xmat=jnp.zeros((3, 3), dtype=jnp.float32),
             positions=jnp.zeros((0, 3), dtype=jnp.float32),
             dummy_positions=jnp.zeros((0, 3), dtype=jnp.float32)
         )
         this = this.update(data)
         return this
 
-    def update(self, data: mjx.Data | mujoco.MjData) -> "BatchedFood":
+    def update(self, data: mjx.Data) -> "BatchedFood":
         new_positions = data.site_xpos[self.ids.center_site_ids, :3]
-        return self.replace(positions=new_positions)
+        xmat = data.site_xmat[self.ids.center_site_ids].reshape((3, 3))
+        return self.replace(xmat=xmat, positions=new_positions)
 
     @staticmethod
     @jax.jit
