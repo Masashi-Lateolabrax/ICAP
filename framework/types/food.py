@@ -33,6 +33,9 @@ class FoodIDs:
     center_site_id: jnp.ndarray
     free_joint_id: jnp.ndarray
     velocimeter_id: jnp.ndarray
+    x_act_id: jnp.ndarray
+    y_act_id: jnp.ndarray
+    z_act_id: jnp.ndarray
 
 
 @jax_dataclass
@@ -41,6 +44,9 @@ class BatchedFoodIDs:
     center_site_ids: jnp.ndarray
     free_joint_ids: jnp.ndarray
     velocimeter_ids: jnp.ndarray
+    x_act_ids: jnp.ndarray
+    y_act_ids: jnp.ndarray
+    z_act_ids: jnp.ndarray
 
     @classmethod
     def from_specs(cls, model: mujoco.MjModel | mjx.Model, specs: list[FoodSpec]) -> 'BatchedFoodIDs':
@@ -48,12 +54,18 @@ class BatchedFoodIDs:
         center_site_ids = [mjx.name2id(model, mujoco.mjtObj.mjOBJ_SITE, spec.center_site.name) for spec in specs]
         free_joint_ids = [mjx.name2id(model, mujoco.mjtObj.mjOBJ_JOINT, spec.free_joint.name) for spec in specs]
         velocimeter_ids = [mjx.name2id(model, mujoco.mjtObj.mjOBJ_SENSOR, spec.velocimeter.name) for spec in specs]
+        x_act_ids = [mjx.name2id(model, mujoco.mjtObj.mjOBJ_ACTUATOR, spec.x_act.name) for spec in specs]
+        y_act_ids = [mjx.name2id(model, mujoco.mjtObj.mjtObj.mjOBJ_ACTUATOR, spec.y_act.name) for spec in specs]
+        z_act_ids = [mjx.name2id(model, mujoco.mjtObj.mjOBJ_ACTUATOR, spec.z_act.name) for spec in specs]
 
         return cls(
             body_ids=jnp.array(body_ids, dtype=jnp.int32),
             center_site_ids=jnp.array(center_site_ids, dtype=jnp.int32),
             free_joint_ids=jnp.array(free_joint_ids, dtype=jnp.int32),
-            velocimeter_ids=jnp.array(velocimeter_ids, dtype=jnp.int32)
+            velocimeter_ids=jnp.array(velocimeter_ids, dtype=jnp.int32),
+            x_act_ids=jnp.array(x_act_ids, dtype=jnp.int32),
+            y_act_ids=jnp.array(y_act_ids, dtype=jnp.int32),
+            z_act_ids=jnp.array(z_act_ids, dtype=jnp.int32)
         )
 
     def __getitem__(self, index: int) -> FoodIDs:
@@ -61,7 +73,10 @@ class BatchedFoodIDs:
             body_ids=self.body_ids[index],
             center_site_id=self.center_site_ids[index],
             free_joint_id=self.free_joint_ids[index],
-            velocimeter_id=self.velocimeter_ids[index]
+            velocimeter_id=self.velocimeter_ids[index],
+            x_act_id=self.x_act_ids[index],
+            y_act_id=self.y_act_ids[index],
+            z_act_id=self.z_act_ids[index],
         )
 
 
