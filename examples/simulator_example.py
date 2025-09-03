@@ -10,10 +10,11 @@ from flax.struct import dataclass as jax_dataclass
 from framework.prelude import *
 from framework.utils import GenericTkinterViewer
 from framework.backends import BasicSimulatorWithEnv
+from framework.backends import SimulatorWithCtrl, ControllerInterface
 
 
-class Controller(nnx.Module):
-    def __init__(self, num_robots: int):
+class Controller(ControllerInterface):
+    def __init__(self, parameter: int):  # parameter is the number of robots
         self.candidates = jnp.array([
             [1., -1.],
             [-1., 1.],
@@ -21,18 +22,20 @@ class Controller(nnx.Module):
             [-0.5, -0.5],
         ])
         self.rngs = nnx.Rngs(0)
-        self.state = jnp.zeros((num_robots, 2), dtype=jnp.float32)
+        self.state = jnp.zeros((parameter, 3), dtype=jnp.float32)
 
     def __call__(self, x: jax.Array) -> jax.Array:
         do_update = jax.random.randint(self.rngs(), (1,), minval=0, maxval=100)
         select = jax.random.randint(self.rngs(), (x.shape[0],), minval=0, maxval=4)
 
-        self.state = jax.lax.cond(
+        x = jax.lax.cond(
             do_update[0] < 1,
             lambda _: self.candidates[select, :2],
-            lambda _: self.state,
+            lambda _: self.state[:, :2],
             operand=None
         )
+        self.state = self.state.at[:, :2].set(x)
+        self.state = self.state.at[:, 2].add(1)
 
         return self.state
 
