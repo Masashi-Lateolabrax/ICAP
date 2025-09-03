@@ -3,7 +3,6 @@ import mujoco
 from mujoco import mjx
 
 import jax
-import jax.numpy as jnp
 from flax import nnx
 from flax.struct import dataclass as jax_dataclass
 
@@ -17,18 +16,7 @@ from .controller import Controller
 class Simulator:
     _env_sim: BasicSimulatorWithEnv
 
-    individual: jax.Array
     controller: Controller
-
-    delta_loss: jax.Array
-
-    OFFSET_ROBOT_AND_FOOD: float
-    SIGMA_ROBOT_AND_FOOD: float
-    GAIN_ROBOT_AND_FOOD: float
-
-    OFFSET_NEST_AND_FOOD: float
-    SIGMA_NEST_AND_FOOD: float
-    GAIN_NEST_AND_FOOD: float
 
     @property
     def data(self) -> mjx.Data:
@@ -52,32 +40,24 @@ class Simulator:
 
     def update(
             self,
-            rngs: jax.Array = None,
-            model: mjx.Model = None,
             data: mjx.Data = None,
             robots: BatchedRobots = None,
             robot_inputs: jax.Array = None,
-            food_items: BatchedFood = None,
+            loss: jax.Array = None,
 
-            individual: jax.Array = None,
-            controller: Controller = None,
-            delta_loss: float = None,
+            controller: Controller = None
     ) -> 'Simulator':
         parent_kwargs = {
-            "rngs": rngs,
-            "model": model,
             "data": data,
             "robots": robots,
             "robot_inputs": robot_inputs,
-            "food_items": food_items,
+            "loss": loss,
         }
         env_sim = self._env_sim.update(**parent_kwargs)
 
         this_kwargs = {
             "_env_sim": env_sim,
-            "individual": individual,
             "controller": controller,
-            "delta_loss": delta_loss,
         }
         kwargs = {k: v for k, v in this_kwargs.items() if v is not None}
         if not kwargs:
@@ -86,26 +66,13 @@ class Simulator:
         return self.replace(**kwargs)
 
     @classmethod
-    def new(cls, settings: Settings, individual: jax.Array, rngs: jax.Array) -> 'Simulator':
-        sim = BasicSimulatorWithEnv.new(settings, rngs)
-        controller = Controller(individual)
-        return cls(
+    def new(cls, settings: Settings, rngs: jax.Array) -> tuple[mujoco.MjModel, 'Simulator']:
+        mj_model, sim = BasicSimulatorWithEnv.new(settings, rngs)
+        controller = Controller(settings.Robot.NUM)
+        return mj_model, cls(
             _env_sim=sim,
-            individual=individual,
             controller=controller,
-            delta_loss=jnp.zeros((1,), dtype=jnp.float32),
-
-            OFFSET_ROBOT_AND_FOOD=settings.Loss.OFFSET_ROBOT_AND_FOOD,
-            SIGMA_ROBOT_AND_FOOD=settings.Loss.SIGMA_ROBOT_AND_FOOD,
-            GAIN_ROBOT_AND_FOOD=settings.Loss.GAIN_ROBOT_AND_FOOD,
-
-            OFFSET_NEST_AND_FOOD=settings.Loss.OFFSET_NEST_AND_FOOD,
-            SIGMA_NEST_AND_FOOD=settings.Loss.SIGMA_NEST_AND_FOOD,
-            GAIN_NEST_AND_FOOD=settings.Loss.GAIN_NEST_AND_FOOD,
         )
-
-    def get_pheromone(self, positions: jax.Array) -> jax.Array:
-        return self._env_sim.get_pheromone(positions)
 
     def add_pheromone(self, positions: jax.Array, amounts: jax.Array) -> 'Simulator':
         new_env_sim = self._env_sim.add_pheromone(positions, amounts)
