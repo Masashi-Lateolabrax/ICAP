@@ -48,8 +48,10 @@ class BatchedFoodIDs:
     y_act_ids: jnp.ndarray
     z_act_ids: jnp.ndarray
 
+    free_joint_qpos_adr: jnp.ndarray
+
     @classmethod
-    def from_specs(cls, model: mujoco.MjModel | mjx.Model, specs: list[FoodSpec]) -> 'BatchedFoodIDs':
+    def from_specs(cls, model: mjx.Model, specs: list[FoodSpec]) -> 'BatchedFoodIDs':
         body_ids = [mjx.name2id(model, mujoco.mjtObj.mjOBJ_BODY, spec.body.name) for spec in specs]
         center_site_ids = [mjx.name2id(model, mujoco.mjtObj.mjOBJ_SITE, spec.center_site.name) for spec in specs]
         free_joint_ids = [mjx.name2id(model, mujoco.mjtObj.mjOBJ_JOINT, spec.free_joint.name) for spec in specs]
@@ -58,6 +60,8 @@ class BatchedFoodIDs:
         y_act_ids = [mjx.name2id(model, mujoco.mjtObj.mjOBJ_ACTUATOR, spec.y_act.name) for spec in specs]
         z_act_ids = [mjx.name2id(model, mujoco.mjtObj.mjOBJ_ACTUATOR, spec.z_act.name) for spec in specs]
 
+        free_joint_qpos_adr = [model.jnt_qposadr[i] for i in free_joint_ids]
+
         return cls(
             body_ids=jnp.array(body_ids, dtype=jnp.int32),
             center_site_ids=jnp.array(center_site_ids, dtype=jnp.int32),
@@ -65,7 +69,8 @@ class BatchedFoodIDs:
             velocimeter_ids=jnp.array(velocimeter_ids, dtype=jnp.int32),
             x_act_ids=jnp.array(x_act_ids, dtype=jnp.int32),
             y_act_ids=jnp.array(y_act_ids, dtype=jnp.int32),
-            z_act_ids=jnp.array(z_act_ids, dtype=jnp.int32)
+            z_act_ids=jnp.array(z_act_ids, dtype=jnp.int32),
+            free_joint_qpos_adr=jnp.array(free_joint_qpos_adr, dtype=jnp.int32),
         )
 
     def __getitem__(self, index: int) -> FoodIDs:
