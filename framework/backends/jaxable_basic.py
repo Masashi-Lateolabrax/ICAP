@@ -153,7 +153,6 @@ class BasicSimulator:
 
     def reset(self) -> 'BasicSimulator':
         new_data = mjx.make_data(self.model)
-        new_data = mjx.step(self.model, new_data)
 
         new_pheromone = self.pheromone.reset()
 
