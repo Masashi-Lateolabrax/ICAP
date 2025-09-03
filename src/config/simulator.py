@@ -38,6 +38,10 @@ class Simulator:
     def NEST_POSITION(self) -> jax.Array:
         return self._env_sim.NEST_POSITION
 
+    @property
+    def loss(self) -> jax.Array:
+        return self._env_sim.loss
+
     def update(
             self,
             data: mjx.Data = None,
