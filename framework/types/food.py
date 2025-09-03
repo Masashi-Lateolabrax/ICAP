@@ -100,7 +100,7 @@ class BatchedFood:
     ):
         this = cls(
             ids=batched_food_ids,
-            xmat=jnp.zeros((3, 3), dtype=jnp.float32),
+            xmat=jnp.zeros((0, 3, 3), dtype=jnp.float32),
             positions=jnp.zeros((0, 3), dtype=jnp.float32),
             dummy_positions=jnp.zeros((0, 3), dtype=jnp.float32)
         )
@@ -109,7 +109,7 @@ class BatchedFood:
 
     def update(self, data: mjx.Data) -> "BatchedFood":
         new_positions = data.site_xpos[self.ids.center_site_ids, :3]
-        xmat = data.site_xmat[self.ids.center_site_ids].reshape((3, 3))
+        xmat = data.site_xmat[self.ids.center_site_ids]
         return self.replace(xmat=xmat, positions=new_positions)
 
     @staticmethod
