@@ -130,7 +130,7 @@ class Simulator:
 
     def reset(self, controller: ControllerInterface = None, rngs: jax.Array = None) -> 'Simulator':
         new_sim = self._sim.reset(rngs)
-        this = self.replace(_env_sim=new_sim)
+        this = self.replace(_sim=new_sim)
         return this.update(
             controller=controller
         )
@@ -148,7 +148,11 @@ def jaxable_example():
     settings.Food.NUM = 1
 
     rngs = jax.random.PRNGKey(0)
-    mj_model, backend = Simulator.new(settings, rngs)
+    mj_model, backend = Simulator.new(
+        settings,
+        Controller(settings.Robot.NUM),
+        rngs
+    )
     backend = jax.device_put(backend, cpu_device)
 
     viewer = GenericTkinterViewer(mj_model, settings, backend)
