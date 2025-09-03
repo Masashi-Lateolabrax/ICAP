@@ -18,30 +18,6 @@ from ..pheromone import PheromoneFieldCellSpec, PheromoneField, PheromoneFieldCe
 from .basic import BasicMuJoCoSimulator
 
 
-def add_pheromone_cells_in_mjspec(
-        spec: mujoco.MjSpec,
-        settings: Settings
-) -> list[PheromoneFieldCellSpec]:
-    from ..pheromone import add_pheromone_cell
-
-    sites = []
-    for x in range(settings.Pheromone.WIDTH_NUM):
-        for y in range(settings.Pheromone.HEIGHT_NUM):
-            pos_x = settings.Pheromone.CELL_SIZE * (x - (settings.Pheromone.WIDTH_NUM - 1) * 0.5)
-            pos_y = settings.Pheromone.CELL_SIZE * (-y + (settings.Pheromone.HEIGHT_NUM - 1) * 0.5)
-
-            sites.append(
-                add_pheromone_cell(
-                    spec,
-                    index_x=x,
-                    index_y=y,
-                    size=settings.Pheromone.CELL_SIZE * 0.5,
-                    pos=(pos_x, pos_y, 0),
-                )
-            )
-    return sites
-
-
 
 
 class BasicMuJoCoSimulatorWithEnv(BasicMuJoCoSimulator, ABC):
