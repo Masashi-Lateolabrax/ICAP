@@ -365,6 +365,8 @@ class BasicSimulatorWithEnv:
         new_robots = self.robots.update(new_basic_sim.data)
         new_food_items = self.food_items.update(new_basic_sim.data)
 
+        rngs = this._rngs_for_relocating_food if rngs is None else rngs
+
         return this.update(
             robots=new_robots,
             food_items=new_food_items,
