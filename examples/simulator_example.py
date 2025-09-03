@@ -9,7 +9,6 @@ from flax.struct import dataclass as jax_dataclass
 
 from framework.prelude import *
 from framework.utils import GenericTkinterViewer
-from framework.backends import BasicSimulatorWithEnv
 from framework.backends import SimulatorWithCtrl, ControllerInterface
 
 
@@ -46,29 +45,15 @@ class Controller(ControllerInterface):
 
 @jax_dataclass
 class Simulator:
-    _env_sim: BasicSimulatorWithEnv
-
-    controller: Controller
+    _sim: SimulatorWithCtrl
 
     @property
     def data(self) -> mjx.Data:
-        return self._env_sim.data
-
-    @property
-    def robots(self) -> BatchedRobots:
-        return self._env_sim.robots
-
-    @property
-    def robot_inputs(self) -> jax.Array:
-        return self._env_sim.robot_inputs
+        return self._sim.data
 
     @property
     def food_items(self) -> BatchedFood:
-        return self._env_sim.food_items
-
-    @property
-    def loss(self) -> jax.Array:
-        return self._env_sim.loss
+        return self._sim.food_items
 
     def update(
             self,
@@ -76,7 +61,6 @@ class Simulator:
             robots: BatchedRobots = None,
             robot_inputs: jax.Array = None,
             loss: jax.Array = None,
-
             controller: Controller = None
     ) -> 'Simulator':
         parent_kwargs = {
@@ -84,12 +68,12 @@ class Simulator:
             "robots": robots,
             "robot_inputs": robot_inputs,
             "loss": loss,
+            "controller": controller
         }
-        env_sim = self._env_sim.update(**parent_kwargs)
+        sim = self._sim.update(**parent_kwargs)
 
         this_kwargs = {
-            "_env_sim": env_sim,
-            "controller": controller,
+            "_sim": sim,
         }
         kwargs = {k: v for k, v in this_kwargs.items() if v is not None}
         if not kwargs:
@@ -98,35 +82,23 @@ class Simulator:
         return self.replace(**kwargs)
 
     @classmethod
-    def new(cls, settings: Settings, rngs: jax.Array) -> tuple[mujoco.MjModel, 'Simulator']:
-        mj_model, sim = BasicSimulatorWithEnv.new(settings, rngs)
-        controller = Controller(settings.Robot.NUM)
-        return mj_model, cls(
-            _env_sim=sim,
-            controller=controller,
-        )
+    def new(cls, settings: Settings, controller: Controller, rngs: jax.Array) -> tuple[mujoco.MjModel, 'Simulator']:
+        mj_model, sim = SimulatorWithCtrl.new(settings, controller, rngs)
+        return mj_model, cls(_sim=sim)
 
     def add_pheromone(self, positions: jax.Array, amounts: jax.Array) -> 'Simulator':
-        new_env_sim = self._env_sim.add_pheromone(positions, amounts)
-        return self.replace(_env_sim=new_env_sim)
+        new_sim = self._sim.add_pheromone(positions, amounts)
+        return self.replace(_sim=new_sim)
 
     @staticmethod
     @nnx.jit
     def _step(this: 'Simulator') -> 'Simulator':
-        this: "Simulator" = this.replace(_env_sim=this._env_sim.step())
-
-        output = this.controller(this.robot_inputs)
-        new_data = this.robots.set_ctrl(this.data, output)
-
-        this = this.add_pheromone(
-            this.robots.positions,
-            jnp.ones((this.robots.num_robots,), dtype=jnp.float32)
-        )
+        this: "Simulator" = this.replace(_sim=this._sim.step())
 
         nest_dir = -this.food_items.positions
         nest_dir = nest_dir.at[:, 2].set(0.0)
         force = nest_dir / (jnp.linalg.norm(nest_dir, axis=1, keepdims=True) + 1e-6) * 50.0
-        new_data = this.food_items.set_force(new_data, jnp.arange(force.shape[0]), force)
+        new_data = this.food_items.set_force(this.data, jnp.arange(force.shape[0]), force)
 
         return this.update(data=new_data)
 
@@ -135,12 +107,12 @@ class Simulator:
 
     @staticmethod
     @nnx.jit
-    def _step_n(simulator: "Simulator", n: int) -> "Simulator":
+    def _step_n(this: "Simulator", n: int) -> "Simulator":
         def body_fn(_i, sim: "Simulator"):
             return Simulator._step(sim)
 
-        new_simulator = jax.lax.fori_loop(0, n, body_fn, simulator)
-        return new_simulator
+        this = jax.lax.fori_loop(0, n, body_fn, this)
+        return this
 
     def step_n(self, n: int) -> 'Simulator':
         return Simulator._step_n(self, n)
@@ -154,15 +126,12 @@ class Simulator:
             max_geom=100,
             max_pheromone=1.0
     ):
-        self._env_sim.render(mj_model, img_buf, pos, lookat, max_geom, max_pheromone)
+        self._sim.render(mj_model, img_buf, pos, lookat, max_geom, max_pheromone)
 
-    def reset(self, individual: jax.Array = None, rngs: jax.Array = None) -> 'Simulator':
-        new_env_sim = self._env_sim.reset(rngs)
-        this = self.replace(_env_sim=new_env_sim)
-
-        controller = Controller(individual) if individual is not None else None
+    def reset(self, controller: ControllerInterface = None, rngs: jax.Array = None) -> 'Simulator':
+        new_sim = self._sim.reset(rngs)
+        this = self.replace(_env_sim=new_sim)
         return this.update(
-            individual=individual,
             controller=controller
         )
 
