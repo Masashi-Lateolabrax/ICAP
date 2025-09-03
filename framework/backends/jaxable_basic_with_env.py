@@ -243,35 +243,32 @@ class BasicSimulatorWithEnv:
 
     @staticmethod
     @jax.jit
-    def _relocate_food_item(
+    def _relocate_food_items(
             this: "BasicSimulatorWithEnv"
-    ) -> tuple["BasicSimulatorWithEnv", int, jax.Array]:
-        idx = new_counter = (this._counter_for_relocation + 1) % this.food_items.positions.shape[0]
+    ) -> tuple["BasicSimulatorWithEnv", jax.Array]:
+        relocation_happen = BasicSimulatorWithEnv._check_food_in_nest(this)
 
-        position = this.food_items.positions[idx, :]
-        distance = jnp.linalg.norm(position[:2] - this.consts.NEST_POSITION)
-        has_to_relocate = distance < this.consts.NEST_RADIUS
-
-        def body_fn(sim: "BasicSimulatorWithEnv") -> "BasicSimulatorWithEnv":
+        def relocation_fn(i, sim: "BasicSimulatorWithEnv") -> "BasicSimulatorWithEnv":
             new_rngs, rngs = jax.random.split(this._rngs_for_relocating_food)
             new_position = BasicSimulatorWithEnv._generate_new_food_position(sim, rngs)
-            new_data = sim.food_items.set_pos(this.data, idx, new_position)
+            new_data = sim.food_items.set_pos(this.data, i, new_position)
             return sim.update(
                 data=new_data,
                 rngs_for_relocating_food=new_rngs
             )
 
-        this = jax.lax.cond(
-            has_to_relocate,
-            lambda x: body_fn(x),
-            lambda x: x,
+        this = jax.lax.fori_loop(
+            0, this.food_items.positions.shape[0],
+            lambda i, val: jax.lax.cond(
+                relocation_happen[i],
+                lambda x: relocation_fn(i, x),
+                lambda x: x,
+                val
+            ),
             this
         )
 
-        this = this.update(
-            counter_for_relocation=new_counter,
-        )
-        return this, idx, has_to_relocate
+        return this, relocation_happen
 
     @staticmethod
     @jax.jit
