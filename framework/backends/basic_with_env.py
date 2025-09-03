@@ -16,7 +16,7 @@ from ..mkenv import (
     rand_robot_pos, rand_food_pos, add_mesh_in_asset, MeshContentType,
     add_food_object_with_mesh, add_robot_with_mesh,
 )
-from .jaxable_basic import BasicSimulator
+from .basic import BasicSimulator
 
 
 def generate_mjspec(
