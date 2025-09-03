@@ -80,33 +80,6 @@ class Simulator:
 
     @staticmethod
     @nnx.jit
-    def _calc_loss_between_robots_and_food(this: "Simulator") -> jax.Array:
-        subs = (this.robots.positions[:, None, :2] - this.food_items.positions[None, :, :2]).reshape(-1, 2)
-        distance = jnp.clip(
-            jnp.linalg.norm(subs, axis=1) - this.OFFSET_ROBOT_AND_FOOD,
-            a_min=0
-        )
-        rf_loss = -jnp.sum(jnp.exp(-(distance ** 2) / this.SIGMA_ROBOT_AND_FOOD))
-        rf_loss = rf_loss * this.GAIN_ROBOT_AND_FOOD
-        return rf_loss
-
-    @staticmethod
-    @nnx.jit
-    def _calc_loss_between_food_and_nest(this: "Simulator") -> jax.Array:
-        distance_between_food_and_nest = jnp.linalg.norm(
-            this.food_items.positions[:, :2] - this.NEST_POSITION,
-            axis=1
-        )
-        distance = jnp.clip(
-            distance_between_food_and_nest - this.OFFSET_NEST_AND_FOOD,
-            a_min=0
-        )
-        fn_loss = -jnp.sum(jnp.exp(-(distance ** 2) / this.SIGMA_NEST_AND_FOOD))
-        fn_loss = fn_loss * this.GAIN_NEST_AND_FOOD
-        return fn_loss
-
-    @staticmethod
-    @nnx.jit
     def _step(this: 'Simulator', dt: float) -> 'Simulator':
         this = this.replace(_env_sim=this._env_sim.step(dt))
 
