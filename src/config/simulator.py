@@ -95,15 +95,15 @@ class Simulator:
 
     @staticmethod
     @nnx.jit
-    def _step_n(simulator: "Simulator", n: int, dt: float) -> "Simulator":
+    def _step_n(simulator: "Simulator", n: int) -> "Simulator":
         def body_fn(_i, sim: "Simulator"):
-            return Simulator._step(sim, dt)
+            return Simulator._step(sim)
 
         new_simulator = jax.lax.fori_loop(0, n, body_fn, simulator)
         return new_simulator
 
-    def step_n(self, n: int, dt: float) -> 'Simulator':
-        return Simulator._step_n(self, n, dt)
+    def step_n(self, n: int) -> 'Simulator':
+        return Simulator._step_n(self, n)
 
     def render(
             self,
