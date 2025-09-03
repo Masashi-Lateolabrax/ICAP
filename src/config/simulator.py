@@ -116,11 +116,11 @@ class Simulator:
     ):
         self._env_sim.render(mj_model, img_buf, pos, lookat, max_geom, max_pheromone)
 
-    def reset(self, individual: jax.Array = None, rngs: jax.Array = None) -> 'BasicSimulatorWithEnv':
+    def reset(self, individual: jax.Array = None, rngs: jax.Array = None) -> 'Simulator':
         new_env_sim = self._env_sim.reset(rngs)
+        this = self.replace(_env_sim=new_env_sim)
 
         controller = Controller(individual) if individual is not None else None
-        this = self.replace(_env_sim=new_env_sim)
         return this.update(
             individual=individual,
             controller=controller
