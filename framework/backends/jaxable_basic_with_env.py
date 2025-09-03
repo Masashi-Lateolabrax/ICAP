@@ -231,13 +231,13 @@ class BasicSimulatorWithEnv:
             key,
             shape=(2,),
             minval=this.consts.NEST_RADIUS,
-            maxval=jnp.array([this.consts.WORLD_WIDTH, this.consts.WORLD_HEIGHT]) - this.consts.FOOD_RADIUS
+            maxval=jnp.array([this.consts.WORLD_WIDTH, this.consts.WORLD_HEIGHT]) * 0.5 - this.consts.FOOD_RADIUS
         )
 
         key, rngs = jax.random.split(rngs)
         sign = 2 * jax.random.randint(key, shape=(3,), minval=0, maxval=2).astype(jnp.float32) - 1
         random_xy = sign.at[:2].multiply(random_xy)
-        random_xy = random_xy.at[2].set(5.0)
+        random_xy = random_xy.at[2].set(2.0)
 
         return random_xy
 
