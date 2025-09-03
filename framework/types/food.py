@@ -114,14 +114,13 @@ class BatchedFood:
 
     @staticmethod
     @jax.jit
-    def _set_pos(data: mjx.Data, body_id: jax.Array, pos: jax.Array) -> mjx.Data:
-        new_xpos = data.xpos.at[body_id, :3].set(pos[:3])
-        data = data.replace(xpos=new_xpos)
-        return data
+    def _set_pos(data: mjx.Data, qpos_addr: jax.Array, pos: jax.Array) -> mjx.Data:
+        new_qpos = jax.lax.dynamic_update_slice(data.qpos, pos[:3], (qpos_addr,))
+        return data.replace(qpos=new_qpos)
 
-    def set_pos(self, data: mjx.Data, idx: int, pos: jax.Array) -> mjx.Data:
-        body_id = self.ids.body_ids[idx]
-        return BatchedFood._set_pos(data, body_id, pos)
+    def set_pos(self, data: mjx.Data, idx: jax.Array, pos: jax.Array) -> mjx.Data:
+        qpos_addr = self.ids.free_joint_qpos_adr[idx]
+        return BatchedFood._set_pos(data, qpos_addr, pos)
 
     @staticmethod
     @jax.jit
