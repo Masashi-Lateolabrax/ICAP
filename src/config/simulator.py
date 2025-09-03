@@ -35,10 +35,6 @@ class Simulator:
         return self._env_sim.food_items
 
     @property
-    def NEST_POSITION(self) -> jax.Array:
-        return self._env_sim.NEST_POSITION
-
-    @property
     def loss(self) -> jax.Array:
         return self._env_sim.loss
 
