@@ -313,7 +313,7 @@ class BasicSimulatorWithEnv:
         inputs = jnp.reciprocal(depths + 1e-6)
 
         # Relocate food items if necessary
-        this, idx, relocation_occurred = BasicSimulatorWithEnv._relocate_food_item(this)
+        this, relocation_occurred = BasicSimulatorWithEnv._relocate_food_items(this)
 
         # Calculate losses
         fr_losses = jax.vmap(lambda x: BasicSimulatorWithEnv._calc_loss_between_food_and_robots(
@@ -324,7 +324,7 @@ class BasicSimulatorWithEnv:
         ))(this.food_items.positions)
         losses = fr_losses + fn_losses + this._loss_offset
 
-        loss_offset = this._loss_offset + relocation_occurred * losses[idx]
+        loss_offset = this._loss_offset + relocation_occurred * losses
 
         return this.update(
             robot_inputs=inputs,
