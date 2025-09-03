@@ -80,22 +80,18 @@ class Simulator:
 
     @staticmethod
     @nnx.jit
-    def _step(this: 'Simulator', dt: float) -> 'Simulator':
-        this = this.replace(_env_sim=this._env_sim.step(dt))
+    def _step(this: 'Simulator') -> 'Simulator':
+        this: "Simulator" = this.replace(_env_sim=this._env_sim.step())
 
         output = this.controller(this.robot_inputs)
-        new_data = this.robots.set_ctrl(this.data, output)
+        new_data = this.robots.set_ctrl(this.data, output[:, 0:2])
 
-        this = this.add_pheromone(this.robots.positions, jnp.ones((this.robots.num_robots,), dtype=jnp.float32))
+        this = this.add_pheromone(this.robots.positions, output[:, 2])
 
-        rf_loss = Simulator._calc_loss_between_robots_and_food(this)
-        fn_loss = Simulator._calc_loss_between_food_and_nest(this)
-        delta_loss = rf_loss + fn_loss
+        return this.update(data=new_data)
 
-        return this.update(data=new_data, delta_loss=delta_loss)
-
-    def step(self, dt: float) -> 'Simulator':
-        return Simulator._step(self, dt)
+    def step(self) -> 'Simulator':
+        return Simulator._step(self)
 
     @staticmethod
     @nnx.jit
