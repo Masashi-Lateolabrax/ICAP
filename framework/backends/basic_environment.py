@@ -8,7 +8,7 @@ import numpy as np
 import jax.numpy as jnp
 
 from ..prelude import *
-from ..environment import (
+from ..mkenv import (
     add_geom,
     setup_option, setup_visual, setup_textures, add_nest, add_wall,
     rand_robot_pos, rand_food_pos, add_mesh_in_asset, MeshContentType,
