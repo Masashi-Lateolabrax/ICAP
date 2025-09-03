@@ -109,7 +109,6 @@ class BasicSimulatorWithEnv:
     robot_inputs: jax.Array  # shape (num_robots, NUM_RAYS)
     food_items: BatchedFood
 
-    _counter_for_relocation: int
     _rngs_for_relocating_food: jax.Array
 
     loss: jax.Array
@@ -137,7 +136,6 @@ class BasicSimulatorWithEnv:
             robots: BatchedRobots = None,
             robot_inputs: jax.Array = None,
             food_items: BatchedFood = None,
-            counter_for_relocation: int = None,
             rngs_for_relocating_food: jax.Array = None,
             loss: jax.Array = None,
             loss_offset: jax.Array = None,
@@ -153,7 +151,6 @@ class BasicSimulatorWithEnv:
             "robots": robots,
             "robot_inputs": robot_inputs,
             "food_items": food_items,
-            "_counter_for_relocation": counter_for_relocation,
             "_rngs_for_relocating_food": rngs_for_relocating_food,
             "loss": loss,
             "_loss_offset": loss_offset,
@@ -189,7 +186,6 @@ class BasicSimulatorWithEnv:
             robots=robots,
             robot_inputs=robot_inputs,
             food_items=food_items,
-            _counter_for_relocation=0,
             _rngs_for_relocating_food=rngs,
 
             loss=jnp.zeros((1,), dtype=jnp.float32),
