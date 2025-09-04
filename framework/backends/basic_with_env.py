@@ -197,7 +197,7 @@ class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
         return self._update(**kwargs)
 
     @classmethod
-    def new(cls, settings: Settings, rngs: jax.Array) -> tuple[mujoco.MjModel, 'BasicSimulatorWithEnv']:
+    def new(cls, settings: Settings, rngs: jax.Array) -> tuple[mujoco.MjModel, Self]:
         mj_spec, nest_spec, robot_specs, food_specs = generate_mjspec(settings)
         mj_model, parent_sim = BasicSimulator.new(mj_spec, settings)
 
@@ -382,7 +382,7 @@ class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
             _loss_offset=loss_offset
         )
 
-    def step(self) -> 'BasicSimulatorWithEnv':
+    def step(self) -> Self:
         return BasicSimulatorWithEnv._step(self)
 
     @staticmethod
@@ -394,10 +394,10 @@ class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
         new_simulator = jax.lax.fori_loop(0, n, body_fn, simulator)
         return new_simulator
 
-    def step_n(self, n: int) -> 'BasicSimulatorWithEnv':
+    def step_n(self, n: int) -> Self:
         return BasicSimulatorWithEnv._step_n(self, n)
 
-    def reset(self, rngs: jax.Array = None) -> 'BasicSimulatorWithEnv':
+    def reset(self, rngs: jax.Array = None) -> Self:
         this = self.update(_parent_sim=self._parent_sim.reset())
 
         new_robots = self.robots.update(this.data)
