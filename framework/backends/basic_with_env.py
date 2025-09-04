@@ -9,7 +9,6 @@ import jax
 import jax.numpy as jnp
 from flax.struct import dataclass as jax_dataclass
 
-from ..pheromone import PheromoneField
 from ..prelude import *
 from ..mkenv import (
     add_geom,
@@ -17,6 +16,7 @@ from ..mkenv import (
     rand_robot_pos, rand_food_pos, add_mesh_in_asset, MeshContentType,
     add_food_object_with_mesh, add_robot_with_mesh,
 )
+from ..pheromone import PheromoneField
 from .basic import BasicSimulator
 from .utils import create_emit_rays_functions, emit_rays
 
@@ -419,7 +419,276 @@ class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
     def evaluate(self) -> dict:
         return {"loss": float(self.loss[0])}
 
-    def _update_parent(self, **kwargs: dict) -> Self:
-        updated_basic_sim = self._basic_sim.update(**kwargs)
-        return self.replace(_basic_sim=updated_basic_sim)
-
+# @jax_dataclass
+# class BasicSimulatorWithEnv:
+#     _basic_sim: BasicSimulator
+#
+#     robots: BatchedRobots
+#     robot_inputs: jax.Array  # shape (num_robots, NUM_RAYS)
+#     food_items: BatchedFood
+#
+#     _rngs_for_relocating_food: jax.Array
+#
+#     loss: jax.Array
+#     _loss_offset: jax.Array
+#
+#     consts: Consts
+#
+#     @property
+#     def NEST_POSITION(self) -> jax.Array:
+#         return self.consts.NEST_POSITION
+#
+#     @property
+#     def model(self) -> mjx.Model:
+#         return self._basic_sim.model
+#
+#     @property
+#     def data(self) -> mjx.Data:
+#         return self._basic_sim.data
+#
+#     def update(
+#             self,
+#             model: mjx.Model = None,
+#             data: mjx.Data = None,
+#
+#             robots: BatchedRobots = None,
+#             robot_inputs: jax.Array = None,
+#             food_items: BatchedFood = None,
+#             rngs_for_relocating_food: jax.Array = None,
+#             loss: jax.Array = None,
+#             loss_offset: jax.Array = None,
+#     ) -> 'BasicSimulatorWithEnv':
+#         parent_kwargs = {
+#             "model": model,
+#             "data": data,
+#         }
+#         basic_sim = self._basic_sim.update(**parent_kwargs)
+#
+#         this_kwargs = {
+#             "_basic_sim": basic_sim,
+#             "robots": robots,
+#             "robot_inputs": robot_inputs,
+#             "food_items": food_items,
+#             "_rngs_for_relocating_food": rngs_for_relocating_food,
+#             "loss": loss,
+#             "_loss_offset": loss_offset,
+#         }
+#         kwargs = {k: v for k, v in this_kwargs.items() if v is not None}
+#         if not kwargs:
+#             return self
+#
+#         return self.replace(**kwargs)
+#
+#     @classmethod
+#     def new(cls, settings: Settings, rngs: jax.Array) -> tuple[mujoco.MjModel, 'BasicSimulatorWithEnv']:
+#         mj_spec, nest_spec, robot_specs, food_specs = generate_mjspec(settings)
+#         mj_model, basic_sim = BasicSimulator.new(mj_spec, settings)
+#
+#         batched_robot_id = BatchedRobotIDs.from_specs(basic_sim.model, robot_specs)
+#         batched_food_id = BatchedFoodIDs.from_specs(basic_sim.model, food_specs)
+#
+#         distance_between_wheels = settings.Robot.DISTANCE_BETWEEN_WHEELS
+#         max_speed = settings.Robot.MAX_SPEED
+#         robots = BatchedRobots.new(basic_sim.data, batched_robot_id, distance_between_wheels, max_speed)
+#
+#         food_items: BatchedFood = BatchedFood.new(basic_sim.data, batched_food_id)
+#
+#         create_emit_rays_functions(
+#             settings.Robot.NUM_RAYS, robots
+#         )
+#         robot_inputs = jnp.zeros((robots.num_robots, settings.Robot.NUM_RAYS))
+#
+#         return mj_model, cls(
+#             _basic_sim=basic_sim,
+#
+#             robots=robots,
+#             robot_inputs=robot_inputs,
+#             food_items=food_items,
+#             _rngs_for_relocating_food=rngs,
+#
+#             loss=jnp.zeros((1,), dtype=jnp.float32),
+#             _loss_offset=jnp.zeros((1,), dtype=jnp.float32),
+#
+#             consts=Consts(
+#                 WORLD_WIDTH=settings.Simulation.WORLD_WIDTH,
+#                 WORLD_HEIGHT=settings.Simulation.WORLD_HEIGHT,
+#                 NEST_POSITION=settings.Nest.POSITION.as_array(),
+#                 NEST_RADIUS=settings.Nest.RADIUS,
+#                 FOOD_RADIUS=settings.Food.RADIUS,
+#                 OFFSET_FOOD_AND_ROBOT=settings.Loss.OFFSET_FOOD_AND_ROBOT,
+#                 SIGMA_FOOD_AND_ROBOT=settings.Loss.SIGMA_FOOD_AND_ROBOT,
+#                 GAIN_FOOD_AND_ROBOT=settings.Loss.GAIN_FOOD_AND_ROBOT,
+#                 OFFSET_FOOD_AND_NEST=settings.Loss.OFFSET_FOOD_AND_NEST,
+#                 SIGMA_FOOD_AND_NEST=settings.Loss.SIGMA_FOOD_AND_NEST,
+#                 GAIN_FOOD_AND_NEST=settings.Loss.GAIN_FOOD_AND_NEST,
+#             )
+#         )
+#
+#     def get_pheromone(self, positions: jax.Array) -> jax.Array:
+#         return self._basic_sim.get_pheromone(positions)
+#
+#     def add_pheromone(self, positions: jax.Array, amounts: jax.Array) -> 'BasicSimulatorWithEnv':
+#         new_basic_sim = self._basic_sim.add_pheromone(positions, amounts)
+#         return self.replace(_basic_sim=new_basic_sim)
+#
+#     @staticmethod
+#     @jax.jit
+#     def _check_food_in_nest(this: "BasicSimulatorWithEnv") -> jax.Array:
+#         distance_between_food_and_nest = jnp.linalg.norm(
+#             this.food_items.positions[:, :2] - this.consts.NEST_POSITION,
+#             axis=1
+#         )
+#         mask = distance_between_food_and_nest < this.consts.NEST_RADIUS
+#         return mask
+#
+#     @staticmethod
+#     @jax.jit
+#     def _generate_new_food_position(this: "BasicSimulatorWithEnv", rngs: jax.Array) -> jax.Array:
+#         key, rngs = jax.random.split(rngs)
+#         random_xy = jax.random.uniform(
+#             key,
+#             shape=(2,),
+#             minval=this.consts.NEST_RADIUS,
+#             maxval=jnp.array([this.consts.WORLD_WIDTH, this.consts.WORLD_HEIGHT]) * 0.5 - this.consts.FOOD_RADIUS
+#         )
+#
+#         key, rngs = jax.random.split(rngs)
+#         sign = 2 * jax.random.randint(key, shape=(3,), minval=0, maxval=2).astype(jnp.float32) - 1
+#         random_xy = sign.at[:2].multiply(random_xy)
+#         random_xy = random_xy.at[2].set(2.0)
+#
+#         return random_xy
+#
+#     @staticmethod
+#     @jax.jit
+#     def _relocate_food_items(
+#             this: "BasicSimulatorWithEnv"
+#     ) -> tuple["BasicSimulatorWithEnv", jax.Array]:
+#         relocation_happen = BasicSimulatorWithEnv._check_food_in_nest(this)
+#
+#         def relocation_fn(i, sim: "BasicSimulatorWithEnv") -> "BasicSimulatorWithEnv":
+#             new_rngs, rngs = jax.random.split(this._rngs_for_relocating_food)
+#             new_position = BasicSimulatorWithEnv._generate_new_food_position(sim, rngs)
+#             new_data = sim.food_items.set_pos(this.data, i, new_position)
+#             return sim.update(
+#                 data=new_data,
+#                 rngs_for_relocating_food=new_rngs
+#             )
+#
+#         this = jax.lax.fori_loop(
+#             0, this.food_items.positions.shape[0],
+#             lambda i, val: jax.lax.cond(
+#                 relocation_happen[i],
+#                 lambda x: relocation_fn(i, x),
+#                 lambda x: x,
+#                 val
+#             ),
+#             this
+#         )
+#
+#         return this, relocation_happen
+#
+#     @staticmethod
+#     @jax.jit
+#     def _calc_loss_between_food_and_robots(
+#             food_position: jax.Array,
+#             robot_positions: jax.Array,
+#             const: Consts
+#     ) -> jax.Array:
+#         subs = (robot_positions[:, :2] - food_position[None, :2])
+#         distance = jnp.clip(
+#             jnp.linalg.norm(subs, axis=1) - const.OFFSET_FOOD_AND_ROBOT,
+#             a_min=0
+#         )
+#         return -jnp.sum(jnp.exp(-(distance ** 2) / const.SIGMA_FOOD_AND_ROBOT)) * const.GAIN_FOOD_AND_ROBOT
+#
+#     @staticmethod
+#     @jax.jit
+#     def _calc_loss_between_food_and_nest(
+#             food_position: jax.Array,
+#             nest_position: jax.Array,
+#             const: Consts
+#     ) -> jax.Array:
+#         distance = jnp.linalg.norm(food_position[:2] - nest_position[:2])
+#         distance = jnp.clip(distance - const.OFFSET_FOOD_AND_NEST, a_min=0)
+#         return -jnp.sum(jnp.exp(-(distance ** 2) / const.SIGMA_FOOD_AND_NEST)) * const.GAIN_FOOD_AND_NEST
+#
+#     @staticmethod
+#     @jax.jit
+#     def _step(this: "BasicSimulatorWithEnv") -> "BasicSimulatorWithEnv":
+#         # Step the basic simulator
+#         this: "BasicSimulatorWithEnv" = this.replace(_basic_sim=this._basic_sim.step())
+#         this = this.update(
+#             robots=this.robots.update(this.data),
+#             food_items=this.food_items.update(this.data),
+#         )
+#
+#         # Emit rays and get inputs for robots
+#         depth_sensor: tuple[jax.Array, jax.Array] = emit_rays(
+#             this.model, this.data, this.robots
+#         )
+#         depths, _ = depth_sensor  # shape (num_robots, NUM_RAYS)
+#         inputs = jnp.reciprocal(depths + 1e-6)
+#
+#         # Relocate food items if necessary
+#         this, relocation_occurred = BasicSimulatorWithEnv._relocate_food_items(this)
+#
+#         # Calculate losses
+#         fr_losses = jax.vmap(lambda x: BasicSimulatorWithEnv._calc_loss_between_food_and_robots(
+#             x, this.robots.positions, this.consts
+#         ))(this.food_items.positions)
+#         fn_losses = jax.vmap(lambda x: BasicSimulatorWithEnv._calc_loss_between_food_and_nest(
+#             x, this.consts.NEST_POSITION, this.consts
+#         ))(this.food_items.positions)
+#         losses = fr_losses + fn_losses + this._loss_offset
+#
+#         loss_offset = this._loss_offset + relocation_occurred * losses
+#
+#         return this.update(
+#             robot_inputs=inputs,
+#             loss=jnp.sum(losses),
+#             loss_offset=loss_offset
+#         )
+#
+#     def step(self) -> 'BasicSimulatorWithEnv':
+#         return BasicSimulatorWithEnv._step(self)
+#
+#     @staticmethod
+#     @jax.jit
+#     def _step_n(simulator: "BasicSimulatorWithEnv", n: int) -> "BasicSimulatorWithEnv":
+#         def body_fn(_i, sim: "BasicSimulatorWithEnv"):
+#             return BasicSimulatorWithEnv._step(sim)
+#
+#         new_simulator = jax.lax.fori_loop(0, n, body_fn, simulator)
+#         return new_simulator
+#
+#     def step_n(self, n: int) -> 'BasicSimulatorWithEnv':
+#         return BasicSimulatorWithEnv._step_n(self, n)
+#
+#     def render(
+#             self,
+#             mj_model: mujoco.MjModel,
+#             img_buf: np.ndarray,
+#             pos: tuple[float, float, float],
+#             lookat: tuple[float, float, float],
+#             max_geom=100,
+#             max_pheromone=1.0
+#     ):
+#         self._basic_sim.render(mj_model, img_buf, pos, lookat, max_geom, max_pheromone)
+#
+#     def reset(self, rngs: jax.Array = None) -> 'BasicSimulatorWithEnv':
+#         new_basic_sim = self._basic_sim.reset()
+#         this: "BasicSimulatorWithEnv" = self.replace(_basic_sim=new_basic_sim)
+#
+#         new_robots = self.robots.update(new_basic_sim.data)
+#         new_food_items = self.food_items.update(new_basic_sim.data)
+#
+#         rngs = this._rngs_for_relocating_food if rngs is None else rngs
+#
+#         return this.update(
+#             robots=new_robots,
+#             food_items=new_food_items,
+#             rngs_for_relocating_food=rngs,
+#             loss=jnp.zeros((1,), dtype=jnp.float32),
+#             loss_offset=jnp.zeros((1,), dtype=jnp.float32)
+#         )
