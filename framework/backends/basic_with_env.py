@@ -192,16 +192,16 @@ class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
     @classmethod
     def new(cls, settings: Settings, rngs: jax.Array) -> tuple[mujoco.MjModel, 'BasicSimulatorWithEnv']:
         mj_spec, nest_spec, robot_specs, food_specs = generate_mjspec(settings)
-        mj_model, basic_sim = BasicSimulator.new(mj_spec, settings)
+        mj_model, parent_sim = BasicSimulator.new(mj_spec, settings)
 
-        batched_robot_id = BatchedRobotIDs.from_specs(basic_sim.model, robot_specs)
-        batched_food_id = BatchedFoodIDs.from_specs(basic_sim.model, food_specs)
+        batched_robot_id = BatchedRobotIDs.from_specs(parent_sim.model, robot_specs)
+        batched_food_id = BatchedFoodIDs.from_specs(parent_sim.model, food_specs)
 
         distance_between_wheels = settings.Robot.DISTANCE_BETWEEN_WHEELS
         max_speed = settings.Robot.MAX_SPEED
-        robots = BatchedRobots.new(basic_sim.data, batched_robot_id, distance_between_wheels, max_speed)
+        robots = BatchedRobots.new(parent_sim.data, batched_robot_id, distance_between_wheels, max_speed)
 
-        food_items: BatchedFood = BatchedFood.new(basic_sim.data, batched_food_id)
+        food_items: BatchedFood = BatchedFood.new(parent_sim.data, batched_food_id)
 
         create_emit_rays_functions(
             settings.Robot.NUM_RAYS, robots
@@ -214,7 +214,7 @@ class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
         )
 
         return mj_model, cls(
-            _basic_sim=basic_sim,
+            _parent_sim=parent_sim,
 
             robots=robots,
             food_items=food_items,
@@ -243,10 +243,10 @@ class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
         )
 
     def get_pheromone(self, positions: jax.Array) -> jax.Array:
-        return self._basic_sim.get_pheromone(positions)
+        return self._parent_sim.get_pheromone(positions)
 
     def add_pheromone(self, positions: jax.Array, values: jax.Array) -> PheromoneField:
-        return self._basic_sim.add_pheromone(positions, values)
+        return self._parent_sim.add_pheromone(positions, values)
 
     @staticmethod
     @jax.jit
@@ -335,7 +335,7 @@ class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
     def _step(this: "BasicSimulatorWithEnv") -> "BasicSimulatorWithEnv":
         # Step the basic simulator
         this = this.update(
-            _basic_sim=this._basic_sim.step()
+            _basic_sim=this._parent_sim.step()
         )
         this = this.update(
             robots=this.robots.update(this.data),
@@ -385,10 +385,10 @@ class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
         return BasicSimulatorWithEnv._step_n(self, n)
 
     def render(self, img_buf: np.ndarray, camera: mujoco.MjvCamera, renderer: mujoco.Renderer):
-        self._basic_sim.render(img_buf, camera, renderer)
+        self._parent_sim.render(img_buf, camera, renderer)
 
     def reset(self, rngs: jax.Array = None) -> 'BasicSimulatorWithEnv':
-        new_basic_sim = self._basic_sim.reset()
+        new_basic_sim = self._parent_sim.reset()
         this: "BasicSimulatorWithEnv" = self.replace(_basic_sim=new_basic_sim)
 
         new_robots = self.robots.update(new_basic_sim.data)
