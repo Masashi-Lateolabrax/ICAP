@@ -7,7 +7,7 @@ import mujoco.mjx as mjx
 import numpy as np
 import jax
 import jax.numpy as jnp
-from flax.struct import dataclass as jax_dataclass
+from flax.struct import field, dataclass as jax_dataclass
 
 from ..prelude import *
 from ..mkenv import (
@@ -18,7 +18,7 @@ from ..mkenv import (
 )
 from ..pheromone import PheromoneField
 from .basic import BasicSimulator
-from .utils import create_emit_rays_functions, emit_rays
+from .utils import emit_rays
 
 
 def generate_mjspec(
@@ -114,6 +114,8 @@ class Consts:
 
     FOOD_RADIUS: float
 
+    NUM_RAYS: int = field(pytree_node=False)
+
     OFFSET_FOOD_AND_ROBOT: float
     SIGMA_FOOD_AND_ROBOT: float
     GAIN_FOOD_AND_ROBOT: float
@@ -201,9 +203,6 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
 
         food_items: BatchedFood = BatchedFood.new(parent_sim.data, batched_food_id)
 
-        create_emit_rays_functions(
-            settings.Robot.NUM_RAYS, robots
-        )
         robot_inputs = RobotInputs.zeros(robots.num_robots, settings.Robot.NUM_RAYS)
         robot_outputs = RobotOutputs.zeros(robots.num_robots)
 
@@ -227,6 +226,7 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
                 NEST_POSITION=settings.Nest.POSITION.as_array(),
                 NEST_RADIUS=settings.Nest.RADIUS,
                 FOOD_RADIUS=settings.Food.RADIUS,
+                NUM_RAYS=settings.Robot.NUM_RAYS,
                 OFFSET_FOOD_AND_ROBOT=settings.Loss.OFFSET_FOOD_AND_ROBOT,
                 SIGMA_FOOD_AND_ROBOT=settings.Loss.SIGMA_FOOD_AND_ROBOT,
                 GAIN_FOOD_AND_ROBOT=settings.Loss.GAIN_FOOD_AND_ROBOT,
@@ -344,7 +344,7 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
 
         # Emit rays and get inputs for robots
         depth_sensor: tuple[jax.Array, jax.Array] = emit_rays(
-            this.model, this.data, this.robots
+            this.model, this.data, this.robots, this.consts.NUM_RAYS
         )
         depths, _ = depth_sensor  # shape (num_robots, NUM_RAYS)
         inputs = this.robot_inputs.update(
