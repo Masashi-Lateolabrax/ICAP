@@ -22,6 +22,9 @@ class SimulatorTrait(metaclass=abc.ABCMeta):
         kwargs = {k: v for k, v in kwargs.items() if v is not None}
         this_param_names = vars(this).keys()
 
+        if not kwargs:
+            return this
+
         parent_kwargs = {k: v for k, v in kwargs.items() if k not in this_param_names}
         this = this._update_parent(**parent_kwargs)
 
