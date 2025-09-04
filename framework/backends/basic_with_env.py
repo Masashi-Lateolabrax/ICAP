@@ -154,7 +154,7 @@ class RobotOutputs:
 
 
 @jax_dataclass
-class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
+class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait):
     consts: Consts
 
     _parent_sim: BasicSimulator
