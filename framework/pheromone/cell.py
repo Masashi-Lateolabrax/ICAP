@@ -16,3 +16,7 @@ class PheromoneFieldCell:
     @property
     def pos(self) -> np.ndarray:
         return self._site.pos
+
+    @property
+    def id(self) -> int:
+        return self._site.id

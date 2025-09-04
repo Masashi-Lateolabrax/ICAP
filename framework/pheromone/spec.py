@@ -12,10 +12,6 @@ class PheromoneFieldCellSpec:
         self._index_y = index_y
 
     @property
-    def id(self) -> int:
-        return self._site.id
-
-    @property
     def name(self) -> str:
         return self._site.name
 
