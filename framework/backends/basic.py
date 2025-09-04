@@ -84,7 +84,8 @@ class BasicSimulator(SimulatorTrait):
             data=data,
             pheromone=pheromone,
 
-            _pheromone_cell_pos=pheromone_cell_pos
+            _pheromone_cell_pos=pheromone_cell_pos,
+            _pheromone_cell_site_ids=pheromone_cell_site_ids
         )
 
     @staticmethod

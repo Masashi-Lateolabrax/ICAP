@@ -3,6 +3,8 @@ from typing import Self
 
 import numpy as np
 
+import mujoco
+
 import jax
 from flax.struct import dataclass as jax_dataclass
 
@@ -55,7 +57,7 @@ class SimulatorTrait(metaclass=abc.ABCMeta):
 
 class SimRenderTrait(SimulatorTrait, metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def render(self, img_buf: np.ndarray, pos: tuple[float, float, float], lookat: tuple[float, float, float]):
+    def render(self, img_buf: np.ndarray, camera: mujoco.MjvCamera, renderer: mujoco.Renderer):
         raise NotImplementedError
 
 
