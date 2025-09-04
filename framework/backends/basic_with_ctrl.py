@@ -51,7 +51,7 @@ class SimulatorWithCtrl(SimRenderTrait, SimEvaluateTrait):
         return self._parent_sim.food_items
 
     @property
-    def robot_inputs(self) -> jax.Array:
+    def robot_inputs(self) -> RobotInputs:
         return self._parent_sim.robot_inputs
 
     @property
@@ -108,7 +108,7 @@ class SimulatorWithCtrl(SimRenderTrait, SimEvaluateTrait):
             _parent_sim=this._parent_sim.step()
         )
         this = this.update(
-            robot_outputs=this.controller(this.robot_inputs)
+            robot_outputs=this.controller.forward(this.robot_inputs)
         )
         return this
 
