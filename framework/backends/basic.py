@@ -65,10 +65,10 @@ class BasicSimulator(SimRenderTrait):
         )
 
         pheromone_cells = [s.get_cell(mj_model) for s in p_cell_specs]
-        pheromone_cell_pos = jnp.zeros(
+        pheromone_cell_pos = np.zeros(
             (settings.Pheromone.HEIGHT_NUM, settings.Pheromone.WIDTH_NUM, 2), dtype=jnp.float32
         )
-        pheromone_cell_site_ids = jnp.zeros(
+        pheromone_cell_site_ids = np.zeros(
             (settings.Pheromone.HEIGHT_NUM, settings.Pheromone.WIDTH_NUM), dtype=jnp.int32
         )
         for c in pheromone_cells:
@@ -84,8 +84,8 @@ class BasicSimulator(SimRenderTrait):
             data=data,
             pheromone=pheromone,
 
-            _pheromone_cell_pos=pheromone_cell_pos,
-            _pheromone_cell_site_ids=pheromone_cell_site_ids
+            _pheromone_cell_pos=jnp.array(pheromone_cell_pos),
+            _pheromone_cell_site_ids=jnp.array(pheromone_cell_site_ids)
         )
 
     @staticmethod
