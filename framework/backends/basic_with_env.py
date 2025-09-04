@@ -1,5 +1,6 @@
 import os
 from functools import partial
+from typing import Self
 
 import mujoco
 import mujoco.mjx as mjx
@@ -9,6 +10,7 @@ import jax
 import jax.numpy as jnp
 from flax.struct import dataclass as jax_dataclass
 
+from ..pheromone import PheromoneField
 from ..prelude import *
 from ..mkenv import (
     add_geom,
@@ -191,7 +193,7 @@ class Consts:
 
 
 @jax_dataclass
-class BasicSimulatorWithEnv:
+class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
     _basic_sim: BasicSimulator
 
     robots: BatchedRobots
@@ -298,9 +300,8 @@ class BasicSimulatorWithEnv:
     def get_pheromone(self, positions: jax.Array) -> jax.Array:
         return self._basic_sim.get_pheromone(positions)
 
-    def add_pheromone(self, positions: jax.Array, amounts: jax.Array) -> 'BasicSimulatorWithEnv':
-        new_basic_sim = self._basic_sim.add_pheromone(positions, amounts)
-        return self.replace(_basic_sim=new_basic_sim)
+    def add_pheromone(self, positions: jax.Array, values: jax.Array) -> PheromoneField:
+        return self._basic_sim.add_pheromone(positions, values)
 
     @staticmethod
     @jax.jit
@@ -436,16 +437,8 @@ class BasicSimulatorWithEnv:
     def step_n(self, n: int) -> 'BasicSimulatorWithEnv':
         return BasicSimulatorWithEnv._step_n(self, n)
 
-    def render(
-            self,
-            mj_model: mujoco.MjModel,
-            img_buf: np.ndarray,
-            pos: tuple[float, float, float],
-            lookat: tuple[float, float, float],
-            max_geom=100,
-            max_pheromone=1.0
-    ):
-        self._basic_sim.render(mj_model, img_buf, pos, lookat, max_geom, max_pheromone)
+    def render(self, img_buf: np.ndarray, camera: mujoco.MjvCamera, renderer: mujoco.Renderer):
+        self._basic_sim.render(img_buf, camera, renderer)
 
     def reset(self, rngs: jax.Array = None) -> 'BasicSimulatorWithEnv':
         new_basic_sim = self._basic_sim.reset()
@@ -463,3 +456,11 @@ class BasicSimulatorWithEnv:
             loss=jnp.zeros((1,), dtype=jnp.float32),
             loss_offset=jnp.zeros((1,), dtype=jnp.float32)
         )
+
+    def evaluate(self) -> dict:
+        return {"loss": float(self.loss[0])}
+
+    def _update_parent(self, **kwargs: dict) -> Self:
+        updated_basic_sim = self._basic_sim.update(**kwargs)
+        return self.replace(_basic_sim=updated_basic_sim)
+
