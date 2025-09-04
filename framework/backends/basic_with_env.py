@@ -123,7 +123,6 @@ class Consts:
     GAIN_FOOD_AND_NEST: float
 
 
-
 @jax_dataclass
 class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait):
     consts: Consts
@@ -133,7 +132,7 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
     robots: BatchedRobots
     food_items: BatchedFood
 
-    robot_inputs: jax.Array  # shape (num_robots, NUM_RAYS)
+    robot_inputs: RobotInputs
     robot_outputs: RobotOutputs
 
     loss: jax.Array
@@ -170,7 +169,7 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
 
             robots: BatchedRobots = None,
             food_items: BatchedFood = None,
-            robot_inputs: jax.Array = None,
+            robot_inputs: RobotInputs = None,
             robot_outputs: RobotOutputs = None,
             loss: jax.Array = None,
             rngs_for_relocating_food: jax.Array = None,
@@ -205,7 +204,7 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
         create_emit_rays_functions(
             settings.Robot.NUM_RAYS, robots
         )
-        robot_inputs = jnp.zeros((robots.num_robots, settings.Robot.NUM_RAYS))
+        robot_inputs = RobotInputs.zeros(robots.num_robots, settings.Robot.NUM_RAYS)
         robot_outputs = RobotOutputs.zeros(robots.num_robots)
 
         return mj_model, cls(
@@ -348,7 +347,13 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
             this.model, this.data, this.robots
         )
         depths, _ = depth_sensor  # shape (num_robots, NUM_RAYS)
-        inputs = jnp.reciprocal(depths + 1e-6)
+        inputs = this.robot_inputs.update(
+            ray=jnp.reciprocal(depths + 1e-6)
+        )
+
+        # Get pheromone sensor values
+        pheromone_sensor = this.get_pheromone(this.robots.positions)
+        inputs = inputs.update(pheromone=pheromone_sensor)
 
         # Relocate food items if necessary
         this, relocation_occurred = BasicSimulatorWithEnv._relocate_food_items(this)
@@ -391,10 +396,14 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
         new_robots = self.robots.update(this.data)
         new_food_items = self.food_items.update(this.data)
 
+        new_inputs = this.robot_inputs.fill(0.0)
+        new_outputs = this.robot_outputs.fill(0.0)
+
         return this.update(
             robots=new_robots,
             food_items=new_food_items,
-            robot_outputs=RobotOutputs.zeros(self.robots.num_robots),
+            robot_inputs=new_inputs,
+            robot_outputs=new_outputs,
             loss=jnp.zeros((1,), dtype=jnp.float32),
             _loss_offset=jnp.zeros((1,), dtype=jnp.float32),
         )
