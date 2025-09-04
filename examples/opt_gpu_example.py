@@ -21,6 +21,8 @@ from framework.backends import SimulatorWithCtrl, ControllerInterface
 
 class Controller(ControllerInterface):
     def __init__(self, parameter: jax.Array):
+        self.l2 = jnp.linalg.norm(parameter)
+
         rngs = nnx.Rngs(0)
         parameter = ParaStock(parameter)
 
