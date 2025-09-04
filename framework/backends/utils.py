@@ -95,29 +95,16 @@ def emit_rays_static(
 
     return jax.vmap(single_robot_rays)(positions, xdirections, body_ids)
 
-    body_ids = robots.ids.body_ids.tolist()
 
-    for id_ in body_ids:
-        if id_ in _REGISTERED_ROBOT_IDS:
-            continue
-
-        @partial(jax.jit, static_argnames=["body_id_", "num_rays_"])
-        def emit_rays_fn(model, data, pos, xdir, body_id_=id_, num_rays_=num_rays):
-            return _emit_n_rays(model, data, pos, xdir, body_id_, num_rays_)
-
-        _REGISTERED_ROBOT_IDS.add(id_)
-        _EMIT_RAYS_FUNCTIONS.append(emit_rays_fn)
-
-
+@partial(jax.jit, static_argnames=["num_rays"])
 def emit_rays(
         model: mjx.Model,
         data: mjx.Data,
         robots: BatchedRobots,
+        num_rays: int
 ) -> tuple[jax.Array, jax.Array]:  # shape (num_robots, NUM_RAYS), (num_robots, NUM_RAYS)
-    def body_fn(pos_, xdir_, func_idx_) -> tuple[jax.Array, jax.Array]:  # shape (NUM_RAYS,), (NUM_RAYS,)
-        return jax.lax.switch(func_idx_, _EMIT_RAYS_FUNCTIONS, model, data, pos_, xdir_)
-
-    positions = robots.positions
-    xdirections = robots.xdirections
-    func_idx = jnp.arange(robots.num_robots)
-    return jax.vmap(body_fn)(positions, xdirections, func_idx)
+    return emit_rays_static(
+        model, data,
+        robots.positions, robots.xdirections,
+        robots.ids.body_ids, num_rays
+    )
