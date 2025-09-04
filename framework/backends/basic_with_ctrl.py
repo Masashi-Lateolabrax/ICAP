@@ -1,5 +1,4 @@
-import abc
-from typing import Self
+from typing import Self, Generic
 
 import numpy as np
 import mujoco
@@ -14,29 +13,10 @@ from ..pheromone import PheromoneField
 from .basic_with_env import RobotOutputs, BasicSimulatorWithEnv
 
 
-class ControllerInterface(nnx.Module, metaclass=abc.ABCMeta):
-    @abc.abstractmethod
-    def __init__(self, parameter):
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def forward(self, x: RobotInputs) -> RobotOutputs:
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def reset(self) -> Self:
-        raise NotImplementedError
-
-    @staticmethod
-    @abc.abstractmethod
-    def dim() -> int:
-        raise NotImplementedError
-
-
 @jax_dataclass
-class SimulatorWithCtrl(SimRenderTrait, SimEvaluateTrait):
+class SimulatorWithCtrl(SimRenderTrait, SimEvaluateTrait, Generic[ControllerT]):
     _parent_sim: BasicSimulatorWithEnv
-    controller: ControllerInterface
+    controller: ControllerT
 
     @property
     def data(self) -> mjx.Data:
@@ -78,7 +58,7 @@ class SimulatorWithCtrl(SimRenderTrait, SimEvaluateTrait):
             robot_outputs: RobotOutputs = None,
             loss: jax.Array = None,
 
-            controller: ControllerInterface = None,
+            controller: ControllerT = None,
 
             **kwargs
     ) -> Self:
@@ -94,7 +74,7 @@ class SimulatorWithCtrl(SimRenderTrait, SimEvaluateTrait):
         return self._update(**kwargs)
 
     @classmethod
-    def new(cls, settings: Settings, controller: ControllerInterface, rngs: jax.Array) -> tuple[mujoco.MjModel, Self]:
+    def new(cls, settings: Settings, controller: ControllerT, rngs: jax.Array) -> tuple[mujoco.MjModel, Self]:
         mj_model, sim = BasicSimulatorWithEnv.new(settings, rngs)
         return mj_model, cls(
             _parent_sim=sim,
