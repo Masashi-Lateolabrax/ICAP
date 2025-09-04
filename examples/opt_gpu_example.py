@@ -1,8 +1,10 @@
 import time
+from typing import Self
 
 import numpy as np
-import mujoco
 from cmaes import CMA
+
+import mujoco
 from mujoco import mjx
 
 import jax
@@ -12,11 +14,12 @@ from flax.struct import dataclass as jax_dataclass
 
 from framework.prelude import *
 from framework.utils import ParaStock
-from framework.backends import BasicSimulatorWithEnv
 from framework.utils import configure_gpu_optimization, monitor_gpu_memory
 
+from framework.backends import SimulatorWithCtrl, ControllerInterface
 
-class Controller(nnx.Module):
+
+class Controller(ControllerInterface):
     def __init__(self, parameter: jax.Array):
         rngs = nnx.Rngs(0)
         parameter = ParaStock(parameter)
@@ -40,6 +43,17 @@ class Controller(nnx.Module):
         x = nnx.relu(self.layer1(x))
         x = jnp.clip(self.layer2(x), -0.3, 1.0)
         return x
+
+    def forward(self, x: RobotInputs) -> RobotOutputs:
+        x = self.__call__(x.ray)
+        return RobotOutputs(
+            left_wheel=x[:, 0],
+            right_wheel=x[:, 1],
+            pheromone=jnp.zeros((x.shape[0],), dtype=jnp.float32),
+        )
+
+    def reset(self) -> Self:
+        return self
 
     @staticmethod
     def dim():
