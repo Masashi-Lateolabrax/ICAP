@@ -141,13 +141,13 @@ class BasicSimulator(SimRenderTrait):
         max_pheromone = np.max(pheromone) + 1e-12
         total_pheromone = np.sum(pheromone)
 
-        def paint(value):
-            return np.array(
-                [value / max_pheromone, 0.0, 1 - value / max_pheromone, 0.5],
-                dtype=np.float64
-            )
-
-        colored_pheromone = np.vectorize(paint)(pheromone)
+        normalized_pheromone = pheromone / max_pheromone
+        colored_pheromone = np.stack([
+            normalized_pheromone,
+            np.zeros_like(normalized_pheromone),
+            1 - normalized_pheromone,
+            np.full_like(normalized_pheromone, 0.5)
+        ], axis=-1).astype(np.float64)
 
         mj_model.site_rgba[self._pheromone_cell_site_ids, :] = colored_pheromone
 
