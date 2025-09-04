@@ -20,6 +20,10 @@ from framework.backends import SimulatorWithCtrl, ControllerInterface
 
 
 class Controller(ControllerInterface):
+    @staticmethod
+    def dim():
+        return (16 * 8 + 8) + (8 * 2 + 2)
+
     def __init__(self, parameter: jax.Array):
         self.l2 = jnp.linalg.norm(parameter)
 
