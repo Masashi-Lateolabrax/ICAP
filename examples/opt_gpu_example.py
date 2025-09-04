@@ -146,7 +146,13 @@ def opt_gpu_example():
 
     print("Creating simulator...")
     init_start = time.perf_counter()
-    simulators = jax.vmap(Simulator.new, in_axes=(None, 0, 0))(settings, parameters, rngs)
+
+    def sim_initializer(s, p, r):
+        controller = Controller(p)
+        mj_model, sim = Simulator.new(s, controller, r)
+        return sim
+
+    simulators = jax.vmap(sim_initializer, in_axes=(None, 0, 0))(settings, parameters, rngs)
     init_time = time.perf_counter() - init_start
     print(f"Simulator initialization: {init_time:.2f}s")
 
@@ -165,18 +171,26 @@ def opt_gpu_example():
 
     # Main simulation loop using multi-step batching for better performance
     print(f"\nStarting main simulation ({episode_length} steps, {batch_steps} steps per batch)...")
+    print_timer = time.perf_counter()
     sim_start = time.perf_counter()
 
     completed_steps = 0
     while completed_steps < episode_length:
+        step_start = time.perf_counter()
+
         steps_to_run = min(batch_steps, episode_length - completed_steps)
         simulators = jax.vmap(lambda sim: sim.step_n(steps_to_run))(simulators)
         completed_steps += steps_to_run
 
-        if completed_steps % 100 == 0 or completed_steps == episode_length:
-            elapsed = time.perf_counter() - sim_start
-            steps_per_sec = completed_steps / elapsed
+        step_end = time.perf_counter()
+
+        if completed_steps == episode_length or (step_end - print_timer) > 1.0:
+            print_timer = step_end
+
+            sim_time = step_end - step_start
+            steps_per_sec = steps_to_run / sim_time
             print(f"\nStep {completed_steps}/{episode_length} - {steps_per_sec:.1f} steps/sec")
+
             if gpu_available:
                 monitor_gpu_memory()
 
@@ -188,11 +202,14 @@ def opt_gpu_example():
         print("\nFinal GPU status:")
         monitor_gpu_memory()
 
-    losses = jax.vmap(lambda sim: sim.loss)(simulators)
+    def extract_loss(sim: Simulator) -> jax.Array:
+        return sim.evaluate()["loss"]
+
+    losses = jax.vmap(extract_loss)(simulators)
     losses = np.array(losses)
     parameters = np.array(parameters)
 
-    results = [(para, float(loss)) for para, loss in zip(parameters, losses)]
+    results = [(para, loss) for para, loss in zip(parameters, losses)]
     optimizer.tell(results)
 
     # Performance summary
