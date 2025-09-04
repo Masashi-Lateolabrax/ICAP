@@ -8,7 +8,7 @@ import jax
 import jax.numpy as jnp
 from flax.struct import dataclass as jax_dataclass
 
-from ..prelude import Settings, SimulatorTrait
+from ..prelude import Settings, SimRenderTrait
 from ..pheromone import PheromoneField, PheromoneFieldCellSpec, add_pheromone_cells_to_mjspec
 
 
@@ -18,7 +18,7 @@ class Consts:
 
 
 @jax_dataclass
-class BasicSimulator(SimulatorTrait):
+class BasicSimulator(SimRenderTrait):
     consts: Consts
 
     model: mjx.Model
@@ -132,3 +132,26 @@ class BasicSimulator(SimulatorTrait):
         new_data = mjx.make_data(self.model)
         new_pheromone = self.pheromone.reset()
         return self.update(data=new_data, pheromone=new_pheromone)
+
+    def render(self, img_buf: np.ndarray, camera: mujoco.MjvCamera, renderer: mujoco.Renderer):
+        mj_model = renderer.model
+        mj_data = mjx.get_data(mj_model, self.data)
+
+        pheromone = np.array(self.pheromone.values_gas)
+        max_pheromone = np.max(pheromone) + 1e-12
+        total_pheromone = np.sum(pheromone)
+
+        def paint(value):
+            return np.array(
+                [value / max_pheromone, 0.0, 1 - value / max_pheromone, 0.5],
+                dtype=np.float64
+            )
+
+        colored_pheromone = np.vectorize(paint)(pheromone)
+
+        mj_model.site_rgba[self._pheromone_cell_site_ids, :] = colored_pheromone
+
+        renderer.update_scene(mj_data, camera)
+        renderer.render(out=img_buf)
+
+        return {"max": max_pheromone, "total": total_pheromone}
