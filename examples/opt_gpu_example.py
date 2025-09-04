@@ -63,110 +63,65 @@ class Controller(ControllerInterface):
 
 
 @jax_dataclass
-class Simulator:
-    _env_sim: BasicSimulatorWithEnv
-
-    individual: jax.Array
-    controller: Controller
+class Simulator(SimEvaluateTrait):
+    _parent_sim: SimulatorWithCtrl
 
     @property
     def data(self) -> mjx.Data:
-        return self._env_sim.data
+        return self._parent_sim.data
 
     @property
-    def robots(self) -> BatchedRobots:
-        return self._env_sim.robots
+    def controller(self) -> Controller:
+        return self._parent_sim.controller
 
-    @property
-    def robot_inputs(self) -> jax.Array:
-        return self._env_sim.robot_inputs
-
-    @property
-    def loss(self) -> jax.Array:
-        return self._env_sim.loss
+    def _update_parent(self, **kwargs: dict) -> Self:
+        return self.replace(_parent_sim=self._parent_sim.update(**kwargs))
 
     def update(
             self,
             data: mjx.Data = None,
-            robots: BatchedRobots = None,
-            robot_inputs: jax.Array = None,
-            loss: jax.Array = None,
-
-            individual: jax.Array = None,
-            controller: Controller = None
-    ) -> 'Simulator':
-        parent_kwargs = {
-            "data": data,
-            "robots": robots,
-            "robot_inputs": robot_inputs,
-            "loss": loss,
-        }
-        env_sim = self._env_sim.update(**parent_kwargs)
-
-        this_kwargs = {
-            "_env_sim": env_sim,
-            "individual": individual,
-            "controller": controller,
-        }
-        kwargs = {k: v for k, v in this_kwargs.items() if v is not None}
-        if not kwargs:
-            return self
-
-        return self.replace(**kwargs)
+            controller: Controller = None,
+            **kwargs
+    ) -> Self:
+        kwargs["data"] = data
+        kwargs["controller"] = controller
+        return self._update(**kwargs)
 
     @classmethod
-    def new(cls, settings: Settings, individual: jax.Array, rngs: jax.Array) -> 'Simulator':
-        _, sim = BasicSimulatorWithEnv.new(settings, rngs)
-        controller = Controller(individual)
-        return cls(
-            _env_sim=sim,
-            individual=individual,
-            controller=controller,
-        )
-
-    def add_pheromone(self, positions: jax.Array, amounts: jax.Array) -> 'Simulator':
-        new_env_sim = self._env_sim.add_pheromone(positions, amounts)
-        return self.replace(_env_sim=new_env_sim)
+    def new(cls, settings: Settings, controller: Controller, rngs: jax.Array) -> tuple[mujoco.MjModel, 'Simulator']:
+        mj_model, sim = SimulatorWithCtrl.new(settings, controller, rngs)
+        return mj_model, cls(_parent_sim=sim)
 
     @staticmethod
     @nnx.jit
     def _step(this: 'Simulator') -> 'Simulator':
-        this: "Simulator" = this.replace(_env_sim=this._env_sim.step())
+        this: "Simulator" = this.update(_parent_sim=this._parent_sim.step())
+        return this
 
-        output = this.controller(this.robot_inputs)
-        new_data = this.robots.set_ctrl(this.data, output)
-
-        this = this.add_pheromone(
-            this.robots.positions,
-            jnp.ones((this.robots.num_robots,), dtype=jnp.float32)
-        )
-
-        return this.update(data=new_data)
-
-    def step(self) -> 'Simulator':
+    def step(self) -> Self:
         return Simulator._step(self)
 
     @staticmethod
     @nnx.jit
-    def _step_n(simulator: "Simulator", n: int) -> "Simulator":
+    def _step_n(this: "Simulator", n: int) -> "Simulator":
         def body_fn(_i, sim: "Simulator"):
             return Simulator._step(sim)
 
-        new_simulator = jax.lax.fori_loop(0, n, body_fn, simulator)
-        return new_simulator
+        this = jax.lax.fori_loop(0, n, body_fn, this)
+        return this
 
-    def step_n(self, n: int) -> 'Simulator':
+    def step_n(self, n: int) -> Self:
         return Simulator._step_n(self, n)
 
-    def reset(self, individual: jax.Array = None, rngs: jax.Array = None) -> 'Simulator':
-        new_env_sim = self._env_sim.reset(rngs)
-        this = self.replace(_env_sim=new_env_sim)
-
-        controller = Controller(individual) if individual is not None else None
-        return this.update(
-            individual=individual,
-            controller=controller
+    def reset(self) -> Self:
+        return self.update(
+            _parent_sim=self._parent_sim
         )
+
+    def evaluate(self) -> dict:
+        result = self._parent_sim.evaluate()
+        result["l2"] = self.controller.l2
+        return result
 
 
 def opt_gpu_example():
