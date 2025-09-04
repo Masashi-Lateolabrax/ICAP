@@ -148,7 +148,7 @@ class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
 
     loss: jax.Array
 
-    _rngs_for_relocating_food: jax.Array
+    rngs_for_relocating_food: jax.Array
     _loss_offset: jax.Array
 
     @property
@@ -183,6 +183,7 @@ class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
             robot_inputs: jax.Array = None,
             robot_outputs: RobotOutputs = None,
             loss: jax.Array = None,
+            rngs_for_relocating_food: jax.Array = None,
             **kwargs
     ) -> Self:
         kwargs["model"] = model
@@ -194,6 +195,7 @@ class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
         kwargs["robot_inputs"] = robot_inputs
         kwargs["robot_outputs"] = robot_outputs
         kwargs["loss"] = loss
+        kwargs["rngs_for_relocating_food"] = rngs_for_relocating_food
         return self._update(**kwargs)
 
     @classmethod
@@ -231,7 +233,7 @@ class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
 
             loss=jnp.zeros((1,), dtype=jnp.float32),
 
-            _rngs_for_relocating_food=rngs,
+            rngs_for_relocating_food=rngs,
             _loss_offset=jnp.zeros((1,), dtype=jnp.float32),
 
             consts=Consts(
@@ -291,12 +293,12 @@ class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
         relocation_happen = BasicSimulatorWithEnv._check_food_in_nest(this)
 
         def relocation_fn(i, sim: "BasicSimulatorWithEnv") -> "BasicSimulatorWithEnv":
-            new_rngs, rngs = jax.random.split(this._rngs_for_relocating_food)
+            new_rngs, rngs = jax.random.split(this.rngs_for_relocating_food)
             new_position = BasicSimulatorWithEnv._generate_new_food_position(sim, rngs)
             new_data = sim.food_items.set_pos(this.data, i, new_position)
             return sim.update(
                 data=new_data,
-                _rngs_for_relocating_food=new_rngs
+                rngs_for_relocating_food=new_rngs
             )
 
         this = jax.lax.fori_loop(
@@ -397,20 +399,17 @@ class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
     def step_n(self, n: int) -> Self:
         return BasicSimulatorWithEnv._step_n(self, n)
 
-    def reset(self, rngs: jax.Array = None) -> Self:
+    def reset(self) -> Self:
         this = self.update(_parent_sim=self._parent_sim.reset())
 
         new_robots = self.robots.update(this.data)
         new_food_items = self.food_items.update(this.data)
-
-        rngs = this._rngs_for_relocating_food if rngs is None else rngs
 
         return this.update(
             robots=new_robots,
             food_items=new_food_items,
             loss=jnp.zeros((1,), dtype=jnp.float32),
             _loss_offset=jnp.zeros((1,), dtype=jnp.float32),
-            _rngs_for_relocating_food=rngs,
         )
 
     def render(self, img_buf: np.ndarray, camera: mujoco.MjvCamera, renderer: mujoco.Renderer):
