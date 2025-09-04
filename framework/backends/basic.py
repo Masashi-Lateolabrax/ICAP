@@ -98,11 +98,11 @@ class BasicSimulator(SimRenderTrait):
 
     def get_pheromone(self, positions: jax.Array) -> jax.Array:
         nearest_indices = BasicSimulator._calc_nearest_pheromone_cell_indices(self, positions)
-        return self.pheromone.get_gas(nearest_indices[:, 0], nearest_indices[:, 1])
+        return self.pheromone.get_gas(nearest_indices[:, 1], nearest_indices[:, 0])
 
     def add_pheromone(self, positions: jax.Array, values: jax.Array) -> PheromoneField:
         nearest_indices = BasicSimulator._calc_nearest_pheromone_cell_indices(self, positions)
-        new_pheromone = self.pheromone.add_liquid(nearest_indices[:, 0], nearest_indices[:, 1], values)
+        new_pheromone = self.pheromone.add_liquid(nearest_indices[:, 1], nearest_indices[:, 0], values)
         return new_pheromone
 
     @staticmethod
