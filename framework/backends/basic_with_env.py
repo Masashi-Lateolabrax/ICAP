@@ -19,6 +19,7 @@ from ..mkenv import (
     add_food_object_with_mesh, add_robot_with_mesh,
 )
 from .basic import BasicSimulator
+from .utils import create_emit_rays_functions, emit_rays
 
 
 def generate_mjspec(
@@ -102,75 +103,6 @@ def generate_mjspec(
             )
 
     return spec, nest_spec, robot_specs, food_specs
-
-
-@partial(jax.jit, static_argnames=["body_id"])
-def _jitted_ray_fn(
-        vec: jax.Array, model: mjx.Model, data: mjx.Data, robot_pos: jax.Array, body_id: int
-) -> tuple[jax.Array, jax.Array]:
-    return mjx.ray(model, data, robot_pos, vec, (), True, body_id)
-
-
-@partial(jax.jit, static_argnames=["body_id", "num_rays"])
-def _emit_n_rays(
-        model: mjx.Model,
-        data: mjx.Data,
-        robot_pos: jax.Array,
-        robot_xdir: jax.Array,
-        body_id: int,
-        num_rays: int
-) -> tuple[jax.Array, jax.Array]:  # shape (num_rays,), (num_rays,)
-    def body_fn(vec) -> tuple[jax.Array, jax.Array]:
-        return _jitted_ray_fn(vec, model, data, robot_pos, body_id)
-
-    delta_angle = 2 * jnp.pi / num_rays
-    angles = jnp.arange(num_rays) * delta_angle  # Shape (num_rays,)
-    cos = jnp.cos(angles)  # Shape (num_rays,)
-    sin = jnp.sin(angles)  # Shape (num_rays,)
-    horizontal_elements = cos * robot_xdir[0] - sin * robot_xdir[1]  # Shape (num_rays,)
-    vertical_elements = sin * robot_xdir[0] + cos * robot_xdir[1]  # Shape (num_rays,)
-    rotated_dirs = jnp.stack(
-        [horizontal_elements, vertical_elements, jnp.zeros(num_rays)],
-        axis=1
-    )  # Shape (num_rays, 3)
-
-    dists, ids = jax.vmap(body_fn)(rotated_dirs)
-    return dists, ids
-
-
-_EMIT_RAYS_FUNCTIONS = []
-_REGISTERED_ROBOT_IDS = set()
-
-
-def create_emit_rays_functions(num_rays: int, robots: BatchedRobots):
-    global _EMIT_RAYS_FUNCTIONS, _REGISTERED_ROBOT_IDS
-
-    body_ids = robots.ids.body_ids.tolist()
-
-    for id_ in body_ids:
-        if id_ in _REGISTERED_ROBOT_IDS:
-            continue
-
-        @partial(jax.jit, static_argnames=["body_id_", "num_rays_"])
-        def emit_rays_fn(model, data, pos, xdir, body_id_=id_, num_rays_=num_rays):
-            return _emit_n_rays(model, data, pos, xdir, body_id_, num_rays_)
-
-        _REGISTERED_ROBOT_IDS.add(id_)
-        _EMIT_RAYS_FUNCTIONS.append(emit_rays_fn)
-
-
-def emit_rays(
-        model: mjx.Model,
-        data: mjx.Data,
-        robots: BatchedRobots,
-) -> tuple[jax.Array, jax.Array]:  # shape (num_robots, NUM_RAYS), (num_robots, NUM_RAYS)
-    def body_fn(pos_, xdir_, func_idx_) -> tuple[jax.Array, jax.Array]:  # shape (NUM_RAYS,), (NUM_RAYS,)
-        return jax.lax.switch(func_idx_, _EMIT_RAYS_FUNCTIONS, model, data, pos_, xdir_)
-
-    positions = robots.positions
-    xdirections = robots.xdirections
-    func_idx = jnp.arange(robots.num_robots)
-    return jax.vmap(body_fn)(positions, xdirections, func_idx)
 
 
 @jax_dataclass
