@@ -17,14 +17,12 @@ def _calc_nearest_pheromone_cell_indices(
         this: "BasicSimulator", positions: jax.Array
 ) -> jax.Array:
     dists = jnp.linalg.norm(positions[:, None, :2] - this.consts.pheromone_cell_pos[None, :, :2], axis=2)
-    i = jnp.argmin(dists, axis=1, keepdims=True)
-    return this.consts.pheromone_cell_ind[i[:, 0]]
+    return jnp.array(jnp.unravel_index(jnp.argmin(dists), dists.shape))
 
 
 @jax_dataclass
 class Consts:
     dt: float
-    pheromone_cell_ind: jax.Array
     pheromone_cell_pos: jax.Array
 
 
@@ -73,12 +71,11 @@ class BasicSimulator(SimulatorTrait):
         )
 
         pheromone_cells = [s.get_cell(mj_model) for s in p_cell_specs]
-        pheromone_cell_ind = jnp.array(
-            [(cell.index_x, cell.index_y) for cell in pheromone_cells], dtype=jnp.int32
+        pheromone_cell_pos = jnp.zeros(
+            (settings.Pheromone.HEIGHT_NUM, settings.Pheromone.WIDTH_NUM, 2), dtype=jnp.float32
         )
-        pheromone_cell_pos = jnp.array(
-            [(cell.pos[0], cell.pos[1]) for cell in pheromone_cells], dtype=jnp.float32
-        )
+        for c in pheromone_cells:
+            pheromone_cell_pos[c.index_y, c.index_x, :2] = c.pos[:2]
 
         return mj_model, cls(
             model=model,
@@ -86,7 +83,6 @@ class BasicSimulator(SimulatorTrait):
             pheromone=pheromone,
             consts=Consts(
                 dt=settings.Simulation.TIME_STEP,
-                pheromone_cell_ind=pheromone_cell_ind,
                 pheromone_cell_pos=pheromone_cell_pos,
             )
         )
