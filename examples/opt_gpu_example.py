@@ -61,10 +61,6 @@ class Controller(ControllerInterface):
     def reset(self) -> Self:
         return self
 
-    @staticmethod
-    def dim():
-        return (16 * 8 + 8) + (8 * 2 + 2)
-
 
 @jax_dataclass
 class Simulator(SimEvaluateTrait):
