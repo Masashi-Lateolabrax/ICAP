@@ -198,6 +198,10 @@ class RobotOutputs:
     right_wheel: jax.Array
     pheromone: jax.Array
 
+    @property
+    def wheels(self) -> jax.Array:
+        return jnp.stack([self.left_wheel, self.right_wheel], axis=1)
+
 
 @jax_dataclass
 class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
