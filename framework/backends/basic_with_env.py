@@ -330,7 +330,7 @@ class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
             new_data = sim.food_items.set_pos(this.data, i, new_position)
             return sim.update(
                 data=new_data,
-                rngs_for_relocating_food=new_rngs
+                _rngs_for_relocating_food=new_rngs
             )
 
         this = jax.lax.fori_loop(
