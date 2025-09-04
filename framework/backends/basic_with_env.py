@@ -235,11 +235,7 @@ class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
             settings.Robot.NUM_RAYS, robots
         )
         robot_inputs = jnp.zeros((robots.num_robots, settings.Robot.NUM_RAYS))
-        robot_outputs = RobotOutputs(
-            left_wheel=jnp.zeros((robots.num_robots,), dtype=jnp.float32),
-            right_wheel=jnp.zeros((robots.num_robots,), dtype=jnp.float32),
-            pheromone=jnp.zeros((robots.num_robots,), dtype=jnp.float32),
-        )
+        robot_outputs = RobotOutputs.zeros(robots.num_robots)
 
         return mj_model, cls(
             _parent_sim=parent_sim,
