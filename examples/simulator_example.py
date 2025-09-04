@@ -12,7 +12,7 @@ from flax.struct import dataclass as jax_dataclass
 from framework.prelude import *
 from framework.utils import GenericTkinterViewer
 from framework.pheromone import PheromoneField
-from framework.backends import SimulatorWithCtrl, ControllerInterface
+from framework.backends import SimulatorWithCtrl, ControllerInterface, RobotOutputs
 
 
 class Controller(ControllerInterface):
@@ -24,9 +24,9 @@ class Controller(ControllerInterface):
             [-0.5, -0.5],
         ])
         self.rngs = nnx.Rngs(0)
-        self.state = jnp.zeros((parameter, 3), dtype=jnp.float32)
+        self.state = jnp.ones((parameter, 3), dtype=jnp.float32)
 
-    def __call__(self, x: jax.Array) -> jax.Array:
+    def __call__(self, x: jax.Array) -> RobotOutputs:
         do_update = jax.random.randint(self.rngs(), (1,), minval=0, maxval=100)
         select = jax.random.randint(self.rngs(), (x.shape[0],), minval=0, maxval=4)
 
@@ -37,9 +37,15 @@ class Controller(ControllerInterface):
             operand=None
         )
         self.state = self.state.at[:, :2].set(x)
-        self.state = self.state.at[:, 2].add(1)
 
-        return self.state
+        return RobotOutputs(
+            left_wheel=self.state[:, 0],
+            right_wheel=self.state[:, 1],
+            pheromone=self.state[:, 2],
+        )
+
+    def reset(self) -> Self:
+        return self
 
     @staticmethod
     def dim():
