@@ -218,19 +218,5 @@ class BatchedRobots:
         new_ctrl = new_ctrl.at[self.ids.r_actuator_ids].set(torque)
         return data.replace(ctrl=new_ctrl)
 
-    def set_ctrl(self, data: mujoco.MjData | mjx.Data, ctrl: jax.Array) -> mujoco.MjData | mjx.Data:
-        if isinstance(data, mjx.Data):
-            return self._set_ctrl_mjx(data, ctrl)
-
-        elif isinstance(data, mujoco.MjData):
-            power_and_torque = ctrl @ self.two_wheel_differential_move_matrix_T
-            move = self.xdirections * power_and_torque[:, 0:1]
-            torque = power_and_torque[:, 1]
-
-            data.ctrl[self.ids.x_actuator_ids] = move[:, 0]
-            data.ctrl[self.ids.y_actuator_ids] = move[:, 1]
-            data.ctrl[self.ids.r_actuator_ids] = torque
-
-            return data
-
-        raise TypeError("data must be of type mujoco.MjData or mjx.Data")
+    def set_ctrl(self, data: mjx.Data, ctrl: jax.Array) -> mujoco.MjData | mjx.Data:
+        return self._set_ctrl_mjx(data, ctrl)
