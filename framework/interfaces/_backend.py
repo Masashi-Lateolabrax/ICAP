@@ -54,7 +54,7 @@ class SimulatorTrait(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def reset(self):
+    def reset(self) -> Self:
         raise NotImplementedError
 
 
