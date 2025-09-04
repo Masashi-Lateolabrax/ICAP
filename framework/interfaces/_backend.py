@@ -15,16 +15,22 @@ class SimulatorTrait(metaclass=abc.ABCMeta):
     def _update_parent(self, **kwargs: dict) -> Self:
         return self
 
-    def update(self, **kwargs) -> Self:
+    def _update(self, **kwargs: dict) -> Self:
         this = self
         kwargs = {k: v for k, v in kwargs.items() if v is not None}
-
         this_param_names = vars(this).keys()
+
+        parent_kwargs = {k: v for k, v in kwargs.items() if k not in this_param_names}
+        this = this._update_parent(**parent_kwargs)
+
         this_kwargs = {k: v for k, v in kwargs.items() if k in this_param_names}
         this = this.replace(**this_kwargs)
 
-        parent_kwargs = {k: v for k, v in kwargs.items() if k not in this_param_names}
-        return this._update_parent(parent_kwargs)
+        return this
+
+    @abc.abstractmethod
+    def update(self, **kwargs) -> Self:
+        return self._update(**kwargs)
 
     @abc.abstractmethod
     def get_pheromone(self, positions: jax.Array) -> jax.Array:
