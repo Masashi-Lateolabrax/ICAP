@@ -11,7 +11,6 @@ from flax.struct import dataclass as jax_dataclass
 
 from framework.prelude import *
 from framework.utils import GenericTkinterViewer
-from framework.pheromone import PheromoneField
 from framework.backends import SimulatorWithCtrl, ControllerInterface, RobotOutputs
 
 
@@ -85,12 +84,6 @@ class Simulator(SimRenderTrait):
     def new(cls, settings: Settings, controller: Controller, rngs: jax.Array) -> tuple[mujoco.MjModel, 'Simulator']:
         mj_model, parent_sim = SimulatorWithCtrl.new(settings, controller, rngs)
         return mj_model, cls(_parent_sim=parent_sim)
-
-    def get_pheromone(self, positions: jax.Array) -> jax.Array:
-        return self._parent_sim.get_pheromone(positions)
-
-    def add_pheromone(self, positions: jax.Array, amounts: jax.Array) -> PheromoneField:
-        return self._parent_sim.add_pheromone(positions, amounts)
 
     @staticmethod
     @nnx.jit
