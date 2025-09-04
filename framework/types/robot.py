@@ -130,7 +130,6 @@ class RobotInputs:
             pheromone=jnp.zeros((num_robots,), dtype=jnp.float32),
         )
 
-    @property
     def as_matrix(self) -> jax.Array:
         return jnp.concatenate([self.ray, self.pheromone[:, None]], axis=1)
 
