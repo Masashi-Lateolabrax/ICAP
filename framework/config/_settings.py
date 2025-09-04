@@ -46,9 +46,9 @@ class Render:
 
 class Optimization:
     DIMENSION: int | None = None
-    POPULATION: int = 1000
-    GENERATION: int = 100
-    SIGMA: float = 0.5
+    POPULATION: int = 100
+    GENERATION: int = 1000
+    SIGMA: float = 2.5
     CLIP: Callable[[jnp.ndarray], jnp.ndarray] = ClippingFunctions.none
 
 
@@ -68,11 +68,20 @@ class Robot:
 
     NUM_RAYS = 16
 
-    ROBOT_SENSOR_GAIN: float = 1.0
-    FOOD_SENSOR_GAIN: float = 1.0
+    NUM = 9
+    INITIAL_POSITION = [
+        RobotLocation(-0.175 * 2 - 0.1, 0.5, jnp.pi),
+        RobotLocation(0, 0.5, jnp.pi),
+        RobotLocation(0.175 * 2 + 0.1, 0.5, jnp.pi),
 
-    NUM: int = 1
-    INITIAL_POSITION: list[RobotLocation] = []
+        RobotLocation(-0.175 * 2 - 0.1, 0, jnp.pi),
+        RobotLocation(0, 0, jnp.pi),
+        RobotLocation(0.175 * 2 + 0.1, 0, jnp.pi),
+
+        RobotLocation(-0.175 * 2 - 0.1, -0.5, jnp.pi),
+        RobotLocation(0, -0.5, jnp.pi),
+        RobotLocation(0.175 * 2 + 0.1, -0.5, jnp.pi),
+    ]
 
 
 class Food:
@@ -82,8 +91,11 @@ class Food:
     DENSITY: int = 80
     COLOR: tuple[float, float, float, float] = (0, 1, 1, 1)
 
-    NUM: int = 1
-    INITIAL_POSITION: list[Position] = []
+    NUM = 2
+    INITIAL_POSITION = [
+        Position(2, 2),
+        Position(-2, -2),
+    ]
 
 
 class Nest:
@@ -118,18 +130,6 @@ class Simulation:
     TEMPERATURE: float = 300.0  # Kelvin
 
 
-class Storage:
-    SAVE_INDIVIDUALS: bool = True
-    SAVE_DIRECTORY: str = "./results"
-    SAVE_INTERVAL: int = 10  # Save every N generations
-    TOP_N: int = 0  # Save top N individuals, 0 means save all
-    ASSET_DIRECTORY: str = "./assets"
-
-
-class Device:
-    ENABLE_CUDA: bool = False
-
-
 class Pheromone:
     ACTIVE: bool = False
     CELL_SIZE: float = 0.5
@@ -141,6 +141,14 @@ class Pheromone:
     MATERIAL: Material = ETHANOL
 
 
+class Storage:
+    ASSET_DIRECTORY: str = "./assets"
+    SAVE_DIRECTORY: str = "./results"
+    SAVE_INDIVIDUALS: bool = True
+    SAVE_INTERVAL: int = 1  # Save every N generations
+    TOP_N: int = 5  # Save top N individuals, 0 means save all
+
+
 class Settings:
     Optimization: type[Optimization] = Optimization
     Loss: type[Loss] = Loss
@@ -150,7 +158,6 @@ class Settings:
     Food: type[Food] = Food
     Nest: type[Nest] = Nest
     Storage: type[Storage] = Storage
-    Device: type[Device] = Device
     Pheromone: type[Pheromone] = Pheromone
 
     @staticmethod
