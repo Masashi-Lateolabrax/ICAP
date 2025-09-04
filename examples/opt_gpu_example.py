@@ -164,24 +164,24 @@ def opt_gpu_example():
     monitor_gpu_memory()
 
     # Main simulation loop using multi-step batching for better performance
-    print(f"\nStarting main simulation ({simulation_steps} steps, {batch_steps} steps per batch)...")
+    print(f"\nStarting main simulation ({episode_length} steps, {batch_steps} steps per batch)...")
     sim_start = time.perf_counter()
 
     completed_steps = 0
-    while completed_steps < simulation_steps:
-        steps_to_run = min(batch_steps, simulation_steps - completed_steps)
+    while completed_steps < episode_length:
+        steps_to_run = min(batch_steps, episode_length - completed_steps)
         simulators = jax.vmap(lambda sim: sim.step_n(steps_to_run))(simulators)
         completed_steps += steps_to_run
 
-        if completed_steps % 100 == 0 or completed_steps == simulation_steps:
+        if completed_steps % 100 == 0 or completed_steps == episode_length:
             elapsed = time.perf_counter() - sim_start
             steps_per_sec = completed_steps / elapsed
-            print(f"\nStep {completed_steps}/{simulation_steps} - {steps_per_sec:.1f} steps/sec")
+            print(f"\nStep {completed_steps}/{episode_length} - {steps_per_sec:.1f} steps/sec")
             if gpu_available:
                 monitor_gpu_memory()
 
     sim_time = time.perf_counter() - sim_start
-    total_steps_per_sec = simulation_steps / sim_time
+    total_steps_per_sec = episode_length / sim_time
     print(f"\nSimulation completed: {sim_time:.2f}s ({total_steps_per_sec:.1f} steps/sec)")
 
     if gpu_available:
@@ -207,7 +207,7 @@ def opt_gpu_example():
     print(f"  Total: {total_time:.2f}s")
     print(f"\nThroughput:")
     print(f"  Steps per second: {total_steps_per_sec:.1f}")
-    print(f"  Efficiency: {((population_size * simulation_steps) / sim_time) / 1000:.1f}k individual-steps/sec")
+    print(f"  Efficiency: {((population_size * episode_length) / sim_time) / 1000:.1f}k individual-steps/sec")
     print(f"{'=' * 60}")
 
 
