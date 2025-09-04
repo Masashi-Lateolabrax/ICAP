@@ -28,9 +28,7 @@ class _SimulationState:
         self.running_mode: SimulationRunningMode = SimulationRunningMode.RUNNING
         self.mode_change_event: threading.Event = threading.Event()
 
-        self.lookat_position: Position3d = Position3d(DEFAULT_LOOKAT_X, DEFAULT_LOOKAT_Y, DEFAULT_LOOKAT_Z)
-        self.camera_position: Position3d = Position3d(0, 0, 0)
-        self.set_camera_position_from_angles(DEFAULT_CAMERA_DISTANCE, DEFAULT_CAMERA_AZIMUTH, DEFAULT_CAMERA_ELEVATION)
+        self.camera = mujoco.MjvCamera()
         self.fps: float = 0.0
 
         self.error_message: Optional[str] = None
@@ -59,20 +57,6 @@ class _SimulationState:
         self.error_message = None
         self.error_timestamp = None
 
-    def set_camera_position_from_angles(self, distance: float, azimuth_deg: float, elevation_deg: float):
-        azimuth_rad = np.radians(azimuth_deg)
-        elevation_rad = np.radians(elevation_deg)
-
-        x_offset = distance * np.cos(elevation_rad) * np.cos(azimuth_rad)
-        y_offset = distance * np.cos(elevation_rad) * np.sin(azimuth_rad)
-        z_offset = distance * np.sin(elevation_rad)
-
-        self.camera_position = Position3d(
-            self.lookat_position.x + x_offset,
-            self.lookat_position.y + y_offset,
-            self.lookat_position.z + z_offset
-        )
-
     @property
     def has_recent_error(self) -> bool:
         return (self.error_message is not None and
@@ -84,10 +68,9 @@ class _Simulation:
     def __init__(
             self,
             model: mujoco.MjModel,
-            backend: SimulatorBackend,
+            backend: SimRenderTrait,
             state: _SimulationState,
             max_geom: int,
-            max_pheromone: float
     ):
         self.model = model
         self.backend = backend
@@ -95,7 +78,6 @@ class _Simulation:
         self.logger = logging.getLogger(__name__)
 
         self.max_geom = max_geom
-        self.max_pheromone = max_pheromone
 
         self.thread: Optional[threading.Thread] = None
         self.should_stop = False
@@ -119,15 +101,12 @@ class _Simulation:
                     self.logger.warning("Simulation thread did not stop gracefully")
             self._running = False
 
-    def _render_frame(self):
+    def _render_frame(self, renderer: mujoco.Renderer):
         try:
             self.backend.render(
-                self.model,
-                self.state.rgb_buffer,
-                self.state.camera_position.to_tuple(),
-                self.state.lookat_position.to_tuple(),
-                self.max_geom,
-                self.max_pheromone
+                img_buf=self.state.rgb_buffer,
+                camera=self.state.camera,
+                renderer=renderer
             )
             self.state.buffer_update_timestamp = time.time()
         except Exception as e:
@@ -138,6 +117,10 @@ class _Simulation:
     def _run_loop(self):
         target_interval = 1.0 / TARGET_FPS
         running_mode = self.state.running_mode
+
+        renderer = mujoco.Renderer(
+            self.model, self.state.rgb_buffer.shape[0], self.state.rgb_buffer.shape[1], max_geom=self.max_geom
+        )
 
         try:
             while not self.should_stop:
@@ -167,7 +150,7 @@ class _Simulation:
 
                 sleep_time = max(0.0, target_interval - self._average_elapsed)
                 if sleep_time > 0:
-                    self._render_frame()
+                    self._render_frame(renderer)
                     time.sleep(sleep_time)
 
                 elapsed = time.perf_counter() - start_time
@@ -274,17 +257,15 @@ class CameraControlPanel(ttk.Frame):
             _install_scale_helper(var, range_min, range_max, label)
 
     def _handle_camera_change(self, value=None):
-        self.state.lookat_position = Position3d(
+        self.state.camera.lookat[:] = np.array([
             self.lookat_x_var.get(),
             self.lookat_y_var.get(),
             DEFAULT_LOOKAT_Z
-        )
+        ], dtype=np.float32)
 
-        self.state.set_camera_position_from_angles(
-            self.distance_var.get(),
-            self.azimuth_var.get(),
-            self.elevation_var.get()
-        )
+        self.state.camera.distance = self.distance_var.get()
+        self.state.camera.azimuth = self.azimuth_var.get()
+        self.state.camera.elevation = -self.elevation_var.get()
 
 
 class SimulationInfoPanel(ttk.LabelFrame):
@@ -403,7 +384,7 @@ class _TopWindow(tk.Tk):
 
 
 class GenericTkinterViewer:
-    def __init__(self, model: mujoco.MjModel, settings: Settings, backend: SimulatorBackend):
+    def __init__(self, model: mujoco.MjModel, settings: Settings, backend: SimRenderTrait):
         self.backend = backend
         self.logger = logging.getLogger(__name__)
 
@@ -412,7 +393,7 @@ class GenericTkinterViewer:
         )
 
         self.simulation = _Simulation(
-            model, backend, self.state, settings.Render.MAX_GEOM, settings.Render.MAX_PHEROMONE
+            model, backend, self.state, settings.Render.MAX_GEOM
         )
 
         backend_name = getattr(backend, '__class__', type(backend)).__name__
