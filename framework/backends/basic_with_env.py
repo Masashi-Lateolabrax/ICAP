@@ -170,7 +170,7 @@ class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
 
     def _update_parent(self, **kwargs: dict) -> Self:
         return self.replace(
-            _basic_sim=self._parent_sim.update(**kwargs)
+            _parent_sim=self._parent_sim.update(**kwargs)
         )
 
     def update(
