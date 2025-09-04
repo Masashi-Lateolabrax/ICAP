@@ -402,11 +402,10 @@ class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
         self._parent_sim.render(img_buf, camera, renderer)
 
     def reset(self, rngs: jax.Array = None) -> 'BasicSimulatorWithEnv':
-        new_basic_sim = self._parent_sim.reset()
-        this: "BasicSimulatorWithEnv" = self.replace(_basic_sim=new_basic_sim)
+        this = self.update(_parent_sim=self._parent_sim.reset())
 
-        new_robots = self.robots.update(new_basic_sim.data)
-        new_food_items = self.food_items.update(new_basic_sim.data)
+        new_robots = self.robots.update(this.data)
+        new_food_items = self.food_items.update(this.data)
 
         rngs = this._rngs_for_relocating_food if rngs is None else rngs
 
