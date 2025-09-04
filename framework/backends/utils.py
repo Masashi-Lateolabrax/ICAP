@@ -90,10 +90,18 @@ def emit_rays_static(
         body_ids: tuple[int, ...],
         num_rays: int
 ) -> tuple[jax.Array, jax.Array]:  # shape (num_robots, num_rays), (num_robots, num_rays)
-    def single_robot_rays(pos, xdir, body_id):
-        return _emit_n_rays(model, data, pos, xdir, body_id, num_rays)
+    results = []
+    for i, body_id in enumerate(body_ids):
+        result = _emit_n_rays(
+            model, data,
+            positions[i], xdirections[i],
+            body_id, num_rays
+        )
+        results.append(result)
 
-    return jax.vmap(single_robot_rays)(positions, xdirections, body_ids)
+    dists = jnp.stack([r[0] for r in results])
+    ids = jnp.stack([r[1] for r in results])
+    return dists, ids
 
 
 @partial(jax.jit, static_argnames=["num_rays"])
