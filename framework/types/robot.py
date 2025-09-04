@@ -44,7 +44,7 @@ class RobotIDs:
 
 @jax_dataclass
 class BatchedRobotIDs:
-    body_ids: tuple = field(pytree_node=False)
+    body_ids: tuple[int, ...] = field(pytree_node=False)
     center_site_ids: jnp.ndarray
     front_site_ids: jnp.ndarray
     free_joint_ids: jnp.ndarray
