@@ -20,7 +20,7 @@ class ControllerInterface(nnx.Module, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def __call__(self, x: jax.Array) -> RobotOutputs:
+    def forward(self, x: RobotInputs) -> RobotOutputs:
         raise NotImplementedError
 
     @abc.abstractmethod
