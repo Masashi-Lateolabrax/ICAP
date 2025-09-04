@@ -38,14 +38,6 @@ class SimulatorTrait(metaclass=abc.ABCMeta):
         return self._update(**kwargs)
 
     @abc.abstractmethod
-    def get_pheromone(self, positions: jax.Array) -> jax.Array:
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def add_pheromone(self, positions: jax.Array, values: jax.Array) -> PheromoneField:
-        raise NotImplementedError
-
-    @abc.abstractmethod
     def step(self) -> Self:
         raise NotImplementedError
 
@@ -55,6 +47,16 @@ class SimulatorTrait(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def reset(self) -> Self:
+        raise NotImplementedError
+
+
+class SimPheromoneTrait(SimulatorTrait, metaclass=abc.ABCMeta):
+    @abc.abstractmethod
+    def get_pheromone(self, positions: jax.Array) -> jax.Array:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def add_pheromone(self, positions: jax.Array, values: jax.Array) -> PheromoneField:
         raise NotImplementedError
 
 
