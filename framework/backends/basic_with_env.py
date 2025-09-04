@@ -423,6 +423,7 @@ class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
         return this.update(
             robots=new_robots,
             food_items=new_food_items,
+            robot_outputs=RobotOutputs.zeros(self.robots.num_robots),
             loss=jnp.zeros((1,), dtype=jnp.float32),
             _loss_offset=jnp.zeros((1,), dtype=jnp.float32),
         )
