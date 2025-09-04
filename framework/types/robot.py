@@ -2,7 +2,7 @@ from typing import Self
 
 import jax
 import jax.numpy as jnp
-from flax.struct import dataclass as jax_dataclass
+from flax.struct import field, dataclass as jax_dataclass
 
 import mujoco
 from mujoco import mjx
@@ -32,7 +32,7 @@ class RobotSpec:
 
 @jax_dataclass
 class RobotIDs:
-    body_id: jnp.ndarray
+    body_id: int = field(pytree_node=False)
     center_site_id: jnp.ndarray
     front_site_id: jnp.ndarray
     free_joint_id: jnp.ndarray
@@ -44,7 +44,7 @@ class RobotIDs:
 
 @jax_dataclass
 class BatchedRobotIDs:
-    body_ids: jnp.ndarray
+    body_ids: tuple = field(pytree_node=False)
     center_site_ids: jnp.ndarray
     front_site_ids: jnp.ndarray
     free_joint_ids: jnp.ndarray
@@ -55,7 +55,7 @@ class BatchedRobotIDs:
 
     @classmethod
     def from_specs(cls, model: mujoco.MjModel | mjx.Model, specs: list[RobotSpec]) -> 'BatchedRobotIDs':
-        body_ids = [mjx.name2id(model, mujoco.mjtObj.mjOBJ_BODY, spec.body.name) for spec in specs]
+        body_ids = tuple([mjx.name2id(model, mujoco.mjtObj.mjOBJ_BODY, spec.body.name) for spec in specs])
         center_site_ids = [mjx.name2id(model, mujoco.mjtObj.mjOBJ_SITE, spec.center_site.name) for spec in specs]
         front_site_ids = [mjx.name2id(model, mujoco.mjtObj.mjOBJ_SITE, spec.front_site.name) for spec in specs]
         free_joint_ids = [mjx.name2id(model, mujoco.mjtObj.mjOBJ_JOINT, spec.free_joint.name) for spec in specs]
@@ -65,7 +65,7 @@ class BatchedRobotIDs:
         r_actuator_ids = [mjx.name2id(model, mujoco.mjtObj.mjOBJ_ACTUATOR, spec.r_act.name) for spec in specs]
 
         return cls(
-            body_ids=jnp.array(body_ids, dtype=jnp.int32),
+            body_ids=body_ids,
             center_site_ids=jnp.array(center_site_ids, dtype=jnp.int32),
             front_site_ids=jnp.array(front_site_ids, dtype=jnp.int32),
             free_joint_ids=jnp.array(free_joint_ids, dtype=jnp.int32),
