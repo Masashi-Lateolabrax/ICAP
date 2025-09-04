@@ -123,62 +123,6 @@ class Consts:
     GAIN_FOOD_AND_NEST: float
 
 
-@jax_dataclass
-class RobotOutputs:
-    left_wheel: jax.Array
-    right_wheel: jax.Array
-    pheromone: jax.Array
-
-    @staticmethod
-    def zeros(num_robots: int) -> "RobotOutputs":
-        return RobotOutputs(
-            left_wheel=jnp.zeros((num_robots,), dtype=jnp.float32),
-            right_wheel=jnp.zeros((num_robots,), dtype=jnp.float32),
-            pheromone=jnp.zeros((num_robots,), dtype=jnp.float32),
-        )
-
-    @property
-    def wheels(self) -> jax.Array:
-        return jnp.stack([self.left_wheel, self.right_wheel], axis=1)
-
-    def update(self, left_wheel=None, right_wheel=None, pheromone=None) -> Self:
-        kwargs = {
-            "left_wheel": left_wheel,
-            "right_wheel": right_wheel,
-            "pheromone": pheromone,
-        }
-        kwargs = {k: v for k, v in kwargs.items() if v is not None}
-        if not kwargs:
-            return self
-        return self.replace(**kwargs)
-
-
-@jax_dataclass
-class RobotInputs:
-    ray: jax.Array
-    pheromone: jax.Array
-
-    @staticmethod
-    def zeros(num_robots: int, num_ray: int) -> "RobotInputs":
-        return RobotInputs(
-            ray=jnp.zeros((num_robots, num_ray), dtype=jnp.float32),
-            pheromone=jnp.zeros((num_robots,), dtype=jnp.float32),
-        )
-
-    @property
-    def as_matrix(self) -> jax.Array:
-        return jnp.concatenate([self.ray, self.pheromone[:, None]], axis=1)
-
-    def update(self, ray: jax.Array = None, pheromone: jax.Array = None) -> Self:
-        kwargs = {
-            "ray": ray,
-            "pheromone": pheromone,
-        }
-        kwargs = {k: v for k, v in kwargs.items() if v is not None}
-        if not kwargs:
-            return self
-        return self.replace(**kwargs)
-
 
 @jax_dataclass
 class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait):
