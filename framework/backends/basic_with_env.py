@@ -226,12 +226,16 @@ class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
 
     def update(
             self,
-            robots: BatchedRobots,
-            robot_inputs: jax.Array,
-            food_items: BatchedFood,
-            loss: jax.Array,
+            robots: BatchedRobots = None,
+            robot_inputs: jax.Array = None,
+            food_items: BatchedFood = None,
+            loss: jax.Array = None,
             **kwargs
     ) -> Self:
+        kwargs["robots"] = robots
+        kwargs["robot_inputs"] = robot_inputs
+        kwargs["food_items"] = food_items
+        kwargs["loss"] = loss
         return self._update(**kwargs)
 
     @classmethod
