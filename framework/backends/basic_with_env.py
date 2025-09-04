@@ -348,7 +348,7 @@ class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
 
         # Step the basic simulator
         this = this.update(
-            _basic_sim=this._parent_sim.step()
+            _parent_sim=this._parent_sim.step()
         )
         this = this.update(
             robots=this.robots.update(this.data),
