@@ -44,7 +44,7 @@ class BasicSimulator(SimRenderTrait):
         return self._update(**kwargs)
 
     @classmethod
-    def new(cls, spec: mujoco.MjSpec, settings: Settings) -> tuple[mujoco.MjModel, 'BasicSimulator']:
+    def new(cls, spec: mujoco.MjSpec, settings: Settings) -> tuple[mujoco.MjModel, Self]:
         p_cell_specs: list[PheromoneFieldCellSpec] = add_pheromone_cells_to_mjspec(
             spec, settings.Pheromone.WIDTH_NUM, settings.Pheromone.HEIGHT_NUM, settings.Pheromone.CELL_SIZE
         )
