@@ -8,7 +8,7 @@ import jax
 import jax.numpy as jnp
 from flax.struct import dataclass as jax_dataclass
 
-from ..prelude import Settings, SimRenderTrait
+from ..prelude import Settings, SimRenderTrait, SimPheromoneTrait
 from ..pheromone import PheromoneField, PheromoneFieldCellSpec, add_pheromone_cells_to_mjspec
 
 
@@ -18,7 +18,7 @@ class Consts:
 
 
 @jax_dataclass
-class BasicSimulator(SimRenderTrait):
+class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
     consts: Consts
 
     model: mjx.Model
