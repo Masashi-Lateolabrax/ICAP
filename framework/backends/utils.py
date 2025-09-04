@@ -81,12 +81,19 @@ def _emit_n_rays(
     return dists, ids
 
 
-_EMIT_RAYS_FUNCTIONS = []
-_REGISTERED_ROBOT_IDS = set()
+@partial(jax.jit, static_argnames=["body_ids", "num_rays"])
+def emit_rays_static(
+        model: mjx.Model,
+        data: mjx.Data,
+        positions: jax.Array,
+        xdirections: jax.Array,
+        body_ids: tuple[int, ...],
+        num_rays: int
+) -> tuple[jax.Array, jax.Array]:  # shape (num_robots, num_rays), (num_robots, num_rays)
+    def single_robot_rays(pos, xdir, body_id):
+        return _emit_n_rays(model, data, pos, xdir, body_id, num_rays)
 
-
-def create_emit_rays_functions(num_rays: int, robots: BatchedRobots):
-    global _EMIT_RAYS_FUNCTIONS, _REGISTERED_ROBOT_IDS
+    return jax.vmap(single_robot_rays)(positions, xdirections, body_ids)
 
     body_ids = robots.ids.body_ids.tolist()
 
