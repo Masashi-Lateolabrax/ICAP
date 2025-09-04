@@ -26,6 +26,7 @@ class BasicSimulator(SimulatorTrait):
     pheromone: PheromoneField
 
     _pheromone_cell_pos: jax.Array
+    _pheromone_cell_site_ids: jax.Array
 
     def _update_parent(self, **kwargs: dict) -> Self:
         return self
@@ -67,8 +68,12 @@ class BasicSimulator(SimulatorTrait):
         pheromone_cell_pos = jnp.zeros(
             (settings.Pheromone.HEIGHT_NUM, settings.Pheromone.WIDTH_NUM, 2), dtype=jnp.float32
         )
+        pheromone_cell_site_ids = jnp.zeros(
+            (settings.Pheromone.HEIGHT_NUM, settings.Pheromone.WIDTH_NUM), dtype=jnp.int32
+        )
         for c in pheromone_cells:
             pheromone_cell_pos[c.index_y, c.index_x, :2] = c.pos[:2]
+            pheromone_cell_site_ids[c.index_y, c.index_x] = c.id
 
         return mj_model, cls(
             consts=Consts(
