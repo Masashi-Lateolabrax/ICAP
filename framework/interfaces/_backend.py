@@ -46,10 +46,14 @@ class SimulatorTrait(metaclass=abc.ABCMeta):
     def reset(self):
         raise NotImplementedError
 
+
+class SimRenderTrait(SimulatorTrait, metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def get_scores(self) -> list[float]:
+    def render(self, img_buf: np.ndarray, pos: tuple[float, float, float], lookat: tuple[float, float, float]):
         raise NotImplementedError
 
+
+class SimEvaluateTrait(SimulatorTrait, metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def calc_total_score(self) -> float:
+    def evaluate(self) -> dict:
         raise NotImplementedError
