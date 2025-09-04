@@ -12,14 +12,6 @@ from ..prelude import Settings, SimulatorTrait
 from ..pheromone import PheromoneField, PheromoneFieldCellSpec, add_pheromone_cells_to_mjspec
 
 
-@jax.jit
-def _calc_nearest_pheromone_cell_indices(
-        this: "BasicSimulator", positions: jax.Array
-) -> jax.Array:
-    dists = jnp.linalg.norm(positions[:, None, :2] - this.consts.pheromone_cell_pos[None, :, :2], axis=2)
-    return jnp.array(jnp.unravel_index(jnp.argmin(dists), dists.shape))
-
-
 @jax_dataclass
 class Consts:
     dt: float
@@ -90,12 +82,20 @@ class BasicSimulator(SimulatorTrait):
             _pheromone_cell_pos=pheromone_cell_pos
         )
 
+    @staticmethod
+    @jax.jit
+    def _calc_nearest_pheromone_cell_indices(
+            this: "BasicSimulator", positions: jax.Array
+    ) -> jax.Array:
+        dists = jnp.linalg.norm(positions[:, None, :2] - this._pheromone_cell_pos[None, :, :2], axis=2)
+        return jnp.array(jnp.unravel_index(jnp.argmin(dists), dists.shape))
+
     def get_pheromone(self, positions: jax.Array) -> jax.Array:
-        nearest_indices = _calc_nearest_pheromone_cell_indices(self, positions)
+        nearest_indices = BasicSimulator._calc_nearest_pheromone_cell_indices(self, positions)
         return self.pheromone.get_gas(nearest_indices[:, 0], nearest_indices[:, 1])
 
     def add_pheromone(self, positions: jax.Array, values: jax.Array) -> PheromoneField:
-        nearest_indices = _calc_nearest_pheromone_cell_indices(self, positions)
+        nearest_indices = BasicSimulator._calc_nearest_pheromone_cell_indices(self, positions)
         new_pheromone = self.pheromone.add_liquid(nearest_indices[:, 0], nearest_indices[:, 1], values)
         return new_pheromone
 
