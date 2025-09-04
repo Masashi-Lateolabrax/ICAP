@@ -379,7 +379,9 @@ class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
     @jax.jit
     def _step(this: "BasicSimulatorWithEnv") -> "BasicSimulatorWithEnv":
         # Step the basic simulator
-        this: "BasicSimulatorWithEnv" = this.replace(_basic_sim=this._basic_sim.step())
+        this = this.update(
+            _basic_sim=this._basic_sim.step()
+        )
         this = this.update(
             robots=this.robots.update(this.data),
             food_items=this.food_items.update(this.data),
