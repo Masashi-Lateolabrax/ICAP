@@ -1,5 +1,5 @@
 from .position import Position, Position3d, RobotLocation
-from .robot import RobotIDs, BatchedRobotIDs, RobotSpec, BatchedRobots
+from .robot import RobotIDs, BatchedRobotIDs, RobotSpec, BatchedRobots, RobotOutputs, RobotInputs
 from .food import FoodSpec, FoodIDs, BatchedFoodIDs, BatchedFood
 from .optimization import CalculationState, Individual, EvaluationFunction
 from .pheromone import Material, ETHANOL
@@ -15,6 +15,8 @@ __all__ = [
     "BatchedRobotIDs",
     "RobotSpec",
     "BatchedRobots",
+    "RobotOutputs",
+    "RobotInputs",
     "FoodSpec",
     "FoodIDs",
     "BatchedFoodIDs",
