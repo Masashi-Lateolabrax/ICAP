@@ -131,7 +131,7 @@ def opt_gpu_example():
 
     settings = Settings()
 
-    population_size = 100
+    population_size = 10
     episode_length = int(90 / settings.Simulation.TIME_STEP)
     batch_steps = 100  # Number of steps to batch together
 
@@ -224,7 +224,7 @@ def opt_gpu_example():
     print(f"  Total: {total_time:.2f}s")
     print(f"\nThroughput:")
     print(f"  Steps per second: {total_steps_per_sec:.1f}")
-    print(f"  Efficiency: {((population_size * episode_length) / sim_time) / 1000:.1f}k individual-steps/sec")
+    print(f"  Efficiency: {((population_size * episode_length) / sim_time) / 1000:.3f}k individual-steps/sec")
     print(f"{'=' * 60}")
 
 
