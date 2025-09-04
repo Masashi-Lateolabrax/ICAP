@@ -193,16 +193,25 @@ class Consts:
 
 
 @jax_dataclass
+class RobotOutputs:
+    left_wheel: jax.Array
+    right_wheel: jax.Array
+    pheromone: jax.Array
+
+
+@jax_dataclass
 class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
     _basic_sim: BasicSimulator
 
     robots: BatchedRobots
-    robot_inputs: jax.Array  # shape (num_robots, NUM_RAYS)
     food_items: BatchedFood
 
-    _rngs_for_relocating_food: jax.Array
+    robot_inputs: jax.Array  # shape (num_robots, NUM_RAYS)
+    robot_outputs: RobotOutputs
 
     loss: jax.Array
+
+    _rngs_for_relocating_food: jax.Array
     _loss_offset: jax.Array
 
     consts: Consts
@@ -231,14 +240,16 @@ class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
     def update(
             self,
             robots: BatchedRobots = None,
-            robot_inputs: jax.Array = None,
             food_items: BatchedFood = None,
+            robot_inputs: jax.Array = None,
+            robot_outputs: RobotOutputs = None,
             loss: jax.Array = None,
             **kwargs
     ) -> Self:
         kwargs["robots"] = robots
-        kwargs["robot_inputs"] = robot_inputs
         kwargs["food_items"] = food_items
+        kwargs["robot_inputs"] = robot_inputs
+        kwargs["robot_outputs"] = robot_outputs
         kwargs["loss"] = loss
         return self._update(**kwargs)
 
@@ -260,16 +271,24 @@ class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
             settings.Robot.NUM_RAYS, robots
         )
         robot_inputs = jnp.zeros((robots.num_robots, settings.Robot.NUM_RAYS))
+        robot_outputs = RobotOutputs(
+            left_wheel=jnp.zeros((robots.num_robots,), dtype=jnp.float32),
+            right_wheel=jnp.zeros((robots.num_robots,), dtype=jnp.float32),
+            pheromone=jnp.zeros((robots.num_robots,), dtype=jnp.float32),
+        )
 
         return mj_model, cls(
             _basic_sim=basic_sim,
 
             robots=robots,
-            robot_inputs=robot_inputs,
             food_items=food_items,
-            _rngs_for_relocating_food=rngs,
+
+            robot_inputs=robot_inputs,
+            robot_outputs=robot_outputs,
 
             loss=jnp.zeros((1,), dtype=jnp.float32),
+
+            _rngs_for_relocating_food=rngs,
             _loss_offset=jnp.zeros((1,), dtype=jnp.float32),
 
             consts=Consts(
