@@ -341,6 +341,12 @@ class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
     @staticmethod
     @jax.jit
     def _step(this: "BasicSimulatorWithEnv") -> "BasicSimulatorWithEnv":
+        # First, apply robot outputs to the simulation
+        this = this.update(
+            data=this.robots.set_ctrl(this.data, this.robot_outputs.wheels),
+            pheromone=this.add_pheromone(this.robots.positions, this.robot_outputs.pheromone)
+        )
+
         # Step the basic simulator
         this = this.update(
             _basic_sim=this._parent_sim.step()
