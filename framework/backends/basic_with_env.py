@@ -224,20 +224,15 @@ class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
             _basic_sim=self._basic_sim.update(**kwargs)
         )
 
-        this_kwargs = {
-            "_basic_sim": basic_sim,
-            "robots": robots,
-            "robot_inputs": robot_inputs,
-            "food_items": food_items,
-            "_rngs_for_relocating_food": rngs_for_relocating_food,
-            "loss": loss,
-            "_loss_offset": loss_offset,
-        }
-        kwargs = {k: v for k, v in this_kwargs.items() if v is not None}
-        if not kwargs:
-            return self
-
-        return self.replace(**kwargs)
+    def update(
+            self,
+            robots: BatchedRobots,
+            robot_inputs: jax.Array,
+            food_items: BatchedFood,
+            loss: jax.Array,
+            **kwargs
+    ) -> Self:
+        return self._update(**kwargs)
 
     @classmethod
     def new(cls, settings: Settings, rngs: jax.Array) -> tuple[mujoco.MjModel, 'BasicSimulatorWithEnv']:
