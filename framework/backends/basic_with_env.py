@@ -408,9 +408,9 @@ class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
         return this.update(
             robots=new_robots,
             food_items=new_food_items,
-            rngs_for_relocating_food=rngs,
             loss=jnp.zeros((1,), dtype=jnp.float32),
-            loss_offset=jnp.zeros((1,), dtype=jnp.float32)
+            _loss_offset=jnp.zeros((1,), dtype=jnp.float32),
+            _rngs_for_relocating_food=rngs,
         )
 
     def render(self, img_buf: np.ndarray, camera: mujoco.MjvCamera, renderer: mujoco.Renderer):
