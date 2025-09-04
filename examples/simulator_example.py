@@ -1,3 +1,5 @@
+from typing import Self
+
 import numpy as np
 import mujoco
 from mujoco import mjx
@@ -9,6 +11,7 @@ from flax.struct import dataclass as jax_dataclass
 
 from framework.prelude import *
 from framework.utils import GenericTkinterViewer
+from framework.pheromone import PheromoneField
 from framework.backends import SimulatorWithCtrl, ControllerInterface
 
 
@@ -44,56 +47,51 @@ class Controller(ControllerInterface):
 
 
 @jax_dataclass
-class Simulator:
-    _sim: SimulatorWithCtrl
+class Simulator(SimRenderTrait):
+    _parent_sim: SimulatorWithCtrl
 
     @property
     def data(self) -> mjx.Data:
-        return self._sim.data
+        return self._parent_sim.data
 
     @property
     def food_items(self) -> BatchedFood:
-        return self._sim.food_items
+        return self._parent_sim.food_items
+
+    def _update_parent(self, **kwargs: dict) -> Self:
+        return self.replace(
+            _parent_sim=self._parent_sim.update(**kwargs)
+        )
 
     def update(
             self,
             data: mjx.Data = None,
-            robots: BatchedRobots = None,
-            robot_inputs: jax.Array = None,
-            loss: jax.Array = None,
-            controller: Controller = None
-    ) -> 'Simulator':
-        parent_kwargs = {
-            "data": data,
-            "robots": robots,
-            "robot_inputs": robot_inputs,
-            "loss": loss,
-            "controller": controller
-        }
-        sim = self._sim.update(**parent_kwargs)
-
-        this_kwargs = {
-            "_sim": sim,
-        }
-        kwargs = {k: v for k, v in this_kwargs.items() if v is not None}
-        if not kwargs:
-            return self
-
-        return self.replace(**kwargs)
+            food_items: BatchedFood = None,
+            controller: Controller = None,
+            **kwargs
+    ) -> Self:
+        kwargs["data"] = data
+        kwargs["food_items"] = food_items
+        kwargs["controller"] = controller
+        return self._update(**kwargs)
 
     @classmethod
     def new(cls, settings: Settings, controller: Controller, rngs: jax.Array) -> tuple[mujoco.MjModel, 'Simulator']:
-        mj_model, sim = SimulatorWithCtrl.new(settings, controller, rngs)
-        return mj_model, cls(_sim=sim)
+        mj_model, parent_sim = SimulatorWithCtrl.new(settings, controller, rngs)
+        return mj_model, cls(_parent_sim=parent_sim)
 
-    def add_pheromone(self, positions: jax.Array, amounts: jax.Array) -> 'Simulator':
-        new_sim = self._sim.add_pheromone(positions, amounts)
-        return self.replace(_sim=new_sim)
+    def get_pheromone(self, positions: jax.Array) -> jax.Array:
+        return self._parent_sim.get_pheromone(positions)
+
+    def add_pheromone(self, positions: jax.Array, amounts: jax.Array) -> PheromoneField:
+        return self._parent_sim.add_pheromone(positions, amounts)
 
     @staticmethod
     @nnx.jit
     def _step(this: 'Simulator') -> 'Simulator':
-        this: "Simulator" = this.replace(_sim=this._sim.step())
+        this = this.update(
+            _parent_sim=this._parent_sim.step()
+        )
 
         nest_dir = -this.food_items.positions
         nest_dir = nest_dir.at[:, 2].set(0.0)
@@ -102,7 +100,7 @@ class Simulator:
 
         return this.update(data=new_data)
 
-    def step(self) -> 'Simulator':
+    def step(self) -> Self:
         return Simulator._step(self)
 
     @staticmethod
@@ -114,26 +112,15 @@ class Simulator:
         this = jax.lax.fori_loop(0, n, body_fn, this)
         return this
 
-    def step_n(self, n: int) -> 'Simulator':
+    def step_n(self, n: int) -> Self:
         return Simulator._step_n(self, n)
 
-    def render(
-            self,
-            mj_model: mujoco.MjModel,
-            img_buf: np.ndarray,
-            pos: tuple[float, float, float],
-            lookat: tuple[float, float, float],
-            max_geom=100,
-            max_pheromone=1.0
-    ):
-        self._sim.render(mj_model, img_buf, pos, lookat, max_geom, max_pheromone)
+    def reset(self) -> Self:
+        parent_sim = self._parent_sim.reset()
+        return self.update(_parent_sim=parent_sim)
 
-    def reset(self, controller: ControllerInterface = None, rngs: jax.Array = None) -> 'Simulator':
-        new_sim = self._sim.reset(rngs)
-        this = self.replace(_sim=new_sim)
-        return this.update(
-            controller=controller
-        )
+    def render(self, img_buf: np.ndarray, camera: mujoco.MjvCamera, renderer: mujoco.Renderer):
+        self._parent_sim.render(img_buf, camera, renderer)
 
 
 def jaxable_example():
