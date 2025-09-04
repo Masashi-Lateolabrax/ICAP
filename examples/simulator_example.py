@@ -136,7 +136,14 @@ def jaxable_example():
     settings.Render.RENDER_HEIGHT = 320
 
     settings.Robot.NUM = 1
+    settings.Robot.INITIAL_POSITION = []
+
     settings.Food.NUM = 1
+    settings.Food.INITIAL_POSITION = []
+
+    settings.Pheromone.CELL_SIZE = 0.5
+    settings.Pheromone.WIDTH_NUM = int(settings.Simulation.WORLD_WIDTH / settings.Pheromone.CELL_SIZE)
+    settings.Pheromone.HEIGHT_NUM = int(settings.Simulation.WORLD_HEIGHT / settings.Pheromone.CELL_SIZE)
 
     rngs = jax.random.PRNGKey(0)
     mj_model, backend = Simulator.new(
