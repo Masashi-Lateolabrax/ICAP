@@ -397,9 +397,6 @@ class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
     def step_n(self, n: int) -> 'BasicSimulatorWithEnv':
         return BasicSimulatorWithEnv._step_n(self, n)
 
-    def render(self, img_buf: np.ndarray, camera: mujoco.MjvCamera, renderer: mujoco.Renderer):
-        self._parent_sim.render(img_buf, camera, renderer)
-
     def reset(self, rngs: jax.Array = None) -> 'BasicSimulatorWithEnv':
         this = self.update(_parent_sim=self._parent_sim.reset())
 
@@ -415,6 +412,9 @@ class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
             loss=jnp.zeros((1,), dtype=jnp.float32),
             loss_offset=jnp.zeros((1,), dtype=jnp.float32)
         )
+
+    def render(self, img_buf: np.ndarray, camera: mujoco.MjvCamera, renderer: mujoco.Renderer):
+        self._parent_sim.render(img_buf, camera, renderer)
 
     def evaluate(self) -> dict:
         return {"loss": float(self.loss[0])}
