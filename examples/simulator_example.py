@@ -25,7 +25,7 @@ class Controller(ControllerInterface):
         self.rngs = nnx.Rngs(0)
         self.state = jnp.ones((parameter, 3), dtype=jnp.float32)
 
-    def __call__(self, x: jax.Array) -> RobotOutputs:
+    def __call__(self, x: jax.Array) -> jax.Array:
         do_update = jax.random.randint(self.rngs(), (1,), minval=0, maxval=100)
         select = jax.random.randint(self.rngs(), (x.shape[0],), minval=0, maxval=4)
 
@@ -37,10 +37,15 @@ class Controller(ControllerInterface):
         )
         self.state = self.state.at[:, :2].set(x)
 
+        return self.state
+
+    def forward(self, x: RobotInputs) -> RobotOutputs:
+        x = x.as_matrix()
+        x = self.__call__(x)
         return RobotOutputs(
-            left_wheel=self.state[:, 0],
-            right_wheel=self.state[:, 1],
-            pheromone=self.state[:, 2],
+            left_wheel=x[:, 0],
+            right_wheel=x[:, 1],
+            pheromone=x[:, 2],
         )
 
     def reset(self) -> Self:
