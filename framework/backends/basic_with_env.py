@@ -219,6 +219,10 @@ class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
     def data(self) -> mjx.Data:
         return self._basic_sim.data
 
+    @property
+    def loss_offset(self) -> jax.Array:
+        return self._loss_offset
+
     def _update_parent(self, **kwargs: dict) -> Self:
         return self.replace(
             _basic_sim=self._basic_sim.update(**kwargs)
@@ -398,14 +402,14 @@ class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
         fn_losses = jax.vmap(lambda x: BasicSimulatorWithEnv._calc_loss_between_food_and_nest(
             x, this.consts.NEST_POSITION, this.consts
         ))(this.food_items.positions)
-        losses = fr_losses + fn_losses + this._loss_offset
+        losses = fr_losses + fn_losses + this.loss_offset
 
-        loss_offset = this._loss_offset + relocation_occurred * losses
+        loss_offset = this.loss_offset + jnp.dot(relocation_occurred, losses)
 
         return this.update(
             robot_inputs=inputs,
             loss=jnp.sum(losses),
-            loss_offset=loss_offset
+            _loss_offset=loss_offset
         )
 
     def step(self) -> 'BasicSimulatorWithEnv':
