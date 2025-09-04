@@ -205,7 +205,9 @@ class RobotOutputs:
 
 @jax_dataclass
 class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
-    _basic_sim: BasicSimulator
+    consts: Consts
+
+    _parent_sim: BasicSimulator
 
     robots: BatchedRobots
     food_items: BatchedFood
@@ -218,19 +220,17 @@ class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
     _rngs_for_relocating_food: jax.Array
     _loss_offset: jax.Array
 
-    consts: Consts
-
     @property
     def NEST_POSITION(self) -> jax.Array:
         return self.consts.NEST_POSITION
 
     @property
     def model(self) -> mjx.Model:
-        return self._basic_sim.model
+        return self._parent_sim.model
 
     @property
     def data(self) -> mjx.Data:
-        return self._basic_sim.data
+        return self._parent_sim.data
 
     @property
     def loss_offset(self) -> jax.Array:
@@ -238,7 +238,7 @@ class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
 
     def _update_parent(self, **kwargs: dict) -> Self:
         return self.replace(
-            _basic_sim=self._basic_sim.update(**kwargs)
+            _basic_sim=self._parent_sim.update(**kwargs)
         )
 
     def update(
