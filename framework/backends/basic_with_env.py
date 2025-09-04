@@ -175,6 +175,10 @@ class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
 
     def update(
             self,
+            model: mjx.Model = None,
+            data: mjx.Data = None,
+            pheromone: PheromoneField = None,
+
             robots: BatchedRobots = None,
             food_items: BatchedFood = None,
             robot_inputs: jax.Array = None,
@@ -182,6 +186,10 @@ class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
             loss: jax.Array = None,
             **kwargs
     ) -> Self:
+        kwargs["model"] = model
+        kwargs["data"] = data
+        kwargs["pheromone"] = pheromone
+
         kwargs["robots"] = robots
         kwargs["food_items"] = food_items
         kwargs["robot_inputs"] = robot_inputs
