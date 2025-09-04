@@ -94,6 +94,10 @@ class RobotOutputs:
     right_wheel: jax.Array
     pheromone: jax.Array
 
+    @property
+    def wheels(self) -> jax.Array:
+        return jnp.stack([self.left_wheel, self.right_wheel], axis=1)
+
     @staticmethod
     def zeros(num_robots: int) -> "RobotOutputs":
         return RobotOutputs(
@@ -102,9 +106,12 @@ class RobotOutputs:
             pheromone=jnp.zeros((num_robots,), dtype=jnp.float32),
         )
 
-    @property
-    def wheels(self) -> jax.Array:
-        return jnp.stack([self.left_wheel, self.right_wheel], axis=1)
+    def fill(self, value: float) -> "RobotOutputs":
+        return RobotOutputs(
+            left_wheel=jnp.full(self.left_wheel.shape, value, dtype=jnp.float32),
+            right_wheel=jnp.full(self.right_wheel.shape, value, dtype=jnp.float32),
+            pheromone=jnp.full(self.pheromone.shape, value, dtype=jnp.float32),
+        )
 
     def update(self, left_wheel=None, right_wheel=None, pheromone=None) -> Self:
         kwargs = {
@@ -123,6 +130,9 @@ class RobotInputs:
     ray: jax.Array
     pheromone: jax.Array
 
+    def as_matrix(self) -> jax.Array:
+        return jnp.concatenate([self.ray, self.pheromone[:, None]], axis=1)
+
     @staticmethod
     def zeros(num_robots: int, num_ray: int) -> "RobotInputs":
         return RobotInputs(
@@ -130,8 +140,11 @@ class RobotInputs:
             pheromone=jnp.zeros((num_robots,), dtype=jnp.float32),
         )
 
-    def as_matrix(self) -> jax.Array:
-        return jnp.concatenate([self.ray, self.pheromone[:, None]], axis=1)
+    def fill(self, value: float) -> Self:
+        return RobotInputs(
+            ray=jnp.full(self.ray.shape, value, dtype=jnp.float32),
+            pheromone=jnp.full(self.pheromone.shape, value, dtype=jnp.float32),
+        )
 
     def update(self, ray: jax.Array = None, pheromone: jax.Array = None) -> Self:
         kwargs = {
