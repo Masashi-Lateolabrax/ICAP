@@ -412,4 +412,4 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
         self._parent_sim.render(img_buf, camera, renderer)
 
     def evaluate(self) -> dict:
-        return {"loss": float(self.loss[0])}
+        return {"loss": self.loss}
