@@ -219,23 +219,10 @@ class BasicSimulatorWithEnv(SimEvaluateTrait, SimRenderTrait):
     def data(self) -> mjx.Data:
         return self._basic_sim.data
 
-    def update(
-            self,
-            model: mjx.Model = None,
-            data: mjx.Data = None,
-
-            robots: BatchedRobots = None,
-            robot_inputs: jax.Array = None,
-            food_items: BatchedFood = None,
-            rngs_for_relocating_food: jax.Array = None,
-            loss: jax.Array = None,
-            loss_offset: jax.Array = None,
-    ) -> 'BasicSimulatorWithEnv':
-        parent_kwargs = {
-            "model": model,
-            "data": data,
-        }
-        basic_sim = self._basic_sim.update(**parent_kwargs)
+    def _update_parent(self, **kwargs: dict) -> Self:
+        return self.replace(
+            _basic_sim=self._basic_sim.update(**kwargs)
+        )
 
         this_kwargs = {
             "_basic_sim": basic_sim,
