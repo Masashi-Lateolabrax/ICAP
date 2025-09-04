@@ -23,7 +23,6 @@ def _calc_nearest_pheromone_cell_indices(
 @jax_dataclass
 class Consts:
     dt: float
-    pheromone_cell_pos: jax.Array
 
 
 @jax_dataclass
@@ -33,6 +32,8 @@ class BasicSimulator(SimulatorTrait):
     model: mjx.Model
     data: mjx.Data
     pheromone: PheromoneField
+
+    _pheromone_cell_pos: jax.Array
 
     def _update_parent(self, **kwargs: dict) -> Self:
         return self
@@ -78,13 +79,15 @@ class BasicSimulator(SimulatorTrait):
             pheromone_cell_pos[c.index_y, c.index_x, :2] = c.pos[:2]
 
         return mj_model, cls(
+            consts=Consts(
+                dt=settings.Simulation.TIME_STEP,
+            ),
+
             model=model,
             data=data,
             pheromone=pheromone,
-            consts=Consts(
-                dt=settings.Simulation.TIME_STEP,
-                pheromone_cell_pos=pheromone_cell_pos,
-            )
+
+            _pheromone_cell_pos=pheromone_cell_pos
         )
 
     def get_pheromone(self, positions: jax.Array) -> jax.Array:
