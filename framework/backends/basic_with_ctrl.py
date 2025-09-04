@@ -101,12 +101,6 @@ class SimulatorWithCtrl(SimRenderTrait, SimEvaluateTrait):
             controller=controller,
         )
 
-    def get_pheromone(self, positions: jax.Array) -> jax.Array:
-        return self._parent_sim.get_pheromone(positions)
-
-    def add_pheromone(self, positions: jax.Array, amounts: jax.Array) -> PheromoneField:
-        return self._parent_sim.add_pheromone(positions, amounts)
-
     @staticmethod
     @nnx.jit
     def _step(this: 'SimulatorWithCtrl') -> 'SimulatorWithCtrl':
@@ -146,4 +140,3 @@ class SimulatorWithCtrl(SimRenderTrait, SimEvaluateTrait):
 
     def evaluate(self) -> dict:
         return self._parent_sim.evaluate()
-
