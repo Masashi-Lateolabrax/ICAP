@@ -132,11 +132,8 @@ def opt_gpu_example():
     settings = Settings()
 
     population_size = 100
-    simulation_steps = int(90 / settings.Simulation.TIME_STEP)
+    episode_length = int(90 / settings.Simulation.TIME_STEP)
     batch_steps = 100  # Number of steps to batch together
-
-    settings.Robot.NUM = 1
-    settings.Food.NUM = 1
 
     optimizer = CMA(
         mean=np.zeros((Controller.dim(),), dtype=np.float32),
