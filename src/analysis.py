@@ -30,7 +30,9 @@ class SimulatorForDebugging(analysis_mod.SimulatorForDebugInterface):
             robot_outputs=self.simulator.output_ndarray.copy(),
             robot_directions=[np.copy(r.xdirection) for r in self.simulator.robot_values],
             food_positions=[np.copy(f.xpos) for f in self.simulator.food_values],
-            food_directions=[np.copy(f.direction) for f in self.simulator.food_values]
+            food_directions=[np.copy(f.direction) for f in self.simulator.food_values],
+            total_gas_pheromone=self.simulator.get_total_gas_pheromone(),
+            total_liquid_pheromone=self.simulator.get_total_liquid_pheromone()
         ))
 
     def render(self, img_buf: np.ndarray, pos: tuple[float, float, float], lookat: tuple[float, float, float]):
