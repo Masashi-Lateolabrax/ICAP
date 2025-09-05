@@ -1,9 +1,9 @@
 from .position import Position, Position3d, RobotLocation
 from .robot import RobotIDs, BatchedRobotIDs, RobotSpec, BatchedRobots, RobotOutputs, RobotInputs
 from .food import FoodSpec, FoodIDs, BatchedFoodIDs, BatchedFood
-from .optimization import Task, ClientStatistics, CalculationState, Individual, EvaluationFunction
+from .optimization import CalculationState, Individual, EvaluationFunction
 from .pheromone import Material, ETHANOL
-from .communication import PacketType, Packet, CommunicationResult, SocketState
+from .communication import PacketType, Packet, CommunicationResult, SocketState, Task, ClientStatistics
 from .utils import SavedIndividual, Rec, IndividualRecorder
 from .jaxable import JaxableController
 
@@ -21,15 +21,15 @@ __all__ = [
     "FoodIDs",
     "BatchedFoodIDs",
     "BatchedFood",
-    "Task",
-    "ClientStatistics",
     "CalculationState",
     "Individual",
     "EvaluationFunction",
-    "SocketState",
     "PacketType",
     "Packet",
     "CommunicationResult",
+    "SocketState",
+    "Task",
+    "ClientStatistics",
     "SavedIndividual",
     "Rec",
     "IndividualRecorder",

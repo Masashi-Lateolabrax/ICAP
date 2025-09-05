@@ -1,29 +1,7 @@
 import enum
-from typing import Callable, Optional, Any
-import hashlib
+from typing import Callable
 
 import numpy as np
-
-
-class Task:
-    hash: bytes
-    parameter: np.ndarray
-    result: Optional[float]
-    settings: Any
-    rng_seed: int
-
-    def __init__(self, settings, parameter: np.ndarray, rng_seed: int):
-        self.settings = settings
-        self.parameter = parameter
-        self.result = None
-        self.rng_seed = rng_seed
-        self.hash = hashlib.md5(
-            parameter.tobytes() + str(parameter.shape).encode() + str(parameter.dtype).encode()
-        ).digest()
-
-
-class ClientStatistics:
-    performance: float
 
 
 class CalculationState(enum.Enum):
