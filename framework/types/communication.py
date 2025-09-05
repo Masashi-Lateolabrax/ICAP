@@ -1,10 +1,12 @@
+import dataclasses
 import logging
 from enum import Enum
-from typing import Any, Optional
+from typing import Any, Optional, Self
 from dataclasses import dataclass
 import socket
 import time
 import hashlib
+import datetime
 
 import numpy as np
 from icecream import ic
@@ -12,21 +14,53 @@ from icecream import ic
 from .optimization import Individual
 
 
+@dataclasses.dataclass(frozen=True)
 class Task:
     hash: bytes
+    timestamp: datetime.datetime
     parameter: np.ndarray
     result: Optional[float]
     settings: Any
     rng_seed: int
 
-    def __init__(self, settings, parameter: np.ndarray, rng_seed: int):
-        self.settings = settings
-        self.parameter = parameter
-        self.result = None
-        self.rng_seed = rng_seed
-        self.hash = hashlib.md5(
-            parameter.tobytes() + str(parameter.shape).encode() + str(parameter.dtype).encode()
-        ).digest()
+    @classmethod
+    def new(cls, settings, parameter: np.ndarray, rng_seed: int) -> Self:
+        return cls(
+            hash=hashlib.md5(
+                parameter.tobytes() + str(parameter.shape).encode() + str(parameter.dtype).encode()
+            ).digest(),
+            timestamp=datetime.datetime.now(datetime.UTC),
+            parameter=parameter,
+            result=None,
+            settings=settings,
+            rng_seed=rng_seed
+        )
+
+    def replace(
+            self,
+            parameter: Optional[np.ndarray] = None,
+            result: Optional[float] = None,
+            settings: Optional[Any] = None,
+            rng_seed: Optional[int] = None
+    ) -> Self:
+        if parameter is None:
+            hash_ = self.hash
+            parameter = self.parameter
+
+        else:
+            hash_ = hashlib.md5(
+                parameter.tobytes() + str(parameter.shape).encode() + str(parameter.dtype).encode()
+            ).digest()
+
+        return dataclasses.replace(
+            self,
+            hash=hash_,
+            timestamp=datetime.datetime.now(datetime.UTC),
+            parameter=parameter,
+            result=self.result if result is None else result,
+            settings=self.settings if settings is None else settings,
+            rng_seed=self.rng_seed if rng_seed is None else rng_seed
+        )
 
 
 class ClientStatistics:
