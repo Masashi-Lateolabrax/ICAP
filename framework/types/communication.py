@@ -4,11 +4,44 @@ from typing import Any, Optional
 from dataclasses import dataclass
 import socket
 import time
+import hashlib
 
 import numpy as np
 from icecream import ic
 
 from .optimization import Individual
+
+
+class TaskProgress(Enum):
+    NOT_STARTED = 0
+    IN_PROGRESS = 1
+    COMPLETED = 2
+    FAILED = 3
+
+
+class Task:
+    hash: bytes
+    parameter: np.ndarray
+    result: Optional[float]
+    settings: Any
+    rng_seed: int
+    progress: TaskProgress
+
+    def __init__(self, settings, parameter: np.ndarray, rng_seed: int):
+        self.settings = settings
+        self.parameter = parameter
+        self.result = None
+        self.rng_seed = rng_seed
+        self.hash = hashlib.md5(
+            parameter.tobytes() + str(parameter.shape).encode() + str(parameter.dtype).encode()
+        ).digest()
+
+    def is_finished(self) -> bool:
+        return self.progress == TaskProgress.COMPLETED
+
+
+class ClientStatistics:
+    performance: float
 
 
 class CommunicationResult(Enum):
