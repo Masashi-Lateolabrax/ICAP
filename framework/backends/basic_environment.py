@@ -180,6 +180,11 @@ class BasicEnvironment(BasicMuJoCoSimulator, ABC):
         indexes = np.array([(cell.index_x, cell.index_y) for cell in self._get_pheromone_cells(positions)])
         return self._pheromone_field.get_gas(indexes[:, 0], indexes[:, 1])
 
+    def get_total_pheromone(self) -> float:
+        if self._pheromone_field is None:
+            return 0.0
+        return float(np.sum(self._pheromone_field.get_gas_all()))
+
     def render(self, img_buf: np.ndarray, pos: tuple[float, float, float], lookat: tuple[float, float, float]):
         if not self._do_render:
             return
