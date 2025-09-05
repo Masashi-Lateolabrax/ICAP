@@ -1,4 +1,4 @@
-from typing import Optional
+import random
 
 from ..prelude import *
 
@@ -14,13 +14,18 @@ class SharedTaskManager:
         pass
 
     def take_task_(self, n: int = 1) -> list[Task]:
-        result: list[Task] = []
-        for task in self.tasks:
-            if task.is_waiting():
-                result.append(task)
-                if len(result) >= n:
-                    return result
-        return []
+        waiting_tasks = [task for task in self.tasks if task.is_waiting()]
+        random.shuffle(waiting_tasks)
+
+        num = len(waiting_tasks)
+        waiting_tasks = waiting_tasks[:min(n, num)]
+
+        for task in waiting_tasks:
+            task.replace(
+                progress=TaskProgress.RUNNING
+            )
+
+        return waiting_tasks
 
     def add_task_(self, task: Task):
         self.tasks.append(task)
