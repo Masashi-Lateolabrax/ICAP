@@ -1,3 +1,5 @@
+from typing import Optional
+
 from ..prelude import *
 
 
@@ -11,8 +13,14 @@ class SharedTaskManager:
     def sync_(self, target_addr, port):
         pass
 
-    def take_task_(self):
-        pass
+    def take_task_(self, n: int = 1) -> list[Task]:
+        result: list[Task] = []
+        for task in self.tasks:
+            if task.is_waiting():
+                result.append(task)
+                if len(result) >= n:
+                    return result
+        return []
 
     def add_task_(self, task: Task):
         self.tasks.append(task)
