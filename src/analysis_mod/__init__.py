@@ -4,6 +4,7 @@ from src.analysis_mod.structure.sim_interface import SimulatorForDebugInterface
 from src.analysis_mod.for_individual.run import run, record
 from src.analysis_mod.for_individual.input_anime import input_animation
 from src.analysis_mod.for_individual.plot_input_power import plot_robot_sensor, plot_food_sensor, plot_pheromone_sensor
+from src.analysis_mod.for_individual.plot_output import plot_left_wheel_act
 
 from src.analysis_mod.for_history.collect_loss import collect_loss
 from src.analysis_mod.for_history.plot_bests import plot_fitness
