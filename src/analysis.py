@@ -65,6 +65,9 @@ def analyze_specific_individual(save_dir: str, settings: Settings, individual: I
     right_wheel_act_file_path = os.path.join(save_dir, "right_wheel_act.png")
     pheromone_act_file_path = os.path.join(save_dir, "pheromone_act.png")
 
+    total_gas_pheromone_graph_path = os.path.join(save_dir, "total_gas_pheromone.png")
+    total_liquid_pheromone_graph_path = os.path.join(save_dir, "total_liquid_pheromone.png")
+
     # Record the video if not already recorded
     if not os.path.exists(video_file_path):
         # Record the video
@@ -137,6 +140,20 @@ def analyze_specific_individual(save_dir: str, settings: Settings, individual: I
             debug_data: list[DebugData] = pickle.load(f)
 
         analysis_mod.plot_pheromone_act(settings, debug_data, pheromone_act_file_path)
+
+    # Plot the total gas pheromone
+    if not os.path.exists(total_gas_pheromone_graph_path):
+        with open(debug_data_path, 'rb') as f:
+            debug_data: list[DebugData] = pickle.load(f)
+
+        analysis_mod.plot_total_gas_pheromone(settings, debug_data, total_gas_pheromone_graph_path)
+
+    # Plot the total liquid pheromone
+    if not os.path.exists(total_liquid_pheromone_graph_path):
+        with open(debug_data_path, 'rb') as f:
+            debug_data: list[DebugData] = pickle.load(f)
+
+        analysis_mod.plot_total_liquid_pheromone(settings, debug_data, total_liquid_pheromone_graph_path)
 
 
 def main(settings: Settings):
