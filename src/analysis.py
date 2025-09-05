@@ -121,13 +121,13 @@ def main(settings: Settings):
     )
     fittness_graph_path = os.path.join(save_dir, "loss_history.png")
 
-    rec: Rec = saved_individuals.get_best_rec()
-    individual: Individual = rec.best_individual
-
     analysis_mod.collect_loss(save_dir, settings, saved_individuals, SimulatorForDebugging)
     analysis_mod.plot_fitness(save_dir, fittness_graph_path)
 
-    # analyze_specific_individual(save_dir, settings, individual)
+    # Analyze a specific individual from a specific generation (e.g., generation 0)
+    rec: Rec = saved_individuals[0]
+    individual: Individual = rec.best_individual
+    analyze_specific_individual(save_dir, settings, individual, seed=0)
 
 
 if __name__ == '__main__':
