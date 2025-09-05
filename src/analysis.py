@@ -53,9 +53,14 @@ def analyze_specific_individual(save_dir: str, settings: Settings, individual: I
     debug_data_path = os.path.join(save_dir, "debug_data.pkl")
     video_file_path = os.path.join(save_dir, "video.mp4")
     input_anime_file_path = os.path.join(save_dir, "input_anime.mp4")
+
     robot_sensor_power_file_path = os.path.join(save_dir, "robot_sensor_power.png")
     food_sensor_power_file_path = os.path.join(save_dir, "food_sensor_power.png")
     pheromone_sensor_power_file_path = os.path.join(save_dir, "pheromone_sensor_power.png")
+
+    left_wheel_act_file_path = os.path.join(save_dir, "left_wheel_act.png")
+    right_wheel_act_file_path = os.path.join(save_dir, "right_wheel_act.png")
+    pheromone_act_file_path = os.path.join(save_dir, "pheromone_act.png")
 
     # Record the video if not already recorded
     if not os.path.exists(video_file_path):
