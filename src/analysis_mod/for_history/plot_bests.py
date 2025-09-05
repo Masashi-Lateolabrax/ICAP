@@ -6,6 +6,10 @@ import matplotlib.pyplot as plt
 
 
 def plot_fitness(save_dir: str, filepath: str):
+    if os.path.exists(filepath):
+        print(f"File {filepath} already exists. Skipping plot generation.")
+        return
+
     with open(os.path.join(save_dir, "loss_history.pkl"), 'rb') as f:
         # shape: (n_generation, 2). losses[:, 0]: train, losses[:, 1-3]: validation with different random seeds.
         losses = pickle.load(f)
