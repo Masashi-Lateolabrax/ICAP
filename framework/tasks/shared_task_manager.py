@@ -17,5 +17,10 @@ class SharedTaskManager:
     def add_task_(self, task: Task):
         self.tasks.append(task)
 
-    def retrieve_finished_tasks(self) -> list[Task]:
-        return [task for task in self.tasks if task.is_finished()]
+    def retrieve_completed_tasks(self) -> list[Task]:
+        result = []
+        n = len(self.tasks)
+        for i in range(n - 1, -1, -1):
+            if self.tasks[i].is_completed():
+                result.append(self.tasks.pop(i))
+        return result
