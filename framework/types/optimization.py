@@ -22,6 +22,10 @@ class Task:
         ).digest()
 
 
+class ClientStatistics:
+    performance: float
+
+
 class CalculationState(enum.Enum):
     NOT_STARTED = 0
     CALCULATING = 1
