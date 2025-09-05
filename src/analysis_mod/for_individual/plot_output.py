@@ -28,3 +28,29 @@ def plot_left_wheel_act(settings: Settings, debug_data: list[DebugData], file_pa
     ax.legend()
 
     fig.savefig(file_path)
+
+
+def plot_right_wheel_act(settings: Settings, debug_data: list[DebugData], file_path: str):
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+
+    _plot(ax, settings, debug_data, idx=0)
+
+    ax.set_ylabel('Right Wheel Actuation')
+    ax.set_title('Right Wheel Actuation Over Time')
+    ax.legend()
+
+    fig.savefig(file_path)
+
+
+def plot_pheromone_act(settings: Settings, debug_data: list[DebugData], file_path: str):
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+
+    _plot(ax, settings, debug_data, idx=2)
+
+    ax.set_ylabel('Pheromone Actuation')
+    ax.set_title('Pheromone Actuation Over Time')
+    ax.legend()
+
+    fig.savefig(file_path)
