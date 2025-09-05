@@ -127,7 +127,7 @@ def main(settings: Settings):
     # Analyze a specific individual from a specific generation (e.g., generation 0)
     rec: Rec = saved_individuals[0]
     individual: Individual = rec.best_individual
-    analyze_specific_individual(save_dir, settings, individual, seed=0)
+    analyze_specific_individual(save_dir, settings, individual, seed=None)
 
 
 if __name__ == '__main__':
