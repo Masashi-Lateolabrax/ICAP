@@ -122,6 +122,8 @@ class Simulator(BasicSimulator):
 
         if self._pheromone_field is not None:
             self.add_pheromone(robot_positions, self.output_ndarray[:, 2])
+            self._pheromone_field.add_liquid_by_cell(self._pheromone_cells)
+            self._pheromone_field.update(self.settings.Simulation.TIME_STEP)
 
         for food in self.food_values:
             if np.linalg.norm(food.xpos - self.nest_site.xpos[0:2]) <= self.settings.Nest.RADIUS:
