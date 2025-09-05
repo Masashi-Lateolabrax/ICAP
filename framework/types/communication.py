@@ -81,6 +81,15 @@ class Task:
             rng_seed=self.rng_seed if rng_seed is None else rng_seed
         )
 
+    def is_completed(self):
+        return self.progress == TaskProgress.COMPLETED
+
+    def is_waiting(self):
+        return self.progress == TaskProgress.WAITING
+
+    def is_running(self):
+        return self.progress == TaskProgress.RUNNING
+
 
 class ClientStatistics:
     performance: float
