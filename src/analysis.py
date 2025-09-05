@@ -122,6 +122,20 @@ def analyze_specific_individual(save_dir: str, settings: Settings, individual: I
 
         analysis_mod.plot_left_wheel_act(settings, debug_data, left_wheel_act_file_path)
 
+    # Plot the right wheel activity
+    if not os.path.exists(right_wheel_act_file_path):
+        with open(debug_data_path, 'rb') as f:
+            debug_data: list[DebugData] = pickle.load(f)
+
+        analysis_mod.plot_right_wheel_act(settings, debug_data, right_wheel_act_file_path)
+
+    # Plot the pheromone activity
+    if not os.path.exists(pheromone_act_file_path):
+        with open(debug_data_path, 'rb') as f:
+            debug_data: list[DebugData] = pickle.load(f)
+
+        analysis_mod.plot_pheromone_act(settings, debug_data, pheromone_act_file_path)
+
 
 def main(settings: Settings):
     # save_dir = os.path.abspath(
