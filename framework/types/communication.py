@@ -14,13 +14,23 @@ from icecream import ic
 from .optimization import Individual
 
 
+class TaskProgress(Enum):
+    WAITING = 0
+    RUNNING = 1
+    COMPLETED = 2
+    FAILED = 3
+
+
 @dataclasses.dataclass(frozen=True)
 class Task:
     hash: bytes
+    progress: TaskProgress
     timestamp: datetime.datetime
+
+    settings: Any
     parameter: np.ndarray
     result: Optional[float]
-    settings: Any
+
     rng_seed: int
 
     @classmethod
@@ -29,18 +39,24 @@ class Task:
             hash=hashlib.md5(
                 parameter.tobytes() + str(parameter.shape).encode() + str(parameter.dtype).encode()
             ).digest(),
+            progress=TaskProgress.WAITING,
             timestamp=datetime.datetime.now(datetime.UTC),
+
+            settings=settings,
             parameter=parameter,
             result=None,
-            settings=settings,
+
             rng_seed=rng_seed
         )
 
     def replace(
             self,
+            progress: Optional[TaskProgress] = None,
+
+            settings: Optional[Any] = None,
             parameter: Optional[np.ndarray] = None,
             result: Optional[float] = None,
-            settings: Optional[Any] = None,
+
             rng_seed: Optional[int] = None
     ) -> Self:
         if parameter is None:
@@ -55,10 +71,13 @@ class Task:
         return dataclasses.replace(
             self,
             hash=hash_,
+            progress=self.progress if progress is None else progress,
             timestamp=datetime.datetime.now(datetime.UTC),
+
+            settings=self.settings if settings is None else settings,
             parameter=parameter,
             result=self.result if result is None else result,
-            settings=self.settings if settings is None else settings,
+
             rng_seed=self.rng_seed if rng_seed is None else rng_seed
         )
 
