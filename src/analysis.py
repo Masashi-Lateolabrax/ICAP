@@ -79,7 +79,7 @@ def analyze_specific_individual(save_dir: str, settings: Settings, individual: I
     # Save the debug info if not already saved
     if not os.path.exists(debug_data_path):
         individual._generation = seed
-        simulator = SimulatorForDebugging(settings, individual, render=True)
+        simulator = SimulatorForDebugging(settings, individual, render=False)
         debug_data = analysis_mod.run(settings, simulator)
         individual._generation = generation
 
