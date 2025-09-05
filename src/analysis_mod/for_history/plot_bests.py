@@ -13,6 +13,9 @@ def plot_fitness(save_dir: str, filepath: str):
     train_fitness = losses[:, 0]
     val_fitness = np.mean(losses[:, 1:], axis=1)
 
+    gen_best_in_best = np.argmin(train_fitness)
+    gen_best_in_val = np.argmin(val_fitness)
+
     fig = plt.figure(figsize=(8, 6))
     ax = fig.add_subplot(1, 1, 1)
 
@@ -21,7 +24,7 @@ def plot_fitness(save_dir: str, filepath: str):
 
     ax.set_xlabel("Generation")
     ax.set_ylabel("Fitness")
-    ax.set_title("Fitness Over Generations")
+    ax.set_title(f"Fitness Over Generations\n(Train: {gen_best_in_best}, Val: {gen_best_in_val})")
     ax.legend()
 
     fig.savefig(filepath)

@@ -119,13 +119,15 @@ def main(settings: Settings):
     saved_individuals = IndividualRecorder.load(
         os.path.join(save_dir, "optimization_log.pkl")
     )
+    fittness_graph_path = os.path.join(save_dir, "loss_history.png")
 
     rec: Rec = saved_individuals.get_best_rec()
     individual: Individual = rec.best_individual
 
     analysis_mod.collect_loss(save_dir, settings, saved_individuals, SimulatorForDebugging)
+    analysis_mod.plot_fitness(save_dir, fittness_graph_path)
 
-    analyze_specific_individual(save_dir, settings, individual)
+    # analyze_specific_individual(save_dir, settings, individual)
 
 
 if __name__ == '__main__':
