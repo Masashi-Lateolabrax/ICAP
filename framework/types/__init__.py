@@ -3,7 +3,7 @@ from .robot import RobotIDs, BatchedRobotIDs, RobotSpec, BatchedRobots, RobotOut
 from .food import FoodSpec, FoodIDs, BatchedFoodIDs, BatchedFood
 from .optimization import CalculationState, Individual, EvaluationFunction
 from .pheromone import Material, ETHANOL
-from .communication import PacketType, Packet, CommunicationResult, SocketState
+from .communication import PacketType, Packet, CommunicationResult, SocketState, Task, ClientStatistics
 from .utils import SavedIndividual, Rec, IndividualRecorder
 from .jaxable import JaxableController
 
@@ -24,10 +24,12 @@ __all__ = [
     "CalculationState",
     "Individual",
     "EvaluationFunction",
-    "SocketState",
     "PacketType",
     "Packet",
     "CommunicationResult",
+    "SocketState",
+    "Task",
+    "ClientStatistics",
     "SavedIndividual",
     "Rec",
     "IndividualRecorder",
