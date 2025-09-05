@@ -133,7 +133,7 @@ def opt_gpu_example():
 
     population_size = 10
     episode_length = int(90 / settings.Simulation.TIME_STEP)
-    batch_steps = 100  # Number of steps to batch together
+    batch_steps = 10  # Number of steps to batch together
 
     optimizer = CMA(
         mean=np.zeros((Controller.dim(),), dtype=np.float32),
