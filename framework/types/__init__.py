@@ -1,7 +1,7 @@
 from .position import Position, Position3d, RobotLocation
 from .robot import RobotIDs, BatchedRobotIDs, RobotSpec, BatchedRobots, RobotOutputs, RobotInputs
 from .food import FoodSpec, FoodIDs, BatchedFoodIDs, BatchedFood
-from .optimization import CalculationState, Individual, EvaluationFunction
+from .optimization import Task, CalculationState, Individual, EvaluationFunction
 from .pheromone import Material, ETHANOL
 from .communication import PacketType, Packet, CommunicationResult, SocketState
 from .utils import SavedIndividual, Rec, IndividualRecorder
@@ -21,6 +21,7 @@ __all__ = [
     "FoodIDs",
     "BatchedFoodIDs",
     "BatchedFood",
+    "Task",
     "CalculationState",
     "Individual",
     "EvaluationFunction",
