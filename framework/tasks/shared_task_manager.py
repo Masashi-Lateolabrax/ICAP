@@ -14,7 +14,7 @@ class SharedTaskManager:
     def sync_(self, target_addr, port):
         pass
 
-    def take_task_(self, n: int = 1, deadline: int = 300) -> list[Task]:
+    def take_task(self, n: int = 1, deadline: int = 300) -> list[Task]:
         current_time = datetime.datetime.now(datetime.UTC)
 
         # Reset tasks that have been running too long
@@ -39,7 +39,7 @@ class SharedTaskManager:
 
         return waiting_tasks
 
-    def add_task_(self, task: Task):
+    def add_task(self, task: Task):
         if task.id.content_hash in self.tasks:
             logging.warning(f"Task {task.id.content_hash.hex()} already exists. Skipping addition.")
             return
