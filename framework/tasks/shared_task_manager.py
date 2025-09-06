@@ -9,6 +9,21 @@ class SharedTaskManager:
     def __init__(self):
         self.tasks: dict[bytes, Task] = {}  # key: TaskID.content_hash, value: Task
 
+    def _update(self, target_tasks: dict[bytes, Task], self_is_priority: bool):
+        for target_key, target_task in target_tasks.items():
+            if target_key not in self.tasks:
+                if not self_is_priority:
+                    self.tasks[target_key] = target_task
+                continue
+
+            my_task = self.tasks[target_key]
+            if my_task.progress.is_completed():
+                continue
+            if my_task.fingerprint == target_task.fingerprint:
+                continue
+
+            if target_task.timestamp > my_task.timestamp:
+                self.tasks[target_key] = target_task
 
     def listen_(self, port: int):
         pass
