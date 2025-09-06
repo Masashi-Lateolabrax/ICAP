@@ -49,7 +49,7 @@ class SharedTaskManager:
         # Send our tasks back to the client
         self.network_manager.send_tasks(self.tasks, address)
 
-    def sync_(self, target_addr: str, port: int) -> bool:
+    def sync(self, target_addr: str, port: int) -> bool:
         """Send tasks to target."""
         try:
             self.network_manager.send_tasks(self.tasks, (target_addr, port))
