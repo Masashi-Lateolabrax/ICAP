@@ -194,22 +194,22 @@ class NetworkClient:
             logging.error(f"Error sending tasks: {e}")
             return False
 
-    def _recv_all(self, size: int) -> Optional[bytes]:
+    def _recv_all(self, size: int) -> tuple[Optional[bytes], ReceiveStatus]:
         buffer = b''
         while len(buffer) < size:
             try:
                 chunk = self.socket.recv(size - len(buffer))
                 if not chunk:
                     logging.error("Connection closed by peer")
-                    return None
+                    return None, ReceiveStatus.DISCONNECTED
                 buffer += chunk
             except socket.timeout:
                 logging.error("Receive timeout")
-                return None
+                return None, ReceiveStatus.TIMEOUT
             except Exception as e:
                 logging.error(f"Error receiving data: {e}")
-                return None
-        return buffer
+                return None, ReceiveStatus.ERROR
+        return buffer, ReceiveStatus.SUCCESS
 
     def _receive_tasks(self) -> Optional[dict[bytes, Task]]:
         if not self.socket:
