@@ -161,7 +161,7 @@ def optimization(port: int, timeout: int, settings: Settings):
         fitness: list[tuple[np.ndarray, float]] = [(task.parameter, task.result) for task in completed_tasks]
         cmaes.tell(fitness)
 
-        print_info(settings, i, cmaes, completed_tasks)
+        print_and_save(settings, i, cmaes, completed_tasks)
 
 
 def main(settings: Settings):
