@@ -184,26 +184,11 @@ class NetworkServer:
 
 
 class NetworkClient:
-    def __init__(self):
-        self.socket: Optional[socket.socket] = None
-
-    def connect(self, host: str, port: int, timeout: float = 30.0) -> bool:
-        if self.socket:
-            logging.warning("Already connected to server")
-            return False
-
-        try:
-            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.socket.settimeout(timeout)
-            self.socket.connect((host, port))
-            logging.info(f"Connected to server at {host}:{port}")
-            return True
-        except Exception as e:
-            logging.error(f"Failed to connect to server: {e}")
-            if self.socket:
-                self.socket.close()
-                self.socket = None
-            return False
+    def __init__(self, host: str, port: int, timeout: float = 30.0):
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket.settimeout(timeout)
+        self.socket.connect((host, port))
+        logging.info(f"Connected to server at {host}:{port}")
 
     def send_tasks(self, tasks: dict[bytes, Task]) -> bool:
         if not self.socket:
