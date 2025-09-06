@@ -138,6 +138,8 @@ def optimization(port: int, timeout: int, settings: Settings):
 
         print_and_save(settings, prev_optimization_result, optimization_result)
 
+    shared_task_manager.stop_listening()
+
 
 def main(settings: Settings):
     parser = argparse.ArgumentParser(description="ICAP Optimization Server")
