@@ -82,10 +82,10 @@ class TaskContent:
     ) -> Self:
         return dataclasses.replace(
             self,
-            settings=settings,
-            parameter=parameter,
-            result=result,
-            rng_seed=rng_seed
+            settings=settings if settings is None else settings,
+            parameter=parameter if parameter is None else parameter,
+            result=result if result is None else result,
+            rng_seed=rng_seed if rng_seed is None else rng_seed
         )
 
 
