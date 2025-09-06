@@ -87,6 +87,12 @@ class OptimizerResultSet:
             raise ValueError(f"File {path} is not a OptimizerResultSet instance.")
         return this
 
+    def save(self, path: str) -> None:
+        if not path.endswith('.pkl'):
+            logging.warning(f"File extension is not .pkl. Saving as .pkl.")
+            path += '.pkl'
+        with open(path, 'wb') as f:
+            pickle.dump(self, f)
 
 class SavedIndividual:
     def __init__(self, generation, avg_fitness, timestamp, individuals: list[Individual]):
