@@ -37,6 +37,27 @@ class OptimizationResult:
             median=median,
         )
 
+
+@dataclasses.dataclass(frozen=True)
+class OptimizerResultSet:
+    results: dict[int, OptimizationResult]  # key: generation
+
+    @classmethod
+    def load_folder(cls, path: str) -> Self:
+        results = {}
+        for filename in os.listdir(path):
+            if not filename.endswith('.pkl'):
+                continue
+            with open(os.path.join(path, filename), 'rb') as f:
+                result = pickle.load(f)
+            if not isinstance(result, OptimizationResult):
+                logging.warning(f"File {filename} is not a OptimizationResult instance. Skipping.")
+                continue
+            results[result.generation] = result
+        return cls(results=results)
+
+
+
 class SavedIndividual:
     def __init__(self, generation, avg_fitness, timestamp, individuals: list[Individual]):
         self.generation = generation
