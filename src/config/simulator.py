@@ -27,9 +27,17 @@ class Simulator(SimEvaluateTrait):
     def _update_parent(self, **kwargs) -> Self:
         return self.replace(_parent_sim=self._parent_sim.update(**kwargs))
 
-    def update(self, data=None, controller=None, **kwargs) -> Self:
+    def update(
+            self,
+            data=None,
+            controller=None,
+            rngs_for_relocating_food: jax.Array = None,
+
+            **kwargs
+    ) -> Self:
         kwargs["data"] = data
         kwargs["controller"] = controller
+        kwargs["rngs_for_relocating_food"] = rngs_for_relocating_food
         return self._update_parent(**kwargs)
 
     @classmethod
