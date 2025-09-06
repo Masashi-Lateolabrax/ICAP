@@ -64,6 +64,7 @@ def client_evaluation(host: str, port: int, settings: Settings, batch_size: int)
     retry_delay = 5.0
     consecutive_failures = 0
 
+    print("Entering main evaluation loop...")
     while True:
         # Sync with server to get tasks with retry logic
         sync_success = False
