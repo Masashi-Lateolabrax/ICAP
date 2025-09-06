@@ -107,6 +107,33 @@ class TaskID:
             id=hashlib.md5(content.hash() + state.hash()).digest()
         )
 
+    def replace(
+            self,
+            content: Optional[TaskContent] = None,
+            state: Optional[TaskState] = None
+    ) -> Self:
+        if content is None and state is None:
+            return self
+
+        content_hash = self.content_hash
+        state_hash = self.state_hash
+        id_ = self.id
+        if content is not None:
+            content_hash = content.hash()
+            id_ = None
+        if state is not None:
+            state_hash = state.hash()
+            id_ = None
+        if id_ is not None:
+            id_ = hashlib.md5(content_hash + state_hash).digest()
+
+        return dataclasses.replace(
+            self,
+            content_hash=content_hash,
+            state_hash=state_hash,
+            id=id_
+        )
+
     def __eq__(self, other):
         return self.id == other.id
 
