@@ -82,30 +82,26 @@ class TaskState:
 class TaskContent:
     settings: Any
     parameter: np.ndarray
-    result: Optional[float]
     rng_seed: int
 
     def hash(self) -> bytes:
         parameter_bytes = (
                 self.parameter.tobytes() + str(self.parameter.shape).encode() + str(self.parameter.dtype).encode()
         )
-        result_bytes = str(self.result).encode()
         settings_bytes = str(self.settings).encode()
         rng_seed_bytes = str(self.rng_seed).encode()
-        return hashlib.md5(parameter_bytes + result_bytes + settings_bytes + rng_seed_bytes).digest()
+        return hashlib.md5(parameter_bytes + settings_bytes + rng_seed_bytes).digest()
 
     def replace(
             self,
             settings: Optional[Any] = None,
             parameter: Optional[np.ndarray] = None,
-            result: Optional[float] = None,
             rng_seed: Optional[int] = None
     ) -> Self:
         return dataclasses.replace(
             self,
             settings=settings if settings is not None else self.settings,
             parameter=parameter if parameter is not None else self.parameter,
-            result=result if result is not None else self.result,
             rng_seed=rng_seed if rng_seed is not None else self.rng_seed
         )
 
