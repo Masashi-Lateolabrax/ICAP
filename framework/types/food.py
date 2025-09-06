@@ -1,4 +1,3 @@
-import numpy as np
 from mujoco import mjx
 import mujoco
 

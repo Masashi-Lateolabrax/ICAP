@@ -1,5 +1,4 @@
 import mujoco
-from mujoco._specs import MjsSite
 
 from ..mkenv import add_site
 from .cell import PheromoneFieldCell

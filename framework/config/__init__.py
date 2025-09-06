@@ -8,5 +8,4 @@ from ._viewer_consts import (
     UI_REFRESH_INTERVAL_MS, THREAD_JOIN_TIMEOUT, DEFAULT_CAMERA_AZIMUTH, DEFAULT_CAMERA_DISTANCE,
     DEFAULT_CAMERA_ELEVATION
 )
-from ._server_client_settings import ATTEMPT_COUNT
 from ._settings import Settings, calc_loss_sigma, ClippingFunctions

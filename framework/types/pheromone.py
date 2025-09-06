@@ -1,6 +1,3 @@
-from flax import struct
-
-
 class DiffusionVolumes:
     C = 15.9
     H = 2.31

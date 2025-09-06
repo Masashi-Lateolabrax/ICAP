@@ -1,7 +1,7 @@
 import logging
 import socket
 import pickle
-from typing import Optional, Callable
+from typing import Optional
 
 from ..prelude import *
 
