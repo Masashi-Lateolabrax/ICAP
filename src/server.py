@@ -96,6 +96,10 @@ def print_info(
     )
 
 
+def print_and_save(settings: Settings, prev_result: Optional[OptimizationResult], current_result: OptimizationResult):
+    print_info(settings, prev_result, current_result)
+    save_completed_tasks(settings, current_result)
+
 
 def optimization(port: int, timeout: int, settings: Settings):
     shared_task_manager = SharedTaskManager()
