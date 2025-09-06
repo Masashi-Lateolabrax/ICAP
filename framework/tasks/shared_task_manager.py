@@ -97,3 +97,7 @@ class SharedTaskManager:
     def __del__(self):
         """Cleanup socket on destruction."""
         self.stop_listening()
+
+    def __len__(self):
+        not_completed_tasks = [task for task in self.tasks.values() if not task.progress.is_completed()]
+        return len(not_completed_tasks)
