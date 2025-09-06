@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 
 from ..prelude import *
@@ -19,7 +21,7 @@ def random_point_avoiding_invalid_areas(
         retry: int = -1,
         padding: float = 0,
         rng: np.random.Generator = None
-) -> np.ndarray | None:
+) -> Optional[np.ndarray]:
     """
     Generates a random point within a specified rectangular area while avoiding designated invalid regions.
 
