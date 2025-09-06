@@ -134,7 +134,7 @@ async def optimization(port: int, timeout: int, settings: Settings):
             ic(i, settings.Optimization.GENERATION)
 
             # Generate tasks and distribute them to clients
-            parameters = cmaes.ask()
+            parameters = [cmaes.ask() for _ in range(settings.Optimization.POPULATION)]
             ic(len(parameters), parameters[0].shape if parameters else "no_params")
 
             tasks = [Task.new(None, x, i) for x in parameters]

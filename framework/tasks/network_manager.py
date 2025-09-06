@@ -21,22 +21,18 @@ class ReceiveStatus(Enum):
 class NetworkServer:
     def __init__(self, host: str, port: int, timeout: float = 30.0):
         ic(host, port, timeout)
+        self.host = host
+        self.port = port
         self.timeout = timeout
         self.task_manager = SharedTaskManager()
+        self.server = None
 
-        # Create server immediately like NetworkClient does
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            # No running loop, create one
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-
-        self.server = loop.run_until_complete(
-            asyncio.start_server(self._handle_client, host, port)
-        )
-        ic(self.server)
-        logging.info(f"TCP server created on {host}:{port}")
+    async def _create_server(self):
+        if self.server is None:
+            self.server = await asyncio.start_server(self._handle_client, self.host, self.port)
+            ic(self.server)
+            logging.info(f"TCP server created on {self.host}:{self.port}")
+        return self.server
 
     async def _handle_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
         client_address = writer.get_extra_info('peername')
@@ -159,6 +155,7 @@ class NetworkServer:
         logging.info("Server stopped")
 
     async def __aenter__(self):
+        await self._create_server()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
