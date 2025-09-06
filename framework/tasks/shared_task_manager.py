@@ -40,6 +40,9 @@ class SharedTaskManager:
         return waiting_tasks
 
     def add_task_(self, task: Task):
+        if task.id.content_hash in self.tasks:
+            logging.warning(f"Task {task.id.content_hash.hex()} already exists. Skipping addition.")
+            return
         self.tasks[task.id.content_hash] = task
 
     def retrieve_completed_tasks(self) -> list[Task]:
