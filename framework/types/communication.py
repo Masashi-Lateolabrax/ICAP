@@ -73,6 +73,21 @@ class TaskContent:
         rng_seed_bytes = str(self.rng_seed).encode()
         return hashlib.md5(parameter_bytes + result_bytes + settings_bytes + rng_seed_bytes).digest()
 
+    def replace(
+            self,
+            settings: Optional[Any] = None,
+            parameter: Optional[np.ndarray] = None,
+            result: Optional[float] = None,
+            rng_seed: Optional[int] = None
+    ) -> Self:
+        return dataclasses.replace(
+            self,
+            settings=settings,
+            parameter=parameter,
+            result=result,
+            rng_seed=rng_seed
+        )
+
 
 @dataclasses.dataclass(frozen=True)
 class TaskID:
