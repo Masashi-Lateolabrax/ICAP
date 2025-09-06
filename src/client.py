@@ -29,10 +29,13 @@ ic.configureOutput(
     includeContext=True
 )
 
-ic.disable()
+
+# ic.disable()  # Enable debugging
 
 
 def initialize_simulators(settings: Settings, batch_size: int) -> Simulator:
+    ic(batch_size)
+
     def sim_init() -> Simulator:
         dummy_params = jnp.zeros(Controller.dim())
         controller = Controller(dummy_params)
@@ -40,10 +43,12 @@ def initialize_simulators(settings: Settings, batch_size: int) -> Simulator:
         return sim
 
     simulators = jax.vmap(lambda _: sim_init())(jnp.arange(batch_size))
+    ic(simulators)
     return simulators
 
 
 def reset_simulators(simulator: Simulator, parameter: jax.Array, rngs: jax.Array) -> Simulator:
+    ic(parameter.shape, rngs.shape)
     reset_simulator = simulator.reset()
     controller = Controller(parameter)
     return reset_simulator.update(controller=controller, rngs_for_relocating_food=rngs)
@@ -51,42 +56,49 @@ def reset_simulators(simulator: Simulator, parameter: jax.Array, rngs: jax.Array
 
 def client_evaluation(host: str, port: int, settings: Settings, batch_size: int):
     """Main client evaluation loop using NetworkClient"""
+    ic(host, port, batch_size)
 
     episode_length = math.ceil(settings.Simulation.TIME_LENGTH / settings.Simulation.TIME_STEP)
+    ic(episode_length, settings.Simulation.TIME_LENGTH, settings.Simulation.TIME_STEP)
 
     shared_task_manager = SharedTaskManager()
-    
-    print(f"Initialized {batch_size} simulators")
+    ic(shared_task_manager)
+
     initial_simulators = initialize_simulators(settings, batch_size)
 
     max_retries = 3
     retry_delay = 5.0
     consecutive_failures = 0
 
-    print("Entering main evaluation loop...")
+    ic(max_retries, retry_delay)
     while True:
-        print("Connecting to server...")
         try:
             with NetworkClient(host, port, timeout=10) as client:
-                print(f"Connected to server at {host}:{port}")
-                
+                ic(client.is_connected())
+
                 while True:
-                    print("Syncing with server...")
                     sync_success = False
                     for retry in range(max_retries):
-                        if client.sync(shared_task_manager):
+                        ic(retry, max_retries)
+                        sync_result = client.sync(shared_task_manager)
+                        ic(sync_result)
+                        if sync_result:
                             sync_success = True
                             consecutive_failures = 0
                             break
                         else:
                             retry_delay_actual = retry_delay * (2 ** retry)  # Exponential backoff
-                            logging.warning(f"Failed to sync with server {host}:{port} (attempt {retry + 1}/{max_retries})")
+                            ic(retry_delay_actual)
+                            logging.warning(
+                                f"Failed to sync with server {host}:{port} (attempt {retry + 1}/{max_retries})")
                             logging.warning(f"retrying in {retry_delay_actual}s")
                             time.sleep(retry_delay_actual)
 
                     if not sync_success:
                         consecutive_failures += 1
-                        logging.error(f"Failed to sync after {max_retries} attempts. Consecutive failures: {consecutive_failures}")
+                        ic(consecutive_failures)
+                        logging.error(
+                            f"Failed to sync after {max_retries} attempts. Consecutive failures: {consecutive_failures}")
 
                         if consecutive_failures >= 5:
                             logging.error("Too many consecutive failures. Disconnecting from server.")
@@ -95,36 +107,48 @@ def client_evaluation(host: str, port: int, settings: Settings, batch_size: int)
                         time.sleep(retry_delay * 2)
                         continue
 
-                    print("Taking tasks from server...")
                     tasks = shared_task_manager.take_task(n=batch_size)
+                    ic(len(tasks) if tasks else 0, batch_size)
                     if not tasks:
                         time.sleep(1.0)
                         continue
 
-                    print("Preparing simulators...")
                     num_tasks = len(tasks)
+                    ic(num_tasks)
+
+                    # Log first task details for debugging
+                    if tasks:
+                        ic(tasks[0].parameter.shape, tasks[0].rng_seed)
+
                     sub_simulators = jax.tree.map(lambda x: x[:num_tasks], initial_simulators)
+                    parameters = jnp.array([task.parameter for task in tasks])
+                    rng_seeds = jnp.array([task.rng_seed for task in tasks])
+                    ic(parameters.shape, rng_seeds.shape)
+
                     sub_simulators = jax.vmap(reset_simulators)(
                         sub_simulators,
-                        jnp.array([task.parameter for task in tasks]),
-                        jnp.array([task.rng_seed for task in tasks])
+                        parameters,
+                        rng_seeds
                     )
 
-                    print("Running simulations...")
                     sub_simulators = jax.vmap(lambda sim: sim.step_n(episode_length))(sub_simulators)
                     losses = jax.vmap(lambda sim: sim.evaluate())(sub_simulators)
                     losses = np.array(losses)
+                    ic(losses.shape, losses.dtype)
 
-                    print("Storing results back to server...")
+                    ic(np.min(losses), np.max(losses), np.mean(losses))
+
                     for i, task in enumerate(tasks):
+                        fitness = float(losses[i]["loss"])
                         completed_task = task.replace(
-                            result=float(losses[i]["loss"]),
+                            result=fitness,
                             progress=TaskProgress.COMPLETED
                         )
                         shared_task_manager.set_task(completed_task)
-                        print(f"Completed task with fitness: {float(losses[i]['loss']):.4f}")
-                        
+                        ic(i, fitness)
+
         except Exception as e:
+            ic(e)
             logging.error(f"Connection error: {e}")
             time.sleep(retry_delay)
             continue
