@@ -52,7 +52,7 @@ class NetworkServer:
                     # Healthy timeout - continue waiting
                     await asyncio.sleep(0.1)
                     continue
-                elif status == ReceiveStatus.SUCCESS and tasks:
+                elif status == ReceiveStatus.SUCCESS:
                     # Successfully received tasks - process them
                     ic(len(self.task_manager._tasks))
                     self.task_manager.update(tasks, self_is_priority=True)
