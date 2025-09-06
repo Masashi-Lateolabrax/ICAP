@@ -1,7 +1,9 @@
 import logging
-import socket
+import asyncio
 import pickle
-from typing import Optional
+import struct
+import socket
+from typing import Optional, Dict, Set, Callable
 
 from ..prelude import *
 
@@ -35,17 +37,29 @@ class NetworkManager:
     def send_tasks(self, tasks: dict[bytes, Task], address: tuple[str, int]) -> None:
         sock = self.socket if self.socket else socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-        data = pickle.dumps(tasks)
-        total_size = len(data)
-
-        # Send size header first
-        size_header = total_size.to_bytes(8, byteorder='big')
-        sock.sendto(size_header, address)
-        sock.sendto(data, address)
-
-            return None
+async def _receive_tasks_from_stream(reader: asyncio.StreamReader) -> Optional[dict[bytes, Task]]:
+    try:
+        # Receive size header (4 bytes)
+        size_header = await reader.readexactly(4)
+        if not size_header:
             return None
 
+        size = struct.unpack('!I', size_header)[0]
+
+        # Receive data
+        data = await reader.readexactly(size)
+        if not data:
+            return None
+
+        tasks = pickle.loads(data)
+        return tasks
+
+    except asyncio.IncompleteReadError:
+        logging.debug("Connection closed by peer")
+        return None
+    except Exception as e:
+        logging.error(f"Error receiving tasks: {e}")
+        return None
 
 
 class NetworkServer:
