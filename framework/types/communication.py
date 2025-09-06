@@ -118,10 +118,12 @@ class TaskID:
             content: TaskContent,
             state: TaskState,
     ) -> Self:
+        content_hash = content.hash()
+        state_hash = state.hash()
         return cls(
-            content_hash=content.hash(),
-            state_hash=state.hash(),
-            fingerprint=hashlib.md5(content.hash() + state.hash()).digest()
+            content_hash=content_hash,
+            state_hash=state_hash,
+            fingerprint=hashlib.md5(content_hash + state_hash).digest()
         )
 
     def replace(
