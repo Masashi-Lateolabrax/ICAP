@@ -9,12 +9,11 @@ from ..prelude import *
 class NetworkManager:
     def __init__(self):
         self.server_socket: Optional[socket.socket] = None
-        self.is_listening: bool = False
+        self.is_binding: bool = False
 
-    def start_listening(self, port: int, timeout: int = 30) -> bool:
-        """Start listening on port for incoming UDP packets."""
-        if self.is_listening:
-            logging.warning("Already listening")
+    def start_communication(self, port: int, timeout: int = 30) -> bool:
+        if self.is_binding:
+            logging.warning("Already binding")
             return False
 
         try:
@@ -22,23 +21,24 @@ class NetworkManager:
             self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.server_socket.settimeout(timeout)
             self.server_socket.bind(('0.0.0.0', port))
-            self.is_listening = True
-            logging.info(f"NetworkManager started listening on port {port} (timeout: {timeout}s)")
+            self.is_binding = True
+            logging.info(f"NetworkManager started on port {port} (timeout: {timeout}s)")
             return True
         except Exception as e:
-            logging.error(f"Failed to start listening: {e}")
+            logging.error(f"Failed to start: {e}")
             return False
 
-    def stop_listening(self):
-        """Stop listening and close server socket."""
+    def stop_communication(self):
         if self.server_socket:
             self.server_socket.close()
             self.server_socket = None
-        self.is_listening = False
-        logging.info("Stopped listening")
+        self.is_binding = False
+        logging.info("Stopped")
 
     def send_tasks(self, tasks: dict[bytes, Task], address: tuple[str, int]) -> None:
-        """Send tasks to target address with chunking for large data."""
+        if not self.server_socket:
+            raise RuntimeError("Server socket is not initialized. Call start_connection() first.")
+
         data = pickle.dumps(tasks)
         total_size = len(data)
 
@@ -48,7 +48,6 @@ class NetworkManager:
         self.server_socket.sendto(data, address)
 
     def receive_tasks(self) -> Optional[tuple[dict[bytes, Task], tuple[str, int]]]:
-        """Receive tasks from UDP peer. Handles fragmented packets by chunking."""
         try:
             header_data, address = self.server_socket.recvfrom(8)  # 8 bytes for size header
             total_size = int.from_bytes(header_data, byteorder='big')
@@ -82,4 +81,4 @@ class NetworkManager:
 
     def __del__(self):
         """Cleanup socket on destruction."""
-        self.stop_listening()
+        self.stop_communication()
