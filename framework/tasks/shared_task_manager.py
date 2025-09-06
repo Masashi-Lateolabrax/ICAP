@@ -64,8 +64,10 @@ class SharedTaskManager:
         running_task_keys = [key for key, task in self._tasks.items() if task.progress.is_running()]
         for key in running_task_keys:
             task = self._tasks[key]
-            if (current_time - task.timestamp).total_seconds() > deadline:
+            running_time = (current_time - task.timestamp).total_seconds()
+            if running_time > deadline:
                 self._tasks[key] = task.replace(progress=TaskProgress.WAITING)
+                logging.warning(f"Task {task.id.content_hash[:8]} timed out after {running_time:.1f}s")
 
         # Select waiting tasks randomly
         waiting_task_keys = [key for key, task in self._tasks.items() if task.progress.is_waiting()]
