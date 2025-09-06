@@ -36,7 +36,7 @@ class NetworkManager:
         logging.info("Stopped")
 
     def send_tasks(self, tasks: dict[bytes, Task], address: tuple[str, int]) -> None:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock = self.socket if self.socket else socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
         data = pickle.dumps(tasks)
         total_size = len(data)
