@@ -31,79 +31,68 @@ ic.configureOutput(
 ic.disable()
 
 
-def evaluate_batch(tasks, settings: Settings):
-    """Evaluate a batch of tasks using vectorized simulation"""
-    # Extract parameters and create batch arrays
-    parameters = jnp.array([task.parameter for task in tasks])
-    rng_seeds = jnp.array([task.rng_seed for task in tasks])
-    rngs = jax.vmap(jax.random.PRNGKey)(rng_seeds)
-    
-    # Create vectorized simulator initializer
-    def sim_initializer(param, rng):
-        controller = Controller(param)
-        mj_model, sim = Simulator.new(settings, controller, rng)
+def initialize_simulators(settings: Settings, batch_size: int) -> Simulator:
+    def sim_init() -> Simulator:
+        dummy_params = jnp.zeros(Controller.dim())
+        controller = Controller(dummy_params)
+        mj_model, sim = Simulator.new(settings, controller, jax.random.PRNGKey(0))
         return sim
-    
-    # Initialize batch of simulators
-    simulators = jax.vmap(sim_initializer)(parameters, rngs)
-    
-    # Run simulation steps
-    episode_length = math.ceil(settings.Simulation.TIME_LENGTH / settings.Simulation.TIME_STEP)
-    simulators = jax.vmap(lambda sim: sim.step_n(episode_length))(simulators)
-    
-    # Extract losses
-    def extract_loss(sim):
-        return sim.evaluate()["loss"]
-    
-    losses = jax.vmap(extract_loss)(simulators)
-    return np.array(losses)
+
+    simulators = jax.vmap(lambda _: sim_init())(jnp.arange(batch_size))
+    return simulators
+
+
+def reset_simulators(simulator: Simulator, parameter: jax.Array, rngs: jax.Array) -> Simulator:
+    reset_simulator = simulator.reset()
+    controller = Controller(parameter)
+    return reset_simulator.update(controller=controller, rngs_for_relocating_food=rngs)
 
 
 def client_evaluation(host: str, port: int, settings: Settings, batch_size: int):
     """Main client evaluation loop using SharedTaskManager"""
+
+    episode_length = math.ceil(settings.Simulation.TIME_LENGTH / settings.Simulation.TIME_STEP)
+
     shared_task_manager = SharedTaskManager()
 
+    print(f"Initialized {batch_size} simulators")
+    initial_simulators = initialize_simulators(settings, batch_size)
+
     while True:
-        try:
-            # Sync with server to get tasks
-            if not shared_task_manager.sync(host, port):
-                logging.warning(f"Failed to sync with server {host}:{port}")
-                time.sleep(5.0)
-                continue
-
-            # Take available tasks
-            tasks = shared_task_manager.take_task(n=batch_size)
-            if not tasks:
-                time.sleep(1.0)
-                continue
-
-            # Evaluate tasks using vectorized batch evaluation
-            try:
-                losses = evaluate_batch(tasks, settings)
-                
-                # Update tasks with results
-                for task, loss in zip(tasks, losses):
-                    completed_task = task.replace(
-                        result=float(loss),
-                        progress=TaskProgress.COMPLETED
-                    )
-                    shared_task_manager.tasks[task.id.content_hash] = completed_task
-                    print(f"Completed task with fitness: {float(loss):.4f}")
-                    
-            except Exception as e:
-                logging.error(f"Error evaluating batch: {e}")
-                # Mark all tasks as failed
-                for task in tasks:
-                    failed_task = task.replace(progress=TaskProgress.FAILED)
-                    shared_task_manager.tasks[task.id.content_hash] = failed_task
-
-        except KeyboardInterrupt:
-            logging.info("Client interrupted by user")
-            break
-        except Exception as e:
-            logging.error(f"Client error: {e}")
+        # Sync with server to get tasks
+        if not shared_task_manager.sync(host, port):
+            logging.warning(f"Failed to sync with server {host}:{port}")
             time.sleep(5.0)
             continue
+
+        # Take available tasks
+        tasks = shared_task_manager.take_task(n=batch_size)
+        if not tasks:
+            time.sleep(1.0)
+            continue
+
+        # Prepare simulators for the number of tasks
+        num_tasks = len(tasks)
+        sub_simulators = jax.tree.map(lambda x: x[:num_tasks], initial_simulators)
+        sub_simulators = jax.vmap(reset_simulators)(
+            sub_simulators,
+            jnp.array([task.parameter for task in tasks]),
+            jnp.array([task.rng_seed for task in tasks])
+        )
+
+        # Evaluate tasks
+        sub_simulators = jax.vmap(lambda sim: sim.step_n(episode_length))(sub_simulators)
+        losses = jax.vmap(lambda sim: sim.evaluate())(sub_simulators)
+        losses = np.array(losses)
+
+        # Store results back to tasks
+        for i, task in enumerate(tasks):
+            completed_task = task.replace(
+                result=float(losses[i]["loss"]),
+                progress=TaskProgress.COMPLETED
+            )
+            shared_task_manager.set_task(completed_task)
+            print(f"Completed task with fitness: {float(losses[i]['loss']):.4f}")
 
 
 def main(settings: Settings):
