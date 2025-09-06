@@ -29,11 +29,11 @@ class SharedTaskManager:
 
     def start_listening(self, port: int, timeout: int = 30) -> bool:
         """Start listening on port for incoming connections."""
-        return self._network_manager.start_listening(port, timeout)
+        return self._network_manager.start_communication(port, timeout)
 
     def stop_listening(self):
         """Stop listening and close server socket."""
-        self._network_manager.stop_listening()
+        self._network_manager.stop_communication()
 
     def listen(self):
         """Listen for incoming UDP packets and exchange tasks."""
