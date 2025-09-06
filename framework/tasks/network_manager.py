@@ -9,162 +9,126 @@ from ..prelude import *
 from .shared_task_manager import SharedTaskManager
 
 
-async def _send_tasks_to_stream(tasks: dict[bytes, Task], writer: asyncio.StreamWriter) -> bool:
-    try:
-        data = pickle.dumps(tasks)
-        size = len(data)
-
-        # Send size header (4 bytes)
-        size_header = struct.pack('!I', size)
-        writer.write(size_header)
-
-        # Send data
-        writer.write(data)
-        await writer.drain()
-
-        return True
-    except Exception as e:
-        logging.error(f"Error sending tasks: {e}")
-        return False
-
-
-async def _receive_tasks_from_stream(reader: asyncio.StreamReader) -> Optional[dict[bytes, Task]]:
-    try:
-        # Receive size header (4 bytes)
-        size_header = await reader.readexactly(4)
-        if not size_header:
-            return None
-
-        size = struct.unpack('!I', size_header)[0]
-
-        # Receive data
-        data = await reader.readexactly(size)
-        if not data:
-            return None
-
-        tasks = pickle.loads(data)
-        return tasks
-
-    except asyncio.IncompleteReadError:
-        logging.debug("Connection closed by peer")
-        return None
-    except Exception as e:
-        logging.error(f"Error receiving tasks: {e}")
-        return None
-
-
 class NetworkServer:
-    def __init__(self):
-        self.server: Optional[asyncio.Server] = None
-        self.clients: Dict[str, asyncio.StreamWriter] = {}
-        self.message_handlers: Dict[str, Callable] = {}
+    def __init__(self, host: str, port: int, timeout: float = 30.0):
+        self.timeout = timeout
+        self.task_manager = SharedTaskManager()
 
-    async def start(self, port: int, host: str = '0.0.0.0') -> bool:
-        if self.server:
-            logging.warning("Server already started")
-            return False
-
+        # Create server immediately like NetworkClient does
         try:
-            self.server = await asyncio.start_server(
-                self._handle_client, host, port
-            )
-            logging.info(f"TCP server started on {host}:{port}")
-            return True
-        except Exception as e:
-            logging.error(f"Failed to start server: {e}")
-            return False
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            # No running loop, create one
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
 
-    async def serve_forever(self):
-        if not self.server:
-            logging.error("Server not started")
-            return
-
-        async with self.server:
-            await self.server.serve_forever()
+        self.server = loop.run_until_complete(
+            asyncio.start_server(self._handle_client, host, port)
+        )
+        logging.info(f"TCP server created on {host}:{port}")
 
     async def _handle_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
         client_address = writer.get_extra_info('peername')
         client_id = f"{client_address[0]}:{client_address[1]}"
-
         logging.info(f"Client {client_id} connected")
-        self.clients[client_id] = writer
 
         try:
             while True:
-                tasks = await _receive_tasks_from_stream(reader)
+                tasks = await self._receive_tasks(reader)
                 if tasks is None:
-                    break
+                    await asyncio.sleep(1)
 
-                # Handle received tasks
-                if 'task_handler' in self.message_handlers:
-                    await self.message_handlers['task_handler'](tasks, client_id)
+                # Update server's task manager with received tasks
+                self.task_manager.update(tasks, self_is_priority=True)
+
+                # Send server's tasks back to client
+                await self._send_tasks(self.task_manager._tasks, writer)
 
         except Exception as e:
             logging.error(f"Error handling client {client_id}: {e}")
         finally:
             logging.info(f"Client {client_id} disconnected")
-            if client_id in self.clients:
-                del self.clients[client_id]
             writer.close()
             await writer.wait_closed()
 
-    def register_handler(self, event_type: str, handler: Callable):
-        self.message_handlers[event_type] = handler
-
-    async def send_tasks_to_client(self, tasks: dict[bytes, Task], client_id: str) -> bool:
-        if client_id not in self.clients:
-            logging.error(f"Client {client_id} not connected")
+    async def _send_tasks(self, tasks: dict[bytes, Task], writer: asyncio.StreamWriter) -> bool:
+        if not writer:
+            logging.error("Writer not available")
             return False
 
-        writer = self.clients[client_id]
-        return await _send_tasks_to_stream(tasks, writer)
+        try:
+            data = pickle.dumps(tasks)
+            size = len(data)
 
-    async def broadcast_tasks(self, tasks: dict[bytes, Task]) -> int:
-        if not self.clients:
-            logging.warning("No clients connected")
-            return 0
+            # Send size header (4 bytes)
+            size_header = struct.pack('!I', size)
+            writer.write(size_header)
 
-        successful_sends = 0
-        failed_clients = []
+            # Send data
+            writer.write(data)
+            await writer.drain()
 
-        for client_id, writer in self.clients.items():
+            return True
+        except Exception as e:
+            logging.error(f"Error sending tasks: {e}")
+            return False
+
+    async def _recv_all(self, reader: asyncio.StreamReader, size: int) -> Optional[bytes]:
+        buffer = b''
+        while len(buffer) < size:
             try:
-                success = await _send_tasks_to_stream(tasks, writer)
-                if success:
-                    successful_sends += 1
-                else:
-                    failed_clients.append(client_id)
+                chunk = await asyncio.wait_for(
+                    reader.read(size - len(buffer)),
+                    timeout=self.timeout
+                )
+                if not chunk:
+                    logging.error("Connection closed by peer")
+                    return None
+                buffer += chunk
+            except asyncio.TimeoutError:
+                logging.error("Receive timeout")
+                return None
             except Exception as e:
-                logging.error(f"Error sending to client {client_id}: {e}")
-                failed_clients.append(client_id)
+                logging.error(f"Error receiving data: {e}")
+                return None
+        return buffer
 
-        # Clean up failed connections
-        for client_id in failed_clients:
-            if client_id in self.clients:
-                writer = self.clients[client_id]
-                writer.close()
-                await writer.wait_closed()
-                del self.clients[client_id]
-                logging.info(f"Removed failed client {client_id}")
+    async def _receive_tasks(self, reader: asyncio.StreamReader) -> Optional[dict[bytes, Task]]:
+        if not reader:
+            logging.error("Reader not available")
+            return None
 
-        return successful_sends
+        try:
+            # Receive size header (4 bytes)
+            size_header = await self._recv_all(reader, 4)
+            if not size_header:
+                return None
 
-    def get_connected_clients(self) -> Set[str]:
-        return set(self.clients.keys())
+            size = struct.unpack('!I', size_header)[0]
+
+            # Receive data
+            data = await self._recv_all(reader, size)
+            if not data:
+                return None
+
+            tasks = pickle.loads(data)
+            return tasks
+
+        except asyncio.TimeoutError:
+            logging.debug("Receive timeout")
+            return None
+        except Exception as e:
+            logging.error(f"Error receiving tasks: {e}")
+            return None
+
+    def is_connected(self) -> bool:
+        return self.server is not None
 
     async def stop(self):
-        # Close all client connections
-        for client_id, writer in self.clients.items():
-            writer.close()
-            await writer.wait_closed()
-        self.clients.clear()
-
-        # Stop server
         if self.server:
             self.server.close()
             await self.server.wait_closed()
             self.server = None
-
         logging.info("Server stopped")
 
     async def __aenter__(self):
