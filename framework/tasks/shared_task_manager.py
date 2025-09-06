@@ -30,22 +30,7 @@ class SharedTaskManager:
 
     def start_listening(self, port: int, timeout: int = 30) -> bool:
         """Start listening on port for incoming connections."""
-        if self.is_listening:
-            logging.warning("Already listening")
-            return False
-
-        try:
-            self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.server_socket.settimeout(timeout)
-            self.server_socket.bind(('0.0.0.0', port))
-            self.server_socket.listen(5)
-            self.is_listening = True
-            logging.info(f"TaskManager started listening on port {port} (timeout: {timeout}s)")
-            return True
-        except Exception as e:
-            logging.error(f"Failed to start listening: {e}")
-            return False
+        return self.network_manager.start_listening(port, timeout)
 
     def stop_listening(self):
         """Stop listening and close server socket."""
