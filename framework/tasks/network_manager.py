@@ -43,38 +43,231 @@ class NetworkManager:
         sock.sendto(size_header, address)
         sock.sendto(data, address)
 
-    def receive_tasks(self) -> Optional[tuple[dict[bytes, Task], tuple[str, int]]]:
-        try:
-            header_data, address = self.socket.recvfrom(8)  # 8 bytes for size header
-            total_size = int.from_bytes(header_data, byteorder='big')
-
-        except socket.timeout:
-            logging.debug(f"Receive timeout")
             return None
-        except socket.error as e:
-            logging.error(f"Socket error while receiving header: {e}")
             return None
 
-        buffer = b''
+
+
+class NetworkServer:
+    def __init__(self):
+        self.server: Optional[asyncio.Server] = None
+        self.clients: Dict[str, asyncio.StreamWriter] = {}
+        self.message_handlers: Dict[str, Callable] = {}
+
+    async def start(self, port: int, host: str = '0.0.0.0') -> bool:
+        if self.server:
+            logging.warning("Server already started")
+            return False
+
         try:
-            while len(buffer) < total_size:
-                chunk, _ = self.socket.recvfrom(min(1400, total_size - len(buffer)))
-                buffer += chunk
+            self.server = await asyncio.start_server(
+                self._handle_client, host, port
+            )
+            logging.info(f"TCP server started on {host}:{port}")
+            return True
+        except Exception as e:
+            logging.error(f"Failed to start server: {e}")
+            return False
+
+    async def serve_forever(self):
+        if not self.server:
+            logging.error("Server not started")
+            return
+
+        async with self.server:
+            await self.server.serve_forever()
+
+    async def _handle_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+        client_address = writer.get_extra_info('peername')
+        client_id = f"{client_address[0]}:{client_address[1]}"
+
+        logging.info(f"Client {client_id} connected")
+        self.clients[client_id] = writer
+
+        try:
+            while True:
+                tasks = await _receive_tasks_from_stream(reader)
+                if tasks is None:
+                    break
+
+                # Handle received tasks
+                if 'task_handler' in self.message_handlers:
+                    await self.message_handlers['task_handler'](tasks, client_id)
+
+        except Exception as e:
+            logging.error(f"Error handling client {client_id}: {e}")
+        finally:
+            logging.info(f"Client {client_id} disconnected")
+            if client_id in self.clients:
+                del self.clients[client_id]
+            writer.close()
+            await writer.wait_closed()
+
+    def register_handler(self, event_type: str, handler: Callable):
+        self.message_handlers[event_type] = handler
+
+    async def send_tasks_to_client(self, tasks: dict[bytes, Task], client_id: str) -> bool:
+        if client_id not in self.clients:
+            logging.error(f"Client {client_id} not connected")
+            return False
+
+        writer = self.clients[client_id]
+        return await _send_tasks_to_stream(tasks, writer)
+
+    async def broadcast_tasks(self, tasks: dict[bytes, Task]) -> int:
+        if not self.clients:
+            logging.warning("No clients connected")
+            return 0
+
+        successful_sends = 0
+        failed_clients = []
+
+        for client_id, writer in self.clients.items():
+            try:
+                success = await _send_tasks_to_stream(tasks, writer)
+                if success:
+                    successful_sends += 1
+                else:
+                    failed_clients.append(client_id)
+            except Exception as e:
+                logging.error(f"Error sending to client {client_id}: {e}")
+                failed_clients.append(client_id)
+
+        # Clean up failed connections
+        for client_id in failed_clients:
+            if client_id in self.clients:
+                writer = self.clients[client_id]
+                writer.close()
+                await writer.wait_closed()
+                del self.clients[client_id]
+                logging.info(f"Removed failed client {client_id}")
+
+        return successful_sends
+
+    def get_connected_clients(self) -> Set[str]:
+        return set(self.clients.keys())
+
+    async def stop(self):
+        # Close all client connections
+        for client_id, writer in self.clients.items():
+            writer.close()
+            await writer.wait_closed()
+        self.clients.clear()
+
+        # Stop server
+        if self.server:
+            self.server.close()
+            await self.server.wait_closed()
+            self.server = None
+
+        logging.info("Server stopped")
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.stop()
+
+
+class NetworkClient:
+    def __init__(self):
+        self.socket: Optional[socket.socket] = None
+
+    def connect(self, host: str, port: int, timeout: float = 30.0) -> bool:
+        if self.socket:
+            logging.warning("Already connected to server")
+            return False
+
+        try:
+            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket.settimeout(timeout)
+            self.socket.connect((host, port))
+            logging.info(f"Connected to server at {host}:{port}")
+            return True
+        except Exception as e:
+            logging.error(f"Failed to connect to server: {e}")
+            if self.socket:
+                self.socket.close()
+                self.socket = None
+            return False
+
+    def send_tasks(self, tasks: dict[bytes, Task]) -> bool:
+        if not self.socket:
+            logging.error("Not connected to server")
+            return False
+
+        try:
+            data = pickle.dumps(tasks)
+            size = len(data)
+
+            # Send size header (4 bytes)
+            size_header = struct.pack('!I', size)
+            self.socket.sendall(size_header)
+
+            # Send data
+            self.socket.sendall(data)
+
+            return True
+        except Exception as e:
+            logging.error(f"Error sending tasks: {e}")
+            return False
+
+    def receive_tasks(self) -> Optional[dict[bytes, Task]]:
+        if not self.socket:
+            logging.error("Not connected to server")
+            return None
+
+        try:
+            # Receive size header (4 bytes)
+            size_header = self._recv_all(4)
+            if not size_header:
+                return None
+
+            size = struct.unpack('!I', size_header)[0]
+
+            # Receive data
+            data = self._recv_all(size)
+            if not data:
+                return None
+
+            tasks = pickle.loads(data)
+            return tasks
+
         except socket.timeout:
-            logging.error(f"Receive timeout")
+            logging.debug("Receive timeout")
             return None
         except Exception as e:
             logging.error(f"Error receiving tasks: {e}")
             return None
 
-        try:
-            tasks = pickle.loads(buffer)
-        except Exception as e:
-            logging.error(f"Error deserializing tasks: {e}")
-            return None
+    def disconnect(self):
+        if self.socket:
+            self.socket.close()
+            self.socket = None
+            logging.info("Disconnected from server")
 
-        return tasks, address
+    def is_connected(self) -> bool:
+        return self.socket is not None
 
-    def __del__(self):
-        """Cleanup socket on destruction."""
-        self.stop_communication()
+    def _recv_all(self, size: int) -> Optional[bytes]:
+        buffer = b''
+        while len(buffer) < size:
+            try:
+                chunk = self.socket.recv(size - len(buffer))
+                if not chunk:
+                    logging.error("Connection closed by peer")
+                    return None
+                buffer += chunk
+            except socket.timeout:
+                logging.error("Receive timeout")
+                return None
+            except Exception as e:
+                logging.error(f"Error receiving data: {e}")
+                return None
+        return buffer
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.disconnect()
