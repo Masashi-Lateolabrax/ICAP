@@ -45,10 +45,18 @@ class SharedTaskManager:
         incoming_tasks, address = result
         logging.info(f"Received {len(incoming_tasks)} tasks from {address[0]}:{address[1]}")
         self._update(incoming_tasks, True)
-        
+
         # Send our tasks back to the client
         self.network_manager.send_tasks(self.tasks, address)
 
+    def sync_(self, target_addr: str, port: int) -> bool:
+        """Send tasks to target."""
+        try:
+            self.network_manager.send_tasks(self.tasks, (target_addr, port))
+            return True
+        except Exception as e:
+            logging.error(f"Failed to send tasks to {target_addr}:{port}: {e}")
+            return False
 
     def take_task(self, n: int = 1, deadline: int = 300) -> list[Task]:
         current_time = datetime.datetime.now(datetime.UTC)
