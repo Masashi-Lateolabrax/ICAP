@@ -1,127 +1,67 @@
-import numpy as np
 import mujoco
 from mujoco import mjx
+from typing import Self
 
 import jax
 from flax import nnx
 from flax.struct import dataclass as jax_dataclass
 
 from framework.prelude import *
-from framework.backends import BasicSimulatorWithEnv
+from framework.backends import SimulatorWithCtrl
 
 from .controller import Controller
 
 
 @jax_dataclass
-class Simulator:
-    _env_sim: BasicSimulatorWithEnv
-
-    controller: Controller
+class Simulator(SimEvaluateTrait):
+    _parent_sim: SimulatorWithCtrl
 
     @property
     def data(self) -> mjx.Data:
-        return self._env_sim.data
+        return self._parent_sim.data
 
     @property
-    def robots(self) -> BatchedRobots:
-        return self._env_sim.robots
+    def controller(self) -> Controller:
+        return self._parent_sim.controller
 
-    @property
-    def robot_inputs(self) -> jax.Array:
-        return self._env_sim.robot_inputs
+    def _update_parent(self, **kwargs) -> Self:
+        return self.replace(_parent_sim=self._parent_sim.update(**kwargs))
 
-    @property
-    def food_items(self) -> BatchedFood:
-        return self._env_sim.food_items
-
-    @property
-    def loss(self) -> jax.Array:
-        return self._env_sim.loss
-
-    def update(
-            self,
-            data: mjx.Data = None,
-            robots: BatchedRobots = None,
-            robot_inputs: jax.Array = None,
-            loss: jax.Array = None,
-
-            controller: Controller = None
-    ) -> 'Simulator':
-        parent_kwargs = {
-            "data": data,
-            "robots": robots,
-            "robot_inputs": robot_inputs,
-            "loss": loss,
-        }
-        env_sim = self._env_sim.update(**parent_kwargs)
-
-        this_kwargs = {
-            "_env_sim": env_sim,
-            "controller": controller,
-        }
-        kwargs = {k: v for k, v in this_kwargs.items() if v is not None}
-        if not kwargs:
-            return self
-
-        return self.replace(**kwargs)
+    def update(self, data=None, controller=None, **kwargs) -> Self:
+        kwargs["data"] = data
+        kwargs["controller"] = controller
+        return self._update_parent(**kwargs)
 
     @classmethod
-    def new(cls, settings: Settings, rngs: jax.Array) -> tuple[mujoco.MjModel, 'Simulator']:
-        mj_model, sim = BasicSimulatorWithEnv.new(settings, rngs)
-        controller = Controller(settings.Robot.NUM)
-        return mj_model, cls(
-            _env_sim=sim,
-            controller=controller,
-        )
-
-    def add_pheromone(self, positions: jax.Array, amounts: jax.Array) -> 'Simulator':
-        new_env_sim = self._env_sim.add_pheromone(positions, amounts)
-        return self.replace(_env_sim=new_env_sim)
+    def new(cls, settings: Settings, controller: Controller, rngs: jax.Array) -> tuple[mujoco.MjModel, Self]:
+        mj_model, sim = SimulatorWithCtrl.new(settings, controller, rngs)
+        return mj_model, cls(_parent_sim=sim)
 
     @staticmethod
     @nnx.jit
     def _step(this: 'Simulator') -> 'Simulator':
-        this: "Simulator" = this.replace(_env_sim=this._env_sim.step())
+        this = this.update(_parent_sim=this._parent_sim.step())
+        return this
 
-        output = this.controller(this.robot_inputs)
-        new_data = this.robots.set_ctrl(this.data, output[:, 0:2])
-
-        this = this.add_pheromone(this.robots.positions, output[:, 2])
-
-        return this.update(data=new_data)
-
-    def step(self) -> 'Simulator':
+    def step(self) -> Self:
         return Simulator._step(self)
 
     @staticmethod
     @nnx.jit
-    def _step_n(simulator: "Simulator", n: int) -> "Simulator":
-        def body_fn(_i, sim: "Simulator"):
+    def _step_n(this: 'Simulator', n: int) -> 'Simulator':
+        def body_fn(_i, sim: 'Simulator') -> 'Simulator':
             return Simulator._step(sim)
 
-        new_simulator = jax.lax.fori_loop(0, n, body_fn, simulator)
-        return new_simulator
+        this = jax.lax.fori_loop(0, n, body_fn, this)
+        return this
 
-    def step_n(self, n: int) -> 'Simulator':
+    def step_n(self, n: int) -> Self:
         return Simulator._step_n(self, n)
 
-    def render(
-            self,
-            mj_model: mujoco.MjModel,
-            img_buf: np.ndarray,
-            pos: tuple[float, float, float],
-            lookat: tuple[float, float, float],
-            max_geom=100,
-            max_pheromone=1.0
-    ):
-        self._env_sim.render(mj_model, img_buf, pos, lookat, max_geom, max_pheromone)
+    def reset(self) -> Self:
+        return self.update(_parent_sim=self._parent_sim)
 
-    def reset(self, individual: jax.Array = None, rngs: jax.Array = None) -> 'Simulator':
-        new_env_sim = self._env_sim.reset(rngs)
-        this = self.replace(_env_sim=new_env_sim)
-
-        controller = Controller(individual) if individual is not None else None
-        return this.update(
-            individual=individual,
-            controller=controller
-        )
+    def evaluate(self) -> dict:
+        result = self._parent_sim.evaluate()
+        result["l2"] = self.controller.l2
+        return result
