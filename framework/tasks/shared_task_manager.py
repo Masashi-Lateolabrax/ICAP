@@ -12,6 +12,12 @@ class SharedTaskManager:
 
     def update(self, target_tasks: dict[bytes, Task], self_is_priority: bool):
         ic(len(target_tasks), self_is_priority, len(self._tasks))
+
+        if not self_is_priority:
+            for key, task in self._tasks.items():
+                if not key in target_tasks:
+                    del self._tasks[key]
+
         for target_key, target_task in target_tasks.items():
             if target_key not in self._tasks:
                 if not self_is_priority:
