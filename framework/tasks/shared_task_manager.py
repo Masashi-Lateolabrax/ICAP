@@ -6,7 +6,8 @@ from ..prelude import *
 
 class SharedTaskManager:
     def __init__(self):
-        self.tasks: list[Task] = []
+        self.tasks: dict[bytes, Task] = {}  # key: TaskID.content_hash, value: Task
+
 
     def listen_(self, port: int):
         pass
