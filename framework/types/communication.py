@@ -128,7 +128,7 @@ class TaskID:
             if self.state_hash != state_hash:
                 id_ = None
 
-        if id_ is not None:
+        if id_ is None:
             id_ = hashlib.md5(content_hash + state_hash).digest()
 
         return dataclasses.replace(
