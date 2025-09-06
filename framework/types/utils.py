@@ -4,8 +4,6 @@ import logging
 import pickle
 from typing import Self
 
-import numpy as np
-
 from .communication import Task
 
 
@@ -93,6 +91,10 @@ class OptimizerResultSet:
             path += '.pkl'
         with open(path, 'wb') as f:
             pickle.dump(self, f)
+
+
+from .optimization import Individual
+
 
 class SavedIndividual:
     def __init__(self, generation, avg_fitness, timestamp, individuals: list[Individual]):
