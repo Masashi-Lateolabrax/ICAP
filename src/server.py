@@ -203,7 +203,7 @@ def main(settings: Settings):
     print("Press Ctrl+C to stop the server")
     print("=" * 50)
 
-    asyncio.run(optimization(port, 1, settings))
+    asyncio.run(optimization(port, 60, settings))
 
 
 if __name__ == "__main__":
