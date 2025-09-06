@@ -116,32 +116,25 @@ class NetworkServer:
             logging.error("Reader not available")
             return None, ReceiveStatus.ERROR
 
+        # Receive size header (4 bytes)
+        size_header, status = await self._recv_all(reader, 4)
+        if status != ReceiveStatus.SUCCESS:
+            return None, status
+
+        size = struct.unpack('!I', size_header)[0]
+        ic(size)
+
+        # Receive data
+        data, status = await self._recv_all(reader, size)
+        if status != ReceiveStatus.SUCCESS:
+            return None, status
+
         try:
-            # Receive size header (4 bytes)
-            size_header = await self._recv_all(reader, 4)
-            if not size_header:
-                return None, ReceiveStatus.DISCONNECTED
-
-            size = struct.unpack('!I', size_header)[0]
-            ic(size)
-
-            # Receive data
-            data = await self._recv_all(reader, size)
-            if not data:
-                return None, ReceiveStatus.DISCONNECTED
-
             tasks = pickle.loads(data)
             ic(len(tasks))
             return tasks, ReceiveStatus.SUCCESS
-
-        except asyncio.TimeoutError:
-            logging.debug("Receive timeout - client still connected")
-            return None, ReceiveStatus.TIMEOUT
-        except asyncio.IncompleteReadError:
-            logging.info("Client disconnected")
-            return None, ReceiveStatus.DISCONNECTED
         except Exception as e:
-            logging.error(f"Error receiving tasks: {e}")
+            logging.error(f"Error unpickling tasks: {e}")
             return None, ReceiveStatus.ERROR
 
     def is_connected(self) -> bool:
