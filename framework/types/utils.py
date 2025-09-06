@@ -13,6 +13,7 @@ from .communication import Task
 @dataclasses.dataclass(frozen=True)
 class OptimizationResult:
     generation: int
+    para_and_fitness: list[tuple[np.ndarray, float]]
     avg_fitness: float
     min_fitness: float
     max_fitness: float
@@ -23,6 +24,7 @@ class OptimizationResult:
     @classmethod
     def new(cls, generation: int, tasks: list[Task]) -> Self:
         fitnesses = [task.result for task in tasks]
+        para_and_fitness = [(task.parameter, task.result) for task in tasks]
         avg_fitness = sum(fitnesses) / len(fitnesses)
         min_fitness = min(fitnesses)
         max_fitness = max(fitnesses)
@@ -31,6 +33,7 @@ class OptimizationResult:
         timestamp = datetime.datetime.now(datetime.UTC)
         return cls(
             generation=generation,
+            para_and_fitness=para_and_fitness,
             avg_fitness=avg_fitness,
             min_fitness=min_fitness,
             max_fitness=max_fitness,
