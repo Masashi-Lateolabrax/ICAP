@@ -6,6 +6,7 @@ import socket
 from typing import Optional
 from enum import Enum
 
+from icecream import ic
 from ..prelude import *
 from .shared_task_manager import SharedTaskManager
 
@@ -19,6 +20,7 @@ class ReceiveStatus(Enum):
 
 class NetworkServer:
     def __init__(self, host: str, port: int, timeout: float = 30.0):
+        ic(host, port, timeout)
         self.timeout = timeout
         self.task_manager = SharedTaskManager()
 
@@ -33,16 +35,19 @@ class NetworkServer:
         self.server = loop.run_until_complete(
             asyncio.start_server(self._handle_client, host, port)
         )
+        ic(self.server)
         logging.info(f"TCP server created on {host}:{port}")
 
     async def _handle_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
         client_address = writer.get_extra_info('peername')
         client_id = f"{client_address[0]}:{client_address[1]}"
+        ic(client_id)
         logging.info(f"Client {client_id} connected")
 
         try:
             while True:
                 tasks, status = await self._receive_tasks(reader)
+                ic(len(tasks) if tasks else 0, status)
                 
                 if status == ReceiveStatus.DISCONNECTED or status == ReceiveStatus.ERROR:
                     # Client disconnected or error occurred - break the loop
@@ -53,7 +58,9 @@ class NetworkServer:
                     continue
                 elif status == ReceiveStatus.SUCCESS and tasks:
                     # Successfully received tasks - process them
+                    ic(len(self.task_manager._tasks))
                     self.task_manager.update(tasks, self_is_priority=True)
+                    ic(len(self.task_manager._tasks))
                     # Send server's tasks back to client
                     await self._send_tasks(self.task_manager._tasks, writer)
 
@@ -65,6 +72,7 @@ class NetworkServer:
             await writer.wait_closed()
 
     async def _send_tasks(self, tasks: dict[bytes, Task], writer: asyncio.StreamWriter) -> bool:
+        ic(len(tasks))
         if not writer:
             logging.error("Writer not available")
             return False
@@ -72,6 +80,7 @@ class NetworkServer:
         try:
             data = pickle.dumps(tasks)
             size = len(data)
+            ic(size)
 
             # Send size header (4 bytes)
             size_header = struct.pack('!I', size)
@@ -118,6 +127,7 @@ class NetworkServer:
                 return None, ReceiveStatus.DISCONNECTED
 
             size = struct.unpack('!I', size_header)[0]
+            ic(size)
 
             # Receive data
             data = await self._recv_all(reader, size)
@@ -125,6 +135,7 @@ class NetworkServer:
                 return None, ReceiveStatus.DISCONNECTED
 
             tasks = pickle.loads(data)
+            ic(len(tasks))
             return tasks, ReceiveStatus.SUCCESS
 
         except asyncio.TimeoutError:
@@ -156,12 +167,15 @@ class NetworkServer:
 
 class NetworkClient:
     def __init__(self, host: str, port: int, timeout: float = 30.0):
+        ic(host, port, timeout)
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.settimeout(timeout)
         self.socket.connect((host, port))
+        ic(self.socket)
         logging.info(f"Connected to server at {host}:{port}")
 
     def _send_tasks(self, tasks: dict[bytes, Task]) -> bool:
+        ic(len(tasks))
         if not self.socket:
             logging.error("Not connected to server")
             return False
@@ -169,6 +183,7 @@ class NetworkClient:
         try:
             data = pickle.dumps(tasks)
             size = len(data)
+            ic(size)
 
             # Send size header (4 bytes)
             size_header = struct.pack('!I', size)
@@ -211,6 +226,7 @@ class NetworkClient:
                 return None
 
             size = struct.unpack('!I', size_header)[0]
+            ic(size)
 
             # Receive data
             data = self._recv_all(size)
@@ -218,6 +234,7 @@ class NetworkClient:
                 return None
 
             tasks = pickle.loads(data)
+            ic(len(tasks))
             return tasks
 
         except socket.timeout:
@@ -237,23 +254,27 @@ class NetworkClient:
         return self.socket is not None
 
     def sync(self, task_manager: SharedTaskManager) -> bool:
+        ic(self.is_connected())
         if not self.is_connected():
             logging.error("Not connected to server")
             return False
 
         # Send local tasks to server
+        ic(len(task_manager._tasks))
         if not self._send_tasks(task_manager._tasks):
             logging.error("Failed to send tasks to server")
             return False
 
         # Receive tasks from server
         received_tasks = self._receive_tasks()
+        ic(len(received_tasks) if received_tasks else 0)
         if received_tasks is None:
             logging.error("Failed to receive tasks from server")
             return False
 
         # Update local task manager with received tasks
         task_manager.update(received_tasks, self_is_priority=False)
+        ic(len(task_manager._tasks))
         return True
 
     def __enter__(self):
