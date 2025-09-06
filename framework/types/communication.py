@@ -45,7 +45,7 @@ class TaskState:
         )
 
     def hash(self) -> bytes:
-        result_hash = hashlib.md5(str(self.result).encode())
+        result_hash = str(self.result).encode()
         progress_bytes = str(self.progress.value).encode()
         timestamp_bytes = str(self.timestamp).encode()
         return hashlib.md5(result_hash + progress_bytes + timestamp_bytes).digest()
