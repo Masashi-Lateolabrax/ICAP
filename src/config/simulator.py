@@ -67,7 +67,7 @@ class Simulator(SimEvaluateTrait):
         return Simulator._step_n(self, n)
 
     def reset(self) -> Self:
-        return self.update(_parent_sim=self._parent_sim)
+        return self.update(_parent_sim=self._parent_sim.reset())
 
     def evaluate(self) -> dict:
         result = self._parent_sim.evaluate()
