@@ -1,3 +1,4 @@
+import datetime
 import random
 
 from ..prelude import *
@@ -13,17 +14,28 @@ class SharedTaskManager:
     def sync_(self, target_addr, port):
         pass
 
-    def take_task_(self, n: int = 1) -> list[Task]:
-        waiting_tasks = [task for task in self.tasks if task.is_waiting()]
-        random.shuffle(waiting_tasks)
+    def take_task_(self, n: int = 1, deadline: int = 300) -> list[Task]:
+        current_time = datetime.datetime.now(datetime.UTC)
 
-        num = len(waiting_tasks)
-        waiting_tasks = waiting_tasks[:min(n, num)]
+        # Reset tasks that have been running too long
+        running_task_keys = [key for key, task in self.tasks.items() if task.progress.is_running()]
+        for key in running_task_keys:
+            task = self.tasks[key]
+            if (current_time - task.timestamp).total_seconds() > deadline:
+                self.tasks[key] = task.replace(progress=TaskProgress.WAITING)
 
-        for task in waiting_tasks:
-            task.replace(
-                progress=TaskProgress.RUNNING
-            )
+        # Select waiting tasks randomly
+        waiting_task_keys = [key for key, task in self.tasks.items() if task.progress.is_waiting()]
+        random.shuffle(waiting_task_keys)
+        num = len(waiting_task_keys)
+        waiting_task_keys = waiting_task_keys[:min(n, num)]
+
+        # Mark them as running
+        waiting_tasks = []
+        for key in waiting_task_keys:
+            replaced_task = self.tasks[key].replace(progress=TaskProgress.RUNNING)
+            self.tasks[key] = replaced_task
+            waiting_tasks.append(replaced_task)
 
         return waiting_tasks
 
