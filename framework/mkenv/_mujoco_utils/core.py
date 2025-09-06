@@ -88,6 +88,8 @@ def add_geom(
         condim: Optional contact dimensionality for collision detection
         density: Optional density for mass calculation
         mass: Optional explicit mass (overrides density)
+        quat: Optional quaternion orientation (w, x, y, z)
+        mesh: Optional mesh object for complex geometries
         
     Returns:
         Created MuJoCo geometry specification object
@@ -300,6 +302,7 @@ def add_velocity_actuator(
         joint: Target joint to control
         kv: Velocity gain coefficient
         name: Optional name identifier for the actuator
+        gear: Optional gear ratio for the actuator
         
     Returns:
         Created MuJoCo actuator specification object
