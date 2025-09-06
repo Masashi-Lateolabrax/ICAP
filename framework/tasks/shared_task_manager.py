@@ -1,6 +1,10 @@
 import datetime
 import logging
 import random
+import socket
+import pickle
+import threading
+from typing import Optional
 
 from ..prelude import *
 
@@ -8,6 +12,8 @@ from ..prelude import *
 class SharedTaskManager:
     def __init__(self):
         self.tasks: dict[bytes, Task] = {}  # key: TaskID.content_hash, value: Task
+        self.server_socket: Optional[socket.socket] = None
+        self.is_listening: bool = False
 
     def _update(self, target_tasks: dict[bytes, Task], self_is_priority: bool):
         for target_key, target_task in target_tasks.items():
@@ -24,6 +30,33 @@ class SharedTaskManager:
 
             if target_task.timestamp > my_task.timestamp:
                 self.tasks[target_key] = target_task
+
+    def start_listening(self, port: int, timeout: int = 30) -> bool:
+        """Start listening on port for incoming connections."""
+        if self.is_listening:
+            logging.warning("Already listening")
+            return False
+
+        try:
+            self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.server_socket.settimeout(timeout)
+            self.server_socket.bind(('0.0.0.0', port))
+            self.server_socket.listen(5)
+            self.is_listening = True
+            logging.info(f"TaskManager started listening on port {port} (timeout: {timeout}s)")
+            return True
+        except Exception as e:
+            logging.error(f"Failed to start listening: {e}")
+            return False
+
+    def stop_listening(self):
+        """Stop listening and close server socket."""
+        if self.server_socket:
+            self.server_socket.close()
+            self.server_socket = None
+        self.is_listening = False
+        logging.info("Stopped listening")
 
     def listen_(self, port: int, timeout: int):
         pass  # TODO: listen on port for other task managers
@@ -72,3 +105,7 @@ class SharedTaskManager:
         for task in completed_tasks:
             self.tasks.pop(task.id.content_hash, None)
         return completed_tasks
+
+    def __del__(self):
+        """Cleanup socket on destruction."""
+        self.stop_listening()
