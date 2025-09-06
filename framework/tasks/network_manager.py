@@ -91,7 +91,7 @@ class NetworkServer:
             logging.error(f"Error sending tasks: {e}")
             return False
 
-    async def _recv_all(self, reader: asyncio.StreamReader, size: int) -> Optional[bytes]:
+    async def _recv_all(self, reader: asyncio.StreamReader, size: int) -> tuple[Optional[bytes], ReceiveStatus]:
         buffer = b''
         while len(buffer) < size:
             try:
@@ -101,15 +101,15 @@ class NetworkServer:
                 )
                 if not chunk:
                     logging.error("Connection closed by peer")
-                    return None
+                    return None, ReceiveStatus.DISCONNECTED
                 buffer += chunk
             except asyncio.TimeoutError:
                 logging.error("Receive timeout")
-                return None
+                return None, ReceiveStatus.TIMEOUT
             except Exception as e:
                 logging.error(f"Error receiving data: {e}")
-                return None
-        return buffer
+                return None, ReceiveStatus.ERROR
+        return buffer, ReceiveStatus.SUCCESS
 
     async def _receive_tasks(self, reader: asyncio.StreamReader) -> tuple[Optional[dict[bytes, Task]], ReceiveStatus]:
         if not reader:
