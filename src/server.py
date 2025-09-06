@@ -67,6 +67,35 @@ def save_completed_tasks(settings: Settings, result: OptimizationResult) -> Opti
     return result
 
 
+def print_info(
+        settings: Settings,
+        prev_result: Optional[OptimizationResult],
+        current_result: OptimizationResult
+):
+    current_time = datetime.datetime.now()
+
+    if prev_result is not None:
+        time_diff = current_result.timestamp - prev_result.timestamp
+        speed = time_diff.total_seconds()  # sec/gen
+
+        remaining_generations = settings.Optimization.GENERATION - current_result.generation
+        remaining_seconds = datetime.timedelta(seconds=remaining_generations * speed)
+        eta = current_time + remaining_seconds
+
+    else:
+        speed = float("nan")
+        eta = "N/A"
+
+    print(
+        f"[{current_time.strftime('%H:%M:%S')}] "
+        f"Generation: {current_result.generation}, | "
+        f"Average: {current_result.avg_fitness:.2f} | "
+        f"SD: {math.sqrt(current_result.variance):.2f} | "
+        f"Speed: {settings.Optimization.POPULATION / speed:.2f} ind/sec | "
+        f"ETA: {eta} "
+    )
+
+
 
 def optimization(port: int, timeout: int, settings: Settings):
     shared_task_manager = SharedTaskManager()
