@@ -19,6 +19,7 @@ from icecream import ic
 
 from framework.prelude import Settings, TaskProgress
 from framework.tasks import SharedTaskManager
+from framework.tasks.network_manager import NetworkClient
 
 from config import Simulator, Controller
 
@@ -49,14 +50,12 @@ def reset_simulators(simulator: Simulator, parameter: jax.Array, rngs: jax.Array
 
 
 def client_evaluation(host: str, port: int, settings: Settings, batch_size: int):
-    """Main client evaluation loop using SharedTaskManager"""
+    """Main client evaluation loop using NetworkClient"""
 
     episode_length = math.ceil(settings.Simulation.TIME_LENGTH / settings.Simulation.TIME_STEP)
 
     shared_task_manager = SharedTaskManager()
-    shared_task_manager.start_communication(port, timeout=10)
-    print(f"Started communication on port {port}")
-
+    
     print(f"Initialized {batch_size} simulators")
     initial_simulators = initialize_simulators(settings, batch_size)
 
@@ -66,58 +65,69 @@ def client_evaluation(host: str, port: int, settings: Settings, batch_size: int)
 
     print("Entering main evaluation loop...")
     while True:
-        print("Syncing with server...")
-        sync_success = False
-        for retry in range(max_retries):
-            if shared_task_manager.sync(host, port):
-                sync_success = True
-                consecutive_failures = 0
-                break
-            else:
-                retry_delay_actual = retry_delay * (2 ** retry)  # Exponential backoff
-                logging.warning(f"Failed to sync with server {host}:{port} (attempt {retry + 1}/{max_retries})")
-                logging.warning(f"retrying in {retry_delay_actual}s")
-                time.sleep(retry_delay_actual)
+        print("Connecting to server...")
+        try:
+            with NetworkClient(host, port, timeout=10) as client:
+                print(f"Connected to server at {host}:{port}")
+                
+                while True:
+                    print("Syncing with server...")
+                    sync_success = False
+                    for retry in range(max_retries):
+                        if client.sync(shared_task_manager):
+                            sync_success = True
+                            consecutive_failures = 0
+                            break
+                        else:
+                            retry_delay_actual = retry_delay * (2 ** retry)  # Exponential backoff
+                            logging.warning(f"Failed to sync with server {host}:{port} (attempt {retry + 1}/{max_retries})")
+                            logging.warning(f"retrying in {retry_delay_actual}s")
+                            time.sleep(retry_delay_actual)
 
-        if not sync_success:
-            consecutive_failures += 1
-            logging.error(f"Failed to sync after {max_retries} attempts. Consecutive failures: {consecutive_failures}")
+                    if not sync_success:
+                        consecutive_failures += 1
+                        logging.error(f"Failed to sync after {max_retries} attempts. Consecutive failures: {consecutive_failures}")
 
-            if consecutive_failures >= 5:
-                logging.error("Too many consecutive failures. Exiting client.")
-                break
+                        if consecutive_failures >= 5:
+                            logging.error("Too many consecutive failures. Disconnecting from server.")
+                            break
 
-            time.sleep(retry_delay * 2)
+                        time.sleep(retry_delay * 2)
+                        continue
+
+                    print("Taking tasks from server...")
+                    tasks = shared_task_manager.take_task(n=batch_size)
+                    if not tasks:
+                        time.sleep(1.0)
+                        continue
+
+                    print("Preparing simulators...")
+                    num_tasks = len(tasks)
+                    sub_simulators = jax.tree.map(lambda x: x[:num_tasks], initial_simulators)
+                    sub_simulators = jax.vmap(reset_simulators)(
+                        sub_simulators,
+                        jnp.array([task.parameter for task in tasks]),
+                        jnp.array([task.rng_seed for task in tasks])
+                    )
+
+                    print("Running simulations...")
+                    sub_simulators = jax.vmap(lambda sim: sim.step_n(episode_length))(sub_simulators)
+                    losses = jax.vmap(lambda sim: sim.evaluate())(sub_simulators)
+                    losses = np.array(losses)
+
+                    print("Storing results back to server...")
+                    for i, task in enumerate(tasks):
+                        completed_task = task.replace(
+                            result=float(losses[i]["loss"]),
+                            progress=TaskProgress.COMPLETED
+                        )
+                        shared_task_manager.set_task(completed_task)
+                        print(f"Completed task with fitness: {float(losses[i]['loss']):.4f}")
+                        
+        except Exception as e:
+            logging.error(f"Connection error: {e}")
+            time.sleep(retry_delay)
             continue
-
-        print("Taking tasks from server...")
-        tasks = shared_task_manager.take_task(n=batch_size)
-        if not tasks:
-            time.sleep(1.0)
-            continue
-
-        print("Preparing simulators...")
-        num_tasks = len(tasks)
-        sub_simulators = jax.tree.map(lambda x: x[:num_tasks], initial_simulators)
-        sub_simulators = jax.vmap(reset_simulators)(
-            sub_simulators,
-            jnp.array([task.parameter for task in tasks]),
-            jnp.array([task.rng_seed for task in tasks])
-        )
-
-        print("Running simulations...")
-        sub_simulators = jax.vmap(lambda sim: sim.step_n(episode_length))(sub_simulators)
-        losses = jax.vmap(lambda sim: sim.evaluate())(sub_simulators)
-        losses = np.array(losses)
-
-        print("Storing results back to server...")
-        for i, task in enumerate(tasks):
-            completed_task = task.replace(
-                result=float(losses[i]["loss"]),
-                progress=TaskProgress.COMPLETED
-            )
-            shared_task_manager.set_task(completed_task)
-            print(f"Completed task with fitness: {float(losses[i]['loss']):.4f}")
 
 
 def main(settings: Settings):
