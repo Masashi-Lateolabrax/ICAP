@@ -118,7 +118,7 @@ def optimization(port: int, timeout: int, settings: Settings):
     for i in range(settings.Optimization.GENERATION):
         # Generate tasks and distribute them to clients
         for task in [Task.new(None, x, i) for x in cmaes.ask()]:
-            shared_task_manager.add_task(task)
+            shared_task_manager.set_task(task)
 
         completed_tasks = []
         while len(shared_task_manager) > 0:
