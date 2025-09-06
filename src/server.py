@@ -29,7 +29,8 @@ ic.configureOutput(
     includeContext=True
 )
 
-ic.disable()
+
+# ic.disable()  # Enable debugging
 
 
 def get_git_hash() -> str:
@@ -43,13 +44,20 @@ def get_git_hash() -> str:
 
 
 def create_optimization_result(settings: Settings, generation: int, completed_tasks) -> OptimizationResult:
+    ic(generation, len(completed_tasks))
     num_to_save = max(1, settings.Storage.TOP_N) if settings.Storage.TOP_N > 0 else len(completed_tasks)
     tasks_to_save = sorted(completed_tasks, key=lambda x: x[1])[:num_to_save]
+    ic(num_to_save, len(tasks_to_save), settings.Storage.TOP_N)
     result = OptimizationResult.new(generation, tasks_to_save)
+    ic(result.generation, result.avg_fitness)
     return result
 
 
 def save_completed_tasks(settings: Settings, result: OptimizationResult) -> OptimizationResult:
+    ic(settings.Storage.SAVE_INDIVIDUALS)
+    if not settings.Storage.SAVE_INDIVIDUALS:
+        return result
+
     timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     git_hash = get_git_hash()
     filename = f"generation_{result.generation}.pkl"
@@ -58,12 +66,13 @@ def save_completed_tasks(settings: Settings, result: OptimizationResult) -> Opti
     save_directory = os.path.join(settings.Storage.SAVE_DIRECTORY, folder_name)
     file_path = os.path.join(save_directory, filename)
 
+    ic(file_path)
     os.makedirs(save_directory, exist_ok=True)
 
     try:
-        result.save(file_path)
-
+        ic(result.save(file_path))
     except Exception as e:
+        ic(e)
         raise RuntimeError(f"Failed to save completed tasks: {e}")
 
     return result
@@ -104,39 +113,63 @@ def print_and_save(settings: Settings, prev_result: Optional[OptimizationResult]
 
 
 async def optimization(port: int, timeout: int, settings: Settings):
+    ic(port, timeout, settings.Optimization.GENERATION)
     optimization_result = None
-    
+
     async with NetworkServer('localhost', port, timeout) as server:
         shared_task_manager = server.task_manager
+        ic(shared_task_manager)
 
         dim = Controller.dim()
+        ic(dim)
         cmaes = CMA(
             mean=np.zeros(dim, dtype=np.float32),
             sigma=settings.Optimization.SIGMA,
             seed=settings.Optimization.SEED,
             population_size=settings.Optimization.POPULATION,
         )
+        ic(settings.Optimization.SIGMA, settings.Optimization.POPULATION, settings.Optimization.SEED)
 
         for i in range(settings.Optimization.GENERATION):
+            ic(i, settings.Optimization.GENERATION)
+
             # Generate tasks and distribute them to clients
-            for task in [Task.new(None, x, i) for x in cmaes.ask()]:
+            parameters = cmaes.ask()
+            ic(len(parameters), parameters[0].shape if parameters else "no_params")
+
+            tasks = [Task.new(None, x, i) for x in parameters]
+            for task in tasks:
                 shared_task_manager.set_task(task)
+            ic(len(tasks), len(shared_task_manager))
 
             completed_tasks = []
+            ic(len(shared_task_manager))
+
             while len(shared_task_manager) > 0:
                 # Wait a short time for tasks to be processed by clients
                 await asyncio.sleep(0.1)
 
                 # Retrieve completed tasks
-                completed_tasks += shared_task_manager.retrieve_completed_tasks()
+                newly_completed = shared_task_manager.retrieve_completed_tasks()
+                completed_tasks += newly_completed
+
+                if newly_completed:
+                    ic(len(newly_completed), len(completed_tasks), len(shared_task_manager))
+
+                    # Show task status for debugging
+                    status = shared_task_manager.get_task_status()
+                    ic(status)
+
+            ic(len(completed_tasks), i)
 
             # Create optimization result
             prev_optimization_result = optimization_result
             optimization_result = create_optimization_result(settings, i, completed_tasks)
+            ic(optimization_result.avg_fitness, optimization_result.variance)
 
             # Update CMA-ES with completed tasks
             fitness: list[tuple[np.ndarray, float]] = [(task.parameter, task.result) for task in completed_tasks]
-            cmaes.tell(fitness)
+            ic(cmaes.tell(fitness))
 
             print_and_save(settings, prev_optimization_result, optimization_result)
 
