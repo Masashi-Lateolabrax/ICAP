@@ -4,6 +4,7 @@ Optimization Server
 This script starts an optimization server that distributes CMA-ES optimization
 tasks to connected clients.
 """
+import argparse
 import logging
 import os
 import threading
@@ -11,11 +12,10 @@ import datetime
 import subprocess
 from typing import Optional
 import math
-import re
 
 from icecream import ic
 from framework.prelude import *
-from framework.optimization import OptimizationServer, CMAES
+from framework.tasks import SharedTaskManager
 
 from config import Controller
 
