@@ -48,6 +48,8 @@ class TaskState:
     ) -> Self:
         if progress is None and not update_timestamp:
             return self
+        elif progress == self.progress and not update_timestamp:
+            return self
         return dataclasses.replace(
             self,
             progress=self.progress if progress is None else progress,
