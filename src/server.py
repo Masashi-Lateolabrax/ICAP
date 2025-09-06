@@ -13,7 +13,10 @@ import subprocess
 from typing import Optional
 import math
 
+import numpy as np
 from icecream import ic
+from cmaes import CMA
+
 from framework.prelude import *
 from framework.tasks import SharedTaskManager
 
@@ -127,6 +130,19 @@ class Handler:
             self._save(cmaes.generation, individuals)
 
         self._last_call_time = self._current_time
+
+
+def optimization(port: int, timeout: int, settings: Settings):
+    shared_task_manager = SharedTaskManager()
+    shared_task_manager.start_listening(port, timeout)
+
+    dim = Controller.dim()
+    cmaes = CMA(
+        mean=np.zeros(dim, dtype=np.float32),
+        sigma=settings.Optimization.SIGMA,
+        population_size=settings.Optimization.POPULATION,
+        max_generation=settings.Optimization.MAX_GENERATION
+    )
 
 
 def main(settings: Settings):
