@@ -14,6 +14,7 @@ from datetime import datetime
 
 import jax
 import jax.numpy as jnp
+import numpy as np
 from icecream import ic
 
 from framework.prelude import Settings, TaskProgress
