@@ -52,6 +52,27 @@ class TaskContent:
         return hashlib.md5(parameter_bytes + result_bytes + settings_bytes + rng_seed_bytes).digest()
 
 
+@dataclasses.dataclass(frozen=True)
+class TaskID:
+    hash_content: bytes
+    hash_update: bytes
+    timestamp: datetime.datetime
+
+    @classmethod
+    def new(
+            cls,
+            content: TaskContent
+    ) -> Self:
+        timestamp = datetime.datetime.now(datetime.UTC)
+        content_hash = content.hash()
+        hash_update = hashlib.md5(content_hash + str(timestamp).encode()).digest()
+
+        return cls(
+            hash_content=content_hash,
+            hash_update=hash_update,
+            timestamp=timestamp
+        )
+
 
 @dataclasses.dataclass(frozen=True)
 class Task:
