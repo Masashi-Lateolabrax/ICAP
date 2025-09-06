@@ -9,14 +9,16 @@ import logging
 import os
 import threading
 import time
-from datetime import datetime
 import math
+from datetime import datetime
 
+import jax
 from icecream import ic
 
-from framework.prelude import Settings, Individual, TaskProgress
+from framework.prelude import Settings, TaskProgress
+from framework.tasks import SharedTaskManager
 
-from config import Simulator
+from config import Simulator, Controller
 
 # Configure icecream for distributed system debugging
 ic.configureOutput(
@@ -147,6 +149,42 @@ def client_evaluation(host: str, port: int, evaluator: Evaluator, handler: Handl
             logging.error(f"Client error: {e}")
             time.sleep(5.0)
             continue
+
+
+def main(settings: Settings):
+    parser = argparse.ArgumentParser(description="ICAP Optimization Client")
+    parser.add_argument("--host", type=str, help="Server host address")
+    parser.add_argument("--port", type=int, help="Server port number")
+    parser.add_argument("--batch-size", type=int, default=1, help="Number of tasks to evaluate in batch")
+    args = parser.parse_args()
+
+    if not args.host:
+        print("Error: --host argument is required")
+        exit(1)
+
+    if not args.port:
+        print("Error: --port argument is required")
+        exit(1)
+
+    host = args.host
+    port = args.port
+
+    print("=" * 50)
+    print("OPTIMIZATION CLIENT")
+    print("=" * 50)
+    print(f"Server: {host}:{port}")
+    print("-" * 30)
+    print(f"Batch size: {args.batch_size}")
+    print("-" * 30)
+    print("Connecting to server...")
+    print("Press Ctrl+C to disconnect")
+    print("=" * 50)
+
+    try:
+        client_evaluation(host, port, settings, args.batch_size)
+    except Exception as e:
+        logging.error(f"Failed to connect to server: {e}")
+        exit(1)
 
 
 if __name__ == "__main__":
