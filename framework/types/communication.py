@@ -38,34 +38,43 @@ class TaskProgress(Enum):
 
 @dataclasses.dataclass(frozen=True)
 class TaskState:
+    result: Optional[float]
     progress: TaskProgress
     timestamp: datetime.datetime
 
     @classmethod
-    def new(cls, progress: TaskProgress = TaskProgress.WAITING) -> Self:
+    def new(cls, result: float = None, progress: TaskProgress = TaskProgress.WAITING) -> Self:
         return cls(
+            result=result,
             progress=progress,
             timestamp=datetime.datetime.now(datetime.UTC)
         )
 
     def hash(self) -> bytes:
+        result_hash = hashlib.md5(str(self.result).encode())
         progress_bytes = str(self.progress.value).encode()
         timestamp_bytes = str(self.timestamp).encode()
-        return hashlib.md5(progress_bytes + timestamp_bytes).digest()
+        return hashlib.md5(result_hash + progress_bytes + timestamp_bytes).digest()
 
     def replace(
             self,
+            result: Optional[float] = None,
             progress: Optional[TaskProgress] = None,
             update_timestamp: bool = True,
     ) -> Self:
-        if progress is None and not update_timestamp:
+        if result is None and progress is None and not update_timestamp:
             return self
-        elif progress == self.progress and not update_timestamp:
-            return self
+
+        update_timestamp = update_timestamp or result is not None or progress is not None
+
+        result = self.result if result is None else result
+        progress = self.progress if progress is None else progress
+        timestamp = self.timestamp if not update_timestamp else datetime.datetime.now(datetime.UTC)
         return dataclasses.replace(
             self,
-            progress=self.progress if progress is None else progress,
-            timestamp=datetime.datetime.now(datetime.UTC)
+            result=result,
+            progress=progress,
+            timestamp=timestamp
         )
 
 
