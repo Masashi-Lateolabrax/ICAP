@@ -147,7 +147,7 @@ async def optimization(port: int, timeout: int, settings: Settings):
 
             while len(shared_task_manager) > 0:
                 # Wait a short time for tasks to be processed by clients
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(1.0)
 
                 # Retrieve completed tasks
                 newly_completed = shared_task_manager.retrieve_completed_tasks()
