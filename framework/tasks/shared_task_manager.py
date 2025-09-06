@@ -25,11 +25,16 @@ class SharedTaskManager:
             if target_task.timestamp > my_task.timestamp:
                 self.tasks[target_key] = target_task
 
-    def listen_(self, port: int):
-        pass
+    def listen_(self, port: int, timeout: int):
+        pass  # TODO: listen on port for other task managers
+        tasks_in_sender: dict[bytes, Task] = None  # TODO: get tasks from other task manager
+        self._update(tasks_in_sender, True)
 
-    def sync_(self, target_addr, port):
-        pass
+    def sync_(self, target_addr, port) -> bool:  # returns False if connection failed
+        pass  # TODO: connect to other task manager
+        tasks_in_target: dict[bytes, Task] = None  # TODO: get tasks from other task manager
+        self._update(tasks_in_target, False)
+        return True
 
     def take_task(self, n: int = 1, deadline: int = 300) -> list[Task]:
         current_time = datetime.datetime.now(datetime.UTC)
