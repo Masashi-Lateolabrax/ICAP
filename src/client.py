@@ -14,8 +14,7 @@ import math
 
 from icecream import ic
 
-from framework.prelude import Settings, Individual
-from framework.optimization import connect_to_server
+from framework.prelude import Settings, Individual, TaskProgress
 
 from config import Simulator
 
@@ -90,13 +89,64 @@ def main(settings: Settings):
     handler = Handler()
     evaluator = Evaluator(settings)
 
-    connect_to_server(
-        host,
-        port,
-        evaluation_function=evaluator.run,
-        handler=handler.run,
-        num_processes=args.num_processes,
-    )
+    try:
+        client_evaluation(host, port, evaluator, handler, args.num_processes)
+    except Exception as e:
+        logging.error(f"Failed to connect to server: {e}")
+        exit(1)
+
+
+def client_evaluation(host: str, port: int, evaluator: Evaluator, handler: Handler, num_processes: int):
+    """Main client evaluation loop using SharedTaskManager"""
+    from framework.tasks import SharedTaskManager
+    
+    shared_task_manager = SharedTaskManager()
+    
+    while True:
+        try:
+            # Sync with server to get tasks
+            if not shared_task_manager.sync(host, port):
+                logging.warning(f"Failed to sync with server {host}:{port}")
+                time.sleep(5.0)
+                continue
+            
+            # Take available tasks
+            tasks = shared_task_manager.take_task(n=num_processes)
+            if not tasks:
+                time.sleep(1.0)
+                continue
+            
+            # Evaluate tasks
+            evaluated_individuals = []
+            for task in tasks:
+                try:
+                    individual = Individual.from_parameter(task.parameter)
+                    fitness = evaluator.run(individual)
+                    individual.set_fitness(fitness)
+                    evaluated_individuals.append(individual)
+                    
+                    # Mark task as completed
+                    completed_task = task.replace(
+                        result=fitness,
+                        progress=TaskProgress.COMPLETED
+                    )
+                    shared_task_manager.tasks[task.id.content_hash] = completed_task
+                    
+                except Exception as e:
+                    logging.error(f"Error evaluating task: {e}")
+                    continue
+            
+            # Report results via handler
+            if evaluated_individuals and handler:
+                handler.run(evaluated_individuals)
+                
+        except KeyboardInterrupt:
+            logging.info("Client interrupted by user")
+            break
+        except Exception as e:
+            logging.error(f"Client error: {e}")
+            time.sleep(5.0)
+            continue
 
 
 if __name__ == "__main__":
