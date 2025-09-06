@@ -38,6 +38,9 @@ class OptimizationResult:
         )
 
     def save(self, path: str) -> None:
+        if not path.endswith('.pkl'):
+            logging.warning(f"File extension is not .pkl. Saving as .pkl.")
+            path += '.pkl'
         with open(path, 'wb') as f:
             pickle.dump(self, f)
 
