@@ -186,7 +186,7 @@ class Task:
 
     @property
     def result(self) -> Optional[float]:
-        return self.content.result
+        return self.state.result
 
     @property
     def rng_seed(self) -> int:
@@ -197,10 +197,12 @@ class Task:
         content = TaskContent(
             settings=settings,
             parameter=parameter,
-            result=None,
             rng_seed=rng_seed
         )
-        state = TaskState.new(progress=TaskProgress.WAITING)
+        state = TaskState.new(
+            result=None,
+            progress=TaskProgress.WAITING
+        )
         return cls(
             id=TaskID.new(content, state),
             content=content,
@@ -220,10 +222,10 @@ class Task:
         new_content = self.content.replace(
             settings=settings,
             parameter=parameter,
-            result=result,
             rng_seed=rng_seed
         )
         new_state = self.state.replace(
+            result=result,
             progress=progress,
             update_timestamp=new_content.hash() != self.id.content_hash
         )
