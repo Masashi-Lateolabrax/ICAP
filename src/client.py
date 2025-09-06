@@ -132,8 +132,6 @@ def main(settings: Settings):
 
 
 if __name__ == "__main__":
-    from settings import MySettings
-
     main(
-        MySettings()
+        Settings()
     )
