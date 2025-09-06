@@ -170,7 +170,7 @@ def main(settings: Settings):
     print("Press Ctrl+C to stop the server")
     print("=" * 50)
 
-    optimization(port, settings)
+    optimization(port, 1, settings)
 
 
 if __name__ == "__main__":
