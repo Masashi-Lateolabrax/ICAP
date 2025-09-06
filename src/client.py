@@ -1,3 +1,9 @@
+"""
+Optimization Client
+
+This script connects to an optimization server to evaluate individuals
+using CMA-ES optimization in a distributed manner.
+"""
 import argparse
 import logging
 import os
