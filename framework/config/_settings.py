@@ -45,7 +45,6 @@ class Render:
 
 
 class Optimization:
-    DIMENSION: int | None = None
     POPULATION: int = 100
     GENERATION: int = 1000
     SIGMA: float = 2.5
