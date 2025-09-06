@@ -201,8 +201,8 @@ class PheromoneField:
     _values_gas: jnp.ndarray  # Shape: (x+2, y+2)
     mask: jnp.ndarray  # Shape: (x+2, y+2)
 
-    padding_value: float = 0.0
-    iter_: int = 1
+    padding_value: float = field(pytree_node=False)
+    iter_: int = field(pytree_node=False)
 
     @property
     def values_gas(self) -> jnp.ndarray:
