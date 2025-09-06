@@ -13,6 +13,7 @@ import math
 from datetime import datetime
 
 import jax
+import jax.numpy as jnp
 from icecream import ic
 
 from framework.prelude import Settings, TaskProgress
