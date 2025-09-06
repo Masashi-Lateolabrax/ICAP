@@ -54,6 +54,8 @@ def client_evaluation(host: str, port: int, settings: Settings, batch_size: int)
     episode_length = math.ceil(settings.Simulation.TIME_LENGTH / settings.Simulation.TIME_STEP)
 
     shared_task_manager = SharedTaskManager()
+    shared_task_manager.start_communication(port, timeout=10)
+    print(f"Started communication on port {port}")
 
     print(f"Initialized {batch_size} simulators")
     initial_simulators = initialize_simulators(settings, batch_size)
