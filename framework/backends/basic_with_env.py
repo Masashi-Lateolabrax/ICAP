@@ -25,7 +25,7 @@ def generate_mjspec(
         settings: Settings
 ) -> tuple[
     mujoco.MjSpec,
-    mujoco._specs.MjsSite,
+    mujoco.MjsSite,
     list[RobotSpec],
     list[FoodSpec]
 ]:

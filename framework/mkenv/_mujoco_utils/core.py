@@ -11,7 +11,7 @@ def add_texture(
         height: int,
         rgb1: tuple[float, float, float],
         rgb2: tuple[float, float, float]
-) -> mujoco._specs.MjsTexture:
+) -> mujoco.MjsTexture:
     """Add a texture to the MuJoCo simulation specification.
     
     Args:
@@ -44,7 +44,7 @@ def add_material(
         name: str,
         texture: str,
         texrepeat: tuple[float, float],
-) -> mujoco._specs.MjsMaterial:
+) -> mujoco.MjsMaterial:
     """Add a material to the MuJoCo simulation specification.
     
     Args:
@@ -56,13 +56,13 @@ def add_material(
     Returns:
         Created MuJoCo material specification object
     """
-    material: mujoco._specs.MjsMaterial = spec.add_material(name=name, texrepeat=texrepeat)
+    material: mujoco.MjsMaterial = spec.add_material(name=name, texrepeat=texrepeat)
     material.textures[mujoco.mjtTextureRole.mjTEXROLE_RGB] = texture
     return material
 
 
 def add_geom(
-        body: mujoco._specs.MjsBody,
+        body: mujoco.MjsBody,
         geom_type: mujoco.mjtGeom,
         size: tuple[float, float, float] = None,
         pos: tuple[float, float, float] = (0, 0, 0),
@@ -74,7 +74,7 @@ def add_geom(
         mass: float = None,
         quat: np.ndarray = None,
         mesh: mujoco.MjsMesh = None,
-) -> mujoco._specs.MjsGeom:
+) -> mujoco.MjsGeom:
     """Add a geometry to a MuJoCo body.
     
     Args:
@@ -97,7 +97,7 @@ def add_geom(
     Note:
         If both mass and density are provided, mass takes precedence.
     """
-    geom: mujoco._specs.MjsGeom = body.add_geom()
+    geom: mujoco.MjsGeom = body.add_geom()
     geom.type = geom_type
     geom.pos = pos
 
@@ -124,13 +124,13 @@ def add_geom(
 
 
 def add_site(
-        body: mujoco._specs.MjsBody,
+        body: mujoco.MjsBody,
         name: str,
         pos: tuple[float, float, float] = None,
         size: list[float] = None,
         rgba: tuple[float, float, float, float] = None,
         type_: mujoco.mjtGeom = None,
-) -> mujoco._specs.MjsSite:
+) -> mujoco.MjsSite:
     """Add a site (reference point) to a MuJoCo body.
     
     Sites are used for sensors, visualization, and as reference points
@@ -147,7 +147,7 @@ def add_site(
     Returns:
         Created MuJoCo site specification object
     """
-    site: mujoco._specs.MjsSite = body.add_site()
+    site: mujoco.MjsSite = body.add_site()
     site.name = name
 
     if pos is not None:
@@ -163,11 +163,11 @@ def add_site(
 
 
 def add_body(
-        parent: mujoco._specs.MjsBody,
+        parent: mujoco.MjsBody,
         pos: tuple[float, float, float] = (0, 0, 0),
         name: str = None,
         quat: tuple[float, float, float, float] = None,
-) -> mujoco._specs.MjsBody:
+) -> mujoco.MjsBody:
     """Add a child body to a parent body in the MuJoCo simulation.
     
     Args:
@@ -179,7 +179,7 @@ def add_body(
     Returns:
         Created MuJoCo body specification object
     """
-    body: mujoco._specs.MjsBody = parent.add_body()
+    body: mujoco.MjsBody = parent.add_body()
     body.pos = pos
 
     if name is not None:
@@ -191,7 +191,7 @@ def add_body(
 
 
 def add_joint(
-        body: mujoco._specs.MjsBody,
+        body: mujoco.MjsBody,
         name: str,
         joint_type: mujoco.mjtJoint,
         axis: tuple[float, float, float] = None,
@@ -200,7 +200,7 @@ def add_joint(
         range_: tuple[float, float] = None,
         stiffness: float = None,
         damping: float = None,
-) -> mujoco._specs.MjsJoint:
+) -> mujoco.MjsJoint:
     """Add a joint to a MuJoCo body.
     
     Args:
@@ -217,7 +217,7 @@ def add_joint(
     Returns:
         Created MuJoCo joint specification object
     """
-    joint: mujoco._specs.MjsJoint = body.add_joint()
+    joint: mujoco.MjsJoint = body.add_joint()
     joint.name = name
     joint.type = joint_type
 
@@ -247,7 +247,7 @@ def _create_base_general_actuator(
         biasprm: tuple[float, float, float],
         name: str = None,
         gear: tuple[float, float, float, float, float, float] = None
-) -> mujoco._specs.MjsActuator:
+) -> mujoco.MjsActuator:
     """Create a base general actuator with specified dynamics, gain, and bias.
     
     This is a helper function for creating specialized actuators with
@@ -266,7 +266,7 @@ def _create_base_general_actuator(
     Returns:
         Created MuJoCo actuator specification object
     """
-    actuator: mujoco._specs.MjsActuator = spec.add_actuator()
+    actuator: mujoco.MjsActuator = spec.add_actuator()
 
     actuator.dyntype = dyntype
     actuator.dynprm[0:3] = dynprm
@@ -287,11 +287,11 @@ def _create_base_general_actuator(
 
 def add_velocity_actuator(
         spec: mujoco.MjSpec,
-        joint: mujoco._specs.MjsJoint,
+        joint: mujoco.MjsJoint,
         kv: float,
         name: str = None,
         gear: tuple[float, float, float, float, float, float] = None
-) -> mujoco._specs.MjsActuator:
+) -> mujoco.MjsActuator:
     """Add a velocity actuator to control a joint.
     
     Creates a velocity-controlled actuator that applies forces/torques
@@ -337,12 +337,12 @@ def add_velocity_actuator(
 
 def add_position_actuator(
         spec: mujoco.MjSpec,
-        joint: mujoco._specs.MjsJoint,
+        joint: mujoco.MjsJoint,
         kp: float,
         kv: float,
         name: str = None,
         gear: tuple[float, float, float, float, float, float] = None
-) -> mujoco._specs.MjsActuator:
+) -> mujoco.MjsActuator:
     if spec is None:
         raise ValueError("MuJoCo specification cannot be None")
     if joint is None:
@@ -365,10 +365,10 @@ def add_position_actuator(
 
 def add_motor_actuator(
         spec: mujoco.MjSpec,
-        joint: mujoco._specs.MjsJoint,
+        joint: mujoco.MjsJoint,
         name: str = None,
         gear: tuple[float, float, float, float, float, float] = None
-) -> mujoco._specs.MjsActuator:
+) -> mujoco.MjsActuator:
     if spec is None:
         raise ValueError("MuJoCo specification cannot be None")
     if joint is None:
@@ -396,7 +396,7 @@ def add_sensor(
         noise: float = None,
         cutoff: float = None,
         **kwargs
-) -> mujoco._specs.MjsSensor:
+) -> mujoco.MjsSensor:
     """Add a sensor to the MuJoCo simulation specification.
     
     Args:
@@ -410,7 +410,7 @@ def add_sensor(
     Returns:
         Created MuJoCo sensor specification object
     """
-    sensor: mujoco._specs.MjsSensor = spec.add_sensor()
+    sensor: mujoco.MjsSensor = spec.add_sensor()
 
     sensor.type = sensor_type
 
@@ -429,10 +429,10 @@ def add_sensor(
 def add_velocimeter(
         spec: mujoco.MjSpec,
         name: str,
-        site: mujoco._specs.MjsSite,
+        site: mujoco.MjsSite,
         noise: float = None,
         cutoff: float = None,
-) -> mujoco._specs.MjsSensor:
+) -> mujoco.MjsSensor:
     """Add a velocimeter sensor to measure velocity at a site.
     
     Args:

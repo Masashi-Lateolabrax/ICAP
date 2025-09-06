@@ -5,7 +5,7 @@ from .cell import PheromoneFieldCell
 
 
 class PheromoneFieldCellSpec:
-    def __init__(self, _site: MjsSite, index_x: int, index_y: int):
+    def __init__(self, _site: mujoco.MjsSite, index_x: int, index_y: int):
         self._site = _site
         self._index_x = index_x
         self._index_y = index_y

@@ -42,7 +42,7 @@ def add_wall(spec: mujoco.MjSpec, settings: Settings) -> None:
         )
 
 
-def add_nest(spec: mujoco.MjSpec, settings: Settings) -> mujoco._specs.MjsSite:
+def add_nest(spec: mujoco.MjSpec, settings: Settings) -> mujoco.MjsSite:
     return add_site(
         spec.worldbody,
         name="nest",

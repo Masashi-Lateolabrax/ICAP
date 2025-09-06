@@ -17,7 +17,7 @@ def add_mesh_in_asset(
         inertia: mujoco.mjtMeshInertia = mujoco.mjtMeshInertia.mjMESH_INERTIA_LEGACY,
         refpos: tuple[float, float, float] = (0, 0, 0),
         refquat: tuple[float, float, float, float] = (1, 0, 0, 0),
-) -> mujoco._specs.MjsGeom:
+) -> mujoco.MjsGeom:
     mesh: mujoco.MjsMesh = spec.add_mesh()
 
     if name:

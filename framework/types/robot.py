@@ -11,14 +11,14 @@ from mujoco import mjx
 class RobotSpec:
     def __init__(
             self,
-            body: mujoco._specs.MjsBody,
-            center_site: mujoco._specs.MjsSite,
-            front_site: mujoco._specs.MjsSite,
-            free_joint: mujoco._specs.MjsJoint,
-            x_act: mujoco._specs.MjsActuator,
-            y_act: mujoco._specs.MjsActuator,
-            z_act: mujoco._specs.MjsActuator,
-            r_act: mujoco._specs.MjsActuator
+            body: mujoco.MjsBody,
+            center_site: mujoco.MjsSite,
+            front_site: mujoco.MjsSite,
+            free_joint: mujoco.MjsJoint,
+            x_act: mujoco.MjsActuator,
+            y_act: mujoco.MjsActuator,
+            z_act: mujoco.MjsActuator,
+            r_act: mujoco.MjsActuator
     ):
         self.body = body
         self.center_site = center_site
