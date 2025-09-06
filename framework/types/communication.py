@@ -105,7 +105,7 @@ class TaskContent:
 class TaskID:
     content_hash: bytes
     state_hash: bytes
-    id: bytes
+    fingerprint: bytes
 
     @classmethod
     def new(
@@ -116,7 +116,7 @@ class TaskID:
         return cls(
             content_hash=content.hash(),
             state_hash=state.hash(),
-            id=hashlib.md5(content.hash() + state.hash()).digest()
+            fingerprint=hashlib.md5(content.hash() + state.hash()).digest()
         )
 
     def replace(
@@ -129,25 +129,25 @@ class TaskID:
 
         content_hash = self.content_hash
         state_hash = self.state_hash
-        id_ = self.id
+        fingerprint = self.fingerprint
         if content is not None:
             content_hash = content.hash()
             if self.content_hash != content_hash:
-                id_ = None
+                fingerprint = None
 
         if state is not None:
             state_hash = state.hash()
             if self.state_hash != state_hash:
-                id_ = None
+                fingerprint = None
 
-        if id_ is None:
-            id_ = hashlib.md5(content_hash + state_hash).digest()
+        if fingerprint is None:
+            fingerprint = hashlib.md5(content_hash + state_hash).digest()
 
         return dataclasses.replace(
             self,
             content_hash=content_hash,
             state_hash=state_hash,
-            id=id_
+            fingerprint=fingerprint
         )
 
 
@@ -158,8 +158,8 @@ class Task:
     state: TaskState
 
     @property
-    def hash(self) -> bytes:
-        return self.id.id
+    def fingerprint(self) -> bytes:
+        return self.id.fingerprint
 
     @property
     def progress(self) -> TaskProgress:
