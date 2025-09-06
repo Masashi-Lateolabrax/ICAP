@@ -29,34 +29,32 @@ ic.configureOutput(
 ic.disable()
 
 
-class Handler:
-    def __init__(self):
-        self.time = -1
-
-    def run(self, individuals: list[Individual]):
-        current_time = time.time()
-        throughput = len(individuals) / ((current_time - self.time) + 1e-10)
-        self.time = current_time
-
-        ave_fitness = sum([i.get_fitness() for i in individuals]) / len(individuals)
-
-        print(
-            f"[{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(current_time))}] "
-            f"num: {len(individuals)} "
-            f"fitness:{ave_fitness} "
-            f"throughput:{throughput:.2f} ind/s"
-        )
-
-
-class Evaluator:
-    def __init__(self, settings: Settings):
-        self.settings = settings
-
-    def run(self, individual: Individual):
-        backend = Simulator(self.settings, individual, render=False)
-        for _ in range(math.ceil(self.settings.Simulation.TIME_LENGTH / self.settings.Simulation.TIME_STEP)):
-            backend.step()
-        return backend.calc_total_score()
+def evaluate_batch(tasks, settings: Settings):
+    """Evaluate a batch of tasks using vectorized simulation"""
+    # Extract parameters and create batch arrays
+    parameters = jnp.array([task.parameter for task in tasks])
+    rng_seeds = jnp.array([task.rng_seed for task in tasks])
+    rngs = jax.vmap(jax.random.PRNGKey)(rng_seeds)
+    
+    # Create vectorized simulator initializer
+    def sim_initializer(param, rng):
+        controller = Controller(param)
+        mj_model, sim = Simulator.new(settings, controller, rng)
+        return sim
+    
+    # Initialize batch of simulators
+    simulators = jax.vmap(sim_initializer)(parameters, rngs)
+    
+    # Run simulation steps
+    episode_length = math.ceil(settings.Simulation.TIME_LENGTH / settings.Simulation.TIME_STEP)
+    simulators = jax.vmap(lambda sim: sim.step_n(episode_length))(simulators)
+    
+    # Extract losses
+    def extract_loss(sim):
+        return sim.evaluate()["loss"]
+    
+    losses = jax.vmap(extract_loss)(simulators)
+    return losses
 
 
 def main(settings: Settings):
