@@ -47,11 +47,12 @@ def initialize_simulators(settings: Settings, batch_size: int) -> Simulator:
     return simulators
 
 
-def reset_simulators(simulator: Simulator, parameter: jax.Array, rngs: jax.Array) -> Simulator:
-    ic(parameter.shape, rngs.shape)
+def reset_simulators(simulator: Simulator, parameter: jax.Array, rng_seed: jax.Array) -> Simulator:
+    ic(parameter.shape, rng_seed.shape)
     reset_simulator = simulator.reset()
     controller = Controller(parameter)
-    return reset_simulator.update(controller=controller, rngs_for_relocating_food=rngs)
+    rng_key = jax.random.PRNGKey(rng_seed)
+    return reset_simulator.update(controller=controller, rngs_for_relocating_food=rng_key)
 
 
 def client_evaluation(host: str, port: int, settings: Settings, batch_size: int):
@@ -125,11 +126,10 @@ def client_evaluation(host: str, port: int, settings: Settings, batch_size: int)
                     rng_seeds = jnp.array([task.rng_seed for task in tasks])
                     ic(parameters.shape, rng_seeds.shape)
 
-                    rngs = jax.vmap(lambda seed: jax.random.PRNGKey(seed))(rng_seeds)
                     sub_simulators = jax.vmap(reset_simulators)(
                         sub_simulators,
                         parameters,
-                        rngs
+                        rng_seeds
                     )
 
                     sub_simulators = jax.vmap(lambda sim: sim.step_n(episode_length))(sub_simulators)
