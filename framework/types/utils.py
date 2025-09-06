@@ -75,6 +75,17 @@ class OptimizerResultSet:
             results[result.generation] = result
         return cls(results=results)
 
+    @classmethod
+    def load(cls, path: str) -> Self:
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"File {path} does not exist.")
+        if not path.endswith('.pkl'):
+            raise ValueError(f"File {path} is not a .pkl file.")
+        with open(path, 'rb') as f:
+            this = pickle.load(f)
+        if not isinstance(this, OptimizerResultSet):
+            raise ValueError(f"File {path} is not a OptimizerResultSet instance.")
+        return this
 
 
 class SavedIndividual:
