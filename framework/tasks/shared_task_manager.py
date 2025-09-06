@@ -1,19 +1,16 @@
 import datetime
 import logging
 import random
-import socket
-import pickle
-import threading
 from typing import Optional
 
 from ..prelude import *
+from .network_manager import NetworkManager
 
 
 class SharedTaskManager:
     def __init__(self):
         self.tasks: dict[bytes, Task] = {}  # key: TaskID.content_hash, value: Task
-        self.server_socket: Optional[socket.socket] = None
-        self.is_listening: bool = False
+        self.network_manager = NetworkManager()
 
     def _update(self, target_tasks: dict[bytes, Task], self_is_priority: bool):
         for target_key, target_task in target_tasks.items():
