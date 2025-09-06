@@ -1,6 +1,6 @@
 import jax
 import jax.numpy as jnp
-from flax.struct import dataclass as jax_dataclass
+from flax.struct import field, dataclass as jax_dataclass
 
 from ..prelude import *
 from .cell import PheromoneFieldCell
@@ -188,14 +188,14 @@ def _iter_update_with_rk4(
 
 @jax_dataclass
 class PheromoneField:
-    nx: int
-    ny: int
-    dx: float
+    nx: int = field(pytree_node=False)
+    ny: int = field(pytree_node=False)
+    dx: float = field(pytree_node=False)
 
-    saturation_pressure: float
-    diffusion_coefficient: float
-    evaporation_rate: float
-    decrease_rate: float
+    saturation_pressure: float = field(pytree_node=False)
+    diffusion_coefficient: float = field(pytree_node=False)
+    evaporation_rate: float = field(pytree_node=False)
+    decrease_rate: float = field(pytree_node=False)
 
     values_liquid: jnp.ndarray  # Shape: (x, y)
     _values_gas: jnp.ndarray  # Shape: (x+2, y+2)
