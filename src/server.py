@@ -13,7 +13,10 @@ import subprocess
 from typing import Optional
 import math
 
+import numpy as np
 from icecream import ic
+from cmaes import CMA
+
 from framework.prelude import *
 from framework.tasks import SharedTaskManager
 
@@ -127,6 +130,36 @@ class Handler:
             self._save(cmaes.generation, individuals)
 
         self._last_call_time = self._current_time
+
+
+def optimization(port: int, timeout: int, settings: Settings):
+    shared_task_manager = SharedTaskManager()
+    shared_task_manager.start_listening(port, timeout)
+
+    dim = Controller.dim()
+    cmaes = CMA(
+        mean=np.zeros(dim, dtype=np.float32),
+        sigma=settings.Optimization.SIGMA,
+        seed=settings.Optimization.SEED,
+        population_size=settings.Optimization.POPULATION,
+    )
+
+    for i in range(settings.Optimization.GENERATION):
+        # Generate tasks and distribute them to clients
+        for task in [Task.new(None, x, i) for x in cmaes.ask()]:
+            shared_task_manager.add_task(task)
+
+        completed_tasks = []
+        while len(shared_task_manager) > 0:
+            # Synchronize task manager
+            shared_task_manager.listen()
+
+            # Retrieve completed tasks
+            completed_tasks += shared_task_manager.retrieve_completed_tasks()
+
+        # Update CMA-ES with completed tasks
+        fitness: list[tuple[np.ndarray, float]] = [(task.parameter, task.result) for task in completed_tasks]
+        cmaes.tell(fitness)
 
 
 def main(settings: Settings):
