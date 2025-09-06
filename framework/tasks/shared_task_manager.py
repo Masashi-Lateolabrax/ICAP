@@ -1,7 +1,6 @@
 import datetime
 import logging
 import random
-from typing import Optional
 
 from ..prelude import *
 from .network_manager import NetworkManager
