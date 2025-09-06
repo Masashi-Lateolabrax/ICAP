@@ -130,19 +130,22 @@ class Handler:
 
 
 def main(settings: Settings):
-    dim = Controller().dim
+    parser = argparse.ArgumentParser(description="ICAP Optimization Server")
+    parser.add_argument("--port", type=int, help="Server port number")
+    args = parser.parse_args()
 
-    settings.Server.HOST = "0.0.0.0"
-    settings.Optimization.DIMENSION = dim
+    if not args.port:
+        print("Error: --port argument is required")
+        exit(1)
+
+    port = args.port
 
     print("=" * 50)
     print("OPTIMIZATION SERVER")
     print("=" * 50)
-    print(f"Host: {settings.Server.HOST}")
-    print(f"Port: {settings.Server.PORT}")
-    print(f"Socket Backlog: {settings.Server.SOCKET_BACKLOG}")
+    print(f"Port: {port}")
     print("-" * 30)
-    print(f"Problem dimension: {settings.Optimization.DIMENSION}")
+    print(f"Problem dimension: {Controller.dim()}")
     print(f"Initial sigma: {settings.Optimization.SIGMA}")
     print(f"Population size: {settings.Optimization.POPULATION}")
     print("-" * 30)
@@ -155,30 +158,7 @@ def main(settings: Settings):
     print("Press Ctrl+C to stop the server")
     print("=" * 50)
 
-    handler = Handler(settings)
-    server = OptimizationServer(
-        settings,
-        handler=handler.run
-    )
-
-    try:
-        server.start_server()
-    except KeyboardInterrupt:
-        print("\n" + "=" * 50)
-        print("Server stopped by user")
-        print("=" * 50)
-    except Exception as e:
-        print(f"\nServer error: {e}")
-
-    IndividualRecorder.load_from_recs_folder(handler.save_directory).save(
-        os.path.join(handler.save_directory, "optimization_log.pkl")
-    )
-
-    # Remove generation pkl files (generation_{number}.pkl)
-    generation_pattern = re.compile(r"^generation_\d+\.pkl$")
-    for filename in os.listdir(handler.save_directory):
-        if generation_pattern.match(filename):
-            os.remove(os.path.join(handler.save_directory, filename))
+    optimization(port, settings)
 
 
 if __name__ == "__main__":
