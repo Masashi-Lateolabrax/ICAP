@@ -8,34 +8,24 @@ from typing import Optional, Dict, Set, Callable
 from ..prelude import *
 
 
-class NetworkManager:
-    def __init__(self):
-        self.socket: Optional[socket.socket] = None
+async def _send_tasks_to_stream(tasks: dict[bytes, Task], writer: asyncio.StreamWriter) -> bool:
+    try:
+        data = pickle.dumps(tasks)
+        size = len(data)
 
-    def start_communication(self, port: int, timeout: int = 30) -> bool:
-        if self.socket:
-            logging.warning("Already binding")
-            return False
+        # Send size header (4 bytes)
+        size_header = struct.pack('!I', size)
+        writer.write(size_header)
 
-        try:
-            self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.socket.settimeout(timeout)
-            self.socket.bind(('0.0.0.0', port))
-            logging.info(f"NetworkManager started on port {port} (timeout: {timeout}s)")
-            return True
-        except Exception as e:
-            logging.error(f"Failed to start: {e}")
-            return False
+        # Send data
+        writer.write(data)
+        await writer.drain()
 
-    def stop_communication(self):
-        if self.socket:
-            self.socket.close()
-            self.socket = None
-        logging.info("Stopped")
+        return True
+    except Exception as e:
+        logging.error(f"Error sending tasks: {e}")
+        return False
 
-    def send_tasks(self, tasks: dict[bytes, Task], address: tuple[str, int]) -> None:
-        sock = self.socket if self.socket else socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 async def _receive_tasks_from_stream(reader: asyncio.StreamReader) -> Optional[dict[bytes, Task]]:
     try:
