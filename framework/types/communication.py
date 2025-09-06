@@ -29,6 +29,13 @@ class TaskState:
     progress: TaskProgress
     timestamp: datetime.datetime
 
+    @classmethod
+    def new(cls, progress: TaskProgress = TaskProgress.WAITING) -> Self:
+        return cls(
+            progress=progress,
+            timestamp=datetime.datetime.now(datetime.UTC)
+        )
+
     def hash(self) -> bytes:
         progress_bytes = str(self.progress.value).encode()
         timestamp_bytes = str(self.timestamp).encode()
