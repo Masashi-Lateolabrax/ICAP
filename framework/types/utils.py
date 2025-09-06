@@ -1,10 +1,43 @@
+import datetime
 import os
 import dataclasses
 import logging
 import pickle
+from typing import Self
 
-from .optimization import Individual
+import numpy as np
 
+from .communication import Task
+
+
+@dataclasses.dataclass(frozen=True)
+class OptimizationResult:
+    generation: int
+    avg_fitness: float
+    min_fitness: float
+    max_fitness: float
+    variance: float
+    median: float
+    timestamp: datetime.datetime
+
+    @classmethod
+    def new(cls, generation: int, tasks: list[Task]) -> Self:
+        fitnesses = [task.result for task in tasks]
+        avg_fitness = sum(fitnesses) / len(fitnesses)
+        min_fitness = min(fitnesses)
+        max_fitness = max(fitnesses)
+        variance = sum((f - avg_fitness) ** 2 for f in fitnesses) / len(fitnesses)
+        median = sorted(fitnesses)[len(fitnesses) // 2]
+        timestamp = datetime.datetime.now(datetime.UTC)
+        return cls(
+            generation=generation,
+            avg_fitness=avg_fitness,
+            min_fitness=min_fitness,
+            max_fitness=max_fitness,
+            variance=variance,
+            median=median,
+            timestamp=timestamp
+        )
 
 class SavedIndividual:
     def __init__(self, generation, avg_fitness, timestamp, individuals: list[Individual]):
