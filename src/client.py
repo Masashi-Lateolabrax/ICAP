@@ -55,54 +55,13 @@ def evaluate_batch(tasks, settings: Settings):
         return sim.evaluate()["loss"]
     
     losses = jax.vmap(extract_loss)(simulators)
-    return losses
+    return np.array(losses)
 
 
-def main(settings: Settings):
-    parser = argparse.ArgumentParser(description="ICAP Optimization Client")
-    parser.add_argument("--host", type=str, help="Server host address")
-    parser.add_argument("--port", type=int, help="Server port number")
-    parser.add_argument("--num-processes", type=int, default=1, help="Number of evaluation processes")
-    args = parser.parse_args()
-
-    if not args.host:
-        print("Error: --host argument is required")
-        exit(1)
-
-    if not args.port:
-        print("Error: --port argument is required")
-        exit(1)
-
-    host = args.host
-    port = args.port
-
-    print("=" * 50)
-    print("OPTIMIZATION CLIENT")
-    print("=" * 50)
-    print(f"Server: {host}:{port}")
-    print("-" * 30)
-    print(f"Number of processes: {args.num_processes}")
-    print("-" * 30)
-    print("Connecting to server...")
-    print("Press Ctrl+C to disconnect")
-    print("=" * 50)
-
-    handler = Handler()
-    evaluator = Evaluator(settings)
-
-    try:
-        client_evaluation(host, port, evaluator, handler, args.num_processes)
-    except Exception as e:
-        logging.error(f"Failed to connect to server: {e}")
-        exit(1)
-
-
-def client_evaluation(host: str, port: int, evaluator: Evaluator, handler: Handler, num_processes: int):
+def client_evaluation(host: str, port: int, settings: Settings, batch_size: int):
     """Main client evaluation loop using SharedTaskManager"""
-    from framework.tasks import SharedTaskManager
-    
     shared_task_manager = SharedTaskManager()
-    
+
     while True:
         try:
             # Sync with server to get tasks
@@ -110,37 +69,33 @@ def client_evaluation(host: str, port: int, evaluator: Evaluator, handler: Handl
                 logging.warning(f"Failed to sync with server {host}:{port}")
                 time.sleep(5.0)
                 continue
-            
+
             # Take available tasks
-            tasks = shared_task_manager.take_task(n=num_processes)
+            tasks = shared_task_manager.take_task(n=batch_size)
             if not tasks:
                 time.sleep(1.0)
                 continue
-            
-            # Evaluate tasks
-            evaluated_individuals = []
-            for task in tasks:
-                try:
-                    individual = Individual.from_parameter(task.parameter)
-                    fitness = evaluator.run(individual)
-                    individual.set_fitness(fitness)
-                    evaluated_individuals.append(individual)
-                    
-                    # Mark task as completed
+
+            # Evaluate tasks using vectorized batch evaluation
+            try:
+                losses = evaluate_batch(tasks, settings)
+                
+                # Update tasks with results
+                for task, loss in zip(tasks, losses):
                     completed_task = task.replace(
-                        result=fitness,
+                        result=float(loss),
                         progress=TaskProgress.COMPLETED
                     )
                     shared_task_manager.tasks[task.id.content_hash] = completed_task
+                    print(f"Completed task with fitness: {float(loss):.4f}")
                     
-                except Exception as e:
-                    logging.error(f"Error evaluating task: {e}")
-                    continue
-            
-            # Report results via handler
-            if evaluated_individuals and handler:
-                handler.run(evaluated_individuals)
-                
+            except Exception as e:
+                logging.error(f"Error evaluating batch: {e}")
+                # Mark all tasks as failed
+                for task in tasks:
+                    failed_task = task.replace(progress=TaskProgress.FAILED)
+                    shared_task_manager.tasks[task.id.content_hash] = failed_task
+
         except KeyboardInterrupt:
             logging.info("Client interrupted by user")
             break
