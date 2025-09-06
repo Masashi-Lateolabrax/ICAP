@@ -57,6 +57,7 @@ class SimulatorWithCtrl(SimRenderTrait, SimEvaluateTrait, Generic[ControllerT]):
             robot_inputs: jax.Array = None,
             robot_outputs: RobotOutputs = None,
             loss: jax.Array = None,
+            rngs_for_relocating_food: jax.Array = None,
 
             controller: ControllerT = None,
 
@@ -70,6 +71,7 @@ class SimulatorWithCtrl(SimRenderTrait, SimEvaluateTrait, Generic[ControllerT]):
         kwargs["robot_inputs"] = robot_inputs
         kwargs["robot_outputs"] = robot_outputs
         kwargs["loss"] = loss
+        kwargs["rngs_for_relocating_food"] = rngs_for_relocating_food
         kwargs["controller"] = controller
         return self._update(**kwargs)
 
