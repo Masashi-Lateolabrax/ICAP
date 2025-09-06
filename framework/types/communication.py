@@ -144,30 +144,51 @@ class TaskID:
 
 @dataclasses.dataclass(frozen=True)
 class Task:
-    hash: bytes
-    progress: TaskProgress
-    timestamp: datetime.datetime
+    id: TaskID
+    content: TaskContent
+    state: TaskState
 
-    settings: Any
-    parameter: np.ndarray
-    result: Optional[float]
+    @property
+    def hash(self) -> bytes:
+        return self.id.id
 
-    rng_seed: int
+    @property
+    def progress(self) -> TaskProgress:
+        return self.state.progress
+
+    @property
+    def timestamp(self) -> datetime.datetime:
+        return self.state.timestamp
+
+    @property
+    def settings(self) -> Any:
+        return self.content.settings
+
+    @property
+    def parameter(self) -> np.ndarray:
+        return self.content.parameter
+
+    @property
+    def result(self) -> Optional[float]:
+        return self.content.result
+
+    @property
+    def rng_seed(self) -> int:
+        return self.content.rng_seed
 
     @classmethod
     def new(cls, settings, parameter: np.ndarray, rng_seed: int) -> Self:
-        return cls(
-            hash=hashlib.md5(
-                parameter.tobytes() + str(parameter.shape).encode() + str(parameter.dtype).encode()
-            ).digest(),
-            progress=TaskProgress.WAITING,
-            timestamp=datetime.datetime.now(datetime.UTC),
-
+        content = TaskContent(
             settings=settings,
             parameter=parameter,
             result=None,
-
             rng_seed=rng_seed
+        )
+        state = TaskState.new(progress=TaskProgress.WAITING)
+        return cls(
+            id=TaskID.new(content, state),
+            content=content,
+            state=state
         )
 
     def replace(
@@ -180,36 +201,27 @@ class Task:
 
             rng_seed: Optional[int] = None
     ) -> Self:
-        if parameter is None:
-            hash_ = self.hash
-            parameter = self.parameter
-
-        else:
-            hash_ = hashlib.md5(
-                parameter.tobytes() + str(parameter.shape).encode() + str(parameter.dtype).encode()
-            ).digest()
+        new_content = self.content.replace(
+            settings=settings,
+            parameter=parameter,
+            result=result,
+            rng_seed=rng_seed
+        )
+        new_state = self.state.replace(
+            progress=progress,
+            update_timestamp=new_content.hash() != self.id.content_hash
+        )
+        new_id = self.id.replace(
+            content=new_content,
+            state=new_state
+        )
 
         return dataclasses.replace(
             self,
-            hash=hash_,
-            progress=self.progress if progress is None else progress,
-            timestamp=datetime.datetime.now(datetime.UTC),
-
-            settings=self.settings if settings is None else settings,
-            parameter=parameter,
-            result=self.result if result is None else result,
-
-            rng_seed=self.rng_seed if rng_seed is None else rng_seed
+            content=new_content,
+            state=new_state,
+            id=new_id
         )
-
-    def is_completed(self):
-        return self.progress == TaskProgress.COMPLETED
-
-    def is_waiting(self):
-        return self.progress == TaskProgress.WAITING
-
-    def is_running(self):
-        return self.progress == TaskProgress.RUNNING
 
 
 class ClientStatistics:
