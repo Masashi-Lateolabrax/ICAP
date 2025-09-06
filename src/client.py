@@ -1,4 +1,5 @@
 import argparse
+import logging
 import os
 import threading
 import time
@@ -12,6 +13,7 @@ from framework.optimization import connect_to_server
 
 from config import Simulator
 
+# Configure icecream for distributed system debugging
 ic.configureOutput(
     prefix=lambda: f'[{datetime.now().strftime("%H:%M:%S.%f")[:-3]}][PID:{os.getpid()}][TID:{threading.get_ident()}] CLIENT| ',
     includeContext=True
