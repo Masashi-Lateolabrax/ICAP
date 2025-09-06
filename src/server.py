@@ -102,6 +102,7 @@ def print_and_save(settings: Settings, prev_result: Optional[OptimizationResult]
 
 
 def optimization(port: int, timeout: int, settings: Settings):
+    optimization_result = None
     shared_task_manager = SharedTaskManager()
     shared_task_manager.start_listening(port, timeout)
 
@@ -126,11 +127,15 @@ def optimization(port: int, timeout: int, settings: Settings):
             # Retrieve completed tasks
             completed_tasks += shared_task_manager.retrieve_completed_tasks()
 
+        # Create optimization result
+        prev_optimization_result = optimization_result
+        optimization_result = create_optimization_result(settings, i, completed_tasks)
+
         # Update CMA-ES with completed tasks
         fitness: list[tuple[np.ndarray, float]] = [(task.parameter, task.result) for task in completed_tasks]
         cmaes.tell(fitness)
 
-        print_and_save(settings, i, cmaes, completed_tasks)
+        print_and_save(settings, prev_optimization_result, optimization_result)
 
 
 def main(settings: Settings):
