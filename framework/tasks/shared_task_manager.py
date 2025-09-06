@@ -34,11 +34,8 @@ class SharedTaskManager:
 
     def stop_listening(self):
         """Stop listening and close server socket."""
-        if self.server_socket:
-            self.server_socket.close()
-            self.server_socket = None
-        self.is_listening = False
-        logging.info("Stopped listening")
+        self.network_manager.stop_listening()
+
 
     def listen_(self, port: int, timeout: int):
         pass  # TODO: listen on port for other task managers
