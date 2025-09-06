@@ -9,10 +9,9 @@ from ..prelude import *
 class NetworkManager:
     def __init__(self):
         self.socket: Optional[socket.socket] = None
-        self.is_binding: bool = False
 
     def start_communication(self, port: int, timeout: int = 30) -> bool:
-        if self.is_binding:
+        if self.socket:
             logging.warning("Already binding")
             return False
 
@@ -21,7 +20,6 @@ class NetworkManager:
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.socket.settimeout(timeout)
             self.socket.bind(('0.0.0.0', port))
-            self.is_binding = True
             logging.info(f"NetworkManager started on port {port} (timeout: {timeout}s)")
             return True
         except Exception as e:
@@ -32,7 +30,6 @@ class NetworkManager:
         if self.socket:
             self.socket.close()
             self.socket = None
-        self.is_binding = False
         logging.info("Stopped")
 
     def send_tasks(self, tasks: dict[bytes, Task], address: tuple[str, int]) -> None:
