@@ -211,35 +211,31 @@ class NetworkClient:
                 return None, ReceiveStatus.ERROR
         return buffer, ReceiveStatus.SUCCESS
 
-    def _receive_tasks(self) -> Optional[dict[bytes, Task]]:
+    def _receive_tasks(self) -> tuple[Optional[dict[bytes, Task]], ReceiveStatus]:
         if not self.socket:
             logging.error("Not connected to server")
-            return None
+            return None, ReceiveStatus.ERROR
 
-        try:
-            # Receive size header (4 bytes)
-            size_header = self._recv_all(4)
-            if not size_header:
-                return None
+        # Receive size header (4 bytes)
+        size_header, status = self._recv_all(4)
+        if status != ReceiveStatus.SUCCESS:
+            return None, status
 
-            size = struct.unpack('!I', size_header)[0]
-            ic(size)
+        size = struct.unpack('!I', size_header)[0]
+        ic(size)
 
-            # Receive data
-            data = self._recv_all(size)
-            if not data:
-                return None
+        # Receive data
+        data, status = self._recv_all(size)
+        if status != ReceiveStatus.SUCCESS:
+            return None, status
 
-            tasks = pickle.loads(data)
-            ic(len(tasks))
-            return tasks
+        tasks = pickle.loads(data)
+        if not isinstance(tasks, dict):
+            logging.error("Received data is not a valid task dictionary")
+            return None, ReceiveStatus.ERROR
 
-        except socket.timeout:
-            logging.debug("Receive timeout")
-            return None
-        except Exception as e:
-            logging.error(f"Error receiving tasks: {e}")
-            return None
+        ic(len(tasks))
+        return tasks, ReceiveStatus.SUCCESS
 
     def disconnect(self):
         if self.socket:
