@@ -40,6 +40,13 @@ def get_git_hash() -> str:
         return "unknown"
 
 
+def create_optimization_result(settings: Settings, generation: int, completed_tasks) -> OptimizationResult:
+    num_to_save = max(1, settings.Storage.TOP_N) if settings.Storage.TOP_N > 0 else len(completed_tasks)
+    tasks_to_save = sorted(completed_tasks, key=lambda x: x[1])[:num_to_save]
+    result = OptimizationResult.new(generation, tasks_to_save)
+    return result
+
+
 def save_completed_tasks(settings: Settings, generation: int, completed_tasks: list[Task]) -> OptimizationResult:
     timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     git_hash = get_git_hash()
