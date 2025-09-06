@@ -36,7 +36,8 @@ def get_git_hash() -> str:
         result = subprocess.run(['git', 'rev-parse', '--short', 'HEAD'],
                                 capture_output=True, text=True, cwd=os.path.dirname(__file__))
         return result.stdout.strip() if result.returncode == 0 else "unknown"
-    except Exception:
+    except Exception as e:
+        logging.error(f"Failed to get git hash: {e}")
         return "unknown"
 
 
