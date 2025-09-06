@@ -12,13 +12,14 @@ import datetime
 import subprocess
 from typing import Optional
 import math
+import asyncio
 
 import numpy as np
 from icecream import ic
 from cmaes import CMA
 
 from framework.prelude import *
-from framework.tasks import SharedTaskManager
+from framework.tasks.network_manager import NetworkServer
 
 from config import Controller
 
@@ -102,43 +103,42 @@ def print_and_save(settings: Settings, prev_result: Optional[OptimizationResult]
     save_completed_tasks(settings, current_result)
 
 
-def optimization(port: int, timeout: int, settings: Settings):
+async def optimization(port: int, timeout: int, settings: Settings):
     optimization_result = None
-    shared_task_manager = SharedTaskManager()
-    shared_task_manager.start_communication(port, timeout)
+    
+    async with NetworkServer('localhost', port, timeout) as server:
+        shared_task_manager = server.task_manager
 
-    dim = Controller.dim()
-    cmaes = CMA(
-        mean=np.zeros(dim, dtype=np.float32),
-        sigma=settings.Optimization.SIGMA,
-        seed=settings.Optimization.SEED,
-        population_size=settings.Optimization.POPULATION,
-    )
+        dim = Controller.dim()
+        cmaes = CMA(
+            mean=np.zeros(dim, dtype=np.float32),
+            sigma=settings.Optimization.SIGMA,
+            seed=settings.Optimization.SEED,
+            population_size=settings.Optimization.POPULATION,
+        )
 
-    for i in range(settings.Optimization.GENERATION):
-        # Generate tasks and distribute them to clients
-        for task in [Task.new(None, x, i) for x in cmaes.ask()]:
-            shared_task_manager.set_task(task)
+        for i in range(settings.Optimization.GENERATION):
+            # Generate tasks and distribute them to clients
+            for task in [Task.new(None, x, i) for x in cmaes.ask()]:
+                shared_task_manager.set_task(task)
 
-        completed_tasks = []
-        while len(shared_task_manager) > 0:
-            # Synchronize task manager
-            shared_task_manager.listen()
+            completed_tasks = []
+            while len(shared_task_manager) > 0:
+                # Wait a short time for tasks to be processed by clients
+                await asyncio.sleep(0.1)
 
-            # Retrieve completed tasks
-            completed_tasks += shared_task_manager.retrieve_completed_tasks()
+                # Retrieve completed tasks
+                completed_tasks += shared_task_manager.retrieve_completed_tasks()
 
-        # Create optimization result
-        prev_optimization_result = optimization_result
-        optimization_result = create_optimization_result(settings, i, completed_tasks)
+            # Create optimization result
+            prev_optimization_result = optimization_result
+            optimization_result = create_optimization_result(settings, i, completed_tasks)
 
-        # Update CMA-ES with completed tasks
-        fitness: list[tuple[np.ndarray, float]] = [(task.parameter, task.result) for task in completed_tasks]
-        cmaes.tell(fitness)
+            # Update CMA-ES with completed tasks
+            fitness: list[tuple[np.ndarray, float]] = [(task.parameter, task.result) for task in completed_tasks]
+            cmaes.tell(fitness)
 
-        print_and_save(settings, prev_optimization_result, optimization_result)
-
-    shared_task_manager.stop_communication()
+            print_and_save(settings, prev_optimization_result, optimization_result)
 
 
 def main(settings: Settings):
@@ -170,7 +170,7 @@ def main(settings: Settings):
     print("Press Ctrl+C to stop the server")
     print("=" * 50)
 
-    optimization(port, 1, settings)
+    asyncio.run(optimization(port, 1, settings))
 
 
 if __name__ == "__main__":
