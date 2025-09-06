@@ -89,9 +89,23 @@ class SharedTaskManager:
 
     def retrieve_completed_tasks(self) -> list[Task]:
         completed_tasks = [task for task in self._tasks.values() if task.progress.is_completed()]
+        if completed_tasks:
+            logging.info(f"Retrieving {len(completed_tasks)} completed tasks")
         for task in completed_tasks:
             self._tasks.pop(task.id.content_hash, None)
         return completed_tasks
+
+    def get_task_status(self) -> dict[str, int]:
+        """Get current task status counts for monitoring"""
+        status_counts = {"waiting": 0, "running": 0, "completed": 0}
+        for task in self._tasks.values():
+            if task.progress.is_waiting():
+                status_counts["waiting"] += 1
+            elif task.progress.is_running():
+                status_counts["running"] += 1
+            elif task.progress.is_completed():
+                status_counts["completed"] += 1
+        return status_counts
 
     def __del__(self):
         """Cleanup socket on destruction."""
