@@ -221,7 +221,7 @@ class PheromoneField:
             padding_value: float = 0.0,
             iter_: int = 1,
     ) -> "PheromoneField":
-        shape = jnp.array([ny, nx], dtype=jnp.int32)
+        shape = (ny, nx)
         saturation_pressure = material.saturation_pressure(temperature)
         diffusion_coefficient = material.diffusion_coefficient(temperature)
 
@@ -236,8 +236,8 @@ class PheromoneField:
             decrease_rate=decrease_rate,
 
             values_liquid=jnp.zeros(shape, dtype=jnp.float32),
-            _values_gas=jnp.zeros(shape + 2, dtype=jnp.float32),
-            mask=jnp.ones(shape + 2, dtype=jnp.bool_),
+            _values_gas=jnp.zeros((shape[0] + 2, shape[1] + 2), dtype=jnp.float32),
+            mask=jnp.ones((shape[0] + 2, shape[1] + 2), dtype=jnp.bool_),
 
             padding_value=padding_value,
             iter_=iter_
@@ -313,10 +313,10 @@ class PheromoneField:
         return new_field
 
     def reset(self) -> "PheromoneField":
-        shape = jnp.array([self.ny, self.nx], dtype=jnp.int32)
+        shape = (self.ny, self.nx)
         return self.replace(
             values_liquid=jnp.zeros(shape, dtype=jnp.float32),
-            _values_gas=jnp.zeros(shape + 2, dtype=jnp.float32),
+            _values_gas=jnp.zeros((shape[0] + 2, shape[1] + 2), dtype=jnp.float32),
         )
 
     def set_neumann_boundary(self) -> "PheromoneField":
