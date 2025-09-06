@@ -180,7 +180,7 @@ class NetworkClient:
         self.socket.connect((host, port))
         logging.info(f"Connected to server at {host}:{port}")
 
-    def send_tasks(self, tasks: dict[bytes, Task]) -> bool:
+    def _send_tasks(self, tasks: dict[bytes, Task]) -> bool:
         if not self.socket:
             logging.error("Not connected to server")
             return False
@@ -201,7 +201,24 @@ class NetworkClient:
             logging.error(f"Error sending tasks: {e}")
             return False
 
-    def receive_tasks(self) -> Optional[dict[bytes, Task]]:
+    def _recv_all(self, size: int) -> Optional[bytes]:
+        buffer = b''
+        while len(buffer) < size:
+            try:
+                chunk = self.socket.recv(size - len(buffer))
+                if not chunk:
+                    logging.error("Connection closed by peer")
+                    return None
+                buffer += chunk
+            except socket.timeout:
+                logging.error("Receive timeout")
+                return None
+            except Exception as e:
+                logging.error(f"Error receiving data: {e}")
+                return None
+        return buffer
+
+    def _receive_tasks(self) -> Optional[dict[bytes, Task]]:
         if not self.socket:
             logging.error("Not connected to server")
             return None
@@ -237,23 +254,6 @@ class NetworkClient:
 
     def is_connected(self) -> bool:
         return self.socket is not None
-
-    def _recv_all(self, size: int) -> Optional[bytes]:
-        buffer = b''
-        while len(buffer) < size:
-            try:
-                chunk = self.socket.recv(size - len(buffer))
-                if not chunk:
-                    logging.error("Connection closed by peer")
-                    return None
-                buffer += chunk
-            except socket.timeout:
-                logging.error("Receive timeout")
-                return None
-            except Exception as e:
-                logging.error(f"Error receiving data: {e}")
-                return None
-        return buffer
 
     def __enter__(self):
         return self
