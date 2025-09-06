@@ -43,9 +43,7 @@ class SharedTaskManager:
         self.tasks[task.id.content_hash] = task
 
     def retrieve_completed_tasks(self) -> list[Task]:
-        result = []
-        n = len(self.tasks)
-        for i in range(n - 1, -1, -1):
-            if self.tasks[i].is_completed():
-                result.append(self.tasks.pop(i))
-        return result
+        completed_tasks = [task for task in self.tasks.values() if task.progress.is_completed()]
+        for task in completed_tasks:
+            self.tasks.pop(task.id.content_hash, None)
+        return completed_tasks
