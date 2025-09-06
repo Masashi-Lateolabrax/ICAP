@@ -23,6 +23,18 @@ class TaskProgress(Enum):
     def __str__(self) -> str:
         return self.name
 
+    def is_waiting(self) -> bool:
+        return self == TaskProgress.WAITING
+
+    def is_running(self) -> bool:
+        return self == TaskProgress.RUNNING
+
+    def is_completed(self) -> bool:
+        return self == TaskProgress.COMPLETED
+
+    def is_failed(self) -> bool:
+        return self == TaskProgress.FAILED
+
 
 @dataclasses.dataclass(frozen=True)
 class TaskState:
