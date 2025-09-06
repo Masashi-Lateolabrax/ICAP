@@ -120,10 +120,14 @@ class TaskID:
         id_ = self.id
         if content is not None:
             content_hash = content.hash()
-            id_ = None
+            if self.content_hash != content_hash:
+                id_ = None
+
         if state is not None:
             state_hash = state.hash()
-            id_ = None
+            if self.state_hash != state_hash:
+                id_ = None
+
         if id_ is not None:
             id_ = hashlib.md5(content_hash + state_hash).digest()
 
