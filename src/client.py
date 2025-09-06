@@ -66,7 +66,7 @@ def client_evaluation(host: str, port: int, settings: Settings, batch_size: int)
 
     print("Entering main evaluation loop...")
     while True:
-        # Sync with server to get tasks with retry logic
+        print("Syncing with server...")
         sync_success = False
         for retry in range(max_retries):
             if shared_task_manager.sync(host, port):
@@ -90,13 +90,13 @@ def client_evaluation(host: str, port: int, settings: Settings, batch_size: int)
             time.sleep(retry_delay * 2)
             continue
 
-        # Take available tasks
+        print("Taking tasks from server...")
         tasks = shared_task_manager.take_task(n=batch_size)
         if not tasks:
             time.sleep(1.0)
             continue
 
-        # Prepare simulators for the number of tasks
+        print("Preparing simulators...")
         num_tasks = len(tasks)
         sub_simulators = jax.tree.map(lambda x: x[:num_tasks], initial_simulators)
         sub_simulators = jax.vmap(reset_simulators)(
@@ -105,12 +105,12 @@ def client_evaluation(host: str, port: int, settings: Settings, batch_size: int)
             jnp.array([task.rng_seed for task in tasks])
         )
 
-        # Evaluate tasks
+        print("Running simulations...")
         sub_simulators = jax.vmap(lambda sim: sim.step_n(episode_length))(sub_simulators)
         losses = jax.vmap(lambda sim: sim.evaluate())(sub_simulators)
         losses = np.array(losses)
 
-        # Store results back to tasks
+        print("Storing results back to server...")
         for i, task in enumerate(tasks):
             completed_task = task.replace(
                 result=float(losses[i]["loss"]),
