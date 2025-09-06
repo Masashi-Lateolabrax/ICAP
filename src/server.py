@@ -105,7 +105,7 @@ def print_and_save(settings: Settings, prev_result: Optional[OptimizationResult]
 def optimization(port: int, timeout: int, settings: Settings):
     optimization_result = None
     shared_task_manager = SharedTaskManager()
-    shared_task_manager.start_listening(port, timeout)
+    shared_task_manager.start_communication(port, timeout)
 
     dim = Controller.dim()
     cmaes = CMA(
@@ -138,7 +138,7 @@ def optimization(port: int, timeout: int, settings: Settings):
 
         print_and_save(settings, prev_optimization_result, optimization_result)
 
-    shared_task_manager.stop_listening()
+    shared_task_manager.stop_communication()
 
 
 def main(settings: Settings):

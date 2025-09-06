@@ -27,11 +27,11 @@ class SharedTaskManager:
             if target_task.timestamp > my_task.timestamp:
                 self._tasks[target_key] = target_task
 
-    def start_listening(self, port: int, timeout: int = 30) -> bool:
+    def start_communication(self, port: int, timeout: int = 30) -> bool:
         """Start listening on port for incoming connections."""
         return self._network_manager.start_communication(port, timeout)
 
-    def stop_listening(self):
+    def stop_communication(self):
         """Stop listening and close server socket."""
         self._network_manager.stop_communication()
 
@@ -109,7 +109,7 @@ class SharedTaskManager:
 
     def __del__(self):
         """Cleanup socket on destruction."""
-        self.stop_listening()
+        self.stop_communication()
 
     def __len__(self):
         not_completed_tasks = [task for task in self._tasks.values() if not task.progress.is_completed()]
