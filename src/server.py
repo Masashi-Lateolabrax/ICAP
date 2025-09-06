@@ -47,10 +47,10 @@ def create_optimization_result(settings: Settings, generation: int, completed_ta
     return result
 
 
-def save_completed_tasks(settings: Settings, generation: int, completed_tasks: list[Task]) -> OptimizationResult:
+def save_completed_tasks(settings: Settings, result: OptimizationResult) -> OptimizationResult:
     timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     git_hash = get_git_hash()
-    filename = f"generation_{generation}.pkl"
+    filename = f"generation_{result.generation}.pkl"
     folder_name = f"{timestamp}_{git_hash}"
 
     save_directory = os.path.join(settings.Storage.SAVE_DIRECTORY, folder_name)
@@ -58,11 +58,7 @@ def save_completed_tasks(settings: Settings, generation: int, completed_tasks: l
 
     os.makedirs(save_directory, exist_ok=True)
 
-    num_to_save = max(1, settings.Storage.TOP_N) if settings.Storage.TOP_N > 0 else len(completed_tasks)
-    tasks_to_save = sorted(completed_tasks, key=lambda x: x[1])[:num_to_save]
-
     try:
-        result = OptimizationResult.new(generation, tasks_to_save)
         result.save(file_path)
 
     except Exception as e:
