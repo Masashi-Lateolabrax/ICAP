@@ -61,24 +61,24 @@ class TaskContent:
 
 @dataclasses.dataclass(frozen=True)
 class TaskID:
-    hash_content: bytes
-    hash_update: bytes
-    timestamp: datetime.datetime
+    content_hash: bytes
+    state_hash: bytes
+    id: bytes
 
     @classmethod
     def new(
             cls,
-            content: TaskContent
+            content: TaskContent,
+            state: TaskState,
     ) -> Self:
-        timestamp = datetime.datetime.now(datetime.UTC)
-        content_hash = content.hash()
-        hash_update = hashlib.md5(content_hash + str(timestamp).encode()).digest()
-
         return cls(
-            hash_content=content_hash,
-            hash_update=hash_update,
-            timestamp=timestamp
+            content_hash=content.hash(),
+            state_hash=state.hash(),
+            id=hashlib.md5(content.hash() + state.hash()).digest()
         )
+
+    def __eq__(self, other):
+        return self.id == other.id
 
 
 @dataclasses.dataclass(frozen=True)
