@@ -45,6 +45,7 @@ class Render:
 
 
 class Optimization:
+    SEED: int = 1234
     POPULATION: int = 100
     GENERATION: int = 1000
     SIGMA: float = 2.5
