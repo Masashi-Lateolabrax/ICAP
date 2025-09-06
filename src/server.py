@@ -132,6 +132,28 @@ class Handler:
         self._last_call_time = self._current_time
 
 
+def save_completed_tasks(settings: Settings, generation: int, completed_tasks: list[Task]):
+    timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    git_hash = get_git_hash()
+    filename = f"generation_{generation}.pkl"
+    folder_name = f"{timestamp}_{git_hash}"
+
+    save_directory = os.path.join(settings.Storage.SAVE_DIRECTORY, folder_name)
+    file_path = os.path.join(save_directory, filename)
+
+    os.makedirs(save_directory, exist_ok=True)
+
+    num_to_save = max(1, settings.Storage.TOP_N) if settings.Storage.TOP_N > 0 else len(completed_tasks)
+    tasks_to_save = sorted(completed_tasks, key=lambda x: x[1])[:num_to_save]
+
+    try:
+        result = OptimizationResult.new(generation, tasks_to_save)
+        result.save(file_path)
+
+    except Exception as e:
+        print(f"Error saving individuals: {e}")
+
+
 def optimization(port: int, timeout: int, settings: Settings):
     shared_task_manager = SharedTaskManager()
     shared_task_manager.start_listening(port, timeout)
