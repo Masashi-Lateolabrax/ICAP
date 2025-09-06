@@ -1,3 +1,5 @@
+from functools import partial
+
 import jax
 import jax.numpy as jnp
 from flax.struct import field, dataclass as jax_dataclass
@@ -86,7 +88,9 @@ def _d_dt(
     return d_gas, d_liquid
 
 
-@jax.jit
+@partial(jax.jit, static_argnames=(
+        "saturation_pressure", "diffusion_coefficient", "evaporation_rate", "decrease_rate", "padding_value",
+))
 def _update_with_rk4(
         liquid_values: jnp.ndarray,
         gas_values: jnp.ndarray,
@@ -153,7 +157,9 @@ def _update_with_rk4(
     return gas_values, liquid_values
 
 
-@jax.jit
+@partial(jax.jit, static_argnames=(
+        "saturation_pressure", "diffusion_coefficient", "evaporation_rate", "decrease_rate", "padding_value", "iter_"
+))
 def _iter_update_with_rk4(
         liquid_values: jnp.ndarray,
         gas_values: jnp.ndarray,
