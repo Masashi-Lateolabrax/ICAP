@@ -59,7 +59,10 @@ def save_completed_tasks(settings: Settings, generation: int, completed_tasks: l
         result.save(file_path)
 
     except Exception as e:
-        print(f"Error saving individuals: {e}")
+        raise RuntimeError(f"Failed to save completed tasks: {e}")
+
+    return result
+
 
 
 def optimization(port: int, timeout: int, settings: Settings):
