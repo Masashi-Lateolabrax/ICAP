@@ -6,6 +6,7 @@ import socket
 from typing import Optional, Dict, Set, Callable
 
 from ..prelude import *
+from .shared_task_manager import SharedTaskManager
 
 
 async def _send_tasks_to_stream(tasks: dict[bytes, Task], writer: asyncio.StreamWriter) -> bool:
@@ -254,6 +255,26 @@ class NetworkClient:
 
     def is_connected(self) -> bool:
         return self.socket is not None
+
+    def sync(self, task_manager: SharedTaskManager) -> bool:
+        if not self.is_connected():
+            logging.error("Not connected to server")
+            return False
+
+        # Send local tasks to server
+        if not self._send_tasks(task_manager._tasks):
+            logging.error("Failed to send tasks to server")
+            return False
+
+        # Receive tasks from server
+        received_tasks = self._receive_tasks()
+        if received_tasks is None:
+            logging.error("Failed to receive tasks from server")
+            return False
+
+        # Update local task manager with received tasks
+        task_manager.update(received_tasks, self_is_priority=False)
+        return True
 
     def __enter__(self):
         return self
