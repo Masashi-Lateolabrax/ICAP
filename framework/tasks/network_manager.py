@@ -44,7 +44,7 @@ class NetworkServer:
             while True:
                 tasks, status = await self._receive_tasks(reader)
                 ic(len(tasks) if tasks else 0, status)
-                
+
                 if status == ReceiveStatus.DISCONNECTED or status == ReceiveStatus.ERROR:
                     # Client disconnected or error occurred - break the loop
                     break
@@ -259,10 +259,10 @@ class NetworkClient:
             return False
 
         # Receive tasks from server
-        received_tasks = self._receive_tasks()
-        ic(len(received_tasks) if received_tasks else 0)
-        if received_tasks is None:
-            logging.error("Failed to receive tasks from server")
+        received_tasks, status = self._receive_tasks()
+        ic(len(received_tasks) if received_tasks else 0, status)
+        if status != ReceiveStatus.SUCCESS:
+            logging.error(f"Failed to receive tasks from server: {status.value}")
             return False
 
         # Update local task manager with received tasks
