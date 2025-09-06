@@ -125,10 +125,11 @@ def client_evaluation(host: str, port: int, settings: Settings, batch_size: int)
                     rng_seeds = jnp.array([task.rng_seed for task in tasks])
                     ic(parameters.shape, rng_seeds.shape)
 
+                    rngs = jax.vmap(lambda seed: jax.random.PRNGKey(seed))(rng_seeds)
                     sub_simulators = jax.vmap(reset_simulators)(
                         sub_simulators,
                         parameters,
-                        rng_seeds
+                        rngs
                     )
 
                     sub_simulators = jax.vmap(lambda sim: sim.step_n(episode_length))(sub_simulators)
