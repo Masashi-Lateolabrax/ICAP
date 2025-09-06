@@ -4,7 +4,7 @@ from .food import FoodSpec, FoodIDs, BatchedFoodIDs, BatchedFood
 from .optimization import CalculationState, Individual, EvaluationFunction
 from .pheromone import Material, ETHANOL
 from .communication import PacketType, Packet, CommunicationResult, SocketState, TaskProgress, Task, ClientStatistics
-from .utils import SavedIndividual, Rec, IndividualRecorder
+from .utils import OptimizationResult, OptimizerResultSet, SavedIndividual, Rec, IndividualRecorder
 from .jaxable import JaxableController
 
 __all__ = [
@@ -31,6 +31,8 @@ __all__ = [
     "TaskProgress",
     "Task",
     "ClientStatistics",
+    "OptimizationResult",
+    "OptimizerResultSet",
     "SavedIndividual",
     "Rec",
     "IndividualRecorder",
