@@ -37,6 +37,18 @@ class OptimizationResult:
             median=median,
         )
 
+    def save(self, path: str) -> None:
+        with open(path, 'wb') as f:
+            pickle.dump(self, f)
+
+    @classmethod
+    def load(cls, path: str) -> Self:
+        with open(path, 'rb') as f:
+            this = pickle.load(f)
+        if not isinstance(this, OptimizationResult):
+            raise ValueError(f"File {path} is not a OptimizationResult instance.")
+        return this
+
 
 @dataclasses.dataclass(frozen=True)
 class OptimizerResultSet:
