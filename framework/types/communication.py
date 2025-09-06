@@ -20,6 +20,10 @@ class TaskProgress(Enum):
     COMPLETED = 2
     FAILED = 3
 
+    def __str__(self) -> str:
+        return self.name
+
+
 
 @dataclasses.dataclass(frozen=True)
 class Task:
