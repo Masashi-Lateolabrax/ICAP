@@ -4,9 +4,17 @@ import pickle
 import struct
 import socket
 from typing import Optional, Dict, Set, Callable
+from enum import Enum
 
 from ..prelude import *
 from .shared_task_manager import SharedTaskManager
+
+
+class ReceiveStatus(Enum):
+    SUCCESS = "success"
+    TIMEOUT = "timeout"
+    DISCONNECTED = "disconnected"
+    ERROR = "error"
 
 
 class NetworkServer:
@@ -34,15 +42,20 @@ class NetworkServer:
 
         try:
             while True:
-                tasks = await self._receive_tasks(reader)
-                if tasks is None:
-                    await asyncio.sleep(1)
-
-                # Update server's task manager with received tasks
-                self.task_manager.update(tasks, self_is_priority=True)
-
-                # Send server's tasks back to client
-                await self._send_tasks(self.task_manager._tasks, writer)
+                tasks, status = await self._receive_tasks(reader)
+                
+                if status == ReceiveStatus.DISCONNECTED or status == ReceiveStatus.ERROR:
+                    # Client disconnected or error occurred - break the loop
+                    break
+                elif status == ReceiveStatus.TIMEOUT:
+                    # Healthy timeout - continue waiting
+                    await asyncio.sleep(0.1)
+                    continue
+                elif status == ReceiveStatus.SUCCESS and tasks:
+                    # Successfully received tasks - process them
+                    self.task_manager.update(tasks, self_is_priority=True)
+                    # Send server's tasks back to client
+                    await self._send_tasks(self.task_manager._tasks, writer)
 
         except Exception as e:
             logging.error(f"Error handling client {client_id}: {e}")
@@ -93,33 +106,36 @@ class NetworkServer:
                 return None
         return buffer
 
-    async def _receive_tasks(self, reader: asyncio.StreamReader) -> Optional[dict[bytes, Task]]:
+    async def _receive_tasks(self, reader: asyncio.StreamReader) -> tuple[Optional[dict[bytes, Task]], ReceiveStatus]:
         if not reader:
             logging.error("Reader not available")
-            return None
+            return None, ReceiveStatus.ERROR
 
         try:
             # Receive size header (4 bytes)
             size_header = await self._recv_all(reader, 4)
             if not size_header:
-                return None
+                return None, ReceiveStatus.DISCONNECTED
 
             size = struct.unpack('!I', size_header)[0]
 
             # Receive data
             data = await self._recv_all(reader, size)
             if not data:
-                return None
+                return None, ReceiveStatus.DISCONNECTED
 
             tasks = pickle.loads(data)
-            return tasks
+            return tasks, ReceiveStatus.SUCCESS
 
         except asyncio.TimeoutError:
-            logging.debug("Receive timeout")
-            return None
+            logging.debug("Receive timeout - client still connected")
+            return None, ReceiveStatus.TIMEOUT
+        except asyncio.IncompleteReadError:
+            logging.info("Client disconnected")
+            return None, ReceiveStatus.DISCONNECTED
         except Exception as e:
             logging.error(f"Error receiving tasks: {e}")
-            return None
+            return None, ReceiveStatus.ERROR
 
     def is_connected(self) -> bool:
         return self.server is not None
