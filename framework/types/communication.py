@@ -24,6 +24,17 @@ class TaskProgress(Enum):
         return self.name
 
 
+@dataclasses.dataclass(frozen=True)
+class TaskState:
+    progress: TaskProgress
+    timestamp: datetime.datetime
+
+    def hash(self) -> bytes:
+        progress_bytes = str(self.progress.value).encode()
+        timestamp_bytes = str(self.timestamp).encode()
+        return hashlib.md5(progress_bytes + timestamp_bytes).digest()
+
+
 
 @dataclasses.dataclass(frozen=True)
 class Task:
