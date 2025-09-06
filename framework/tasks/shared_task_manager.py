@@ -3,15 +3,13 @@ import logging
 import random
 
 from ..prelude import *
-from .network_manager import NetworkManager
 
 
 class SharedTaskManager:
     def __init__(self):
         self._tasks: dict[bytes, Task] = {}  # key: TaskID.content_hash, value: Task
-        self._network_manager = NetworkManager()
 
-    def _update(self, target_tasks: dict[bytes, Task], self_is_priority: bool):
+    def update(self, target_tasks: dict[bytes, Task], self_is_priority: bool):
         for target_key, target_task in target_tasks.items():
             if target_key not in self._tasks:
                 if not self_is_priority:
@@ -26,36 +24,6 @@ class SharedTaskManager:
 
             if target_task.timestamp > my_task.timestamp:
                 self._tasks[target_key] = target_task
-
-    def start_communication(self, port: int, timeout: int = 30) -> bool:
-        """Start listening on port for incoming connections."""
-        return self._network_manager.start_communication(port, timeout)
-
-    def stop_communication(self):
-        """Stop listening and close server socket."""
-        self._network_manager.stop_communication()
-
-    def listen(self):
-        """Listen for incoming UDP packets and exchange tasks."""
-        result = self._network_manager.receive_tasks()
-        if result is None:
-            return
-
-        incoming_tasks, address = result
-        logging.info(f"Received {len(incoming_tasks)} tasks from {address[0]}:{address[1]}")
-        self._update(incoming_tasks, True)
-
-        # Send our tasks back to the client
-        self._network_manager.send_tasks(self._tasks, address)
-
-    def sync(self, target_addr: str, port: int) -> bool:
-        """Send tasks to target."""
-        try:
-            self._network_manager.send_tasks(self._tasks, (target_addr, port))
-            return True
-        except Exception as e:
-            logging.error(f"Failed to send tasks to {target_addr}:{port}: {e}")
-            return False
 
     def take_task(self, n: int = 1, deadline: int = 300) -> list[Task]:
         current_time = datetime.datetime.now(datetime.UTC)
@@ -106,10 +74,6 @@ class SharedTaskManager:
             elif task.progress.is_completed():
                 status_counts["completed"] += 1
         return status_counts
-
-    def __del__(self):
-        """Cleanup socket on destruction."""
-        self.stop_communication()
 
     def __len__(self):
         not_completed_tasks = [task for task in self._tasks.values() if not task.progress.is_completed()]
