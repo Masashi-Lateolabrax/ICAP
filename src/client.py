@@ -81,6 +81,8 @@ def main(settings: Settings):
     print("=" * 50)
     print(f"Server: {host}:{port}")
     print("-" * 30)
+    print(f"Number of processes: {args.num_processes}")
+    print("-" * 30)
     print("Connecting to server...")
     print("Press Ctrl+C to disconnect")
     print("=" * 50)
