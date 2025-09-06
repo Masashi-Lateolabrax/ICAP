@@ -41,6 +41,19 @@ class TaskState:
         timestamp_bytes = str(self.timestamp).encode()
         return hashlib.md5(progress_bytes + timestamp_bytes).digest()
 
+    def replace(
+            self,
+            progress: Optional[TaskProgress] = None,
+            update_timestamp: bool = True,
+    ) -> Self:
+        if progress is None and not update_timestamp:
+            return self
+        return dataclasses.replace(
+            self,
+            progress=self.progress if progress is None else progress,
+            timestamp=datetime.datetime.now(datetime.UTC)
+        )
+
 
 @dataclasses.dataclass(frozen=True)
 class TaskContent:
