@@ -150,11 +150,6 @@ class TaskID:
             id=id_
         )
 
-    def __eq__(self, other):
-        if not isinstance(other, TaskID):
-            return NotImplemented
-        return self.id == other.id
-
 
 @dataclasses.dataclass(frozen=True)
 class Task:
