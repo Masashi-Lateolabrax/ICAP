@@ -39,8 +39,8 @@ class Controller(ControllerInterface):
         x = self.layer2(x)
         act = jnp.clip(x[:, 0:2], -0.3, 1.0)
         phe = nnx.sigmoid(x[:, 2])
-        x = x.at[0:2].set(act)
-        x = x.at[2].set(phe)
+        x = x.at[:, 0:2].set(act)
+        x = x.at[:, 2].set(phe)
         return x
 
     def forward(self, x: RobotInputs) -> RobotOutputs:
