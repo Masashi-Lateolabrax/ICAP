@@ -1,3 +1,4 @@
+import datetime
 import os
 import dataclasses
 import logging
@@ -16,15 +17,19 @@ class OptimizationResult:
     max_fitness: float
     variance: float
     median: float
+    timestamp: datetime.datetime
 
     @classmethod
     def new(cls, generation: int, tasks: list[Task]) -> Self:
+        timestamp = datetime.datetime.now(datetime.timezone.utc)
+
         fitnesses = [task.result for task in tasks]
         avg_fitness = sum(fitnesses) / len(fitnesses)
         min_fitness = min(fitnesses)
         max_fitness = max(fitnesses)
         variance = sum((f - avg_fitness) ** 2 for f in fitnesses) / len(fitnesses)
         median = sorted(fitnesses)[len(fitnesses) // 2]
+
         return cls(
             generation=generation,
             tasks=tasks,
@@ -33,6 +38,7 @@ class OptimizationResult:
             max_fitness=max_fitness,
             variance=variance,
             median=median,
+            timestamp=timestamp
         )
 
     def save(self, path: str) -> None:
