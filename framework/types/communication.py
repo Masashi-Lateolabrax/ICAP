@@ -35,6 +35,23 @@ class TaskState:
         return hashlib.md5(progress_bytes + timestamp_bytes).digest()
 
 
+@dataclasses.dataclass(frozen=True)
+class TaskContent:
+    settings: Any
+    parameter: np.ndarray
+    result: Optional[float]
+    rng_seed: int
+
+    def hash(self) -> bytes:
+        parameter_bytes = (
+                self.parameter.tobytes() + str(self.parameter.shape).encode() + str(self.parameter.dtype).encode()
+        )
+        result_bytes = str(self.result).encode()
+        settings_bytes = str(self.settings).encode()
+        rng_seed_bytes = str(self.rng_seed).encode()
+        return hashlib.md5(parameter_bytes + result_bytes + settings_bytes + rng_seed_bytes).digest()
+
+
 
 @dataclasses.dataclass(frozen=True)
 class Task:
