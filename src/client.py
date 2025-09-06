@@ -58,11 +58,33 @@ def client_evaluation(host: str, port: int, settings: Settings, batch_size: int)
     print(f"Initialized {batch_size} simulators")
     initial_simulators = initialize_simulators(settings, batch_size)
 
+    max_retries = 3
+    retry_delay = 5.0
+    consecutive_failures = 0
+
     while True:
-        # Sync with server to get tasks
-        if not shared_task_manager.sync(host, port):
-            logging.warning(f"Failed to sync with server {host}:{port}")
-            time.sleep(5.0)
+        # Sync with server to get tasks with retry logic
+        sync_success = False
+        for retry in range(max_retries):
+            if shared_task_manager.sync(host, port):
+                sync_success = True
+                consecutive_failures = 0
+                break
+            else:
+                retry_delay_actual = retry_delay * (2 ** retry)  # Exponential backoff
+                logging.warning(f"Failed to sync with server {host}:{port} (attempt {retry + 1}/{max_retries})")
+                logging.warning(f"retrying in {retry_delay_actual}s")
+                time.sleep(retry_delay_actual)
+
+        if not sync_success:
+            consecutive_failures += 1
+            logging.error(f"Failed to sync after {max_retries} attempts. Consecutive failures: {consecutive_failures}")
+
+            if consecutive_failures >= 5:
+                logging.error("Too many consecutive failures. Exiting client.")
+                break
+
+            time.sleep(retry_delay * 2)
             continue
 
         # Take available tasks
