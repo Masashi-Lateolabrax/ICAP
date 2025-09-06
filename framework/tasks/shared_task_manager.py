@@ -40,7 +40,7 @@ class SharedTaskManager:
         return waiting_tasks
 
     def add_task_(self, task: Task):
-        self.tasks.append(task)
+        self.tasks[task.id.content_hash] = task
 
     def retrieve_completed_tasks(self) -> list[Task]:
         result = []
