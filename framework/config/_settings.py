@@ -119,7 +119,7 @@ class Loss:
 
 class Simulation:
     TIME_STEP: float = 0.01
-    TIME_LENGTH: int = 60  # Unit is Seconds
+    TIME_LENGTH: int = 90  # Unit is Seconds
 
     WORLD_WIDTH: float = 10.0
     WORLD_HEIGHT: float = 10.0
