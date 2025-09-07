@@ -14,6 +14,68 @@ from framework.backends import SimulatorWithCtrl
 
 
 @jax_dataclass
+class PracticalSimulator(SimEvaluateTrait):
+    _parent_sim: SimulatorWithCtrl
+
+    @property
+    def data(self) -> mjx.Data:
+        return self._parent_sim.data
+
+    @property
+    def controller(self) -> ControllerT:
+        return self._parent_sim.controller
+
+    def _update_parent(self, **kwargs: dict) -> Self:
+        return self.replace(_parent_sim=self._parent_sim.update(**kwargs))
+
+    def update(
+            self,
+            data: mjx.Data = None,
+            controller: ControllerT = None,
+            **kwargs
+    ) -> Self:
+        kwargs["data"] = data
+        kwargs["controller"] = controller
+        return self._update(**kwargs)
+
+    @classmethod
+    def new(cls, settings: Settings, controller: ControllerT, rngs: jax.Array) -> tuple[
+        mujoco.MjModel, 'PracticalSimulator']:
+        mj_model, sim = SimulatorWithCtrl.new(settings, controller, rngs)
+        return mj_model, cls(_parent_sim=sim)
+
+    @staticmethod
+    @nnx.jit
+    def _step(this: 'PracticalSimulator') -> 'PracticalSimulator':
+        this: "PracticalSimulator" = this.update(_parent_sim=this._parent_sim.step())
+        return this
+
+    def step(self) -> Self:
+        return PracticalSimulator._step(self)
+
+    @staticmethod
+    @nnx.jit
+    def _step_n(this: "PracticalSimulator", n: int) -> "PracticalSimulator":
+        def body_fn(_i, sim: "PracticalSimulator"):
+            return PracticalSimulator._step(sim)
+
+        this = jax.lax.fori_loop(0, n, body_fn, this)
+        return this
+
+    def step_n(self, n: int) -> Self:
+        return PracticalSimulator._step_n(self, n)
+
+    def reset(self) -> Self:
+        return self.update(
+            _parent_sim=self._parent_sim
+        )
+
+    def evaluate(self) -> dict:
+        result = self._parent_sim.evaluate()
+        return result
+
+
+@jax_dataclass
 class FoodRelocationSimulator(SimRenderTrait):
     _parent_sim: SimulatorWithCtrl
 
@@ -43,7 +105,9 @@ class FoodRelocationSimulator(SimRenderTrait):
         return self._update(**kwargs)
 
     @classmethod
-    def new(cls, settings: Settings, controller: ControllerT, rngs: jax.Array) -> tuple[mujoco.MjModel, 'FoodRelocationSimulator']:
+    def new(
+            cls, settings: Settings, controller: ControllerT, rngs: jax.Array
+    ) -> tuple[mujoco.MjModel, 'FoodRelocationSimulator']:
         mj_model, parent_sim = SimulatorWithCtrl.new(settings, controller, rngs)
         return mj_model, cls(_parent_sim=parent_sim)
 
