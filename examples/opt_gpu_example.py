@@ -62,6 +62,7 @@ def opt_gpu_example():
     print(f"\nStarting main simulation ({episode_length} steps, {batch_steps} steps per batch)...")
     print_timer = time.perf_counter()
     sim_start = time.perf_counter()
+    jax.profiler.start_trace(f"./jax_trace")
 
     completed_steps = 0
     while completed_steps < episode_length:
@@ -86,6 +87,7 @@ def opt_gpu_example():
     sim_time = time.perf_counter() - sim_start
     total_steps_per_sec = episode_length / sim_time
     print(f"\nSimulation completed: {sim_time:.2f}s ({total_steps_per_sec:.1f} steps/sec)")
+    jax.profiler.stop_trace()
 
     if gpu_available:
         print("\nFinal GPU status:")
