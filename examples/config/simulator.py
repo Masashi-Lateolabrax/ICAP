@@ -1,4 +1,5 @@
 from typing import Self
+from functools import partial
 
 import jax
 import jax.numpy as jnp
@@ -54,7 +55,7 @@ class PracticalSimulator(SimEvaluateTrait):
         return PracticalSimulator._step(self)
 
     @staticmethod
-    @nnx.jit
+    @partial(nnx.jit, static_argnames=("n",))
     def _step_n(this: "PracticalSimulator", n: int) -> "PracticalSimulator":
         def body_fn(_i, sim: "PracticalSimulator"):
             return PracticalSimulator._step(sim)
@@ -129,7 +130,7 @@ class FoodRelocationSimulator(SimRenderTrait):
         return FoodRelocationSimulator._step(self)
 
     @staticmethod
-    @nnx.jit
+    @partial(nnx.jit, static_argnames=("n",))
     def _step_n(this: "FoodRelocationSimulator", n: int) -> "FoodRelocationSimulator":
         def body_fn(_i, sim: "FoodRelocationSimulator"):
             return FoodRelocationSimulator._step(sim)
