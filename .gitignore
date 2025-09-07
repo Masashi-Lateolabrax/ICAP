@@ -3,7 +3,7 @@
 /.run
 /data
 /.serena
-
+/jax_trace
 
 /report.md
 /poetry.toml
@@ -20,4 +20,3 @@
 *.tmp.*
 *.log.*
 *.pkl
-
