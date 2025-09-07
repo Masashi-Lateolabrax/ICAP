@@ -1,127 +1,15 @@
 import time
-from typing import Self
 
 import numpy as np
 from cmaes import CMA
 
-import mujoco
-from mujoco import mjx
-
 import jax
 import jax.numpy as jnp
-from flax import nnx
-from flax.struct import dataclass as jax_dataclass
 
 from framework.prelude import *
-from framework.utils import ParaStock
 from framework.utils import configure_gpu_optimization, monitor_gpu_memory
 
-from framework.backends import SimulatorWithCtrl, ControllerInterface
-
-
-class Controller(ControllerInterface):
-    @staticmethod
-    def dim():
-        return (16 * 8 + 8) + (8 * 2 + 2)
-
-    def __init__(self, parameter: jax.Array):
-        self.l2 = jnp.linalg.norm(parameter)
-
-        rngs = nnx.Rngs(0)
-        parameter = ParaStock(parameter)
-
-        self.layer1 = nnx.Linear(
-            in_features=16,
-            out_features=8,
-            kernel_init=parameter.gen_initializer(16 * 8),
-            bias_init=parameter.gen_initializer(8),
-            rngs=rngs,
-        )
-        self.layer2 = nnx.Linear(
-            in_features=8,
-            out_features=2,
-            kernel_init=parameter.gen_initializer(8 * 2),
-            bias_init=parameter.gen_initializer(2),
-            rngs=rngs,
-        )
-
-    def __call__(self, x: jax.Array) -> jax.Array:
-        x = nnx.relu(self.layer1(x))
-        x = jnp.clip(self.layer2(x), -0.3, 1.0)
-        return x
-
-    def forward(self, x: RobotInputs) -> RobotOutputs:
-        x = self.__call__(x.ray)
-        return RobotOutputs(
-            left_wheel=x[:, 0],
-            right_wheel=x[:, 1],
-            pheromone=jnp.zeros((x.shape[0],), dtype=jnp.float32),
-        )
-
-    def reset(self) -> Self:
-        return self
-
-
-@jax_dataclass
-class Simulator(SimEvaluateTrait):
-    _parent_sim: SimulatorWithCtrl
-
-    @property
-    def data(self) -> mjx.Data:
-        return self._parent_sim.data
-
-    @property
-    def controller(self) -> Controller:
-        return self._parent_sim.controller
-
-    def _update_parent(self, **kwargs: dict) -> Self:
-        return self.replace(_parent_sim=self._parent_sim.update(**kwargs))
-
-    def update(
-            self,
-            data: mjx.Data = None,
-            controller: Controller = None,
-            **kwargs
-    ) -> Self:
-        kwargs["data"] = data
-        kwargs["controller"] = controller
-        return self._update(**kwargs)
-
-    @classmethod
-    def new(cls, settings: Settings, controller: Controller, rngs: jax.Array) -> tuple[mujoco.MjModel, 'Simulator']:
-        mj_model, sim = SimulatorWithCtrl.new(settings, controller, rngs)
-        return mj_model, cls(_parent_sim=sim)
-
-    @staticmethod
-    @nnx.jit
-    def _step(this: 'Simulator') -> 'Simulator':
-        this: "Simulator" = this.update(_parent_sim=this._parent_sim.step())
-        return this
-
-    def step(self) -> Self:
-        return Simulator._step(self)
-
-    @staticmethod
-    @nnx.jit
-    def _step_n(this: "Simulator", n: int) -> "Simulator":
-        def body_fn(_i, sim: "Simulator"):
-            return Simulator._step(sim)
-
-        this = jax.lax.fori_loop(0, n, body_fn, this)
-        return this
-
-    def step_n(self, n: int) -> Self:
-        return Simulator._step_n(self, n)
-
-    def reset(self) -> Self:
-        return self.update(
-            _parent_sim=self._parent_sim
-        )
-
-    def evaluate(self) -> dict:
-        result = self._parent_sim.evaluate()
-        result["l2"] = self.controller.l2
-        return result
+from config import PracticalController, PracticalSimulator
 
 
 def opt_gpu_example():
@@ -136,7 +24,7 @@ def opt_gpu_example():
     batch_steps = 10  # Number of steps to batch together
 
     optimizer = CMA(
-        mean=np.zeros((Controller.dim(),), dtype=np.float32),
+        mean=np.zeros((PracticalController.dim(),), dtype=np.float32),
         sigma=0.1,
         population_size=population_size,
     )
@@ -148,8 +36,8 @@ def opt_gpu_example():
     init_start = time.perf_counter()
 
     def sim_initializer(s, p, r):
-        controller = Controller(p)
-        mj_model, sim = Simulator.new(s, controller, r)
+        controller = PracticalController(p)
+        mj_model, sim = PracticalSimulator.new(s, controller, r)
         return sim
 
     simulators = jax.vmap(sim_initializer, in_axes=(None, 0, 0))(settings, parameters, rngs)
@@ -202,7 +90,7 @@ def opt_gpu_example():
         print("\nFinal GPU status:")
         monitor_gpu_memory()
 
-    def extract_loss(sim: Simulator) -> jax.Array:
+    def extract_loss(sim: PracticalSimulator) -> jax.Array:
         return sim.evaluate()["loss"]
 
     losses = jax.vmap(extract_loss)(simulators)
