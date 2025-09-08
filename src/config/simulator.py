@@ -1,3 +1,5 @@
+from functools import partial
+
 import mujoco
 from mujoco import mjx
 from typing import Self
@@ -55,7 +57,7 @@ class Simulator(SimEvaluateTrait):
         return Simulator._step(self)
 
     @staticmethod
-    @nnx.jit
+    @partial(nnx.jit, static_argnames=("n",))
     def _step_n(this: 'Simulator', n: int) -> 'Simulator':
         def body_fn(_i, sim: 'Simulator') -> 'Simulator':
             return Simulator._step(sim)
