@@ -1,4 +1,5 @@
 from functools import partial
+from typing import Self
 
 import jax
 import jax.numpy as jnp
@@ -226,7 +227,7 @@ class PheromoneField:
             decrease_rate: float,
             padding_value: float = 0.0,
             iter_: int = 1,
-    ) -> "PheromoneField":
+    ) -> Self:
         shape = (ny, nx)
         saturation_pressure = material.saturation_pressure(temperature)
         diffusion_coefficient = material.diffusion_coefficient(temperature)
@@ -249,7 +250,7 @@ class PheromoneField:
             iter_=iter_
         )
 
-    def update(self, dt: float) -> "PheromoneField":
+    def update(self, dt: float) -> Self:
         dt = dt / self.iter_
         new_gas, new_liquid = _iter_update_with_rk4(
             liquid_values=self.values_liquid,
@@ -291,11 +292,11 @@ class PheromoneField:
         ys = jnp.clip(ys.astype(jnp.int32), 0, shape[0] - 1)
         return values.at[ys, xs].add(additions)
 
-    def add_liquid(self, xs, ys, additions) -> "PheromoneField":
+    def add_liquid(self, xs, ys, additions) -> Self:
         new_liquid = self._add(self.values_liquid, xs, ys, additions)
         return self.replace(values_liquid=new_liquid)
 
-    def add_liquid_by_cell(self, cell: list[PheromoneFieldCell]) -> "PheromoneField":
+    def add_liquid_by_cell(self, cell: list[PheromoneFieldCell]) -> Self:
         indexes = []
         values = []
         for c in cell:
@@ -318,14 +319,14 @@ class PheromoneField:
 
         return new_field
 
-    def reset(self) -> "PheromoneField":
+    def reset(self) -> Self:
         shape = (self.ny, self.nx)
         return self.replace(
             values_liquid=jnp.zeros(shape, dtype=jnp.float32),
             _values_gas=jnp.zeros((shape[0] + 2, shape[1] + 2), dtype=jnp.float32),
         )
 
-    def set_neumann_boundary(self) -> "PheromoneField":
+    def set_neumann_boundary(self) -> Self:
         new_mask = _set_boundary(self.mask, 0)
         return self.replace(mask=new_mask)
 
