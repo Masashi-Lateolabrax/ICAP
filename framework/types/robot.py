@@ -1,3 +1,4 @@
+from functools import partial
 from typing import Self
 
 import jax
@@ -191,7 +192,7 @@ class BatchedRobots:
         return self.positions.shape[0]
 
     @staticmethod
-    @jax.jit
+    @partial(jax.jit, inline=True)
     def _update(data: mujoco.MjData | mjx.Data, ids: BatchedRobotIDs) -> tuple[jax.Array, jax.Array]:
         center_site_positions = data.site_xpos[ids.center_site_ids, :]
         front_site_positions = data.site_xpos[ids.front_site_ids, :2]
@@ -207,7 +208,7 @@ class BatchedRobots:
             xdirections=xdirections
         )
 
-    @jax.jit
+    @partial(jax.jit, inline=True)
     def _set_ctrl_mjx(self, data: mjx.Data, ctrl: jax.Array) -> mjx.Data:
         power_and_torque = ctrl @ self.two_wheel_differential_move_matrix_T
         move = self.xdirections * power_and_torque[:, 0:1]

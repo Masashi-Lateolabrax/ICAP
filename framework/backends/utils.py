@@ -47,14 +47,14 @@ def render(
         img_buf.fill(0)
 
 
-@partial(jax.jit, static_argnames=["body_id"])
+@partial(jax.jit, static_argnames=["body_id"], inline=True)
 def _jitted_ray_fn(
         vec: jax.Array, model: mjx.Model, data: mjx.Data, robot_pos: jax.Array, body_id: int
 ) -> tuple[jax.Array, jax.Array]:
     return mjx.ray(model, data, robot_pos, vec, (), True, body_id)
 
 
-@partial(jax.jit, static_argnames=["body_id", "num_rays"])
+@partial(jax.jit, static_argnames=["body_id", "num_rays"], inline=True)
 def _emit_n_rays(
         model: mjx.Model,
         data: mjx.Data,
@@ -81,7 +81,7 @@ def _emit_n_rays(
     return dists, ids
 
 
-@partial(jax.jit, static_argnames=["body_ids", "num_rays"])
+@partial(jax.jit, static_argnames=["body_ids", "num_rays"], inline=True)
 def emit_rays_static(
         model: mjx.Model,
         data: mjx.Data,
@@ -104,7 +104,7 @@ def emit_rays_static(
     return dists, ids
 
 
-@partial(jax.jit, static_argnames=["num_rays"])
+@partial(jax.jit, static_argnames=["num_rays"], inline=True)
 def emit_rays(
         model: mjx.Model,
         data: mjx.Data,

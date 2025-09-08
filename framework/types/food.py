@@ -1,3 +1,5 @@
+from functools import partial
+
 from mujoco import mjx
 import mujoco
 
@@ -112,7 +114,7 @@ class BatchedFood:
         return self.replace(xmat=xmat, positions=new_positions)
 
     @staticmethod
-    @jax.jit
+    @partial(jax.jit, inline=True)
     def _set_pos(data: mjx.Data, qpos_addr: jax.Array, pos: jax.Array) -> mjx.Data:
         new_qpos = jax.lax.dynamic_update_slice(data.qpos, pos[:3], (qpos_addr,))
         return data.replace(qpos=new_qpos)
@@ -122,7 +124,7 @@ class BatchedFood:
         return BatchedFood._set_pos(data, qpos_addr, pos)
 
     @staticmethod
-    @jax.jit
+    @partial(jax.jit, inline=True)
     def _set_force(this: "BatchedFood", data: mjx.Data, idx: jax.Array, force: jax.Array) -> mjx.Data:
         x_act_id = this.ids.x_act_ids[idx]
         y_act_id = this.ids.y_act_ids[idx]

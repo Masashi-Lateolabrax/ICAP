@@ -1,3 +1,4 @@
+from functools import partial
 import os
 from typing import Self
 
@@ -243,7 +244,7 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
         return self._parent_sim.add_pheromone(positions, values)
 
     @staticmethod
-    @jax.jit
+    @partial(jax.jit, inline=True)
     def _check_food_in_nest(this: "BasicSimulatorWithEnv") -> jax.Array:
         distance_between_food_and_nest = jnp.linalg.norm(
             this.food_items.positions[:, :2] - this.consts.NEST_POSITION,
@@ -253,7 +254,7 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
         return mask
 
     @staticmethod
-    @jax.jit
+    @partial(jax.jit, inline=True)
     def _generate_new_food_position(this: "BasicSimulatorWithEnv", rngs: jax.Array) -> jax.Array:
         key, rngs = jax.random.split(rngs)
         random_xy = jax.random.uniform(
@@ -271,7 +272,7 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
         return random_xy
 
     @staticmethod
-    @jax.jit
+    @partial(jax.jit, inline=True)
     def _relocate_food_items(
             this: "BasicSimulatorWithEnv"
     ) -> tuple["BasicSimulatorWithEnv", jax.Array]:
@@ -300,7 +301,7 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
         return this, relocation_happen
 
     @staticmethod
-    @jax.jit
+    @partial(jax.jit, inline=True)
     def _calc_loss_between_food_and_robots(
             food_position: jax.Array,
             robot_positions: jax.Array,
@@ -314,7 +315,7 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
         return -jnp.sum(jnp.exp(-(distance ** 2) / const.SIGMA_FOOD_AND_ROBOT)) * const.GAIN_FOOD_AND_ROBOT
 
     @staticmethod
-    @jax.jit
+    @partial(jax.jit, inline=True)
     def _calc_loss_between_food_and_nest(
             food_position: jax.Array,
             nest_position: jax.Array,
@@ -325,7 +326,7 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
         return -jnp.sum(jnp.exp(-(distance ** 2) / const.SIGMA_FOOD_AND_NEST)) * const.GAIN_FOOD_AND_NEST
 
     @staticmethod
-    @jax.jit
+    @partial(jax.jit, inline=True)
     def _step(this: "BasicSimulatorWithEnv") -> "BasicSimulatorWithEnv":
         # First, apply robot outputs to the simulation
         this = this.update(
@@ -379,7 +380,7 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
         return BasicSimulatorWithEnv._step(self)
 
     @staticmethod
-    @jax.jit
+    @partial(jax.jit, inline=True)
     def _step_n(simulator: "BasicSimulatorWithEnv", n: int) -> "BasicSimulatorWithEnv":
         def body_fn(_i, sim: "BasicSimulatorWithEnv"):
             return BasicSimulatorWithEnv._step(sim)

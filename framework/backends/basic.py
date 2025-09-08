@@ -1,3 +1,4 @@
+from functools import partial
 from typing import Self
 
 import mujoco
@@ -89,7 +90,7 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
         )
 
     @staticmethod
-    @jax.jit
+    @partial(jax.jit, inline=True)
     def _calc_nearest_pheromone_cell_indices(
             this: "BasicSimulator", positions: jax.Array
     ) -> jax.Array:
@@ -106,7 +107,7 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
         return new_pheromone
 
     @staticmethod
-    @jax.jit
+    @partial(jax.jit, inline=True)
     def _step(this: "BasicSimulator"):
         new_data = mjx.step(this.model, this.data)
         new_pheromone = this.pheromone.update(this.consts.dt)
@@ -117,7 +118,7 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
         return BasicSimulator._step(self)
 
     @staticmethod
-    @jax.jit
+    @partial(jax.jit, inline=True)
     def _step_n(simulator: "BasicSimulator", n: int) -> "BasicSimulator":
         def body_fn(_i, sim: "BasicSimulator"):
             return BasicSimulator._step(sim)

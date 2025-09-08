@@ -8,7 +8,7 @@ from ..prelude import *
 from .cell import PheromoneFieldCell
 
 
-@jax.jit
+@partial(jax.jit, inline=True)
 def _set_boundary(values, fill):
     values = values.at[0, :].set(fill)
     values = values.at[-1, :].set(fill)
@@ -90,7 +90,7 @@ def _d_dt(
 
 @partial(jax.jit, static_argnames=(
         "saturation_pressure", "diffusion_coefficient", "evaporation_rate", "decrease_rate", "padding_value",
-))
+), inline=True)
 def _update_with_rk4(
         liquid_values: jnp.ndarray,
         gas_values: jnp.ndarray,
@@ -159,7 +159,7 @@ def _update_with_rk4(
 
 @partial(jax.jit, static_argnames=(
         "saturation_pressure", "diffusion_coefficient", "evaporation_rate", "decrease_rate", "padding_value", "iter_"
-))
+), inline=True)
 def _iter_update_with_rk4(
         liquid_values: jnp.ndarray,
         gas_values: jnp.ndarray,
@@ -270,7 +270,7 @@ class PheromoneField:
         )
 
     @staticmethod
-    @jax.jit
+    @partial(jax.jit, inline=True)
     def _get(values, xs, ys) -> jnp.ndarray:
         shape = values.shape
         xs = jnp.clip(xs.astype(jnp.int32), 0, shape[1] - 1)
@@ -284,7 +284,7 @@ class PheromoneField:
         return self._get(self.values_liquid, xs, ys)
 
     @staticmethod
-    @jax.jit
+    @partial(jax.jit, inline=True)
     def _add(values: jax.Array, xs: jax.Array, ys: jax.Array, additions: jax.Array):
         shape = values.shape
         xs = jnp.clip(xs.astype(jnp.int32), 0, shape[1] - 1)
