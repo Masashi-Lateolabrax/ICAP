@@ -118,7 +118,7 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
         return BasicSimulator._step(self)
 
     @staticmethod
-    @partial(jax.jit, inline=True)
+    @partial(jax.jit, static_argnames=("n",), inline=True)
     def _step_n(simulator: "BasicSimulator", n: int) -> "BasicSimulator":
         def body_fn(_i, sim: "BasicSimulator"):
             return BasicSimulator._step(sim)
