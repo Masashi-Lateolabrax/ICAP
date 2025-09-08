@@ -23,11 +23,15 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
     consts: Consts
 
     model: mjx.Model
-    data: mjx.Data
+    _data: mjx.Data
     pheromone: PheromoneField
 
     _pheromone_cell_pos: jax.Array
     _pheromone_cell_site_ids: jax.Array
+
+    @property
+    def data(self) -> mjx.Data:
+        return self._data
 
     def _update_parent(self, **kwargs: dict) -> Self:
         return self
@@ -40,7 +44,7 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
             **kwargs
     ) -> Self:
         kwargs["model"] = model
-        kwargs["data"] = data
+        kwargs["_data"] = data
         kwargs["pheromone"] = pheromone
         return self._update(**kwargs)
 
@@ -82,7 +86,7 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
             ),
 
             model=model,
-            data=data,
+            _data=data,
             pheromone=pheromone,
 
             _pheromone_cell_pos=jnp.array(pheromone_cell_pos),
