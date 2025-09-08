@@ -113,7 +113,7 @@ class FoodRelocationSimulator(SimRenderTrait):
         return mj_model, cls(_parent_sim=parent_sim)
 
     @staticmethod
-    @nnx.jit
+    @partial(nnx.jit, inline=True)
     def _step(this: 'FoodRelocationSimulator') -> 'FoodRelocationSimulator':
         this = this.update(
             _parent_sim=this._parent_sim.step()
@@ -130,7 +130,7 @@ class FoodRelocationSimulator(SimRenderTrait):
         return FoodRelocationSimulator._step(self)
 
     @staticmethod
-    @partial(nnx.jit, static_argnames=("n",))
+    @partial(nnx.jit, static_argnames=("n",), inline=True)
     def _step_n(this: "FoodRelocationSimulator", n: int) -> "FoodRelocationSimulator":
         def body_fn(_i, sim: "FoodRelocationSimulator"):
             return FoodRelocationSimulator._step(sim)
