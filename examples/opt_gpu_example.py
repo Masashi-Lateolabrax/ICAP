@@ -79,7 +79,6 @@ def opt_gpu_example():
 
     # Main simulation loop using multistep batching for better performance
     print(f"\nStarting main simulation ({episode_length} steps, {batch_steps} steps per batch)...")
-    print_timer = time.perf_counter()
     sim_start = time.perf_counter()
     jax.profiler.start_trace(f"./jax_trace")
 
@@ -88,20 +87,16 @@ def opt_gpu_example():
         step_start = time.perf_counter()
 
         steps_to_run = min(batch_steps, episode_length - completed_steps)
-        simulators = jax.vmap(lambda sim: sim.step_n(steps_to_run))(simulators)
+        simulators = jit_step_n(simulators, steps_to_run)
         completed_steps += steps_to_run
 
         step_end = time.perf_counter()
+        d_time = step_end - step_start
+        steps_per_sec = steps_to_run / d_time
+        print(f"\n[{step_end - step_start:.2f}s] Step {completed_steps}/{episode_length}, {steps_per_sec:.1f} steps/s")
 
-        if completed_steps == episode_length or (step_end - print_timer) > 1.0:
-            print_timer = step_end
-
-            sim_time = step_end - step_start
-            steps_per_sec = steps_to_run / sim_time
-            print(f"\nStep {completed_steps}/{episode_length} - {steps_per_sec:.1f} steps/sec")
-
-            if gpu_available:
-                monitor_gpu_memory()
+        if gpu_available:
+            monitor_gpu_memory()
 
     sim_time = time.perf_counter() - sim_start
     total_steps_per_sec = episode_length / sim_time
