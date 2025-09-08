@@ -392,6 +392,7 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
     def step_n(self, n: int) -> Self:
         return BasicSimulatorWithEnv._step_n(self, n)
 
+    @partial(jax.jit, inline=True)
     def reset(self) -> Self:
         this = self.update(_parent_sim=self._parent_sim.reset())
 

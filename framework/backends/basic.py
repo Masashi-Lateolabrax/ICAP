@@ -129,6 +129,7 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
     def step_n(self, n: int) -> Self:
         return BasicSimulator._step_n(self, n)
 
+    @partial(jax.jit, inline=True)
     def reset(self) -> Self:
         new_data = mjx.make_data(self.model)
         new_pheromone = self.pheromone.reset()

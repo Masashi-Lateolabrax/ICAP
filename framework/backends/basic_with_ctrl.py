@@ -110,6 +110,7 @@ class SimulatorWithCtrl(SimRenderTrait, SimEvaluateTrait, Generic[ControllerT]):
     def step_n(self, n: int) -> Self:
         return SimulatorWithCtrl._step_n(self, n)
 
+    @partial(nnx.jit, inline=True)
     def reset(self) -> Self:
         parent_sim = self._parent_sim.reset()
         controller = self.controller.reset()

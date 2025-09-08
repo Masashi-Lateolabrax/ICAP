@@ -66,6 +66,7 @@ class PracticalSimulator(SimEvaluateTrait):
     def step_n(self, n: int) -> Self:
         return PracticalSimulator._step_n(self, n)
 
+    @partial(nnx.jit, inline=True)
     def reset(self) -> Self:
         return self.update(
             _parent_sim=self._parent_sim
