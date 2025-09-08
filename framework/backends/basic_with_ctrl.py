@@ -1,3 +1,4 @@
+from functools import partial
 from typing import Self, Generic
 
 import numpy as np
@@ -84,7 +85,7 @@ class SimulatorWithCtrl(SimRenderTrait, SimEvaluateTrait, Generic[ControllerT]):
         )
 
     @staticmethod
-    @nnx.jit
+    @partial(nnx.jit, inline=True)
     def _step(this: 'SimulatorWithCtrl') -> 'SimulatorWithCtrl':
         this = this.update(
             _parent_sim=this._parent_sim.step()
@@ -98,7 +99,7 @@ class SimulatorWithCtrl(SimRenderTrait, SimEvaluateTrait, Generic[ControllerT]):
         return SimulatorWithCtrl._step(self)
 
     @staticmethod
-    @nnx.jit
+    @partial(nnx.jit, inline=True)
     def _step_n(this: "SimulatorWithCtrl", n: int) -> "SimulatorWithCtrl":
         def body_fn(_i, sim: "SimulatorWithCtrl"):
             return SimulatorWithCtrl._step(sim)
