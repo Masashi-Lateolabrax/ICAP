@@ -381,7 +381,7 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
         return BasicSimulatorWithEnv._step(self)
 
     @staticmethod
-    @partial(jax.jit, inline=True)
+    @partial(jax.jit, static_argnames=("n",), inline=True)
     def _step_n(simulator: "BasicSimulatorWithEnv", n: int) -> "BasicSimulatorWithEnv":
         def body_fn(_i, sim: "BasicSimulatorWithEnv"):
             return BasicSimulatorWithEnv._step(sim)
