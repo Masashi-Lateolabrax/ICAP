@@ -99,7 +99,7 @@ class SimulatorWithCtrl(SimRenderTrait, SimEvaluateTrait, Generic[ControllerT]):
         return SimulatorWithCtrl._step(self)
 
     @staticmethod
-    @partial(nnx.jit, inline=True)
+    @partial(nnx.jit, static_argnames=("n",), inline=True)
     def _step_n(this: "SimulatorWithCtrl", n: int) -> "SimulatorWithCtrl":
         def body_fn(_i, sim: "SimulatorWithCtrl"):
             return SimulatorWithCtrl._step(sim)
