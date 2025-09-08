@@ -4,6 +4,7 @@ from typing import Self
 import numpy as np
 
 import mujoco
+from mujoco import mjx
 
 import jax
 from flax.struct import dataclass as jax_dataclass
@@ -13,6 +14,11 @@ from ..pheromone import PheromoneField
 
 @jax_dataclass
 class SimulatorTrait(metaclass=abc.ABCMeta):
+    @property
+    @abc.abstractmethod
+    def data(self) -> mjx.Data:
+        raise NotImplementedError
+
     @abc.abstractmethod
     def _update_parent(self, **kwargs: dict) -> Self:
         return self
