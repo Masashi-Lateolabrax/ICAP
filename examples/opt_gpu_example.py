@@ -1,3 +1,4 @@
+from functools import partial
 import time
 
 import numpy as np
@@ -5,6 +6,7 @@ from cmaes import CMA
 
 import jax
 import jax.numpy as jnp
+from flax import nnx
 
 from framework.prelude import *
 from framework.utils import configure_gpu_optimization, monitor_gpu_memory
@@ -41,6 +43,14 @@ def opt_gpu_example():
         mj_model, sim = PracticalSimulator.new(s, controller, r)
         return sim
 
+    @partial(nnx.jit, static_argnames=("n",))
+    def jit_step_n(sims, n: int):
+        return jax.vmap(lambda s: s.step_n(n))(sims)
+
+    @nnx.jit
+    def jit_reset(sims):
+        return jax.vmap(lambda sim: sim.reset())(sims)
+
     simulators = jax.vmap(sim_initializer, in_axes=(None, 0, 0))(settings, parameters, rngs)
     init_time = time.perf_counter() - init_start
     print(f"Simulator initialization: {init_time:.2f}s")
@@ -51,14 +61,23 @@ def opt_gpu_example():
     # Warmup run to compile JIT functions
     print("\nPerforming JIT warmup...")
     warmup_start = time.perf_counter()
-    simulators = jax.vmap(lambda sim: sim.step())(simulators)
+    simulators = jit_step_n(simulators, batch_steps)
     warmup_time = time.perf_counter() - warmup_start
     print(f"JIT warmup completed: {warmup_time:.2f}s")
 
     print("\nGPU status after JIT warmup:")
     monitor_gpu_memory()
 
-    # Main simulation loop using multi-step batching for better performance
+    # Reset simulators before main simulation
+    reset_start = time.perf_counter()
+    simulators = jit_reset(simulators)
+    reset_time = time.perf_counter() - reset_start
+    print(f"Simulator reset completed: {reset_time:.2f}s")
+
+    print("\nGPU status after simulator reset:")
+    monitor_gpu_memory()
+
+    # Main simulation loop using multistep batching for better performance
     print(f"\nStarting main simulation ({episode_length} steps, {batch_steps} steps per batch)...")
     print_timer = time.perf_counter()
     sim_start = time.perf_counter()
