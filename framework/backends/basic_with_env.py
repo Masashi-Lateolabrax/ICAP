@@ -368,11 +368,12 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
         ))(this.food_items.positions)
         losses = fr_losses + fn_losses + this.loss_offset
 
+        loss = jnp.sum(losses, keepdims=True)
         loss_offset = this.loss_offset + jnp.dot(relocation_occurred, losses)
 
         return this.update(
             robot_inputs=inputs,
-            loss=jnp.sum(losses),
+            loss=loss,
             _loss_offset=loss_offset
         )
 
