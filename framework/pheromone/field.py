@@ -319,6 +319,7 @@ class PheromoneField:
 
         return new_field
 
+    @partial(jax.jit, inline=True)
     def reset(self) -> Self:
         shape = (self.ny, self.nx)
         return self.replace(
