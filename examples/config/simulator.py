@@ -69,7 +69,7 @@ class PracticalSimulator(SimEvaluateTrait):
     @partial(nnx.jit, inline=True)
     def reset(self) -> Self:
         return self.update(
-            _parent_sim=self._parent_sim
+            _parent_sim=self._parent_sim.reset()
         )
 
     def evaluate(self) -> dict:
