@@ -329,52 +329,52 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
     @partial(jax.jit, inline=True)
     def _step(this: "BasicSimulatorWithEnv") -> "BasicSimulatorWithEnv":
         # First, apply robot outputs to the simulation
-        this = this.update(
-            data=this.robots.set_ctrl(this.data, this.robot_outputs.wheels),
-            pheromone=this.add_pheromone(this.robots.positions, this.robot_outputs.pheromone)
-        )
+        # this = this.update(
+        #     data=this.robots.set_ctrl(this.data, this.robot_outputs.wheels),
+        #     pheromone=this.add_pheromone(this.robots.positions, this.robot_outputs.pheromone)
+        # )
 
         # Step the basic simulator
         this = this.update(
             _parent_sim=this._parent_sim.step()
         )
-        this = this.update(
-            robots=this.robots.update(this.data),
-            food_items=this.food_items.update(this.data),
-        )
+        # this = this.update(
+        #     robots=this.robots.update(this.data),
+        #     food_items=this.food_items.update(this.data),
+        # )
 
         # Emit rays and get inputs for robots
-        depth_sensor: tuple[jax.Array, jax.Array] = emit_rays(
-            this.model, this.data, this.robots, this.consts.NUM_RAYS
-        )
-        depths, _ = depth_sensor  # shape (num_robots, NUM_RAYS)
-        inputs = this.robot_inputs.update(
-            ray=jnp.reciprocal(depths + 1e-6)
-        )
+        # depth_sensor: tuple[jax.Array, jax.Array] = emit_rays(
+        #     this.model, this.data, this.robots, this.consts.NUM_RAYS
+        # )
+        # depths, _ = depth_sensor  # shape (num_robots, NUM_RAYS)
+        # inputs = this.robot_inputs.update(
+        #     ray=jnp.reciprocal(depths + 1e-6)
+        # )
 
         # Get pheromone sensor values
-        pheromone_sensor = this.get_pheromone(this.robots.positions)
-        inputs = inputs.update(pheromone=pheromone_sensor)
+        # pheromone_sensor = this.get_pheromone(this.robots.positions)
+        # inputs = inputs.update(pheromone=pheromone_sensor)
 
         # Relocate food items if necessary
-        this, relocation_occurred = BasicSimulatorWithEnv._relocate_food_items(this)
+        # this, relocation_occurred = BasicSimulatorWithEnv._relocate_food_items(this)
 
         # Calculate losses
-        fr_losses = jax.vmap(lambda x: BasicSimulatorWithEnv._calc_loss_between_food_and_robots(
-            x, this.robots.positions, this.consts
-        ))(this.food_items.positions)
-        fn_losses = jax.vmap(lambda x: BasicSimulatorWithEnv._calc_loss_between_food_and_nest(
-            x, this.consts.NEST_POSITION, this.consts
-        ))(this.food_items.positions)
-        losses = fr_losses + fn_losses + this.loss_offset
+        # fr_losses = jax.vmap(lambda x: BasicSimulatorWithEnv._calc_loss_between_food_and_robots(
+        #     x, this.robots.positions, this.consts
+        # ))(this.food_items.positions)
+        # fn_losses = jax.vmap(lambda x: BasicSimulatorWithEnv._calc_loss_between_food_and_nest(
+        #     x, this.consts.NEST_POSITION, this.consts
+        # ))(this.food_items.positions)
+        # losses = fr_losses + fn_losses + this.loss_offset
 
-        loss = jnp.sum(losses, keepdims=True)
-        loss_offset = this.loss_offset + jnp.dot(relocation_occurred, losses)
+        # loss = jnp.sum(losses, keepdims=True)
+        # loss_offset = this.loss_offset + jnp.dot(relocation_occurred, losses)
 
         return this.update(
-            robot_inputs=inputs,
-            loss=loss,
-            _loss_offset=loss_offset
+            # robot_inputs=inputs,
+            # loss=loss,
+            # _loss_offset=loss_offset
         )
 
     def step(self) -> Self:

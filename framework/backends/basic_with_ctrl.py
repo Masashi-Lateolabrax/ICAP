@@ -90,9 +90,9 @@ class SimulatorWithCtrl(SimRenderTrait, SimEvaluateTrait, Generic[ControllerT]):
         this = this.update(
             _parent_sim=this._parent_sim.step()
         )
-        this = this.update(
-            robot_outputs=this.controller.forward(this.robot_inputs)
-        )
+        # this = this.update(
+        #     robot_outputs=this.controller.forward(this.robot_inputs)
+        # )
         return this
 
     def step(self) -> Self:

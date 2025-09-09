@@ -113,10 +113,11 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
     @staticmethod
     @partial(jax.jit, inline=True)
     def _step(this: "BasicSimulator"):
-        new_data = mjx.step(this.model, this.data)
-        new_pheromone = this.pheromone.update(this.consts.dt)
-        new_simulator = this.update(data=new_data, pheromone=new_pheromone)
-        return new_simulator
+        this = this.update(
+            data=mjx.step(this.model, this.data),
+            # pheromone=this.pheromone.update(this.consts.dt)
+        )
+        return this
 
     def step(self) -> Self:
         return BasicSimulator._step(self)
