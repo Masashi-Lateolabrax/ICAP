@@ -49,24 +49,24 @@ class Simulator(SimEvaluateTrait):
 
     @staticmethod
     @partial(nnx.jit, inline=True)
-    def _step(this: 'Simulator') -> 'Simulator':
-        this = this.update(_parent_sim=this._parent_sim.step())
+    def _step(this: 'Simulator', model: mjx.Model) -> 'Simulator':
+        this = this.update(_parent_sim=this._parent_sim.step(model))
         return this
 
-    def step(self) -> Self:
-        return Simulator._step(self)
+    def step(self, model: mjx.Model) -> Self:
+        return Simulator._step(self, model)
 
     @staticmethod
     @partial(nnx.jit, static_argnames=("n",), inline=True)
-    def _step_n(this: 'Simulator', n: int) -> 'Simulator':
+    def _step_n(this: 'Simulator', model: mjx.Model, n: int) -> 'Simulator':
         def body_fn(_i, sim: 'Simulator') -> 'Simulator':
-            return Simulator._step(sim)
+            return Simulator._step(sim, model)
 
         this = jax.lax.fori_loop(0, n, body_fn, this, unroll=True)
         return this
 
-    def step_n(self, n: int) -> Self:
-        return Simulator._step_n(self, n)
+    def step_n(self, model: mjx.Model, n: int) -> Self:
+        return Simulator._step_n(self, model, n)
 
     def reset(self) -> Self:
         return self.update(_parent_sim=self._parent_sim.reset())
