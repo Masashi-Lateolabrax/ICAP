@@ -111,11 +111,9 @@ class SimulatorWithCtrl(SimRenderTrait, SimEvaluateTrait, Generic[ControllerT]):
 
     @partial(nnx.jit, inline=True)
     def reset(self, model: mjx.Model) -> Self:
-        parent_sim = self._parent_sim.reset(model)
-        controller = self.controller.reset()
         return self.update(
-            _parent_sim=parent_sim,
-            controller=controller
+            _parent_sim=self._parent_sim.reset(model),
+            controller=self.controller.reset()
         )
 
     def render(self, img_buf: np.ndarray, camera: mujoco.MjvCamera, renderer: mujoco.Renderer):
