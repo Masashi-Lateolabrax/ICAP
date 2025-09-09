@@ -111,7 +111,7 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
     def _step(this: "BasicSimulator", model: mjx.Model):
         this = this.update(
             data=mjx.step(model, this.data),
-            # pheromone=this.pheromone.update(this.consts.dt)
+            pheromone=this.pheromone.update(this.consts.dt)
         )
         return this
 
