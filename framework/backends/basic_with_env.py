@@ -390,18 +390,11 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
     @partial(jax.jit, inline=True)
     def reset(self, model: mjx.Model) -> Self:
         this = self.update(_parent_sim=self._parent_sim.reset(model))
-
-        new_robots = self.robots.update(this.data)
-        new_food_items = self.food_items.update(this.data)
-
-        new_inputs = this.robot_inputs.fill(0.0)
-        new_outputs = this.robot_outputs.fill(0.0)
-
         return this.update(
-            robots=new_robots,
-            food_items=new_food_items,
-            robot_inputs=new_inputs,
-            robot_outputs=new_outputs,
+            robots=this.robots.update(this.data),
+            food_items=this.food_items.update(this.data),
+            robot_inputs=this.robot_inputs.fill(0.0),
+            robot_outputs=this.robot_outputs.fill(0.0),
             loss=jnp.zeros((1,), dtype=jnp.float32),
             _loss_offset=jnp.zeros((1,), dtype=jnp.float32),
         )
