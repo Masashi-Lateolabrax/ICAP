@@ -387,8 +387,8 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
         return BasicSimulatorWithEnv._step_n(self, model, n)
 
     @partial(jax.jit, inline=True)
-    def reset(self) -> Self:
-        this = self.update(_parent_sim=self._parent_sim.reset())
+    def reset(self, model: mjx.Model) -> Self:
+        this = self.update(_parent_sim=self._parent_sim.reset(model))
 
         new_robots = self.robots.update(this.data)
         new_food_items = self.food_items.update(this.data)

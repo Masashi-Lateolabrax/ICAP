@@ -110,8 +110,8 @@ class SimulatorWithCtrl(SimRenderTrait, SimEvaluateTrait, Generic[ControllerT]):
         return SimulatorWithCtrl._step_n(self, model, n)
 
     @partial(nnx.jit, inline=True)
-    def reset(self) -> Self:
-        parent_sim = self._parent_sim.reset()
+    def reset(self, model: mjx.Model) -> Self:
+        parent_sim = self._parent_sim.reset(model)
         controller = self.controller.reset()
         return self.update(
             _parent_sim=parent_sim,

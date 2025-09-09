@@ -131,10 +131,11 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
         return BasicSimulator._step_n(self, model, n)
 
     @partial(jax.jit, inline=True)
-    def reset(self) -> Self:
-        new_data = mjx.make_data(self.model)
-        new_pheromone = self.pheromone.reset()
-        return self.update(data=new_data, pheromone=new_pheromone)
+    def reset(self, model: mjx.Model) -> Self:
+        return self.update(
+            data=mjx.make_data(model),
+            pheromone=self.pheromone.reset()
+        )
 
     def render(self, img_buf: np.ndarray, camera: mujoco.MjvCamera, renderer: mujoco.Renderer):
         mj_model = renderer.model
