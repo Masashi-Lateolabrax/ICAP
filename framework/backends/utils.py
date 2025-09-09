@@ -93,11 +93,13 @@ def emit_rays_static(
     dists = jnp.zeros((len(body_ids), num_rays), dtype=jnp.float32)
     ids = jnp.zeros((len(body_ids), num_rays), dtype=jnp.int32)
     for i, body_id in enumerate(body_ids):
-        dists[i], ids[i] = _emit_n_rays(
+        result = _emit_n_rays(
             model, data,
             positions[i], xdirections[i],
             body_id, num_rays
         )
+        dists = dists.at[i].set(result[0])
+        ids = ids.at[i].set(result[1])
     return dists, ids
 
 
