@@ -50,7 +50,6 @@ class SimulatorWithCtrl(SimRenderTrait, SimEvaluateTrait, Generic[ControllerT]):
 
     def update(
             self,
-            model: mjx.Model = None,
             data: mjx.Data = None,
             pheromone: PheromoneField = None,
             robots: BatchedRobots = None,
@@ -64,7 +63,6 @@ class SimulatorWithCtrl(SimRenderTrait, SimEvaluateTrait, Generic[ControllerT]):
 
             **kwargs
     ) -> Self:
-        kwargs["model"] = model
         kwargs["data"] = data
         kwargs["pheromone"] = pheromone
         kwargs["robots"] = robots
@@ -73,6 +71,7 @@ class SimulatorWithCtrl(SimRenderTrait, SimEvaluateTrait, Generic[ControllerT]):
         kwargs["robot_outputs"] = robot_outputs
         kwargs["loss"] = loss
         kwargs["rngs_for_relocating_food"] = rngs_for_relocating_food
+
         kwargs["controller"] = controller
         return self._update(**kwargs)
 
@@ -86,29 +85,29 @@ class SimulatorWithCtrl(SimRenderTrait, SimEvaluateTrait, Generic[ControllerT]):
 
     @staticmethod
     @partial(nnx.jit, inline=True)
-    def _step(this: 'SimulatorWithCtrl') -> 'SimulatorWithCtrl':
+    def _step(this: 'SimulatorWithCtrl', model: mjx.Model) -> 'SimulatorWithCtrl':
         this = this.update(
-            _parent_sim=this._parent_sim.step()
+            _parent_sim=this._parent_sim.step(model)
         )
         # this = this.update(
         #     robot_outputs=this.controller.forward(this.robot_inputs)
         # )
         return this
 
-    def step(self) -> Self:
-        return SimulatorWithCtrl._step(self)
+    def step(self, model: mjx.Model) -> Self:
+        return SimulatorWithCtrl._step(self, model)
 
     @staticmethod
     @partial(nnx.jit, static_argnames=("n",), inline=True)
-    def _step_n(this: "SimulatorWithCtrl", n: int) -> "SimulatorWithCtrl":
+    def _step_n(this: "SimulatorWithCtrl", model: mjx.Model, n: int) -> "SimulatorWithCtrl":
         def body_fn(_i, sim: "SimulatorWithCtrl"):
-            return SimulatorWithCtrl._step(sim)
+            return SimulatorWithCtrl._step(sim, model)
 
         new_simulator = jax.lax.fori_loop(0, n, body_fn, this)
         return new_simulator
 
-    def step_n(self, n: int) -> Self:
-        return SimulatorWithCtrl._step_n(self, n)
+    def step_n(self, model: mjx.Model, n: int) -> Self:
+        return SimulatorWithCtrl._step_n(self, model, n)
 
     @partial(nnx.jit, inline=True)
     def reset(self) -> Self:
