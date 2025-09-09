@@ -7,6 +7,7 @@ from cmaes import CMA
 import jax
 import jax.numpy as jnp
 from flax import nnx
+from mujoco import mjx
 
 from framework.prelude import *
 from framework.utils import configure_gpu_optimization, monitor_gpu_memory
@@ -34,25 +35,35 @@ def opt_gpu_example():
     )
 
     parameters = jnp.array([optimizer.ask() for _ in range(batch_size)])
-    rngs: jax.Array = jax.random.split(jax.random.PRNGKey(0), batch_size)
 
     print("Creating simulator...")
     init_start = time.perf_counter()
 
-    def sim_initializer(s, p, r):
-        controller = PracticalController(p)
-        mj_model, sim = PracticalSimulator.new(s, controller, r)
-        return sim
+    mj_model, simulators = PracticalSimulator.new(
+        settings,
+        PracticalController(jnp.zeros(dim)),
+        jax.random.PRNGKey(0)
+    )
+    model = mjx.put_model(mj_model)
+
+    @partial(nnx.jit, static_argnames=("n",))
+    def jit_duplicate_sim(sim: PracticalSimulator, n: int):
+        _c, sims = jax.lax.scan(
+            lambda c, _x: (c, c.reset(model)),
+            init=sim,
+            xs=jnp.ones((n,), dtype=jnp.int32),
+        )
+        return sims
 
     @partial(nnx.jit, static_argnames=("n",))
     def jit_step_n(sims, n: int):
-        return jax.vmap(lambda s: s.step_n(n))(sims)
+        return jax.vmap(lambda s: s.step_n(model, n))(sims)
 
     @nnx.jit
     def jit_reset(sims):
-        return jax.vmap(lambda sim: sim.reset())(sims)
+        return jax.vmap(lambda sim: sim.reset(model))(sims)
 
-    simulators = jax.vmap(sim_initializer, in_axes=(None, 0, 0))(settings, parameters, rngs)
+    simulators = jit_duplicate_sim(simulators, batch_size)
     init_time = time.perf_counter() - init_start
     print(f"Simulator initialization: {init_time:.2f}s")
 
