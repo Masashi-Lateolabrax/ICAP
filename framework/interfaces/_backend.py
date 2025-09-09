@@ -44,11 +44,11 @@ class SimulatorTrait(metaclass=abc.ABCMeta):
         return self._update(**kwargs)
 
     @abc.abstractmethod
-    def step(self) -> Self:
+    def step(self, model: mjx.Model) -> Self:
         raise NotImplementedError
 
     @abc.abstractmethod
-    def step_n(self, n: int) -> Self:
+    def step_n(self, model: mjx.Model, n: int) -> Self:
         raise NotImplementedError
 
     @abc.abstractmethod
