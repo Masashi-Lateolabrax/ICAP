@@ -55,6 +55,9 @@ class SimulatorTrait(metaclass=abc.ABCMeta):
     def reset(self) -> Self:
         raise NotImplementedError
 
+    def block_until_ready(self):
+        self.data.qpos.block_until_ready()
+
 
 class SimPheromoneTrait(SimulatorTrait, metaclass=abc.ABCMeta):
     @abc.abstractmethod
