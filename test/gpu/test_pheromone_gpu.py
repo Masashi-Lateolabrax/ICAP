@@ -73,6 +73,12 @@ def test_pheromone_field_gpu():
             unroll=True
         )
 
+    @partial(jax.jit, static_argnames=['steps'])
+    def jit_pheromone_multiple_updates_with_for(field, steps):
+        for _ in range(steps):
+            field = field.update(dt=dt)
+        return field
+
     # Test 1: Single update with JAX profiler
     print("\n=== Test 1: Single Pheromone Update with Profiler ===")
 
@@ -107,6 +113,26 @@ def test_pheromone_field_gpu():
         pheromone_field.values_liquid.block_until_ready()
         total_time = time.perf_counter() - start_time
     print(f"{num_steps} updates took {total_time:.4f}s, avg {total_time / num_steps:.4f}s per update")
+
+    print("\nGPU status after multiple updates:")
+    if gpu_available:
+        monitor_gpu_memory()
+
+    # Test 3: Multiple updates with for loop and timing
+    print("\n=== Test 3: Multiple Pheromone Updates with For Loop and Timing ===")
+    num_steps = 100
+
+    # Warmup
+    pheromone_field: PheromoneField = jit_pheromone_multiple_updates_with_for(pheromone_field, steps=num_steps)
+    pheromone_field.values_liquid.block_until_ready()
+
+    # Timed run with profiler
+    start_time_for = time.perf_counter()
+    with jax.profiler.trace("pheromone_multiple_for_trace", create_perfetto_link=True):
+        pheromone_field: PheromoneField = jit_pheromone_multiple_updates_with_for(pheromone_field, steps=num_steps)
+        pheromone_field.values_liquid.block_until_ready()
+        total_time = time.perf_counter() - start_time_for
+    print(f"{num_steps} updates with 'for' took {total_time:.4f}s, avg {total_time / num_steps:.4f}s per update")
 
 
 if __name__ == "__main__":
