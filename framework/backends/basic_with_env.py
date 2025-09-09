@@ -148,10 +148,6 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
         return self.consts.NEST_POSITION
 
     @property
-    def model(self) -> mjx.Model:
-        return self._parent_sim.model
-
-    @property
     def data(self) -> mjx.Data:
         return self._parent_sim.data
 
@@ -166,7 +162,6 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
 
     def update(
             self,
-            model: mjx.Model = None,
             data: mjx.Data = None,
             pheromone: PheromoneField = None,
 
@@ -178,7 +173,6 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
             rngs_for_relocating_food: jax.Array = None,
             **kwargs
     ) -> Self:
-        kwargs["model"] = model
         kwargs["data"] = data
         kwargs["pheromone"] = pheromone
 
@@ -195,8 +189,8 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
         mj_spec, nest_spec, robot_specs, food_specs = generate_mjspec(settings)
         mj_model, parent_sim = BasicSimulator.new(mj_spec, settings)
 
-        batched_robot_id = BatchedRobotIDs.from_specs(parent_sim.model, robot_specs)
-        batched_food_id = BatchedFoodIDs.from_specs(parent_sim.model, food_specs)
+        batched_robot_id = BatchedRobotIDs.from_specs(mj_model, robot_specs)
+        batched_food_id = BatchedFoodIDs.from_specs(mj_model, food_specs)
 
         distance_between_wheels = settings.Robot.DISTANCE_BETWEEN_WHEELS
         max_speed = settings.Robot.MAX_SPEED
@@ -327,7 +321,7 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
 
     @staticmethod
     @partial(jax.jit, inline=True)
-    def _step(this: "BasicSimulatorWithEnv") -> "BasicSimulatorWithEnv":
+    def _step(this: "BasicSimulatorWithEnv", model: mjx.Model) -> "BasicSimulatorWithEnv":
         # First, apply robot outputs to the simulation
         # this = this.update(
         #     data=this.robots.set_ctrl(this.data, this.robot_outputs.wheels),
@@ -336,7 +330,7 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
 
         # Step the basic simulator
         this = this.update(
-            _parent_sim=this._parent_sim.step()
+            _parent_sim=this._parent_sim.step(model)
         )
         # this = this.update(
         #     robots=this.robots.update(this.data),
@@ -377,20 +371,20 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
             # _loss_offset=loss_offset
         )
 
-    def step(self) -> Self:
-        return BasicSimulatorWithEnv._step(self)
+    def step(self, model: mjx.Model) -> Self:
+        return BasicSimulatorWithEnv._step(self, model)
 
     @staticmethod
     @partial(jax.jit, static_argnames=("n",), inline=True)
-    def _step_n(simulator: "BasicSimulatorWithEnv", n: int) -> "BasicSimulatorWithEnv":
+    def _step_n(simulator: "BasicSimulatorWithEnv", model: mjx.Model, n: int) -> "BasicSimulatorWithEnv":
         def body_fn(_i, sim: "BasicSimulatorWithEnv"):
-            return BasicSimulatorWithEnv._step(sim)
+            return BasicSimulatorWithEnv._step(sim, model)
 
         new_simulator = jax.lax.fori_loop(0, n, body_fn, simulator)
         return new_simulator
 
-    def step_n(self, n: int) -> Self:
-        return BasicSimulatorWithEnv._step_n(self, n)
+    def step_n(self, model: mjx.Model, n: int) -> Self:
+        return BasicSimulatorWithEnv._step_n(self, model, n)
 
     @partial(jax.jit, inline=True)
     def reset(self) -> Self:
