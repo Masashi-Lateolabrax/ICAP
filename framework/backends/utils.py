@@ -90,17 +90,16 @@ def emit_rays_static(
         body_ids: tuple[int, ...],
         num_rays: int
 ) -> tuple[jax.Array, jax.Array]:  # shape (num_robots, num_rays), (num_robots, num_rays)
-    results = []
+    dists = jnp.zeros((len(body_ids), num_rays), dtype=jnp.float32)
+    ids = jnp.zeros((len(body_ids), num_rays), dtype=jnp.int32)
     for i, body_id in enumerate(body_ids):
         result = _emit_n_rays(
             model, data,
             positions[i], xdirections[i],
             body_id, num_rays
         )
-        results.append(result)
-
-    dists = jnp.stack([r[0] for r in results])
-    ids = jnp.stack([r[1] for r in results])
+        dists = dists.at[i].set(result[0])
+        ids = ids.at[i].set(result[1])
     return dists, ids
 
 
