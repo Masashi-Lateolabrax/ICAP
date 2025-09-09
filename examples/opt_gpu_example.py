@@ -73,9 +73,7 @@ def opt_gpu_example():
     # Warmup run to compile JIT functions
     print("\nPerforming JIT warmup...")
     warmup_start = time.perf_counter()
-    with jax.profiler.trace("jax_trace", create_perfetto_link=True):
-        simulators = jit_step_n(simulators, batch_steps)
-        simulators.block_until_ready()
+    simulators = jit_step_n(simulators, batch_steps)
     warmup_time = time.perf_counter() - warmup_start
     print(f"JIT warmup completed: {warmup_time:.2f}s")
 
@@ -105,8 +103,8 @@ def opt_gpu_example():
             completed_steps += steps_to_run
 
             simulators.block_until_ready()
-
             step_end = time.perf_counter()
+
             d_time = step_end - step_start
             steps_per_sec = steps_to_run / d_time
             print(f"\n[{d_time:.2f}s] Step {completed_steps}/{episode_length}, {steps_per_sec:.1f} steps/s")
@@ -114,7 +112,7 @@ def opt_gpu_example():
             if gpu_available:
                 monitor_gpu_memory()
 
-    sim_time = time.perf_counter() - sim_start
+    sim_time = step_end - sim_start
     total_steps_per_sec = episode_length / sim_time
     print(f"\nSimulation completed: {sim_time:.2f}s ({total_steps_per_sec:.1f} steps/sec)")
 
