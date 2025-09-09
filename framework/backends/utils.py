@@ -81,6 +81,23 @@ def _emit_n_rays(
     return dists, ids
 
 
+@partial(jax.jit, static_argnames=["i", "body_ids", "num_rays"], inline=True)
+def _body_fn_in_emit_rays_static(
+        i, carry,
+        model, data, positions, xdirections, body_ids, num_rays
+):
+    dists_list, ids_list = carry
+    body_id = body_ids[i]
+    result = _emit_n_rays(
+        model, data,
+        positions[i], xdirections[i],
+        body_id, num_rays
+    )
+    dists_list = dists_list.at[i].set(result[0])
+    ids_list = ids_list.at[i].set(result[1])
+    return dists_list, ids_list
+
+
 @partial(jax.jit, static_argnames=["body_ids", "num_rays"], inline=True)
 def emit_rays_static(
         model: mjx.Model,
@@ -90,20 +107,14 @@ def emit_rays_static(
         body_ids: tuple[int, ...],
         num_rays: int
 ) -> tuple[jax.Array, jax.Array]:  # shape (num_robots, num_rays), (num_robots, num_rays)
-    def body_fn(i, carry):
-        dists_list, ids_list = carry
-        body_id = body_ids[i]
-        result = _emit_n_rays(
-            model, data,
-            positions[i], xdirections[i],
-            body_id, num_rays
-        )
-        dists_list = dists_list.at[i].set(result[0])
-        ids_list = ids_list.at[i].set(result[1])
-        return dists_list, ids_list
+    body_fn = partial(
+        _body_fn_in_emit_rays_static,
+        model=model, data=data,
+        positions=positions, xdirections=xdirections,
+        body_ids=body_ids, num_rays=num_rays
+    )
 
     num_robots = len(body_ids)
-    # Initialize arrays with proper shapes
     init_dists = jnp.zeros((num_robots, num_rays))
     init_ids = jnp.zeros((num_robots, num_rays), dtype=jnp.int32)
 
