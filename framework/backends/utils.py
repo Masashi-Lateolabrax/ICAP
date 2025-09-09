@@ -106,11 +106,13 @@ def emit_rays_static(
     # Initialize arrays with proper shapes
     init_dists = jnp.zeros((num_robots, num_rays))
     init_ids = jnp.zeros((num_robots, num_rays), dtype=jnp.int32)
-    
+
     dists, ids = jax.lax.fori_loop(
-        0, num_robots, 
-        body_fn, 
-        (init_dists, init_ids)
+        0,
+        num_robots,
+        body_fn,
+        (init_dists, init_ids),
+        unroll=True
     )
     return dists, ids
 
