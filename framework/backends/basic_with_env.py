@@ -338,20 +338,20 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
         )
 
         # Emit rays and get inputs for robots
-        # depth_sensor: tuple[jax.Array, jax.Array] = emit_rays(
-        #     this.model, this.data, this.robots, this.consts.NUM_RAYS
-        # )
-        # depths, _ = depth_sensor  # shape (num_robots, NUM_RAYS)
-        # inputs = this.robot_inputs.update(
-        #     ray=jnp.reciprocal(depths + 1e-6)
-        # )
+        depth_sensor: tuple[jax.Array, jax.Array] = emit_rays(
+            model, this.data, this.robots, this.consts.NUM_RAYS
+        )
+        depths, _ = depth_sensor  # shape (num_robots, NUM_RAYS)
+        inputs = this.robot_inputs.update(
+            ray=jnp.reciprocal(depths + 1e-6)
+        )
 
         # Get pheromone sensor values
         # pheromone_sensor = this.get_pheromone(this.robots.positions)
         # inputs = inputs.update(pheromone=pheromone_sensor)
 
         # Relocate food items if necessary
-        # this, relocation_occurred = BasicSimulatorWithEnv._relocate_food_items(this)
+        this, relocation_occurred = BasicSimulatorWithEnv._relocate_food_items(this)
 
         # Calculate losses
         fr_losses = jax.vmap(lambda x: BasicSimulatorWithEnv._calc_loss_between_food_and_robots(
@@ -363,12 +363,12 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
         losses = fr_losses + fn_losses + this.loss_offset
 
         loss = jnp.sum(losses, keepdims=True)
-        # loss_offset = this.loss_offset + jnp.dot(relocation_occurred, losses)
+        loss_offset = this.loss_offset + jnp.dot(relocation_occurred, losses)
 
         return this.update(
-            # robot_inputs=inputs,
+            robot_inputs=inputs,
             loss=loss,
-            # _loss_offset=loss_offset
+            _loss_offset=loss_offset
         )
 
     def step(self, model: mjx.Model) -> Self:
