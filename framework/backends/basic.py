@@ -22,7 +22,6 @@ class Consts:
 class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
     consts: Consts
 
-    model: mjx.Model
     _data: mjx.Data
     pheromone: PheromoneField
 
@@ -38,12 +37,10 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
 
     def update(
             self,
-            model: mjx.Model = None,
             data: mjx.Data = None,
             pheromone: PheromoneField = None,
             **kwargs
     ) -> Self:
-        kwargs["model"] = model
         kwargs["_data"] = data
         kwargs["pheromone"] = pheromone
         return self._update(**kwargs)
@@ -55,8 +52,8 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
         )
 
         mj_model: mujoco.MjModel = spec.compile()
-        model = mjx.put_model(mj_model)
-        data = mjx.make_data(model)
+        mj_data: mujoco.MjData = mujoco.MjData(mj_model)
+        data = mjx.put_data(mj_model, mj_data)
 
         pheromone = PheromoneField.new(
             nx=settings.Pheromone.WIDTH_NUM,
@@ -85,7 +82,6 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
                 dt=settings.Simulation.TIME_STEP,
             ),
 
-            model=model,
             _data=data,
             pheromone=pheromone,
 
@@ -112,27 +108,27 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
 
     @staticmethod
     @partial(jax.jit, inline=True)
-    def _step(this: "BasicSimulator"):
+    def _step(this: "BasicSimulator", model: mjx.Model):
         this = this.update(
-            data=mjx.step(this.model, this.data),
+            data=mjx.step(model, this.data),
             # pheromone=this.pheromone.update(this.consts.dt)
         )
         return this
 
-    def step(self) -> Self:
-        return BasicSimulator._step(self)
+    def step(self, model: mjx.Model) -> Self:
+        return BasicSimulator._step(self, model)
 
     @staticmethod
     @partial(jax.jit, static_argnames=("n",), inline=True)
-    def _step_n(simulator: "BasicSimulator", n: int) -> "BasicSimulator":
+    def _step_n(simulator: "BasicSimulator", model: mjx.Model, n: int) -> "BasicSimulator":
         def body_fn(_i, sim: "BasicSimulator"):
-            return BasicSimulator._step(sim)
+            return BasicSimulator._step(sim, model)
 
         new_simulator = jax.lax.fori_loop(0, n, body_fn, simulator)
         return new_simulator
 
-    def step_n(self, n: int) -> Self:
-        return BasicSimulator._step_n(self, n)
+    def step_n(self, model: mjx.Model, n: int) -> Self:
+        return BasicSimulator._step_n(self, model, n)
 
     @partial(jax.jit, inline=True)
     def reset(self) -> Self:
