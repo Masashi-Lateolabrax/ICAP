@@ -40,8 +40,9 @@ class PracticalSimulator(SimEvaluateTrait):
         return self._update(**kwargs)
 
     @classmethod
-    def new(cls, settings: Settings, controller: ControllerT, rngs: jax.Array) -> tuple[
-        mujoco.MjModel, 'PracticalSimulator']:
+    def new(
+            cls, settings: Settings, controller: ControllerT, rngs: jax.Array
+    ) -> tuple[mujoco.MjModel, 'PracticalSimulator']:
         mj_model, sim = SimulatorWithCtrl.new(settings, controller, rngs)
         return mj_model, cls(_parent_sim=sim)
 
