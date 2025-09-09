@@ -62,7 +62,7 @@ class Simulator(SimEvaluateTrait):
         def body_fn(_i, sim: 'Simulator') -> 'Simulator':
             return Simulator._step(sim)
 
-        this = jax.lax.fori_loop(0, n, body_fn, this)
+        this = jax.lax.fori_loop(0, n, body_fn, this, unroll=True)
         return this
 
     def step_n(self, n: int) -> Self:
