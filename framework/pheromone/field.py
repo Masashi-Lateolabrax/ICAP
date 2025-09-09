@@ -189,7 +189,13 @@ def _iter_update_with_rk4(
         )
         return {"gas": g, "liquid": l}
 
-    result = jax.lax.fori_loop(0, iter_, body_fn, {"gas": gas_values, "liquid": liquid_values})
+    result = jax.lax.fori_loop(
+        0,
+        iter_,
+        body_fn,
+        {"gas": gas_values, "liquid": liquid_values},
+        unroll=True
+    )
     return result["gas"], result["liquid"]
 
 
