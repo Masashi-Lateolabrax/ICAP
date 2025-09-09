@@ -47,24 +47,24 @@ class PracticalSimulator(SimEvaluateTrait):
 
     @staticmethod
     @partial(nnx.jit, inline=True)
-    def _step(this: 'PracticalSimulator') -> 'PracticalSimulator':
-        this: "PracticalSimulator" = this.update(_parent_sim=this._parent_sim.step())
+    def _step(this: 'PracticalSimulator', model: mjx.Model) -> 'PracticalSimulator':
+        this: "PracticalSimulator" = this.update(_parent_sim=this._parent_sim.step(model))
         return this
 
-    def step(self) -> Self:
-        return PracticalSimulator._step(self)
+    def step(self, model: mjx.Model) -> Self:
+        return PracticalSimulator._step(self, model)
 
     @staticmethod
     @partial(nnx.jit, static_argnames=("n",), inline=True)
-    def _step_n(this: "PracticalSimulator", n: int) -> "PracticalSimulator":
+    def _step_n(this: "PracticalSimulator", model: mjx.Model, n: int) -> "PracticalSimulator":
         def body_fn(_i, sim: "PracticalSimulator"):
-            return PracticalSimulator._step(sim)
+            return PracticalSimulator._step(sim, model)
 
         this = jax.lax.fori_loop(0, n, body_fn, this)
         return this
 
-    def step_n(self, n: int) -> Self:
-        return PracticalSimulator._step_n(self, n)
+    def step_n(self, model: mjx.Model, n: int) -> Self:
+        return PracticalSimulator._step_n(self, model, n)
 
     @partial(nnx.jit, inline=True)
     def reset(self) -> Self:
@@ -115,9 +115,9 @@ class FoodRelocationSimulator(SimRenderTrait):
 
     @staticmethod
     @partial(nnx.jit, inline=True)
-    def _step(this: 'FoodRelocationSimulator') -> 'FoodRelocationSimulator':
+    def _step(this: 'FoodRelocationSimulator', model: mjx.Model) -> 'FoodRelocationSimulator':
         this = this.update(
-            _parent_sim=this._parent_sim.step()
+            _parent_sim=this._parent_sim.step(model)
         )
 
         nest_dir = -this.food_items.positions
@@ -127,20 +127,20 @@ class FoodRelocationSimulator(SimRenderTrait):
 
         return this.update(data=new_data)
 
-    def step(self) -> Self:
-        return FoodRelocationSimulator._step(self)
+    def step(self, model: mjx.Model) -> Self:
+        return FoodRelocationSimulator._step(self, model)
 
     @staticmethod
     @partial(nnx.jit, static_argnames=("n",), inline=True)
-    def _step_n(this: "FoodRelocationSimulator", n: int) -> "FoodRelocationSimulator":
+    def _step_n(this: "FoodRelocationSimulator", model: mjx.Model, n: int) -> "FoodRelocationSimulator":
         def body_fn(_i, sim: "FoodRelocationSimulator"):
-            return FoodRelocationSimulator._step(sim)
+            return FoodRelocationSimulator._step(sim, model)
 
         this = jax.lax.fori_loop(0, n, body_fn, this)
         return this
 
-    def step_n(self, n: int) -> Self:
-        return FoodRelocationSimulator._step_n(self, n)
+    def step_n(self, model: mjx.Model, n: int) -> Self:
+        return FoodRelocationSimulator._step_n(self, model, n)
 
     def reset(self) -> Self:
         parent_sim = self._parent_sim.reset()
