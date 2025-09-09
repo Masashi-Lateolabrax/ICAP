@@ -52,7 +52,7 @@ class SimulatorTrait(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def reset(self) -> Self:
+    def reset(self, model: mjx.Model) -> Self:
         raise NotImplementedError
 
     def block_until_ready(self):
