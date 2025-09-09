@@ -48,7 +48,7 @@ class Simulator(SimEvaluateTrait):
         return mj_model, cls(_parent_sim=sim)
 
     @staticmethod
-    @nnx.jit
+    @partial(nnx.jit, inline=True)
     def _step(this: 'Simulator') -> 'Simulator':
         this = this.update(_parent_sim=this._parent_sim.step())
         return this
@@ -57,7 +57,7 @@ class Simulator(SimEvaluateTrait):
         return Simulator._step(self)
 
     @staticmethod
-    @partial(nnx.jit, static_argnames=("n",))
+    @partial(nnx.jit, static_argnames=("n",), inline=True)
     def _step_n(this: 'Simulator', n: int) -> 'Simulator':
         def body_fn(_i, sim: 'Simulator') -> 'Simulator':
             return Simulator._step(sim)
