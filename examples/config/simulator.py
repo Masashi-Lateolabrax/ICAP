@@ -142,8 +142,8 @@ class FoodRelocationSimulator(SimRenderTrait):
     def step_n(self, model: mjx.Model, n: int) -> Self:
         return FoodRelocationSimulator._step_n(self, model, n)
 
-    def reset(self) -> Self:
-        parent_sim = self._parent_sim.reset()
+    def reset(self, model: mjx.Model) -> Self:
+        parent_sim = self._parent_sim.reset(model)
         return self.update(_parent_sim=parent_sim)
 
     def render(self, img_buf: np.ndarray, camera: mujoco.MjvCamera, renderer: mujoco.Renderer):
