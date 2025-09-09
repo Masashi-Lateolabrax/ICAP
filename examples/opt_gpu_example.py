@@ -22,10 +22,10 @@ def opt_gpu_example():
 
     settings = Settings()
 
-    population_size = 10
+    population_size = 50
     batch_size = population_size
     episode_length = int(90 / settings.Simulation.TIME_STEP)
-    batch_steps = 20  # Number of steps to batch together
+    batch_steps = 100  # Number of steps to batch together
     dim = PracticalController.dim()
 
     optimizer = CMA(
@@ -91,7 +91,7 @@ def opt_gpu_example():
 
     # Main simulation loop using multistep batching for better performance
     print(f"\nStarting main simulation ({episode_length} steps, {batch_steps} steps per batch)...")
-    sim_start = time.perf_counter()
+    sim_start = step_end = time.perf_counter()
 
     completed_steps = 0
     with jax.profiler.trace("jax_trace", create_perfetto_link=True):
