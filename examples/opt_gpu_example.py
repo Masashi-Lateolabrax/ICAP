@@ -57,6 +57,10 @@ def opt_gpu_example():
         )
         return sims
 
+    @nnx.jit
+    def jit_set_params(sims, params):
+        return jax.vmap(lambda s, p: s.update(controller=PracticalController(p)))(sims, params)
+
     @partial(nnx.jit, static_argnames=("n",))
     def jit_step_n(sims, n: int):
         return jax.vmap(lambda s: s.step_n(model, n))(sims)
@@ -66,6 +70,8 @@ def opt_gpu_example():
         return jax.vmap(lambda sim: sim.reset(model))(sims)
 
     simulators = jit_duplicate_sim(simulators, batch_size)
+    simulators = jit_set_params(simulators, parameters)
+
     init_time = time.perf_counter() - init_start
     print(f"Simulator initialization: {init_time:.2f}s")
 
