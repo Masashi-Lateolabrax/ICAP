@@ -111,9 +111,10 @@ class BatchedFood:
         return this
 
     def update(self, data: mjx.Data) -> "BatchedFood":
-        new_positions = data.site_xpos[self.ids.center_site_ids, :3]
-        xmat = data.site_xmat[self.ids.center_site_ids]
-        return self.replace(xmat=xmat, positions=new_positions)
+        return self.replace(
+            xmat=data.site_xmat[self.ids.center_site_ids],
+            positions=data.site_xpos[self.ids.center_site_ids, :3]
+        )
 
     @staticmethod
     @partial(jax.jit, static_argnames=["qpos_addr"], inline=True)
