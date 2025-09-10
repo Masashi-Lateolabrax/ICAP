@@ -1,3 +1,5 @@
+from . import utils
+
 from src.analysis_mod.structure.debug_data import DebugData
 from src.analysis_mod.structure.sim_interface import SimulatorForDebugInterface
 
