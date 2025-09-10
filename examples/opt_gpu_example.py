@@ -16,7 +16,9 @@ from config import PracticalController, PracticalSimulator
 
 
 def opt_gpu_example():
-    gpu_available = configure_gpu_optimization()
+    if not configure_gpu_optimization():
+        print("No GPU detected. Exiting.")
+        return
 
     print("Initializing GPU-optimized simulation...")
 
@@ -109,16 +111,14 @@ def opt_gpu_example():
             steps_per_sec = steps_to_run / d_time
             print(f"\n[{d_time:.2f}s] Step {completed_steps}/{episode_length}, {steps_per_sec:.1f} steps/s")
 
-            if gpu_available:
-                monitor_gpu_memory()
+        monitor_gpu_memory()
 
     sim_time = step_end - sim_start
     total_steps_per_sec = episode_length / sim_time
     print(f"\nSimulation completed: {sim_time:.2f}s ({total_steps_per_sec:.1f} steps/sec)")
 
-    if gpu_available:
-        print("\nFinal GPU status:")
-        monitor_gpu_memory()
+    print("\nFinal GPU status:")
+    monitor_gpu_memory()
 
     def extract_loss(sim: PracticalSimulator) -> jax.Array:
         return sim.evaluate()["loss"]
