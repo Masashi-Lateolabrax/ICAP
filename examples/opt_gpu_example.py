@@ -89,6 +89,7 @@ def opt_gpu_example():
     monitor_gpu_memory()
 
     # Reset simulators before main simulation
+    print("\nResetting simulators...")
     reset_start = time.perf_counter()
     simulators = jit_reset(simulators)
     reset_time = time.perf_counter() - reset_start
