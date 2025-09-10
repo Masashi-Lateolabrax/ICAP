@@ -67,8 +67,8 @@ class Simulator(SimEvaluateTrait):
     def step_n(self, model: mjx.Model, n: int) -> Self:
         return Simulator._step_n(self, model, n)
 
-    def reset(self) -> Self:
-        return self.update(_parent_sim=self._parent_sim.reset())
+    def reset(self, model: mjx.Model) -> Self:
+        return self.update(_parent_sim=self._parent_sim.reset(model))
 
     def evaluate(self) -> dict:
         result = self._parent_sim.evaluate()
