@@ -157,10 +157,10 @@ def analyze_specific_individual(save_dir: str, settings: Settings, individual: I
 
 
 def main(settings: Settings):
-    # save_dir = os.path.abspath(
-    #     get_latest_folder(settings.Storage.SAVE_DIRECTORY)
-    # )
-    save_dir = "./results/20250829-153444_bf9923e9"
+    save_dir = os.path.abspath(
+        analysis_mod.utils.get_latest_folder(settings.Storage.SAVE_DIRECTORY)
+    )
+    # save_dir = "./results/20250829-153444_bf9923e9"
 
     saved_individuals = IndividualRecorder.load(
         os.path.join(save_dir, "optimization_log.pkl")
