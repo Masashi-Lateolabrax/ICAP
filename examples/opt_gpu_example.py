@@ -24,10 +24,10 @@ def opt_gpu_example():
 
     settings = Settings()
 
-    population_size = 50
-    batch_size = population_size
+    population_size = 100
+    batch_size = 3
     episode_length = int(90 / settings.Simulation.TIME_STEP)
-    batch_steps = 100  # Number of steps to batch together
+    batch_steps = episode_length  # Number of steps to batch together
     unroll = 1
     dim = PracticalController.dim()
 
