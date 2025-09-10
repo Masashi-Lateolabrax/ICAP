@@ -267,32 +267,28 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
 
     @staticmethod
     @partial(jax.jit, inline=True)
-    def _relocate_food_items(
-            this: "BasicSimulatorWithEnv"
-    ) -> tuple["BasicSimulatorWithEnv", jax.Array]:
-        relocation_happen = BasicSimulatorWithEnv._check_food_in_nest(this)
+    def _relocate_food_items(this: "BasicSimulatorWithEnv") -> tuple["BasicSimulatorWithEnv", jax.Array]:
+        done_relocate = BasicSimulatorWithEnv._check_food_in_nest(this)
+        not_relocate = jnp.logical_not(done_relocate)
+        new_rngs = this.rngs_for_relocating_food
+        data = this.data
 
-        def relocation_fn(i, sim: "BasicSimulatorWithEnv") -> "BasicSimulatorWithEnv":
-            new_rngs, rngs = jax.random.split(this.rngs_for_relocating_food)
-            new_position = BasicSimulatorWithEnv._generate_new_food_position(sim, rngs)
-            new_data = sim.food_items.set_pos(this.data, i, new_position)
-            return sim.update(
-                data=new_data,
-                rngs_for_relocating_food=new_rngs
-            )
+        for idx in range(this.food_items.num_food_items):
+            next_rngs, rngs = jax.random.split(new_rngs)
+            relocated_position = BasicSimulatorWithEnv._generate_new_food_position(this, rngs)
+            current_position = this.food_items.positions[idx]
 
-        this = jax.lax.fori_loop(
-            0, this.food_items.positions.shape[0],
-            lambda i, val: jax.lax.cond(
-                relocation_happen[i],
-                lambda x: relocation_fn(i, x),
-                lambda x: x,
-                val
-            ),
-            this
+            new_position = done_relocate[idx] * relocated_position + not_relocate[idx] * current_position
+            new_rngs = done_relocate[idx] * next_rngs + not_relocate[idx] * new_rngs
+
+            data = this.food_items.set_pos(data, idx, new_position)
+
+        this = this.update(
+            data=data,
+            rngs_for_relocating_food=new_rngs
         )
 
-        return this, relocation_happen
+        return this, done_relocate
 
     @staticmethod
     @partial(jax.jit, inline=True)

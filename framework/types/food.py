@@ -30,26 +30,26 @@ class FoodSpec:
 
 @jax_dataclass
 class FoodIDs:
-    body_ids: jnp.ndarray
-    center_site_id: jnp.ndarray
-    free_joint_id: jnp.ndarray
-    velocimeter_id: jnp.ndarray
-    x_act_id: jnp.ndarray
-    y_act_id: jnp.ndarray
-    z_act_id: jnp.ndarray
+    body_id: jnp.ndarray = field(pytree_node=False)
+    center_site_id: jnp.ndarray = field(pytree_node=False)
+    free_joint_id: jnp.ndarray = field(pytree_node=False)
+    velocimeter_id: jnp.ndarray = field(pytree_node=False)
+    x_act_id: jnp.ndarray = field(pytree_node=False)
+    y_act_id: jnp.ndarray = field(pytree_node=False)
+    z_act_id: jnp.ndarray = field(pytree_node=False)
 
 
 @jax_dataclass
 class BatchedFoodIDs:
-    body_ids: jnp.ndarray
-    center_site_ids: jnp.ndarray
-    free_joint_ids: jnp.ndarray
-    velocimeter_ids: jnp.ndarray
-    x_act_ids: jnp.ndarray
-    y_act_ids: jnp.ndarray
-    z_act_ids: jnp.ndarray
+    body_ids: jnp.ndarray = field(pytree_node=False)
+    center_site_ids: jnp.ndarray = field(pytree_node=False)
+    free_joint_ids: jnp.ndarray = field(pytree_node=False)
+    velocimeter_ids: jnp.ndarray = field(pytree_node=False)
+    x_act_ids: jnp.ndarray = field(pytree_node=False)
+    y_act_ids: jnp.ndarray = field(pytree_node=False)
+    z_act_ids: jnp.ndarray = field(pytree_node=False)
 
-    free_joint_qpos_adr: jnp.ndarray
+    free_joint_qpos_adr: tuple[int, ...] = field(pytree_node=False)
 
     @classmethod
     def from_specs(cls, model: mjx.Model, specs: list[FoodSpec]) -> 'BatchedFoodIDs':
@@ -61,7 +61,7 @@ class BatchedFoodIDs:
         y_act_ids = [mjx.name2id(model, mujoco.mjtObj.mjOBJ_ACTUATOR, spec.y_act.name) for spec in specs]
         z_act_ids = [mjx.name2id(model, mujoco.mjtObj.mjOBJ_ACTUATOR, spec.z_act.name) for spec in specs]
 
-        free_joint_qpos_adr = [model.jnt_qposadr[i] for i in free_joint_ids]
+        free_joint_qpos_adr = tuple(int(model.jnt_qposadr[i]) for i in free_joint_ids)
 
         return cls(
             body_ids=jnp.array(body_ids, dtype=jnp.int32),
@@ -71,12 +71,12 @@ class BatchedFoodIDs:
             x_act_ids=jnp.array(x_act_ids, dtype=jnp.int32),
             y_act_ids=jnp.array(y_act_ids, dtype=jnp.int32),
             z_act_ids=jnp.array(z_act_ids, dtype=jnp.int32),
-            free_joint_qpos_adr=jnp.array(free_joint_qpos_adr, dtype=jnp.int32),
+            free_joint_qpos_adr=free_joint_qpos_adr
         )
 
     def __getitem__(self, index: int) -> FoodIDs:
         return FoodIDs(
-            body_ids=self.body_ids[index],
+            body_id=self.body_ids[index],
             center_site_id=self.center_site_ids[index],
             free_joint_id=self.free_joint_ids[index],
             velocimeter_id=self.velocimeter_ids[index],
@@ -89,7 +89,7 @@ class BatchedFoodIDs:
 @jax_dataclass
 class BatchedFood:
     num_food_items: int = field(pytree_node=False)
-    ids: BatchedFoodIDs
+    ids: BatchedFoodIDs = field(pytree_node=False)
     xmat: jax.Array
     positions: jax.Array
     dummy_positions: jax.Array
@@ -116,17 +116,18 @@ class BatchedFood:
         return self.replace(xmat=xmat, positions=new_positions)
 
     @staticmethod
-    @partial(jax.jit, inline=True)
-    def _set_pos(data: mjx.Data, qpos_addr: jax.Array, pos: jax.Array) -> mjx.Data:
-        new_qpos = jax.lax.dynamic_update_slice(data.qpos, pos[:3], (qpos_addr,))
-        return data.replace(qpos=new_qpos)
+    @partial(jax.jit, static_argnames=["qpos_addr"], inline=True)
+    def _set_pos(data: mjx.Data, qpos_addr: int, pos: jax.Array) -> mjx.Data:
+        return data.replace(
+            qpos=data.qpos.at[qpos_addr:qpos_addr + 3].set(pos[:3])
+        )
 
-    def set_pos(self, data: mjx.Data, idx: jax.Array, pos: jax.Array) -> mjx.Data:
+    def set_pos(self, data: mjx.Data, idx: int, pos: jax.Array) -> mjx.Data:
         qpos_addr = self.ids.free_joint_qpos_adr[idx]
         return BatchedFood._set_pos(data, qpos_addr, pos)
 
     @staticmethod
-    @partial(jax.jit, inline=True)
+    @partial(jax.jit, static_argnames=["idx"], inline=True)
     def _set_force(this: "BatchedFood", data: mjx.Data, idx: jax.Array, force: jax.Array) -> mjx.Data:
         x_act_id = this.ids.x_act_ids[idx]
         y_act_id = this.ids.y_act_ids[idx]
