@@ -5,7 +5,7 @@ import mujoco
 
 import jax
 import jax.numpy as jnp
-from flax.struct import dataclass as jax_dataclass
+from flax.struct import field, dataclass as jax_dataclass
 
 
 class FoodSpec:
@@ -88,6 +88,7 @@ class BatchedFoodIDs:
 
 @jax_dataclass
 class BatchedFood:
+    num_food_items: int = field(pytree_node=False)
     ids: BatchedFoodIDs
     xmat: jax.Array
     positions: jax.Array
@@ -100,6 +101,7 @@ class BatchedFood:
             batched_food_ids: BatchedFoodIDs,
     ):
         this = cls(
+            num_food_items=batched_food_ids.body_ids.shape[0],
             ids=batched_food_ids,
             xmat=jnp.zeros((0, 3, 3), dtype=jnp.float32),
             positions=jnp.zeros((0, 3), dtype=jnp.float32),
