@@ -24,7 +24,12 @@ from flax import nnx
 from mujoco import mjx
 
 from framework.prelude import *
-from framework.utils import configure_gpu_optimization, monitor_gpu_memory
+from framework.utils import (
+    configure_gpu_optimization,
+    monitor_gpu_memory,
+    monitor_gpu_health,
+    force_garbage_collection
+)
 
 from config import PracticalController, PracticalSimulator
 
@@ -130,7 +135,16 @@ def opt_gpu_example():
 
         d_time = step_end - step_start
         steps_per_sec = steps_to_run / d_time
+        
         print(f"\n[{d_time:.2f}s] Step {completed_steps}/{episode_length}, {steps_per_sec:.1f} steps/s")
+        
+        # Monitor GPU health with centralized utility
+        monitor_gpu_health()
+
+        # Force garbage collection every 200 steps to prevent memory fragmentation
+        if completed_steps % 200 == 0:
+            force_garbage_collection()
+            print(f"GC triggered at step {completed_steps}")
 
         monitor_gpu_memory()
 
