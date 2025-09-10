@@ -59,11 +59,10 @@ class Simulator(SimEvaluateTrait):
     @staticmethod
     @partial(nnx.jit, static_argnames=("n",), inline=True)
     def _step_n(this: 'Simulator', model: mjx.Model, n: int) -> 'Simulator':
-        def body_fn(_i, sim: 'Simulator') -> 'Simulator':
-            return Simulator._step(sim, model)
+        def body_fn(carry: 'Simulator', _x) -> tuple['Simulator', None]:
+            return Simulator._step(carry, model), None
 
-        this = jax.lax.fori_loop(0, n, body_fn, this, unroll=True)
-        return this
+        return jax.lax.scan(body_fn, this, length=n)[0]
 
     def step_n(self, model: mjx.Model, n: int) -> Self:
         return Simulator._step_n(self, model, n)

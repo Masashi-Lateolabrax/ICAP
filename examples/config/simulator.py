@@ -58,11 +58,10 @@ class PracticalSimulator(SimEvaluateTrait):
     @staticmethod
     @partial(nnx.jit, static_argnames=("n",), inline=True)
     def _step_n(this: "PracticalSimulator", model: mjx.Model, n: int) -> "PracticalSimulator":
-        def body_fn(_i, sim: "PracticalSimulator"):
-            return PracticalSimulator._step(sim, model)
+        def body_fn(carry: "PracticalSimulator", _x) -> tuple["PracticalSimulator", None]:
+            return PracticalSimulator._step(carry, model), None
 
-        this = jax.lax.fori_loop(0, n, body_fn, this)
-        return this
+        return jax.lax.scan(body_fn, this, length=n)[0]
 
     def step_n(self, model: mjx.Model, n: int) -> Self:
         return PracticalSimulator._step_n(self, model, n)
@@ -134,11 +133,14 @@ class FoodRelocationSimulator(SimRenderTrait):
     @staticmethod
     @partial(nnx.jit, static_argnames=("n",), inline=True)
     def _step_n(this: "FoodRelocationSimulator", model: mjx.Model, n: int) -> "FoodRelocationSimulator":
-        def body_fn(_i, sim: "FoodRelocationSimulator"):
-            return FoodRelocationSimulator._step(sim, model)
+        def body_fn(carry: "FoodRelocationSimulator", _x) -> tuple["FoodRelocationSimulator", None]:
+            return FoodRelocationSimulator._step(carry, model), None
 
-        this = jax.lax.fori_loop(0, n, body_fn, this)
-        return this
+        return jax.lax.scan(
+            body_fn,
+            this,
+            length=n,
+        )[0]
 
     def step_n(self, model: mjx.Model, n: int) -> Self:
         return FoodRelocationSimulator._step_n(self, model, n)
