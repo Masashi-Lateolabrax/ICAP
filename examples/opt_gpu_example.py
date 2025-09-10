@@ -103,20 +103,19 @@ def opt_gpu_example():
     sim_start = step_end = time.perf_counter()
 
     completed_steps = 0
-    with jax.profiler.trace("jax_trace", create_perfetto_link=True):
-        while completed_steps < episode_length:
-            step_start = time.perf_counter()
+    while completed_steps < episode_length:
+        step_start = time.perf_counter()
 
-            steps_to_run = min(batch_steps, episode_length - completed_steps)
-            simulators: PracticalSimulator = jit_step_n(simulators, steps_to_run)
-            completed_steps += steps_to_run
+        steps_to_run = min(batch_steps, episode_length - completed_steps)
+        simulators: PracticalSimulator = jit_step_n(simulators, steps_to_run)
+        completed_steps += steps_to_run
 
-            simulators.block_until_ready()
-            step_end = time.perf_counter()
+        simulators.block_until_ready()
+        step_end = time.perf_counter()
 
-            d_time = step_end - step_start
-            steps_per_sec = steps_to_run / d_time
-            print(f"\n[{d_time:.2f}s] Step {completed_steps}/{episode_length}, {steps_per_sec:.1f} steps/s")
+        d_time = step_end - step_start
+        steps_per_sec = steps_to_run / d_time
+        print(f"\n[{d_time:.2f}s] Step {completed_steps}/{episode_length}, {steps_per_sec:.1f} steps/s")
 
         monitor_gpu_memory()
 
