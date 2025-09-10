@@ -173,11 +173,12 @@ def _iter_update_with_rk4(
         dt: float,
         padding_value: float,
         iter_: int = 1,
-):
-    def body_fn(_i, val):
-        g, l = _update_with_rk4(
-            liquid_values=val["liquid"],
-            gas_values=val["gas"],
+) -> tuple[jax.Array, jax.Array]:
+    def body_fn(carry: tuple[jax.Array, jax.Array], _x):
+        g_values, l_values = carry
+        g_values, l_values = _update_with_rk4(
+            liquid_values=l_values,
+            gas_values=g_values,
             mask=mask,
             dx=dx,
             saturation_pressure=saturation_pressure,
@@ -187,16 +188,13 @@ def _iter_update_with_rk4(
             dt=dt,
             padding_value=padding_value,
         )
-        return {"gas": g, "liquid": l}
+        return (g_values, l_values), None
 
-    result = jax.lax.fori_loop(
-        0,
-        iter_,
+    return jax.lax.scan(
         body_fn,
-        {"gas": gas_values, "liquid": liquid_values},
-        unroll=True
-    )
-    return result["gas"], result["liquid"]
+        (gas_values, liquid_values),
+        length=iter_,
+    )[0]
 
 
 @jax_dataclass
