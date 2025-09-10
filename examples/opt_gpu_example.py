@@ -144,7 +144,7 @@ def opt_gpu_example():
         # Force garbage collection every 200 steps to prevent memory fragmentation
         # This is essential for long-running simulations. If you run without this,
         # you may observe degraded performance over time due to GPU memory fragmentation.
-        if completed_steps % 200 == 0:
+        if completed_steps % 500 == 0:
             force_garbage_collection()
             print(f"GC triggered at step {completed_steps}")
 
