@@ -126,17 +126,6 @@ def opt_gpu_example():
     print("\nFinal GPU status:")
     monitor_gpu_memory()
 
-    def extract_loss(sim: PracticalSimulator) -> jax.Array:
-        return sim.evaluate()["loss"]
-
-    losses = jax.vmap(extract_loss)(simulators)
-    losses = np.array(losses)
-    parameters = np.array(parameters)
-
-    if population_size == batch_size:
-        results = [(para, loss) for para, loss in zip(parameters, losses)]
-        optimizer.tell(results)
-
     # Performance summary
     total_time = init_time + warmup_time + sim_time
     print(f"\n{'=' * 60}")
