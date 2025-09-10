@@ -1,5 +1,5 @@
 import subprocess
-
+import gc
 import os
 import jax
 
@@ -39,6 +39,39 @@ def configure_gpu_optimization():
         return False
 
 
+def check_gpu_temperature():
+    """Check GPU temperature"""
+    try:
+        result = subprocess.run(
+            ['nvidia-smi', '--query-gpu=temperature.gpu', '--format=csv,noheader,nounits'],
+            capture_output=True, text=True, timeout=5, check=True
+        )
+        return int(result.stdout.strip())
+    except (subprocess.TimeoutExpired, FileNotFoundError, subprocess.SubprocessError):
+        return "N/A"
+    except Exception:
+        return "N/A"
+
+
+def check_gpu_utilization():
+    """Check GPU utilization percentage"""
+    try:
+        result = subprocess.run(
+            ['nvidia-smi', '--query-gpu=utilization.gpu', '--format=csv,noheader,nounits'],
+            capture_output=True, text=True, timeout=5, check=True
+        )
+        return int(result.stdout.strip())
+    except (subprocess.TimeoutExpired, FileNotFoundError, subprocess.SubprocessError):
+        return "N/A"
+    except Exception:
+        return "N/A"
+
+
+def force_garbage_collection():
+    """Force garbage collection to prevent memory fragmentation"""
+    gc.collect()
+
+
 def monitor_gpu_memory():
     """Monitor GPU memory usage"""
     try:
@@ -56,3 +89,24 @@ def monitor_gpu_memory():
         print("GPU monitoring unavailable (nvidia-smi not found or failed)")
     except Exception as e:
         print(f"GPU monitoring error: {e}")
+
+
+def monitor_gpu_health():
+    """Monitor comprehensive GPU health metrics"""
+    temp = check_gpu_temperature()
+    util = check_gpu_utilization()
+
+    # Check for thermal throttling
+    thermal_warning = ""
+    if isinstance(temp, int) and temp > 80:
+        thermal_warning = " ⚠️ HIGH TEMP"
+    elif isinstance(temp, int) and temp > 85:
+        thermal_warning = " 🔥 THERMAL THROTTLING"
+
+    # Check for low utilization
+    util_warning = ""
+    if isinstance(util, int) and util < 50:
+        util_warning = " ⚠️ LOW UTILIZATION"
+
+    print(f"GPU Health: {temp}°C, {util}% util{thermal_warning}{util_warning}")
+    return {"temperature": temp, "utilization": util}
