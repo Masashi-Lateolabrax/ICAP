@@ -1,10 +1,13 @@
-# This settings degrade performance in some case.
+# import os
+
+# These settings degrade performance in some case.
 # os.environ['XLA_FLAGS'] = " ".join([
 #     os.environ.get('XLA_FLAGS', ''),
 #     "--xla_gpu_triton_gemm_any=True",
 #     "--xla_gpu_enable_latency_hiding_scheduler=true"
 # ])
 
+# os.environ['JAX_LOG_COMPILES'] = '1'
 
 from functools import partial
 import time
@@ -13,6 +16,9 @@ import numpy as np
 from cmaes import CMA
 
 import jax
+
+print(jax.devices())
+
 import jax.numpy as jnp
 from flax import nnx
 from mujoco import mjx
