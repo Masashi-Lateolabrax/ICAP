@@ -48,7 +48,7 @@ class SimulatorTrait(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def step_n(self, model: mjx.Model, n: int) -> Self:
+    def step_n(self, model: mjx.Model, n: int, unroll=1) -> Self:
         raise NotImplementedError
 
     @abc.abstractmethod

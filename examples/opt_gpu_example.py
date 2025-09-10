@@ -28,6 +28,7 @@ def opt_gpu_example():
     batch_size = population_size
     episode_length = int(90 / settings.Simulation.TIME_STEP)
     batch_steps = 100  # Number of steps to batch together
+    unroll = 1
     dim = PracticalController.dim()
 
     optimizer = CMA(
@@ -63,7 +64,7 @@ def opt_gpu_example():
 
     @partial(nnx.jit, static_argnames=("n",))
     def jit_step_n(sims, n: int):
-        return jax.vmap(lambda s: s.step_n(model, n))(sims)
+        return jax.vmap(lambda s: s.step_n(model, n, unroll))(sims)
 
     @nnx.jit
     def jit_reset(sims):

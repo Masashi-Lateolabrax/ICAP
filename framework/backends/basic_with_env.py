@@ -372,16 +372,16 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
         return BasicSimulatorWithEnv._step(self, model)
 
     @staticmethod
-    @partial(jax.jit, static_argnames=("n",), inline=True)
-    def _step_n(this: "BasicSimulatorWithEnv", model: mjx.Model, n: int) -> "BasicSimulatorWithEnv":
+    @partial(jax.jit, static_argnames=("n", "unroll"), inline=True)
+    def _step_n(this: "BasicSimulatorWithEnv", model: mjx.Model, n: int, unroll: int = 1) -> "BasicSimulatorWithEnv":
         def body_fn(carry: "BasicSimulatorWithEnv", _x) -> tuple["BasicSimulatorWithEnv", None]:
             new_carry = BasicSimulatorWithEnv._step(carry, model)
             return new_carry, None
 
-        return jax.lax.scan(body_fn, this, length=n)[0]
+        return jax.lax.scan(body_fn, this, length=n, unroll=unroll)[0]
 
-    def step_n(self, model: mjx.Model, n: int) -> Self:
-        return BasicSimulatorWithEnv._step_n(self, model, n)
+    def step_n(self, model: mjx.Model, n: int, unroll: int = 1) -> Self:
+        return BasicSimulatorWithEnv._step_n(self, model, n, unroll)
 
     @partial(jax.jit, inline=True)
     def reset(self, model: mjx.Model) -> Self:

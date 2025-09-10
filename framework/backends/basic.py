@@ -119,15 +119,15 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
         return BasicSimulator._step(self, model)
 
     @staticmethod
-    @partial(jax.jit, static_argnames=("n",), inline=True)
-    def _step_n(this: "BasicSimulator", model: mjx.Model, n: int) -> "BasicSimulator":
+    @partial(jax.jit, static_argnames=("n", "unroll"), inline=True)
+    def _step_n(this: "BasicSimulator", model: mjx.Model, n: int, unroll: int = 1) -> "BasicSimulator":
         def body_fn(carry: "BasicSimulator", _x) -> tuple["BasicSimulator", None]:
             return BasicSimulator._step(carry, model), None
 
-        return jax.lax.scan(body_fn, this, length=n)[0]
+        return jax.lax.scan(body_fn, this, length=n, unroll=unroll)[0]
 
-    def step_n(self, model: mjx.Model, n: int) -> Self:
-        return BasicSimulator._step_n(self, model, n)
+    def step_n(self, model: mjx.Model, n: int, unroll: int = 1) -> Self:
+        return BasicSimulator._step_n(self, model, n, unroll)
 
     @partial(jax.jit, inline=True)
     def reset(self, model: mjx.Model) -> Self:

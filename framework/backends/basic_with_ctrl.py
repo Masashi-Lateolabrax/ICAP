@@ -98,16 +98,16 @@ class SimulatorWithCtrl(SimRenderTrait, SimEvaluateTrait, Generic[ControllerT]):
         return SimulatorWithCtrl._step(self, model)
 
     @staticmethod
-    @partial(nnx.jit, static_argnames=("n",), inline=True)
-    def _step_n(this: "SimulatorWithCtrl", model: mjx.Model, n: int) -> "SimulatorWithCtrl":
+    @partial(nnx.jit, static_argnames=("n", "unroll"), inline=True)
+    def _step_n(this: "SimulatorWithCtrl", model: mjx.Model, n: int, unroll: int = 1) -> "SimulatorWithCtrl":
         def body_fn(carry: "SimulatorWithCtrl", _x) -> tuple["SimulatorWithCtrl", None]:
             new_carry = SimulatorWithCtrl._step(carry, model)
             return new_carry, None
 
-        return jax.lax.scan(body_fn, this, length=n, )[0]
+        return jax.lax.scan(body_fn, this, length=n, unroll=unroll)[0]
 
-    def step_n(self, model: mjx.Model, n: int) -> Self:
-        return SimulatorWithCtrl._step_n(self, model, n)
+    def step_n(self, model: mjx.Model, n: int, unroll: int = 1) -> Self:
+        return SimulatorWithCtrl._step_n(self, model, n, unroll)
 
     @partial(nnx.jit, inline=True)
     def reset(self, model: mjx.Model) -> Self:

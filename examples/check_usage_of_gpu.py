@@ -21,6 +21,7 @@ def check_usage_of_gpu():
 
     settings.Simulation.TIME_LENGTH = int(90 / settings.Simulation.TIME_STEP)
     batch_steps = 100  # Number of steps to batch together
+    unroll = 1
     dim = PracticalController.dim()
 
     print("Creating simulator...")
@@ -33,9 +34,9 @@ def check_usage_of_gpu():
     )
     model = mjx.put_model(mj_model)
 
-    @partial(nnx.jit, static_argnames=("n",))
+    @partial(nnx.jit, static_argnames=["n"])
     def jit_step_n(sim, n: int):
-        return sim.step_n(model, n)
+        return sim.step_n(model, n, unroll)
 
     @nnx.jit
     def jit_reset(sim):

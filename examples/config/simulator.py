@@ -56,15 +56,15 @@ class PracticalSimulator(SimEvaluateTrait):
         return PracticalSimulator._step(self, model)
 
     @staticmethod
-    @partial(nnx.jit, static_argnames=("n",), inline=True)
-    def _step_n(this: "PracticalSimulator", model: mjx.Model, n: int) -> "PracticalSimulator":
+    @partial(nnx.jit, static_argnames=("n", "unroll"), inline=True)
+    def _step_n(this: "PracticalSimulator", model: mjx.Model, n: int, unroll: int = 1) -> "PracticalSimulator":
         def body_fn(carry: "PracticalSimulator", _x) -> tuple["PracticalSimulator", None]:
             return PracticalSimulator._step(carry, model), None
 
-        return jax.lax.scan(body_fn, this, length=n)[0]
+        return jax.lax.scan(body_fn, this, length=n, unroll=unroll)[0]
 
-    def step_n(self, model: mjx.Model, n: int) -> Self:
-        return PracticalSimulator._step_n(self, model, n)
+    def step_n(self, model: mjx.Model, n: int, unroll: int = 1) -> Self:
+        return PracticalSimulator._step_n(self, model, n, unroll)
 
     @partial(nnx.jit, inline=True)
     def reset(self, model: mjx.Model) -> Self:
@@ -131,19 +131,17 @@ class FoodRelocationSimulator(SimRenderTrait):
         return FoodRelocationSimulator._step(self, model)
 
     @staticmethod
-    @partial(nnx.jit, static_argnames=("n",), inline=True)
-    def _step_n(this: "FoodRelocationSimulator", model: mjx.Model, n: int) -> "FoodRelocationSimulator":
+    @partial(nnx.jit, static_argnames=("n", "unroll"), inline=True)
+    def _step_n(
+            this: "FoodRelocationSimulator", model: mjx.Model, n: int, unroll: int = 1
+    ) -> "FoodRelocationSimulator":
         def body_fn(carry: "FoodRelocationSimulator", _x) -> tuple["FoodRelocationSimulator", None]:
             return FoodRelocationSimulator._step(carry, model), None
 
-        return jax.lax.scan(
-            body_fn,
-            this,
-            length=n,
-        )[0]
+        return jax.lax.scan(body_fn, this, length=n, unroll=unroll)[0]
 
-    def step_n(self, model: mjx.Model, n: int) -> Self:
-        return FoodRelocationSimulator._step_n(self, model, n)
+    def step_n(self, model: mjx.Model, n: int, unroll: int = 1) -> Self:
+        return FoodRelocationSimulator._step_n(self, model, n, unroll)
 
     def reset(self, model: mjx.Model) -> Self:
         parent_sim = self._parent_sim.reset(model)
