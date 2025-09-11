@@ -205,7 +205,7 @@ class BatchedRobots:
         )
 
     @partial(jax.jit, inline=True)
-    def _set_ctrl_mjx(self, data: mjx.Data, ctrl: jax.Array) -> mjx.Data:
+    def set_ctrl(self, data: mjx.Data, ctrl: jax.Array) -> mujoco.MjData | mjx.Data:
         power_and_torque = ctrl @ self.two_wheel_differential_move_matrix_T
         move = self.xdirections * power_and_torque[:, 0:1]
         torque = power_and_torque[:, 1]
@@ -213,7 +213,5 @@ class BatchedRobots:
         new_ctrl = data.ctrl.at[self.ids.x_actuator_ids].set(move[:, 0])
         new_ctrl = new_ctrl.at[self.ids.y_actuator_ids].set(move[:, 1])
         new_ctrl = new_ctrl.at[self.ids.r_actuator_ids].set(torque)
-        return data.replace(ctrl=new_ctrl)
 
-    def set_ctrl(self, data: mjx.Data, ctrl: jax.Array) -> mujoco.MjData | mjx.Data:
-        return self._set_ctrl_mjx(data, ctrl)
+        return data.replace(ctrl=new_ctrl)
