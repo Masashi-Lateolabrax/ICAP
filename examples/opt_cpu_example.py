@@ -1,9 +1,10 @@
 import os
 
-NUM_CPU = 10
+NUM_CPU = 3
 os.environ["XLA_FLAGS"] = f"--xla_force_host_platform_device_count={NUM_CPU}"
 
 import time
+from functools import partial
 
 import numpy as np
 from cmaes import CMA
@@ -11,103 +12,129 @@ from icecream import ic
 
 import jax
 import jax.numpy as jnp
+from flax import nnx
 
 ic(jax.devices("cpu"))
 
+from mujoco import mjx
+
 from framework.prelude import Settings
-from framework.utils import monitor_gpu_memory, configure_gpu_optimization
 
 from config import PracticalController, PracticalSimulator
 
 
 def opt_cpu_example():
-    print("Initializing simulation...")
+    print("Initializing CPU-optimized simulation...")
 
-    gpu_available = configure_gpu_optimization()
     settings = Settings()
 
-    population_size = 10
+    # Program Settings Summary
+    population_size = 100
+    batch_size = NUM_CPU  # Use number of CPU devices as batch size
     episode_length = int(90 / settings.Simulation.TIME_STEP)
-    batch_steps = 1000  # Number of steps to batch together
+    batch_steps = 100  # Number of steps to batch together
+    unroll = 4
+    gc_frequency = 200  # Garbage collection frequency (steps)
+    cma_sigma = 0.1
+    random_seed = 0
+
+    print(f"\n{'=' * 60}")
+    print(f"PROGRAM SETTINGS SUMMARY")
+    print(f"{'=' * 60}")
+    print(f"  Population size: {population_size}")
+    print(f"  Batch size: {batch_size}")
+    print(f"  Episode length: {episode_length} steps")
+    print(f"  Batch steps: {batch_steps}")
+    print(f"  Unroll factor: {unroll}")
+    print(f"  GC frequency: {gc_frequency} steps")
+    print(f"  Time step: {settings.Simulation.TIME_STEP}s")
+    print(f"  CPU devices: {NUM_CPU}")
+    print(f"{'=' * 60}")
+
+    dim = PracticalController.dim()
 
     optimizer = CMA(
-        mean=np.zeros((PracticalController.dim(),), dtype=np.float32),
-        sigma=0.1,
+        mean=np.zeros((dim,), dtype=np.float32),
+        sigma=cma_sigma,
         population_size=population_size,
     )
 
-    cpu_devices = jax.devices("cpu")[0:NUM_CPU]
-    parameters = jnp.array([optimizer.ask() for _ in range(NUM_CPU)])
-    rngs: jax.Array = jax.random.split(jax.random.PRNGKey(0), NUM_CPU)
+    parameters = jnp.array([optimizer.ask() for _ in range(batch_size)])
 
     print("Creating simulator...")
     init_start = time.perf_counter()
 
-    def sim_initializer(s, p, r):
-        controller = PracticalController(p)
-        mj_model, sim = PracticalSimulator.new(s, controller, r)
-        return sim
+    mj_model, simulators = PracticalSimulator.new(
+        settings,
+        PracticalController(jnp.zeros(dim)),
+        jax.random.PRNGKey(random_seed)
+    )
+    model = mjx.put_model(mj_model)
 
-    simulators = jax.vmap(sim_initializer, in_axes=(None, 0, 0))(settings, parameters, rngs)
+    @partial(nnx.jit, static_argnames=("n",))
+    def jit_duplicate_sim(sim: PracticalSimulator, n: int):
+        _c, sims = jax.lax.scan(
+            lambda c, _x: (c, c.reset(model)),
+            init=sim,
+            xs=jnp.ones((n,), dtype=jnp.int32),
+        )
+        return sims
+
+    @partial(nnx.jit, donate_argnames=("sims",))
+    def jit_set_params(sims, params):
+        return jax.vmap(lambda s, p: s.update(controller=PracticalController(p)))(sims, params)
+
+    @partial(nnx.jit, static_argnames=("n",), donate_argnames=("sims",))
+    def jit_step_n(sims, n: int):
+        return jax.vmap(lambda s: s.step_n(model, n, unroll))(sims)
+
+    @partial(nnx.jit, donate_argnames=("sims",))
+    def jit_reset(sims):
+        return jax.vmap(lambda sim: sim.reset(model))(sims)
+
     init_time = time.perf_counter() - init_start
     print(f"Simulator initialization: {init_time:.2f}s")
-
-    if gpu_available:
-        print("\nGPU status after initialization:")
-        monitor_gpu_memory()
 
     # Warmup run to compile JIT functions
     print("\nPerforming JIT warmup...")
     warmup_start = time.perf_counter()
-    # simulators = jax.pmap(lambda sim: sim.step(), devices=cpu_devices)(simulators)
-    simulators = jax.vmap(lambda sim: sim.step())(simulators)
+    simulators = simulators.step_n(model, batch_steps)
     warmup_time = time.perf_counter() - warmup_start
     print(f"JIT warmup completed: {warmup_time:.2f}s")
 
-    if gpu_available:
-        print("\nGPU status after JIT warmup:")
-        monitor_gpu_memory()
+    # Reset simulators before main simulation
+    print("\nResetting simulators...")
+    reset_start = time.perf_counter()
+    simulators = simulators.reset(model)
+    reset_time = time.perf_counter() - reset_start
+    print(f"Simulator reset completed: {reset_time:.2f}s")
 
-    # Main simulation loop using multi-step batching for better performance
+    # Set up batched simulators
+    print("\nSetting up batched simulators...")
+    simulators = jit_duplicate_sim(simulators, batch_size)
+    simulators = jit_set_params(simulators, parameters)
+    print(f"Batched simulators ready: {simulators.shape[0]} instances")
+
+    # Main simulation loop using multistep batching for better performance
     print(f"\nStarting main simulation ({episode_length} steps, {batch_steps} steps per batch)...")
-    print_timer = time.perf_counter()
-    sim_start = time.perf_counter()
+    sim_start = step_end = time.perf_counter()
 
     completed_steps = 0
-    jax.profiler.start_trace(f"./jax_trace")
     while completed_steps < episode_length:
         step_start = time.perf_counter()
-
         steps_to_run = min(batch_steps, episode_length - completed_steps)
-        simulators = jax.pmap(lambda sim: sim.step_n(steps_to_run), devices=cpu_devices)(simulators)
+        simulators = jax.vmap(jit_step_n)(simulators, steps_to_run)
         completed_steps += steps_to_run
-
         step_end = time.perf_counter()
 
-        if completed_steps == episode_length or (step_end - print_timer) > 1.0:
-            print_timer = step_end
+        d_time = step_end - step_start
+        steps_per_sec = steps_to_run / d_time
 
-            sim_time = step_end - step_start
-            steps_per_sec = steps_to_run / sim_time
-            print(f"\nStep {completed_steps}/{episode_length} - {steps_per_sec:.1f} steps/sec")
+        print(f"\n[{d_time:.2f}s] Step {completed_steps}/{episode_length}, {steps_per_sec:.1f} steps/s")
 
-            if gpu_available:
-                monitor_gpu_memory()
-    jax.profiler.stop_trace()
-
-    sim_time = time.perf_counter() - sim_start
+    sim_time = step_end - sim_start
     total_steps_per_sec = episode_length / sim_time
     print(f"\nSimulation completed: {sim_time:.2f}s ({total_steps_per_sec:.1f} steps/sec)")
-
-    if gpu_available:
-        print("\nFinal GPU status:")
-        monitor_gpu_memory()
-
-    def extract_loss(sim: PracticalSimulator) -> jax.Array:
-        return sim.evaluate()["loss"]
-
-    losses = jax.vmap(extract_loss)(simulators)
-    _losses = np.array(losses)
 
     # Performance summary
     total_time = init_time + warmup_time + sim_time
@@ -121,7 +148,7 @@ def opt_cpu_example():
     print(f"  Total: {total_time:.2f}s")
     print(f"\nThroughput:")
     print(f"  Steps per second: {total_steps_per_sec:.1f}")
-    print(f"  Efficiency: {((NUM_CPU * episode_length) / sim_time) / 1000:.3f}k individual-steps/sec")
+    print(f"  Efficiency: {((batch_size * episode_length) / sim_time) / 1000:.3f}k individual-steps/sec")
     print(f"{'=' * 60}")
 
 
