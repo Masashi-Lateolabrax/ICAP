@@ -26,8 +26,7 @@ from mujoco import mjx
 from framework.prelude import *
 from framework.utils import (
     configure_gpu_optimization,
-    monitor_gpu_memory,
-    monitor_gpu_health,
+    monitor_comprehensive_gpu,
     force_garbage_collection
 )
 
@@ -96,7 +95,7 @@ def opt_gpu_example():
     print(f"Simulator initialization: {init_time:.2f}s")
 
     print("\nGPU status after initialization:")
-    monitor_gpu_memory()
+    monitor_comprehensive_gpu()
 
     # Warmup run to compile JIT functions
     print("\nPerforming JIT warmup...")
@@ -106,7 +105,7 @@ def opt_gpu_example():
     print(f"JIT warmup completed: {warmup_time:.2f}s")
 
     print("\nGPU status after JIT warmup:")
-    monitor_gpu_memory()
+    monitor_comprehensive_gpu()
 
     # Reset simulators before main simulation
     print("\nResetting simulators...")
@@ -116,7 +115,7 @@ def opt_gpu_example():
     print(f"Simulator reset completed: {reset_time:.2f}s")
 
     print("\nGPU status after simulator reset:")
-    monitor_gpu_memory()
+    monitor_comprehensive_gpu()
 
     # Main simulation loop using multistep batching for better performance
     print(f"\nStarting main simulation ({episode_length} steps, {batch_steps} steps per batch)...")
@@ -138,8 +137,8 @@ def opt_gpu_example():
 
         print(f"\n[{d_time:.2f}s] Step {completed_steps}/{episode_length}, {steps_per_sec:.1f} steps/s")
 
-        # Monitor GPU health with centralized utility
-        monitor_gpu_health()
+        # Monitor comprehensive GPU metrics including clocks
+        monitor_comprehensive_gpu()
 
         # Force garbage collection every 200 steps to prevent memory fragmentation
         # This is essential for long-running simulations. If you run without this,
@@ -148,14 +147,12 @@ def opt_gpu_example():
             force_garbage_collection()
             print(f"GC triggered at step {completed_steps}")
 
-        monitor_gpu_memory()
-
     sim_time = step_end - sim_start
     total_steps_per_sec = episode_length / sim_time
     print(f"\nSimulation completed: {sim_time:.2f}s ({total_steps_per_sec:.1f} steps/sec)")
 
     print("\nFinal GPU status:")
-    monitor_gpu_memory()
+    monitor_comprehensive_gpu()
 
     # Performance summary
     total_time = init_time + warmup_time + sim_time
