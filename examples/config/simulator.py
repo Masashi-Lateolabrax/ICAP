@@ -46,25 +46,16 @@ class PracticalSimulator(SimEvaluateTrait):
         mj_model, sim = SimulatorWithCtrl.new(settings, controller, rngs)
         return mj_model, cls(_parent_sim=sim)
 
-    @staticmethod
-    @partial(nnx.jit, inline=True, donate_argnames=("this",))
-    def _step(this: 'PracticalSimulator', model: mjx.Model) -> 'PracticalSimulator':
-        this: "PracticalSimulator" = this.update(_parent_sim=this._parent_sim.step(model))
-        return this
-
+    @partial(nnx.jit, inline=True, donate_argnames=("self",))
     def step(self, model: mjx.Model) -> Self:
-        return PracticalSimulator._step(self, model)
+        return self.update(_parent_sim=self._parent_sim.step(model))
 
-    @staticmethod
-    @partial(nnx.jit, static_argnames=("n", "unroll"), inline=True, donate_argnames=("this",))
-    def _step_n(this: "PracticalSimulator", model: mjx.Model, n: int, unroll: int = 1) -> "PracticalSimulator":
-        def body_fn(carry: "PracticalSimulator", _x) -> tuple["PracticalSimulator", None]:
-            return PracticalSimulator._step(carry, model), None
-
-        return jax.lax.scan(body_fn, this, length=n, unroll=unroll)[0]
-
+    @partial(nnx.jit, static_argnames=("n", "unroll"), inline=True, donate_argnames=("self",))
     def step_n(self, model: mjx.Model, n: int, unroll: int = 1) -> Self:
-        return PracticalSimulator._step_n(self, model, n, unroll)
+        def body_fn(carry: "PracticalSimulator", _x) -> tuple["PracticalSimulator", None]:
+            return carry.step(model), None
+
+        return jax.lax.scan(body_fn, self, length=n, unroll=unroll)[0]
 
     @partial(nnx.jit, inline=True)
     def reset(self, model: mjx.Model) -> Self:
@@ -113,11 +104,10 @@ class FoodRelocationSimulator(SimRenderTrait):
         mj_model, parent_sim = SimulatorWithCtrl.new(settings, controller, rngs)
         return mj_model, cls(_parent_sim=parent_sim)
 
-    @staticmethod
-    @partial(nnx.jit, inline=True)
-    def _step(this: 'FoodRelocationSimulator', model: mjx.Model) -> 'FoodRelocationSimulator':
-        this = this.update(
-            _parent_sim=this._parent_sim.step(model)
+    @partial(nnx.jit, inline=True, donate_argnames=("self",))
+    def step(self, model: mjx.Model) -> Self:
+        this = self.update(
+            _parent_sim=self._parent_sim.step(model)
         )
 
         nest_dir = -this.food_items.positions
@@ -127,21 +117,12 @@ class FoodRelocationSimulator(SimRenderTrait):
 
         return this.update(data=new_data)
 
-    def step(self, model: mjx.Model) -> Self:
-        return FoodRelocationSimulator._step(self, model)
-
-    @staticmethod
-    @partial(nnx.jit, static_argnames=("n", "unroll"), inline=True)
-    def _step_n(
-            this: "FoodRelocationSimulator", model: mjx.Model, n: int, unroll: int = 1
-    ) -> "FoodRelocationSimulator":
-        def body_fn(carry: "FoodRelocationSimulator", _x) -> tuple["FoodRelocationSimulator", None]:
-            return FoodRelocationSimulator._step(carry, model), None
-
-        return jax.lax.scan(body_fn, this, length=n, unroll=unroll)[0]
-
+    @partial(nnx.jit, static_argnames=("n", "unroll"), inline=True, donate_argnames=("self",))
     def step_n(self, model: mjx.Model, n: int, unroll: int = 1) -> Self:
-        return FoodRelocationSimulator._step_n(self, model, n, unroll)
+        def body_fn(carry: "FoodRelocationSimulator", _x) -> tuple["FoodRelocationSimulator", None]:
+            return carry.step(model), None
+
+        return jax.lax.scan(body_fn, self, length=n, unroll=unroll)[0]
 
     def reset(self, model: mjx.Model) -> Self:
         parent_sim = self._parent_sim.reset(model)
