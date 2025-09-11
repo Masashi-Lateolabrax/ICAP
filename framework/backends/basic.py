@@ -156,7 +156,7 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
         max_pheromone = np.max(pheromone)
         total_pheromone = np.sum(pheromone)
 
-        normalized_pheromone = pheromone / max_pheromone
+        normalized_pheromone = pheromone / (max_pheromone + 1e-6)
         colored_pheromone = np.stack([
             normalized_pheromone,
             np.zeros_like(normalized_pheromone),
