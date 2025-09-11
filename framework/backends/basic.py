@@ -141,7 +141,7 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
 
         return jax.lax.scan(body_fn, self, length=n, unroll=unroll)[0]
 
-    @partial(jax.jit, inline=True, donate_argnames=("self",))
+    @partial(jax.jit, inline=True)
     def reset(self, model: mjx.Model) -> Self:
         return self.update(
             data=mjx.make_data(model),

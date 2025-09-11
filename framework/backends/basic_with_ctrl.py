@@ -100,7 +100,7 @@ class SimulatorWithCtrl(SimRenderTrait, SimEvaluateTrait, Generic[ControllerT]):
 
         return jax.lax.scan(body_fn, self, length=n, unroll=unroll)[0]
 
-    @partial(nnx.jit, inline=True, donate_argnames=("self",))
+    @partial(nnx.jit, inline=True)
     def reset(self, model: mjx.Model) -> Self:
         return self.update(
             _parent_sim=self._parent_sim.reset(model),
