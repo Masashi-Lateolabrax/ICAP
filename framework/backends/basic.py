@@ -7,7 +7,7 @@ import mujoco.mjx as mjx
 import numpy as np
 import jax
 import jax.numpy as jnp
-from flax.struct import dataclass as jax_dataclass
+from flax.struct import field, dataclass as jax_dataclass
 
 from ..prelude import Settings, SimRenderTrait, SimPheromoneTrait
 from ..pheromone import PheromoneField, PheromoneFieldCellSpec, add_pheromone_cells_to_mjspec
@@ -16,6 +16,9 @@ from ..pheromone import PheromoneField, PheromoneFieldCellSpec, add_pheromone_ce
 @jax_dataclass
 class Consts:
     dt: float
+    PHEROMONE_CELL_SIZE: float = field(pytree=False)
+    PHEROMONE_WIDTH: int = field(pytree=False)
+    PHEROMONE_HEIGHT: int = field(pytree=False)
 
 
 @jax_dataclass
@@ -84,6 +87,9 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
         return mj_model, cls(
             consts=Consts(
                 dt=settings.Simulation.TIME_STEP,
+                PHEROMONE_CELL_SIZE=settings.Pheromone.CELL_SIZE,
+                PHEROMONE_WIDTH=settings.Pheromone.WIDTH_NUM,
+                PHEROMONE_HEIGHT=settings.Pheromone.HEIGHT_NUM
             ),
 
             _data=data,
@@ -97,12 +103,28 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
     def calc_nearest_pheromone_cell_indices(
             self, positions: jax.Array
     ) -> tuple[jax.Array, jax.Array]:
-        dists = jnp.linalg.norm(positions[:, None, None, :2] - self._pheromone_cell_pos[None, :, :, :2], axis=3)
-        yi, xi = jax.vmap(
-            lambda d: jnp.unravel_index(jnp.argmin(d), d.shape),
-            in_axes=0,
-            out_axes=0
-        )(dists)
+        # Use precomputed constants instead of runtime shape extraction
+        width_num = self.consts.PHEROMONE_WIDTH
+        height_num = self.consts.PHEROMONE_HEIGHT
+        cell_size = self.consts.PHEROMONE_CELL_SIZE
+
+        # Precomputed offsets
+        width_offset = (width_num - 1) * 0.5
+        height_offset = (height_num - 1) * 0.5
+
+        # Direct coordinate conversion without intermediate clipping
+        pos_xy = positions[:, :2]
+
+        # Convert to grid indices with single clamp operation
+        xi = jnp.clip(
+            jnp.round(pos_xy[:, 0] / cell_size + width_offset).astype(jnp.int32),
+            min=0, max=width_num - 1
+        )
+        yi = jnp.clip(
+            jnp.round(height_offset - pos_xy[:, 1] / cell_size).astype(jnp.int32),
+            min=0, max=height_num - 1
+        )
+
         return xi, yi
 
     @partial(jax.jit, inline=True, donate_argnames=("self",))
