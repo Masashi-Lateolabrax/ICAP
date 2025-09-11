@@ -293,11 +293,9 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
             const: Consts
     ) -> jax.Array:
         subs = (robot_positions[:, :2] - food_position[None, :2])
-        distance = jnp.clip(
-            jnp.linalg.norm(subs, axis=1) - const.OFFSET_FOOD_AND_ROBOT,
-            a_min=0
-        )
-        return -jnp.sum(jnp.exp(-(distance ** 2) / const.SIGMA_FOOD_AND_ROBOT)) * const.GAIN_FOOD_AND_ROBOT
+        distance_squared = jnp.sum(subs * subs, axis=1) - const.OFFSET_FOOD_AND_ROBOT ** 2
+        distance_squared = jnp.maximum(distance_squared, 0)
+        return -jnp.sum(jnp.exp(-distance_squared / const.SIGMA_FOOD_AND_ROBOT)) * const.GAIN_FOOD_AND_ROBOT
 
     @staticmethod
     @partial(jax.jit, inline=True)
