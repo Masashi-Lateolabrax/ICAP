@@ -340,7 +340,7 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
 
         # Get pheromone sensor values
         inputs = inputs.update(
-            # pheromone=this.get_pheromone(this.robots.positions)
+            pheromone=this.get_pheromone(this.robots.positions)
         )
 
         # Relocate food items if necessary
