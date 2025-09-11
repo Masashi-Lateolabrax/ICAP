@@ -282,10 +282,15 @@ class PheromoneField:
 
     @staticmethod
     @partial(jax.jit, inline=True)
-    def _get(values, xs, ys) -> jnp.ndarray:
-        shape = values.shape
+    def _clip_indices(xs: jax.Array, ys: jax.Array, shape: tuple) -> tuple[jax.Array, jax.Array]:
         xs = jnp.clip(xs.astype(jnp.int32), 0, shape[1] - 1)
         ys = jnp.clip(ys.astype(jnp.int32), 0, shape[0] - 1)
+        return xs, ys
+
+    @staticmethod
+    @partial(jax.jit, inline=True)
+    def _get(values, xs, ys) -> jnp.ndarray:
+        xs, ys = PheromoneField._clip_indices(xs, ys, values.shape)
         return values[ys, xs]
 
     def get_gas(self, xs, ys) -> jnp.ndarray:
@@ -297,9 +302,7 @@ class PheromoneField:
     @staticmethod
     @partial(jax.jit, inline=True)
     def _add(values: jax.Array, xs: jax.Array, ys: jax.Array, additions: jax.Array):
-        shape = values.shape
-        xs = jnp.clip(xs.astype(jnp.int32), 0, shape[1] - 1)
-        ys = jnp.clip(ys.astype(jnp.int32), 0, shape[0] - 1)
+        xs, ys = PheromoneField._clip_indices(xs, ys, values.shape)
         return values.at[ys, xs].add(additions)
 
     def add_liquid(self, xs, ys, additions) -> Self:
