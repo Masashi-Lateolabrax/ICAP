@@ -239,7 +239,6 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
             )
         )
 
-
     @partial(jax.jit, inline=True)
     def _check_food_in_nest(self) -> jax.Array:
         diff = self.food_items.positions[:, :2] - self.consts.NEST_POSITION
@@ -265,7 +264,7 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
         return random_xy
 
     @partial(jax.jit, inline=True)
-    def _relocate_food_items(self) -> tuple[Self, jax.Array]:
+    def _relocate_food_items(self) -> tuple[mjx.Data, jax.Array, jax.Array]:
         done_relocate = self._check_food_in_nest()
         not_relocate = jnp.logical_not(done_relocate)
         new_rngs = self.rngs_for_relocating_food
@@ -281,12 +280,7 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
 
             data = self.food_items.set_pos(data, idx, new_position)
 
-        this = self.update(
-            data=data,
-            rngs_for_relocating_food=new_rngs
-        )
-
-        return this, done_relocate
+        return data, new_rngs, done_relocate
 
     @staticmethod
     @partial(jax.jit, inline=True)
