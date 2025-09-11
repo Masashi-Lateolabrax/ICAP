@@ -239,11 +239,9 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
 
     @partial(jax.jit, inline=True)
     def _check_food_in_nest(self) -> jax.Array:
-        distance_between_food_and_nest = jnp.linalg.norm(
-            self.food_items.positions[:, :2] - self.consts.NEST_POSITION,
-            axis=1
-        )
-        mask = distance_between_food_and_nest < self.consts.NEST_RADIUS
+        diff = self.food_items.positions[:, :2] - self.consts.NEST_POSITION
+        distance_squared = jnp.sum(diff * diff, axis=1)
+        mask = distance_squared < (self.consts.NEST_RADIUS ** 2)
         return mask
 
     @partial(jax.jit, inline=True)
