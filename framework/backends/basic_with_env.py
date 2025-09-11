@@ -301,10 +301,9 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
     @partial(jax.jit, inline=True)
     def _calc_loss_between_food_and_nest(
             food_position: jax.Array,
-            nest_position: jax.Array,
             const: Consts
     ) -> jax.Array:
-        diff = food_position[:2] - nest_position[:2]
+        diff = food_position[:2] - const.NEST_POSITION[:2]
         distance_squared = jnp.sum(diff * diff) - const.OFFSET_FOOD_AND_NEST ** 2
         distance_squared = jnp.maximum(distance_squared, 0)
         return -jnp.sum(jnp.exp(-distance_squared / const.SIGMA_FOOD_AND_NEST)) * const.GAIN_FOOD_AND_NEST
@@ -340,12 +339,16 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
         this, relocation_occurred = this._relocate_food_items()
 
         # Calculate losses
-        fr_losses = jax.vmap(lambda x: BasicSimulatorWithEnv._calc_loss_between_food_and_robots(
-            x, this.robots.positions, this.consts
-        ))(this.food_items.positions)
-        fn_losses = jax.vmap(lambda x: BasicSimulatorWithEnv._calc_loss_between_food_and_nest(
-            x, this.consts.NEST_POSITION, this.consts
-        ))(this.food_items.positions)
+        fr_losses = jax.vmap(
+            BasicSimulatorWithEnv._calc_loss_between_food_and_robots,
+            in_axes=(0, None, None),
+            out_axes=0
+        )(this.food_items.positions, this.robots.positions, this.consts)
+        fn_losses = jax.vmap(
+            BasicSimulatorWithEnv._calc_loss_between_food_and_nest,
+            in_axes=(0, None),
+            out_axes=0
+        )(this.food_items.positions, this.consts)
         losses = fr_losses + fn_losses + this.loss_offset
 
         loss = jnp.sum(losses, keepdims=True)
