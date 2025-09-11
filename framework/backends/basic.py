@@ -94,24 +94,16 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
         )
 
     @partial(jax.jit, inline=True)
-    def _calc_nearest_pheromone_cell_indices(
+    def calc_nearest_pheromone_cell_indices(
             self, positions: jax.Array
-    ) -> jax.Array:
+    ) -> tuple[jax.Array, jax.Array]:
         dists = jnp.linalg.norm(positions[:, None, None, :2] - self._pheromone_cell_pos[None, :, :, :2], axis=3)
-        return jnp.array(jax.vmap(
+        yi, xi = jax.vmap(
             lambda d: jnp.unravel_index(jnp.argmin(d), d.shape),
             in_axes=0,
             out_axes=0
-        )(dists))
-
-    def get_pheromone(self, positions: jax.Array) -> jax.Array:
-        nearest_indices = self._calc_nearest_pheromone_cell_indices(positions)
-        return self.pheromone.get_gas(nearest_indices[:, 1], nearest_indices[:, 0])
-
-    def add_pheromone(self, positions: jax.Array, values: jax.Array) -> PheromoneField:
-        nearest_indices = self._calc_nearest_pheromone_cell_indices(positions)
-        new_pheromone = self.pheromone.add_liquid(nearest_indices[:, 1], nearest_indices[:, 0], values)
-        return new_pheromone
+        )(dists)
+        return xi, yi
 
     @partial(jax.jit, inline=True, donate_argnames=("self",))
     def step(self, model: mjx.Model) -> Self:
