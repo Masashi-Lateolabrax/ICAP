@@ -330,16 +330,12 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
         )
 
         # Emit rays and get inputs for robots
-        depth_sensor: tuple[jax.Array, jax.Array] = emit_rays(
+        depths, _ = emit_rays(
             model, this.data, this.robots, this.consts.NUM_RAYS
         )
-        depths, _ = depth_sensor  # shape (num_robots, NUM_RAYS)
+        # Get pheromone sensor values and update inputs in one step
         inputs = this.robot_inputs.update(
-            ray=jnp.reciprocal(depths + 1e-6)
-        )
-
-        # Get pheromone sensor values
-        inputs = inputs.update(
+            ray=jnp.reciprocal(depths + 1e-6),
             pheromone=this.get_pheromone(this.robots.positions)
         )
 
