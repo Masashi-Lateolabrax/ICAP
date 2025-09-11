@@ -305,39 +305,55 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
         distance_squared = jnp.maximum(distance_squared, 0)
         return -jnp.sum(jnp.exp(-distance_squared / const.SIGMA_FOOD_AND_NEST)) * const.GAIN_FOOD_AND_NEST
 
+    def _action_step(self) -> Self:
+        return self.update(
+            data=self.robots.set_ctrl(self.data, self.robot_outputs.wheels),
+            pheromone=self.pheromone.add_liquid(
+                self._robot_pheromone_x_idx, self._robot_pheromone_y_idx, self.robot_outputs.pheromone
+            )
+        )
+
+    def _update_step(self, model: mjx.Model) -> tuple[Self, jax.Array]:
+        data, new_rngs, relocation_occurred = self._relocate_food_items()
+
+        parent_sim = self._parent_sim.update(data=data)
+        parent_sim = parent_sim.step(model)
+
+        return (
+            self.update(
+                _parent_sim=parent_sim,
+                robots=self.robots.update(parent_sim.data),
+                food_items=self.food_items.update(parent_sim.data),
+                rngs_for_relocating_food=new_rngs
+            ),
+            relocation_occurred
+        )
+
+    def _collect_input_step(self, model: mjx.Model) -> Self:
+        pheromone_x_idx, pheromone_y_idx = self._parent_sim.calc_nearest_pheromone_cell_indices(self.robots.positions)
+
+        depths, _ = emit_rays(
+            model, self.data, self.robots, self.consts.NUM_RAYS
+        )
+
+        pheromone_values = self.pheromone.get_gas(pheromone_x_idx, pheromone_y_idx)
+
+        inputs = self.robot_inputs.update(
+            ray=jnp.reciprocal(depths + 1e-6),
+            pheromone=pheromone_values
+        )
+
+        return self.update(
+            robot_inputs=inputs,
+            _robot_pheromone_x_idx=pheromone_x_idx,
+            _robot_pheromone_y_idx=pheromone_y_idx
+        )
+
     @partial(jax.jit, inline=True, donate_argnames=("self",))
     def step(self, model: mjx.Model) -> Self:
-        # Calculate pheromone indices once for both add and get operations  
-        robot_positions = self.robots.positions
-        pheromone_x_indices, pheromone_y_indices = self._parent_sim.calc_nearest_pheromone_cell_indices(robot_positions)
-
-        # First, apply robot outputs to the simulation
-        this = self.update(
-            data=self.robots.set_ctrl(self.data, self.robot_outputs.wheels),
-            pheromone=self.add_pheromone(self.robots.positions, self.robot_outputs.pheromone)
-        )
-
-        # Step the basic simulator
-        this = this.update(
-            _parent_sim=this._parent_sim.step(model)
-        )
-        this = this.update(
-            robots=this.robots.update(this.data),
-            food_items=this.food_items.update(this.data),
-        )
-
-        # Emit rays and get inputs for robots
-        depths, _ = emit_rays(
-            model, this.data, this.robots, this.consts.NUM_RAYS
-        )
-        # Get pheromone sensor values and update inputs in one step
-        inputs = this.robot_inputs.update(
-            ray=jnp.reciprocal(depths + 1e-6),
-            pheromone=this.get_pheromone(this.robots.positions)
-        )
-
-        # Relocate food items if necessary
-        this, relocation_occurred = this._relocate_food_items()
+        this = self._action_step()
+        this, relocation_occurred = this._update_step(model)
+        this = this._collect_input_step(model)
 
         # Calculate losses
         fr_losses = jax.vmap(
@@ -356,7 +372,6 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
         loss_offset = this.loss_offset + jnp.dot(relocation_occurred, losses)
 
         return this.update(
-            robot_inputs=inputs,
             loss=loss,
             _loss_offset=loss_offset
         )
