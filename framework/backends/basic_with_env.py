@@ -137,6 +137,8 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
 
     robot_inputs: RobotInputs
     robot_outputs: RobotOutputs
+    _robot_pheromone_x_idx: jax.Array
+    _robot_pheromone_y_idx: jax.Array
 
     loss: jax.Array
 
@@ -213,6 +215,8 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
 
             robot_inputs=robot_inputs,
             robot_outputs=robot_outputs,
+            _robot_pheromone_x_idx=jnp.zeros((robots.num_robots,), dtype=jnp.int32),
+            _robot_pheromone_y_idx=jnp.zeros((robots.num_robots,), dtype=jnp.int32),
 
             loss=jnp.zeros((1,), dtype=jnp.float32),
 
