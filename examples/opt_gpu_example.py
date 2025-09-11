@@ -42,16 +42,33 @@ def opt_gpu_example():
 
     settings = Settings()
 
+    # Program Settings Summary
     population_size = 100
     batch_size = 3
     episode_length = int(90 / settings.Simulation.TIME_STEP)
     batch_steps = 100  # Number of steps to batch together
     unroll = 4
+    gc_frequency = 200  # Garbage collection frequency (steps)
+    cma_sigma = 0.1
+    random_seed = 0
+    
+    print(f"\n{'=' * 60}")
+    print(f"PROGRAM SETTINGS SUMMARY")
+    print(f"{'=' * 60}")
+    print(f"  Population size: {population_size}")
+    print(f"  Batch size: {batch_size}")
+    print(f"  Episode length: {episode_length} steps")
+    print(f"  Batch steps: {batch_steps}")
+    print(f"  Unroll factor: {unroll}")
+    print(f"  GC frequency: {gc_frequency} steps")
+    print(f"  Time step: {settings.Simulation.TIME_STEP}s")
+    print(f"{'=' * 60}")
+
     dim = PracticalController.dim()
 
     optimizer = CMA(
         mean=np.zeros((dim,), dtype=np.float32),
-        sigma=0.1,
+        sigma=cma_sigma,
         population_size=population_size,
     )
 
@@ -63,7 +80,7 @@ def opt_gpu_example():
     mj_model, simulators = PracticalSimulator.new(
         settings,
         PracticalController(jnp.zeros(dim)),
-        jax.random.PRNGKey(0)
+        jax.random.PRNGKey(random_seed)
     )
     model = mjx.put_model(mj_model)
 
@@ -140,10 +157,10 @@ def opt_gpu_example():
         # Monitor comprehensive GPU metrics including clocks
         monitor_comprehensive_gpu()
 
-        # Force garbage collection every 200 steps to prevent memory fragmentation
+        # Force garbage collection to prevent memory fragmentation
         # This is essential for long-running simulations. If you run without this,
         # you may observe degraded performance over time due to GPU memory fragmentation.
-        if completed_steps % 200 == 0:
+        if completed_steps % gc_frequency == 0:
             force_garbage_collection()
             print(f"GC triggered at step {completed_steps}")
 
