@@ -67,15 +67,16 @@ def _emit_n_rays(
         return _jitted_ray_fn(vec, model, data, robot_pos, body_id)
 
     delta_angle = 2 * jnp.pi / num_rays
-    angles = jnp.arange(num_rays) * delta_angle  # Shape (num_rays,)
-    cos = jnp.cos(angles)  # Shape (num_rays,)
-    sin = jnp.sin(angles)  # Shape (num_rays,)
-    horizontal_elements = cos * robot_xdir[0] - sin * robot_xdir[1]  # Shape (num_rays,)
-    vertical_elements = sin * robot_xdir[0] + cos * robot_xdir[1]  # Shape (num_rays,)
-    rotated_dirs = jnp.stack(
-        [horizontal_elements, vertical_elements, jnp.zeros(num_rays)],
-        axis=1
-    )  # Shape (num_rays, 3)
+    angles = jnp.arange(num_rays) * delta_angle
+    cos_angles, sin_angles = jnp.cos(angles), jnp.sin(angles)
+
+    rx0, rx1 = robot_xdir[0], robot_xdir[1]
+
+    rotated_dirs = jnp.stack([
+        cos_angles * rx0 - sin_angles * rx1,  # x components
+        sin_angles * rx0 + cos_angles * rx1,  # y components  
+        jnp.zeros(num_rays)  # z components
+    ], axis=1)
 
     dists, ids = jax.vmap(body_fn)(rotated_dirs)
     return dists, ids
