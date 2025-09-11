@@ -235,11 +235,6 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
             )
         )
 
-    def get_pheromone(self, positions: jax.Array) -> jax.Array:
-        return self._parent_sim.get_pheromone(positions)
-
-    def add_pheromone(self, positions: jax.Array, values: jax.Array) -> PheromoneField:
-        return self._parent_sim.add_pheromone(positions, values)
 
     @partial(jax.jit, inline=True)
     def _check_food_in_nest(self) -> jax.Array:
