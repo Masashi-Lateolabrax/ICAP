@@ -152,6 +152,10 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
         return self._parent_sim.data
 
     @property
+    def pheromone(self) -> PheromoneField:
+        return self._parent_sim.pheromone
+
+    @property
     def loss_offset(self) -> jax.Array:
         return self._loss_offset
 
