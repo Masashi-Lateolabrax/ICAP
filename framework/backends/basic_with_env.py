@@ -304,9 +304,10 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
             nest_position: jax.Array,
             const: Consts
     ) -> jax.Array:
-        distance = jnp.linalg.norm(food_position[:2] - nest_position[:2])
-        distance = jnp.clip(distance - const.OFFSET_FOOD_AND_NEST, a_min=0)
-        return -jnp.sum(jnp.exp(-(distance ** 2) / const.SIGMA_FOOD_AND_NEST)) * const.GAIN_FOOD_AND_NEST
+        diff = food_position[:2] - nest_position[:2]
+        distance_squared = jnp.sum(diff * diff) - const.OFFSET_FOOD_AND_NEST ** 2
+        distance_squared = jnp.maximum(distance_squared, 0)
+        return -jnp.sum(jnp.exp(-distance_squared / const.SIGMA_FOOD_AND_NEST)) * const.GAIN_FOOD_AND_NEST
 
     @partial(jax.jit, inline=True, donate_argnames=("self",))
     def step(self, model: mjx.Model) -> Self:
