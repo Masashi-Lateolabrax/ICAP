@@ -23,7 +23,7 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
     consts: Consts
 
     _data: mjx.Data
-    pheromone: PheromoneField
+    _pheromone: PheromoneField
 
     _pheromone_cell_pos: jax.Array
     _pheromone_cell_site_ids: jax.Array
@@ -31,6 +31,10 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
     @property
     def data(self) -> mjx.Data:
         return self._data
+
+    @property
+    def pheromone(self) -> PheromoneField:
+        return self._pheromone
 
     def _update_parent(self, **kwargs: dict) -> Self:
         return self
@@ -42,7 +46,7 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
             **kwargs
     ) -> Self:
         kwargs["_data"] = data
-        kwargs["pheromone"] = pheromone
+        kwargs["_pheromone"] = pheromone
         return self._update(**kwargs)
 
     @classmethod
@@ -83,7 +87,7 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
             ),
 
             _data=data,
-            pheromone=pheromone,
+            _pheromone=pheromone,
 
             _pheromone_cell_pos=jnp.array(pheromone_cell_pos),
             _pheromone_cell_site_ids=jnp.array(pheromone_cell_site_ids)
@@ -113,7 +117,7 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
     def step(self, model: mjx.Model) -> Self:
         return self.update(
             data=mjx.step(model, self.data),
-            pheromone=self.pheromone.update(self.consts.dt)
+            pheromone=self._pheromone.update(self.consts.dt)
         )
 
     @partial(jax.jit, static_argnames=("n", "unroll"), inline=True, donate_argnames=("self",))
@@ -127,15 +131,15 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
     def reset(self, model: mjx.Model) -> Self:
         return self.update(
             data=mjx.make_data(model),
-            pheromone=self.pheromone.reset()
+            pheromone=self._pheromone.reset()
         )
 
     def render(self, img_buf: np.ndarray, camera: mujoco.MjvCamera, renderer: mujoco.Renderer):
         mj_model = renderer.model
         mj_data = mjx.get_data(mj_model, self.data)
 
-        pheromone = np.array(self.pheromone.values_gas)
-        max_pheromone = np.max(pheromone) + 1e-12
+        pheromone = np.array(self._pheromone.values_gas)
+        max_pheromone = np.max(pheromone)
         total_pheromone = np.sum(pheromone)
 
         normalized_pheromone = pheromone / max_pheromone
