@@ -15,7 +15,7 @@ from ..pheromone import PheromoneField, PheromoneFieldCellSpec, add_pheromone_ce
 
 @jax_dataclass
 class Consts:
-    dt: float
+    dt: float = field(pytree=False)
     PHEROMONE_CELL_SIZE: float = field(pytree=False)
     PHEROMONE_WIDTH: int = field(pytree=False)
     PHEROMONE_HEIGHT: int = field(pytree=False)
