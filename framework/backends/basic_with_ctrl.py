@@ -83,33 +83,24 @@ class SimulatorWithCtrl(SimRenderTrait, SimEvaluateTrait, Generic[ControllerT]):
             controller=controller,
         )
 
-    @staticmethod
-    @partial(nnx.jit, inline=True, donate_argnames=("this",))
-    def _step(this: 'SimulatorWithCtrl', model: mjx.Model) -> 'SimulatorWithCtrl':
-        this = this.update(
-            _parent_sim=this._parent_sim.step(model)
-        )
-        this = this.update(
-            robot_outputs=this.controller.forward(this.robot_inputs)
-        )
-        return this
-
+    @partial(nnx.jit, inline=True, donate_argnames=("self",))
     def step(self, model: mjx.Model) -> Self:
-        return SimulatorWithCtrl._step(self, model)
+        this = self.update(
+            _parent_sim=self._parent_sim.step(model)
+        )
+        return this.update(
+            robot_outputs=self.controller.forward(this.robot_inputs)
+        )
 
-    @staticmethod
-    @partial(nnx.jit, static_argnames=("n", "unroll"), inline=True, donate_argnames=("this",))
-    def _step_n(this: "SimulatorWithCtrl", model: mjx.Model, n: int, unroll: int = 1) -> "SimulatorWithCtrl":
+    @partial(nnx.jit, static_argnames=("n", "unroll"), inline=True, donate_argnames=("self",))
+    def step_n(self, model: mjx.Model, n: int, unroll: int = 1) -> Self:
         def body_fn(carry: "SimulatorWithCtrl", _x) -> tuple["SimulatorWithCtrl", None]:
-            new_carry = SimulatorWithCtrl._step(carry, model)
+            new_carry = carry.step(model)
             return new_carry, None
 
-        return jax.lax.scan(body_fn, this, length=n, unroll=unroll)[0]
+        return jax.lax.scan(body_fn, self, length=n, unroll=unroll)[0]
 
-    def step_n(self, model: mjx.Model, n: int, unroll: int = 1) -> Self:
-        return SimulatorWithCtrl._step_n(self, model, n, unroll)
-
-    @partial(nnx.jit, inline=True)
+    @partial(nnx.jit, inline=True, donate_argnames=("self",))
     def reset(self, model: mjx.Model) -> Self:
         return self.update(
             _parent_sim=self._parent_sim.reset(model),
