@@ -94,7 +94,11 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
             self, positions: jax.Array
     ) -> jax.Array:
         dists = jnp.linalg.norm(positions[:, None, None, :2] - self._pheromone_cell_pos[None, :, :, :2], axis=3)
-        return jax.vmap(lambda d: jnp.array(jnp.unravel_index(jnp.argmin(d), d.shape)))(dists)
+        return jnp.array(jax.vmap(
+            lambda d: jnp.unravel_index(jnp.argmin(d), d.shape),
+            in_axes=0,
+            out_axes=0
+        )(dists))
 
     def get_pheromone(self, positions: jax.Array) -> jax.Array:
         nearest_indices = self._calc_nearest_pheromone_cell_indices(positions)
