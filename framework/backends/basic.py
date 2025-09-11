@@ -89,45 +89,35 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
             _pheromone_cell_site_ids=jnp.array(pheromone_cell_site_ids)
         )
 
-    @staticmethod
     @partial(jax.jit, inline=True)
     def _calc_nearest_pheromone_cell_indices(
-            this: "BasicSimulator", positions: jax.Array
+            self, positions: jax.Array
     ) -> jax.Array:
-        dists = jnp.linalg.norm(positions[:, None, None, :2] - this._pheromone_cell_pos[None, :, :, :2], axis=3)
+        dists = jnp.linalg.norm(positions[:, None, None, :2] - self._pheromone_cell_pos[None, :, :, :2], axis=3)
         return jax.vmap(lambda d: jnp.array(jnp.unravel_index(jnp.argmin(d), d.shape)))(dists)
 
     def get_pheromone(self, positions: jax.Array) -> jax.Array:
-        nearest_indices = BasicSimulator._calc_nearest_pheromone_cell_indices(self, positions)
+        nearest_indices = self._calc_nearest_pheromone_cell_indices(positions)
         return self.pheromone.get_gas(nearest_indices[:, 1], nearest_indices[:, 0])
 
     def add_pheromone(self, positions: jax.Array, values: jax.Array) -> PheromoneField:
-        nearest_indices = BasicSimulator._calc_nearest_pheromone_cell_indices(self, positions)
+        nearest_indices = self._calc_nearest_pheromone_cell_indices(positions)
         new_pheromone = self.pheromone.add_liquid(nearest_indices[:, 1], nearest_indices[:, 0], values)
         return new_pheromone
 
-    @staticmethod
-    @partial(jax.jit, inline=True, donate_argnames=("this",))
-    def _step(this: "BasicSimulator", model: mjx.Model):
-        this = this.update(
-            data=mjx.step(model, this.data),
-            pheromone=this.pheromone.update(this.consts.dt)
-        )
-        return this
-
+    @partial(jax.jit, inline=True, donate_argnames=("self",))
     def step(self, model: mjx.Model) -> Self:
-        return BasicSimulator._step(self, model)
+        return self.update(
+            data=mjx.step(model, self.data),
+            pheromone=self.pheromone.update(self.consts.dt)
+        )
 
-    @staticmethod
-    @partial(jax.jit, static_argnames=("n", "unroll"), inline=True, donate_argnames=("this",))
-    def _step_n(this: "BasicSimulator", model: mjx.Model, n: int, unroll: int = 1) -> "BasicSimulator":
-        def body_fn(carry: "BasicSimulator", _x) -> tuple["BasicSimulator", None]:
-            return BasicSimulator._step(carry, model), None
-
-        return jax.lax.scan(body_fn, this, length=n, unroll=unroll)[0]
-
+    @partial(jax.jit, static_argnames=("n", "unroll"), inline=True, donate_argnames=("self",))
     def step_n(self, model: mjx.Model, n: int, unroll: int = 1) -> Self:
-        return BasicSimulator._step_n(self, model, n, unroll)
+        def body_fn(carry: "BasicSimulator", _x) -> tuple["BasicSimulator", None]:
+            return carry.step(model), None
+
+        return jax.lax.scan(body_fn, self, length=n, unroll=unroll)[0]
 
     @partial(jax.jit, inline=True, donate_argnames=("self",))
     def reset(self, model: mjx.Model) -> Self:
