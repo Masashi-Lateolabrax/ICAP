@@ -116,29 +116,21 @@ class BatchedFood:
             positions=data.site_xpos[self.ids.center_site_ids, :3]
         )
 
-    @staticmethod
-    @partial(jax.jit, static_argnames=["qpos_addr"], inline=True)
-    def _set_pos(data: mjx.Data, qpos_addr: int, pos: jax.Array) -> mjx.Data:
+    @partial(jax.jit, static_argnames=["idx"], inline=True)
+    def set_pos(self, data: mjx.Data, idx: int, pos: jax.Array) -> mjx.Data:
+        qpos_addr = self.ids.free_joint_qpos_adr[idx]
         return data.replace(
             qpos=data.qpos.at[qpos_addr:qpos_addr + 3].set(pos[:3])
         )
 
-    def set_pos(self, data: mjx.Data, idx: int, pos: jax.Array) -> mjx.Data:
-        qpos_addr = self.ids.free_joint_qpos_adr[idx]
-        return BatchedFood._set_pos(data, qpos_addr, pos)
-
-    @staticmethod
     @partial(jax.jit, static_argnames=["idx"], inline=True)
-    def _set_force(this: "BatchedFood", data: mjx.Data, idx: int, force: jax.Array) -> mjx.Data:
-        x_act_id = this.ids.x_act_ids[idx]
-        y_act_id = this.ids.y_act_ids[idx]
-        z_act_id = this.ids.z_act_ids[idx]
+    def set_force(self, data: mjx.Data, idx: int, force: jax.Array) -> mjx.Data:
+        x_act_id = self.ids.x_act_ids[idx]
+        y_act_id = self.ids.y_act_ids[idx]
+        z_act_id = self.ids.z_act_ids[idx]
 
         new_ctrl = data.ctrl.at[x_act_id].set(force[0])
         new_ctrl = new_ctrl.at[y_act_id].set(force[1])
         new_ctrl = new_ctrl.at[z_act_id].set(force[2])
 
         return data.replace(ctrl=new_ctrl)
-
-    def set_force(self, data: mjx.Data, idx: int, force: jax.Array) -> mjx.Data:
-        return BatchedFood._set_force(self, data, idx, force)
