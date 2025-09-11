@@ -191,20 +191,15 @@ class BatchedRobots:
     def num_robots(self) -> int:
         return self.positions.shape[0]
 
-    @staticmethod
     @partial(jax.jit, inline=True)
-    def _update(data: mujoco.MjData | mjx.Data, ids: BatchedRobotIDs) -> tuple[jax.Array, jax.Array]:
-        center_site_positions = data.site_xpos[ids.center_site_ids, :]
-        front_site_positions = data.site_xpos[ids.front_site_ids, :2]
+    def update(self, data: mujoco.MjData | mjx.Data) -> Self:
+        center_site_positions = data.site_xpos[self.ids.center_site_ids, :]
+        front_site_positions = data.site_xpos[self.ids.front_site_ids, :2]
         sub = front_site_positions - center_site_positions[:, :2]
         n = jnp.linalg.norm(sub, axis=1, keepdims=True) + 1e-6
         xdirections = sub / n
-        return center_site_positions, xdirections
-
-    def update(self, data: mujoco.MjData | mjx.Data) -> 'BatchedRobots':
-        positions, xdirections = self._update(data, self.ids)
         return self.replace(
-            positions=positions,
+            positions=center_site_positions,
             xdirections=xdirections
         )
 
