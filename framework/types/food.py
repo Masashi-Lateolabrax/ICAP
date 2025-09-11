@@ -129,16 +129,16 @@ class BatchedFood:
 
     @staticmethod
     @partial(jax.jit, static_argnames=["idx"], inline=True)
-    def _set_force(this: "BatchedFood", data: mjx.Data, idx: jax.Array, force: jax.Array) -> mjx.Data:
+    def _set_force(this: "BatchedFood", data: mjx.Data, idx: int, force: jax.Array) -> mjx.Data:
         x_act_id = this.ids.x_act_ids[idx]
         y_act_id = this.ids.y_act_ids[idx]
         z_act_id = this.ids.z_act_ids[idx]
 
-        new_ctrl = data.ctrl.at[x_act_id].set(force[:, 0])
-        new_ctrl = new_ctrl.at[y_act_id].set(force[:, 1])
-        new_ctrl = new_ctrl.at[z_act_id].set(force[:, 2])
+        new_ctrl = data.ctrl.at[x_act_id].set(force[0])
+        new_ctrl = new_ctrl.at[y_act_id].set(force[1])
+        new_ctrl = new_ctrl.at[z_act_id].set(force[2])
 
         return data.replace(ctrl=new_ctrl)
 
-    def set_force(self, data: mjx.Data, idx: jax.Array, force: jax.Array) -> mjx.Data:
+    def set_force(self, data: mjx.Data, idx: int, force: jax.Array) -> mjx.Data:
         return BatchedFood._set_force(self, data, idx, force)

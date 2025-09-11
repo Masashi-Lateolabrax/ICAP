@@ -113,7 +113,10 @@ class FoodRelocationSimulator(SimRenderTrait):
         nest_dir = -this.food_items.positions
         nest_dir = nest_dir.at[:, 2].set(0.0)
         force = nest_dir / (jnp.linalg.norm(nest_dir, axis=1, keepdims=True) + 1e-6) * 50.0
-        new_data = this.food_items.set_force(this.data, jnp.arange(force.shape[0]), force)
+
+        new_data = this.data
+        for i in range(force.shape[0]):
+            new_data = this.food_items.set_force(new_data, i, force[i])
 
         return this.update(data=new_data)
 
