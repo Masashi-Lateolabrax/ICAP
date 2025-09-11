@@ -60,12 +60,9 @@ class SimulatorTrait(metaclass=abc.ABCMeta):
 
 
 class SimPheromoneTrait(SimulatorTrait, metaclass=abc.ABCMeta):
+    @property
     @abc.abstractmethod
-    def get_pheromone(self, positions: jax.Array) -> jax.Array:
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def add_pheromone(self, positions: jax.Array, values: jax.Array) -> PheromoneField:
+    def pheromone(self) -> PheromoneField:
         raise NotImplementedError
 
 
