@@ -158,9 +158,15 @@ def _update_with_rk4(
     return gas_values, liquid_values
 
 
-@partial(jax.jit, static_argnames=(
-        "saturation_pressure", "diffusion_coefficient", "evaporation_rate", "decrease_rate", "padding_value", "iter_"
-), inline=True)
+@partial(
+    jax.jit,
+    static_argnames=(
+            "saturation_pressure", "diffusion_coefficient", "evaporation_rate", "decrease_rate", "padding_value",
+            "iter_"
+    ),
+    donate_argnames=("liquid_values", "gas_values"),
+    inline=True,
+)
 def _iter_update_with_rk4(
         liquid_values: jnp.ndarray,
         gas_values: jnp.ndarray,

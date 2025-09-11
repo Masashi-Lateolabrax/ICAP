@@ -316,7 +316,7 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
         return -jnp.sum(jnp.exp(-(distance ** 2) / const.SIGMA_FOOD_AND_NEST)) * const.GAIN_FOOD_AND_NEST
 
     @staticmethod
-    @partial(jax.jit, inline=True)
+    @partial(jax.jit, inline=True, donate_argnames=("this",))
     def _step(this: "BasicSimulatorWithEnv", model: mjx.Model) -> "BasicSimulatorWithEnv":
         # First, apply robot outputs to the simulation
         this = this.update(
@@ -372,7 +372,7 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
         return BasicSimulatorWithEnv._step(self, model)
 
     @staticmethod
-    @partial(jax.jit, static_argnames=("n", "unroll"), inline=True)
+    @partial(jax.jit, static_argnames=("n", "unroll"), inline=True, donate_argnames=("this",))
     def _step_n(this: "BasicSimulatorWithEnv", model: mjx.Model, n: int, unroll: int = 1) -> "BasicSimulatorWithEnv":
         def body_fn(carry: "BasicSimulatorWithEnv", _x) -> tuple["BasicSimulatorWithEnv", None]:
             new_carry = BasicSimulatorWithEnv._step(carry, model)

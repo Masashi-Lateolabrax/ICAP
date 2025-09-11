@@ -107,7 +107,7 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
         return new_pheromone
 
     @staticmethod
-    @partial(jax.jit, inline=True)
+    @partial(jax.jit, inline=True, donate_argnames=("this",))
     def _step(this: "BasicSimulator", model: mjx.Model):
         this = this.update(
             data=mjx.step(model, this.data),
@@ -119,7 +119,7 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
         return BasicSimulator._step(self, model)
 
     @staticmethod
-    @partial(jax.jit, static_argnames=("n", "unroll"), inline=True)
+    @partial(jax.jit, static_argnames=("n", "unroll"), inline=True, donate_argnames=("this",))
     def _step_n(this: "BasicSimulator", model: mjx.Model, n: int, unroll: int = 1) -> "BasicSimulator":
         def body_fn(carry: "BasicSimulator", _x) -> tuple["BasicSimulator", None]:
             return BasicSimulator._step(carry, model), None
@@ -129,7 +129,7 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
     def step_n(self, model: mjx.Model, n: int, unroll: int = 1) -> Self:
         return BasicSimulator._step_n(self, model, n, unroll)
 
-    @partial(jax.jit, inline=True)
+    @partial(jax.jit, inline=True, donate_argnames=("self",))
     def reset(self, model: mjx.Model) -> Self:
         return self.update(
             data=mjx.make_data(model),

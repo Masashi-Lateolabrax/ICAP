@@ -84,7 +84,7 @@ class SimulatorWithCtrl(SimRenderTrait, SimEvaluateTrait, Generic[ControllerT]):
         )
 
     @staticmethod
-    @partial(nnx.jit, inline=True)
+    @partial(nnx.jit, inline=True, donate_argnames=("this",))
     def _step(this: 'SimulatorWithCtrl', model: mjx.Model) -> 'SimulatorWithCtrl':
         this = this.update(
             _parent_sim=this._parent_sim.step(model)
@@ -98,7 +98,7 @@ class SimulatorWithCtrl(SimRenderTrait, SimEvaluateTrait, Generic[ControllerT]):
         return SimulatorWithCtrl._step(self, model)
 
     @staticmethod
-    @partial(nnx.jit, static_argnames=("n", "unroll"), inline=True)
+    @partial(nnx.jit, static_argnames=("n", "unroll"), inline=True, donate_argnames=("this",))
     def _step_n(this: "SimulatorWithCtrl", model: mjx.Model, n: int, unroll: int = 1) -> "SimulatorWithCtrl":
         def body_fn(carry: "SimulatorWithCtrl", _x) -> tuple["SimulatorWithCtrl", None]:
             new_carry = SimulatorWithCtrl._step(carry, model)

@@ -77,15 +77,15 @@ def opt_gpu_example():
         )
         return sims
 
-    @nnx.jit
+    @partial(nnx.jit, donate_argnames=("sims",))
     def jit_set_params(sims, params):
         return jax.vmap(lambda s, p: s.update(controller=PracticalController(p)))(sims, params)
 
-    @partial(nnx.jit, static_argnames=("n",))
+    @partial(nnx.jit, static_argnames=("n",), donate_argnames=("sims",))
     def jit_step_n(sims, n: int):
         return jax.vmap(lambda s: s.step_n(model, n, unroll))(sims)
 
-    @nnx.jit
+    @partial(nnx.jit, donate_argnames=("sims",))
     def jit_reset(sims):
         return jax.vmap(lambda sim: sim.reset(model))(sims)
 
