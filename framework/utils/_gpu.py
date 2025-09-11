@@ -110,3 +110,36 @@ def monitor_gpu_health():
 
     print(f"GPU Health: {temp}°C, {util}% util{thermal_warning}{util_warning}")
     return {"temperature": temp, "utilization": util}
+
+def monitor_gpu_clocks():
+    """Monitor GPU clock frequencies (graphics and memory clocks)"""
+    try:
+        result = subprocess.run(
+            ['nvidia-smi', '--query-gpu=clocks.gr,clocks.mem,clocks.max.gr,clocks.max.mem', '--format=csv,noheader,nounits'],
+            capture_output=True, text=True, timeout=5
+        )
+        if result.returncode == 0:
+            lines = result.stdout.strip().split('\n')
+            for i, line in enumerate(lines):
+                current_gr, current_mem, max_gr, max_mem = line.split(', ')
+                gr_percent = (int(current_gr) / int(max_gr)) * 100 if max_gr != '0' else 0
+                mem_percent = (int(current_mem) / int(max_mem)) * 100 if max_mem != '0' else 0
+                print(f"GPU {i}: Graphics {current_gr}MHz ({gr_percent:.1f}% of {max_gr}MHz), Memory {current_mem}MHz ({mem_percent:.1f}% of {max_mem}MHz)")
+            return {"graphics_clock": int(current_gr), "memory_clock": int(current_mem), 
+                    "max_graphics_clock": int(max_gr), "max_memory_clock": int(max_mem)}
+    except (subprocess.TimeoutExpired, FileNotFoundError, subprocess.SubprocessError):
+        print("GPU clock monitoring unavailable (nvidia-smi not found or failed)")
+        return None
+    except Exception as e:
+        print(f"GPU clock monitoring error: {e}")
+        return None
+
+
+def monitor_comprehensive_gpu():
+    """Monitor all GPU metrics: health, memory, and clocks"""
+    print("=== GPU Status ===")
+    health = monitor_gpu_health()
+    monitor_gpu_memory()
+    clocks = monitor_gpu_clocks()
+    print("==================")
+    return {"health": health, "clocks": clocks}
