@@ -196,8 +196,9 @@ class BatchedRobots:
         center_site_positions = data.site_xpos[self.ids.center_site_ids, :]
         front_site_positions = data.site_xpos[self.ids.front_site_ids, :2]
         sub = front_site_positions - center_site_positions[:, :2]
-        n = jnp.linalg.norm(sub, axis=1, keepdims=True) + 1e-6
-        xdirections = sub / n
+        norm_squared = jnp.sum(sub * sub, axis=1, keepdims=True)
+        inv_norm = jax.lax.rsqrt(norm_squared + 1e-12)
+        xdirections = sub * inv_norm
         return self.replace(
             positions=center_site_positions,
             xdirections=xdirections
