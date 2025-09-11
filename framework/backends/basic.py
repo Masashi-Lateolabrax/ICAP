@@ -144,7 +144,7 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
             np.zeros_like(normalized_pheromone),
             1 - normalized_pheromone,
             np.full_like(normalized_pheromone, 0.5)
-        ], axis=-1).astype(np.float64)
+        ], axis=-1).astype(np.float32)
 
         mj_model.site_rgba[self._pheromone_cell_site_ids, :] = colored_pheromone
 
