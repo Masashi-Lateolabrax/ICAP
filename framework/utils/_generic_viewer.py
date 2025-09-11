@@ -1,14 +1,17 @@
-import enum
-import tkinter as tk
-from tkinter import ttk
-
-import mujoco
-import numpy as np
-from typing import Optional
 import time
+import enum
+from typing import Optional
 import threading
 import logging
+
+import tkinter as tk
+from tkinter import ttk
 from PIL import Image, ImageTk
+
+import numpy as np
+
+import mujoco
+from mujoco import mjx
 
 from ..prelude import *
 
@@ -68,11 +71,13 @@ class _Simulation:
     def __init__(
             self,
             model: mujoco.MjModel,
+            mjx_model: mjx.Model,
             backend: SimRenderTrait,
             state: _SimulationState,
             max_geom: int,
     ):
-        self.model = model
+        self.model = model  # For rendering
+        self.mjx_model = mjx_model  # For backend use
         self.backend = backend
         self.state = state
         self.logger = logging.getLogger(__name__)
@@ -129,11 +134,11 @@ class _Simulation:
                 if running_mode != self.state.running_mode:
                     match self.state.running_mode:
                         case SimulationRunningMode.RESTART:
-                            self.backend.reset()
+                            self.backend = self.backend.reset(self.mjx_model)
                             running_mode = SimulationRunningMode.PAUSED
 
                         case SimulationRunningMode.ONE_STEP:
-                            self.backend.step()
+                            self.backend = self.backend.step(self.mjx_model)
                             running_mode = SimulationRunningMode.PAUSED
 
                         case SimulationRunningMode.RUNNING:
@@ -146,7 +151,7 @@ class _Simulation:
                     self.state.mode_change_event.set()
 
                 elif running_mode == SimulationRunningMode.RUNNING:
-                    self.backend = self.backend.step()
+                    self.backend = self.backend.step(self.mjx_model)
 
                 sleep_time = max(0.0, target_interval - self._average_elapsed)
                 if sleep_time > 0:
@@ -392,8 +397,11 @@ class GenericTkinterViewer:
             settings.Render.RENDER_WIDTH, settings.Render.RENDER_HEIGHT
         )
 
+        # Convert mujoco.MjModel to mjx.Model for backend use
+        mjx_model = mjx.put_model(model)
+
         self.simulation = _Simulation(
-            model, backend, self.state, settings.Render.MAX_GEOM
+            model, mjx_model, backend, self.state, settings.Render.MAX_GEOM
         )
 
         backend_name = getattr(backend, '__class__', type(backend)).__name__
