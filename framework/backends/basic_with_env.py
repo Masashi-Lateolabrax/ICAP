@@ -309,6 +309,10 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
 
     @partial(jax.jit, inline=True, donate_argnames=("self",))
     def step(self, model: mjx.Model) -> Self:
+        # Calculate pheromone indices once for both add and get operations  
+        robot_positions = self.robots.positions
+        pheromone_x_indices, pheromone_y_indices = self._parent_sim.calc_nearest_pheromone_cell_indices(robot_positions)
+
         # First, apply robot outputs to the simulation
         this = self.update(
             data=self.robots.set_ctrl(self.data, self.robot_outputs.wheels),
