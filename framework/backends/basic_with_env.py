@@ -237,25 +237,23 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
     def add_pheromone(self, positions: jax.Array, values: jax.Array) -> PheromoneField:
         return self._parent_sim.add_pheromone(positions, values)
 
-    @staticmethod
     @partial(jax.jit, inline=True)
-    def _check_food_in_nest(this: "BasicSimulatorWithEnv") -> jax.Array:
+    def _check_food_in_nest(self) -> jax.Array:
         distance_between_food_and_nest = jnp.linalg.norm(
-            this.food_items.positions[:, :2] - this.consts.NEST_POSITION,
+            self.food_items.positions[:, :2] - self.consts.NEST_POSITION,
             axis=1
         )
-        mask = distance_between_food_and_nest < this.consts.NEST_RADIUS
+        mask = distance_between_food_and_nest < self.consts.NEST_RADIUS
         return mask
 
-    @staticmethod
     @partial(jax.jit, inline=True)
-    def _generate_new_food_position(this: "BasicSimulatorWithEnv", rngs: jax.Array) -> jax.Array:
+    def _generate_new_food_position(self, rngs: jax.Array) -> jax.Array:
         key, rngs = jax.random.split(rngs)
         random_xy = jax.random.uniform(
             key,
             shape=(2,),
-            minval=this.consts.NEST_RADIUS,
-            maxval=jnp.array([this.consts.WORLD_WIDTH, this.consts.WORLD_HEIGHT]) * 0.5 - this.consts.FOOD_RADIUS
+            minval=self.consts.NEST_RADIUS,
+            maxval=jnp.array([self.consts.WORLD_WIDTH, self.consts.WORLD_HEIGHT]) * 0.5 - self.consts.FOOD_RADIUS
         )
 
         key, rngs = jax.random.split(rngs)
@@ -265,25 +263,24 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
 
         return random_xy
 
-    @staticmethod
     @partial(jax.jit, inline=True)
-    def _relocate_food_items(this: "BasicSimulatorWithEnv") -> tuple["BasicSimulatorWithEnv", jax.Array]:
-        done_relocate = BasicSimulatorWithEnv._check_food_in_nest(this)
+    def _relocate_food_items(self) -> tuple[Self, jax.Array]:
+        done_relocate = self._check_food_in_nest()
         not_relocate = jnp.logical_not(done_relocate)
-        new_rngs = this.rngs_for_relocating_food
-        data = this.data
+        new_rngs = self.rngs_for_relocating_food
+        data = self.data
 
-        for idx in range(this.food_items.num_food_items):
+        for idx in range(self.food_items.num_food_items):
             next_rngs, rngs = jax.random.split(new_rngs)
-            relocated_position = BasicSimulatorWithEnv._generate_new_food_position(this, rngs)
-            current_position = this.food_items.positions[idx]
+            relocated_position = self._generate_new_food_position(rngs)
+            current_position = self.food_items.positions[idx]
 
             new_position = done_relocate[idx] * relocated_position + not_relocate[idx] * current_position
             new_rngs = done_relocate[idx] * next_rngs + not_relocate[idx] * new_rngs
 
-            data = this.food_items.set_pos(data, idx, new_position)
+            data = self.food_items.set_pos(data, idx, new_position)
 
-        this = this.update(
+        this = self.update(
             data=data,
             rngs_for_relocating_food=new_rngs
         )
@@ -315,13 +312,12 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
         distance = jnp.clip(distance - const.OFFSET_FOOD_AND_NEST, a_min=0)
         return -jnp.sum(jnp.exp(-(distance ** 2) / const.SIGMA_FOOD_AND_NEST)) * const.GAIN_FOOD_AND_NEST
 
-    @staticmethod
-    @partial(jax.jit, inline=True, donate_argnames=("this",))
-    def _step(this: "BasicSimulatorWithEnv", model: mjx.Model) -> "BasicSimulatorWithEnv":
+    @partial(jax.jit, inline=True, donate_argnames=("self",))
+    def step(self, model: mjx.Model) -> Self:
         # First, apply robot outputs to the simulation
-        this = this.update(
-            data=this.robots.set_ctrl(this.data, this.robot_outputs.wheels),
-            pheromone=this.add_pheromone(this.robots.positions, this.robot_outputs.pheromone)
+        this = self.update(
+            data=self.robots.set_ctrl(self.data, self.robot_outputs.wheels),
+            pheromone=self.add_pheromone(self.robots.positions, self.robot_outputs.pheromone)
         )
 
         # Step the basic simulator
@@ -348,7 +344,7 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
         )
 
         # Relocate food items if necessary
-        this, relocation_occurred = BasicSimulatorWithEnv._relocate_food_items(this)
+        this, relocation_occurred = this._relocate_food_items()
 
         # Calculate losses
         fr_losses = jax.vmap(lambda x: BasicSimulatorWithEnv._calc_loss_between_food_and_robots(
@@ -368,20 +364,13 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
             _loss_offset=loss_offset
         )
 
-    def step(self, model: mjx.Model) -> Self:
-        return BasicSimulatorWithEnv._step(self, model)
-
-    @staticmethod
-    @partial(jax.jit, static_argnames=("n", "unroll"), inline=True, donate_argnames=("this",))
-    def _step_n(this: "BasicSimulatorWithEnv", model: mjx.Model, n: int, unroll: int = 1) -> "BasicSimulatorWithEnv":
+    @partial(jax.jit, static_argnames=("n", "unroll"), inline=True, donate_argnames=("self",))
+    def step_n(self, model: mjx.Model, n: int, unroll: int = 1) -> Self:
         def body_fn(carry: "BasicSimulatorWithEnv", _x) -> tuple["BasicSimulatorWithEnv", None]:
-            new_carry = BasicSimulatorWithEnv._step(carry, model)
+            new_carry = carry.step(model)
             return new_carry, None
 
-        return jax.lax.scan(body_fn, this, length=n, unroll=unroll)[0]
-
-    def step_n(self, model: mjx.Model, n: int, unroll: int = 1) -> Self:
-        return BasicSimulatorWithEnv._step_n(self, model, n, unroll)
+        return jax.lax.scan(body_fn, self, length=n, unroll=unroll)[0]
 
     @partial(jax.jit, inline=True)
     def reset(self, model: mjx.Model) -> Self:
