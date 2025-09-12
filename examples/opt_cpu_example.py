@@ -1,6 +1,6 @@
 import os
 
-NUM_CPU = 3
+NUM_CPU = 4
 os.environ["XLA_FLAGS"] = f"--xla_force_host_platform_device_count={NUM_CPU}"
 
 import time
@@ -26,15 +26,13 @@ from config import PracticalController, PracticalSimulator
 def opt_cpu_example():
     print("Initializing CPU-optimized simulation...")
 
+    devices = jax.devices("cpu")
     settings = Settings()
 
     # Program Settings Summary
     population_size = 100
     batch_size = NUM_CPU  # Use number of CPU devices as batch size
     episode_length = int(90 / settings.Simulation.TIME_STEP)
-    batch_steps = 100  # Number of steps to batch together
-    unroll = 4
-    gc_frequency = 200  # Garbage collection frequency (steps)
     cma_sigma = 0.1
     random_seed = 0
 
@@ -44,9 +42,6 @@ def opt_cpu_example():
     print(f"  Population size: {population_size}")
     print(f"  Batch size: {batch_size}")
     print(f"  Episode length: {episode_length} steps")
-    print(f"  Batch steps: {batch_steps}")
-    print(f"  Unroll factor: {unroll}")
-    print(f"  GC frequency: {gc_frequency} steps")
     print(f"  Time step: {settings.Simulation.TIME_STEP}s")
     print(f"  CPU devices: {NUM_CPU}")
     print(f"{'=' * 60}")
@@ -72,7 +67,7 @@ def opt_cpu_example():
     model = mjx.put_model(mj_model)
 
     @partial(nnx.jit, static_argnames=("n",))
-    def jit_duplicate_sim(sim: PracticalSimulator, n: int):
+    def jit_duplicate_sim(sim: PracticalSimulator, n: int) -> PracticalSimulator:
         _c, sims = jax.lax.scan(
             lambda c, _x: (c, c.reset(model)),
             init=sim,
@@ -80,16 +75,16 @@ def opt_cpu_example():
         )
         return sims
 
+    # @partial(nnx.jit, donate_argnames=("sims",))
+    def pmap_step(sims):
+        return jax.pmap(lambda s: s.step(model), devices=devices, backend="cpu")(sims)
+
     @partial(nnx.jit, donate_argnames=("sims",))
-    def jit_set_params(sims, params):
+    def jit_set_params(sims, params) -> PracticalSimulator:
         return jax.vmap(lambda s, p: s.update(controller=PracticalController(p)))(sims, params)
 
-    @partial(nnx.jit, static_argnames=("n",), donate_argnames=("sims",))
-    def jit_step_n(sims, n: int):
-        return jax.vmap(lambda s: s.step_n(model, n, unroll))(sims)
-
     @partial(nnx.jit, donate_argnames=("sims",))
-    def jit_reset(sims):
+    def jit_reset(sims) -> PracticalSimulator:
         return jax.vmap(lambda sim: sim.reset(model))(sims)
 
     init_time = time.perf_counter() - init_start
@@ -98,7 +93,7 @@ def opt_cpu_example():
     # Warmup run to compile JIT functions
     print("\nPerforming JIT warmup...")
     warmup_start = time.perf_counter()
-    simulators = simulators.step_n(model, batch_steps)
+    simulators = simulators.step(model)
     warmup_time = time.perf_counter() - warmup_start
     print(f"JIT warmup completed: {warmup_time:.2f}s")
 
@@ -113,24 +108,20 @@ def opt_cpu_example():
     print("\nSetting up batched simulators...")
     simulators = jit_duplicate_sim(simulators, batch_size)
     simulators = jit_set_params(simulators, parameters)
-    print(f"Batched simulators ready: {simulators.shape[0]} instances")
+    print(f"Batched simulators ready with batch size {batch_size}.")
 
     # Main simulation loop using multistep batching for better performance
-    print(f"\nStarting main simulation ({episode_length} steps, {batch_steps} steps per batch)...")
+    print(f"\nStarting main simulation loop for {episode_length} steps...")
     sim_start = step_end = time.perf_counter()
 
-    completed_steps = 0
-    while completed_steps < episode_length:
+    for step in range(episode_length):
         step_start = time.perf_counter()
-        steps_to_run = min(batch_steps, episode_length - completed_steps)
-        simulators = jax.vmap(jit_step_n)(simulators, steps_to_run)
-        completed_steps += steps_to_run
+        simulators = pmap_step(simulators)
         step_end = time.perf_counter()
+        steps_per_sec = 1 / (step_end - step_start)
 
-        d_time = step_end - step_start
-        steps_per_sec = steps_to_run / d_time
-
-        print(f"\n[{d_time:.2f}s] Step {completed_steps}/{episode_length}, {steps_per_sec:.1f} steps/s")
+        if int((step_end - sim_start) * 10) % 10 == 0:
+            print(f"\nStep {step}/{episode_length}, {steps_per_sec:.1f} steps/s")
 
     sim_time = step_end - sim_start
     total_steps_per_sec = episode_length / sim_time

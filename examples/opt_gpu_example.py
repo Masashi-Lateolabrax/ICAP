@@ -44,14 +44,14 @@ def opt_gpu_example():
 
     # Program Settings Summary
     population_size = 100
-    batch_size = 3
+    batch_size = 4
     episode_length = int(90 / settings.Simulation.TIME_STEP)
-    batch_steps = 100  # Number of steps to batch together
+    batch_steps = 500  # Number of steps to batch together
     unroll = 4
-    gc_frequency = 200  # Garbage collection frequency (steps)
+    gc_frequency = 1000  # Garbage collection frequency (steps)
     cma_sigma = 0.1
     random_seed = 0
-    
+
     print(f"\n{'=' * 60}")
     print(f"PROGRAM SETTINGS SUMMARY")
     print(f"{'=' * 60}")
@@ -105,9 +105,6 @@ def opt_gpu_example():
     def jit_reset(sims):
         return jax.vmap(lambda sim: sim.reset(model))(sims)
 
-    simulators = jit_duplicate_sim(simulators, batch_size)
-    simulators = jit_set_params(simulators, parameters)
-
     init_time = time.perf_counter() - init_start
     print(f"Simulator initialization: {init_time:.2f}s")
 
@@ -117,7 +114,7 @@ def opt_gpu_example():
     # Warmup run to compile JIT functions
     print("\nPerforming JIT warmup...")
     warmup_start = time.perf_counter()
-    simulators = jit_step_n(simulators, batch_steps)
+    simulators = simulators.step_n(model, batch_steps)
     warmup_time = time.perf_counter() - warmup_start
     print(f"JIT warmup completed: {warmup_time:.2f}s")
 
@@ -127,9 +124,16 @@ def opt_gpu_example():
     # Reset simulators before main simulation
     print("\nResetting simulators...")
     reset_start = time.perf_counter()
-    simulators = jit_reset(simulators)
+    simulators = simulators.reset(model)
     reset_time = time.perf_counter() - reset_start
     print(f"Simulator reset completed: {reset_time:.2f}s")
+
+    # Duplicate simulators to match batch size and set parameters
+    print("\nDuplicating simulators to match batch size and setting parameters...")
+    simulators = jit_duplicate_sim(simulators, batch_size)
+    simulators = jit_reset(simulators)
+    simulators = jit_set_params(simulators, parameters)
+    print(f"Duplicated to {batch_size} simulators.")
 
     print("\nGPU status after simulator reset:")
     monitor_comprehensive_gpu()
