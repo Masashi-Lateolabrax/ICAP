@@ -47,7 +47,11 @@ class Evaluator:
         backend = Simulator(self.settings, individual, render=False)
         for _ in range(math.ceil(self.settings.Simulation.TIME_LENGTH / self.settings.Simulation.TIME_STEP)):
             backend.step()
-        return backend.calc_total_score()
+        
+        fitness = backend.calc_total_score()
+        max_gas_pheromone = backend.get_total_gas_pheromone()
+        
+        return fitness, max_gas_pheromone
 
 
 def main(settings: Settings):
