@@ -65,13 +65,12 @@ def test_pheromone_field_gpu():
 
     @partial(jax.jit, static_argnames=['steps'])
     def jit_pheromone_multiple_updates(field, steps):
-        return jax.lax.fori_loop(
-            0,
-            steps,
-            lambda _i, f: f.update(dt=dt),
-            field,
-            unroll=True
-        )
+        return jax.lax.scan(
+            lambda c, _x: (c.update(dt=dt), None),
+            init=field,
+            length=steps,
+            unroll=True,
+        )[0]
 
     @partial(jax.jit, static_argnames=['steps'])
     def jit_pheromone_multiple_updates_with_for(field, steps):
