@@ -93,7 +93,7 @@ def opt_cpu_example():
     # Warmup run to compile JIT functions
     print("\nPerforming JIT warmup...")
     warmup_start = time.perf_counter()
-    simulators = simulators.step_n(model, batch_steps)
+    simulators = simulators.step(model)
     warmup_time = time.perf_counter() - warmup_start
     print(f"JIT warmup completed: {warmup_time:.2f}s")
 
