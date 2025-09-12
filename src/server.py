@@ -174,6 +174,19 @@ async def optimization(port: int, timeout: int, settings: Settings):
             print_and_save(settings, prev_optimization_result, optimization_result)
 
 
+def optimization(port: int, timeout: int, settings: Settings):
+    shared_task_manager = SharedTaskManager()
+    shared_task_manager.start_listening(port, timeout)
+
+    dim = Controller.dim()
+    cmaes = CMA(
+        mean=np.zeros(dim, dtype=np.float32),
+        sigma=settings.Optimization.SIGMA,
+        population_size=settings.Optimization.POPULATION,
+        max_generation=settings.Optimization.MAX_GENERATION
+    )
+
+
 def main(settings: Settings):
     parser = argparse.ArgumentParser(description="ICAP Optimization Server")
     parser.add_argument("--port", type=int, help="Server port number")
