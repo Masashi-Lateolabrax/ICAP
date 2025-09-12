@@ -1,6 +1,6 @@
 import os
 
-NUM_CPU = 3
+NUM_CPU = 4
 os.environ["XLA_FLAGS"] = f"--xla_force_host_platform_device_count={NUM_CPU}"
 
 import time
