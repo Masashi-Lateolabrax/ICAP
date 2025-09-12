@@ -83,10 +83,6 @@ def opt_cpu_example():
     def jit_set_params(sims, params) -> PracticalSimulator:
         return jax.vmap(lambda s, p: s.update(controller=PracticalController(p)))(sims, params)
 
-    @partial(nnx.jit, static_argnames=("n",), donate_argnames=("sims",))
-    def jit_step_n(sims, n: int):
-        return jax.vmap(lambda s: s.step_n(model, n, unroll))(sims)
-
     @partial(nnx.jit, donate_argnames=("sims",))
     def jit_reset(sims) -> PracticalSimulator:
         return jax.vmap(lambda sim: sim.reset(model))(sims)
