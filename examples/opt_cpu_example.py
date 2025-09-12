@@ -80,6 +80,10 @@ def opt_cpu_example():
         )
         return sims
 
+    # @partial(nnx.jit, donate_argnames=("sims",))
+    def pmap_step(sims):
+        return jax.pmap(lambda s: s.step(model), devices=devices, backend="cpu")(sims)
+
     @partial(nnx.jit, donate_argnames=("sims",))
     def jit_set_params(sims, params):
         return jax.vmap(lambda s, p: s.update(controller=PracticalController(p)))(sims, params)
@@ -119,18 +123,14 @@ def opt_cpu_example():
     print(f"\nStarting main simulation ({episode_length} steps, {batch_steps} steps per batch)...")
     sim_start = step_end = time.perf_counter()
 
-    completed_steps = 0
-    while completed_steps < episode_length:
+    for step in range(episode_length):
         step_start = time.perf_counter()
-        steps_to_run = min(batch_steps, episode_length - completed_steps)
-        simulators = jax.vmap(jit_step_n)(simulators, steps_to_run)
-        completed_steps += steps_to_run
+        simulators = pmap_step(simulators)
         step_end = time.perf_counter()
+        steps_per_sec = 1 / (step_end - step_start)
 
-        d_time = step_end - step_start
-        steps_per_sec = steps_to_run / d_time
-
-        print(f"\n[{d_time:.2f}s] Step {completed_steps}/{episode_length}, {steps_per_sec:.1f} steps/s")
+        if int((step_end - sim_start) * 10) % 10 == 0:
+            print(f"\nStep {step}/{episode_length}, {steps_per_sec:.1f} steps/s")
 
     sim_time = step_end - sim_start
     total_steps_per_sec = episode_length / sim_time
