@@ -26,6 +26,7 @@ from config import PracticalController, PracticalSimulator
 def opt_cpu_example():
     print("Initializing CPU-optimized simulation...")
 
+    devices = jax.devices("cpu")
     settings = Settings()
 
     # Program Settings Summary
