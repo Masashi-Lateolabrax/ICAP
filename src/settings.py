@@ -38,9 +38,9 @@ MySettings.Render.CAMERA_LOOKAT = (0.0, 0.0, 0.0)
 # Optimization settings
 ###################################################################################
 MySettings.Optimization.DIMENSION = None  # Will be set later based on the neural network dimension
-MySettings.Optimization.POPULATION = 100
 MySettings.Optimization.GENERATION = 1000
 MySettings.Optimization.SIGMA = 2.5
+MySettings.Optimization.POPULATION = 50
 
 MySettings.Optimization.CLIP = ClippingFunctions.none
 ###################################################################################
