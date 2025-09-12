@@ -108,10 +108,10 @@ def opt_cpu_example():
     print("\nSetting up batched simulators...")
     simulators = jit_duplicate_sim(simulators, batch_size)
     simulators = jit_set_params(simulators, parameters)
-    print(f"Batched simulators ready: {simulators.shape[0]} instances")
+    print(f"Batched simulators ready with batch size {batch_size}.")
 
     # Main simulation loop using multistep batching for better performance
-    print(f"\nStarting main simulation ({episode_length} steps, {batch_steps} steps per batch)...")
+    print(f"\nStarting main simulation loop for {episode_length} steps...")
     sim_start = step_end = time.perf_counter()
 
     for step in range(episode_length):
