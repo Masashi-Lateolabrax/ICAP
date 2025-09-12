@@ -32,9 +32,6 @@ def opt_cpu_example():
     population_size = 100
     batch_size = NUM_CPU  # Use number of CPU devices as batch size
     episode_length = int(90 / settings.Simulation.TIME_STEP)
-    batch_steps = 100  # Number of steps to batch together
-    unroll = 4
-    gc_frequency = 200  # Garbage collection frequency (steps)
     cma_sigma = 0.1
     random_seed = 0
 
@@ -44,9 +41,6 @@ def opt_cpu_example():
     print(f"  Population size: {population_size}")
     print(f"  Batch size: {batch_size}")
     print(f"  Episode length: {episode_length} steps")
-    print(f"  Batch steps: {batch_steps}")
-    print(f"  Unroll factor: {unroll}")
-    print(f"  GC frequency: {gc_frequency} steps")
     print(f"  Time step: {settings.Simulation.TIME_STEP}s")
     print(f"  CPU devices: {NUM_CPU}")
     print(f"{'=' * 60}")
