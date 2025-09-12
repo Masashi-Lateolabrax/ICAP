@@ -14,8 +14,14 @@ def plot_fitness(save_dir: str, filepath: str):
         # shape: (n_generation, 2). losses[:, 0]: train, losses[:, 1-3]: validation with different random seeds.
         losses = pickle.load(f)
 
-    train_fitness = losses[:, 0]
-    val_fitness = np.mean(losses[:, 1:], axis=1)
+    train_fitness = losses["train"]
+
+    val_seeds = losses["val"].keys()
+    val_fitness = []
+    for generation in range(train_fitness.shape[0]):
+        val_fitness.append(
+            np.mean([losses["val"][seed][generation] for seed in val_seeds])
+        )
 
     gen_best_in_best = np.argmin(train_fitness)
     gen_best_in_val = np.argmin(val_fitness)
