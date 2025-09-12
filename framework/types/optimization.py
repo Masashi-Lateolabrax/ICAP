@@ -107,4 +107,4 @@ class Individual(np.ndarray):
         return self.view(np.ndarray)
 
 
-EvaluationFunction = Callable[[Individual], float]
+EvaluationFunction = Callable[[Individual], tuple[float, float]]
