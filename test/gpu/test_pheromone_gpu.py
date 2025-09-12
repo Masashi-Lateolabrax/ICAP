@@ -78,6 +78,12 @@ def test_pheromone_field_gpu():
             field = field.update(dt=dt)
         return field
 
+    @partial(jax.jit, static_argnames=['steps'])
+    def jit_pheromone_multiple_updates_with_for(field, steps):
+        for _ in range(steps):
+            field = field.update(dt=dt)
+        return field
+
     # Test 1: Single update with JAX profiler
     print("\n=== Test 1: Single Pheromone Update with Profiler ===")
 
