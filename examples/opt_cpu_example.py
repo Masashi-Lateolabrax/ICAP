@@ -67,7 +67,7 @@ def opt_cpu_example():
     model = mjx.put_model(mj_model)
 
     @partial(nnx.jit, static_argnames=("n",))
-    def jit_duplicate_sim(sim: PracticalSimulator, n: int):
+    def jit_duplicate_sim(sim: PracticalSimulator, n: int) -> PracticalSimulator:
         _c, sims = jax.lax.scan(
             lambda c, _x: (c, c.reset(model)),
             init=sim,
@@ -80,7 +80,7 @@ def opt_cpu_example():
         return jax.pmap(lambda s: s.step(model), devices=devices, backend="cpu")(sims)
 
     @partial(nnx.jit, donate_argnames=("sims",))
-    def jit_set_params(sims, params):
+    def jit_set_params(sims, params) -> PracticalSimulator:
         return jax.vmap(lambda s, p: s.update(controller=PracticalController(p)))(sims, params)
 
     @partial(nnx.jit, static_argnames=("n",), donate_argnames=("sims",))
@@ -88,7 +88,7 @@ def opt_cpu_example():
         return jax.vmap(lambda s: s.step_n(model, n, unroll))(sims)
 
     @partial(nnx.jit, donate_argnames=("sims",))
-    def jit_reset(sims):
+    def jit_reset(sims) -> PracticalSimulator:
         return jax.vmap(lambda sim: sim.reset(model))(sims)
 
     init_time = time.perf_counter() - init_start
