@@ -30,8 +30,9 @@ class ClientTask:
     def state(self) -> CalculationState:
         return self.individual.get_calculation_state()
 
-    def set_fitness(self, fitness: float) -> None:
+    def set_result(self, fitness: float, max_pheromone: float) -> None:
         self.individual.set_fitness(fitness)
+        self.individual.set_max_gas_pheromone(max_pheromone)
 
     def set_state(self, state: CalculationState) -> None:
         self.individual.set_calculation_state(state)
@@ -96,8 +97,8 @@ def _evaluation_worker_process(
             raise TypeError("Expected ClientTask object")
 
         try:
-            fitness = evaluation_function(task.individual)
-            task.set_fitness(fitness)
+            fitness, max_pheromone = evaluation_function(task.individual)
+            task.set_result(fitness, max_pheromone)
             task.set_state(CalculationState.FINISHED)
 
         except KeyboardInterrupt:
