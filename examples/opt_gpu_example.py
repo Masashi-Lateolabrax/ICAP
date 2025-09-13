@@ -46,8 +46,8 @@ def opt_gpu_example():
     population_size = 100
     batch_size = 4
     episode_length = int(90 / settings.Simulation.TIME_STEP)
-    batch_steps = 500  # Number of steps to batch together
-    unroll = 4
+    batch_steps = 100  # Number of steps to batch together
+    unroll = 1
     gc_frequency = 1000  # Garbage collection frequency (steps)
     cma_sigma = 0.1
     random_seed = 0
