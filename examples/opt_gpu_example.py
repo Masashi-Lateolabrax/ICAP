@@ -111,23 +111,6 @@ def opt_gpu_example():
     print("\nGPU status after initialization:")
     monitor_comprehensive_gpu()
 
-    # Warmup run to compile JIT functions
-    print("\nPerforming JIT warmup...")
-    warmup_start = time.perf_counter()
-    simulators = simulators.step_n(model, batch_steps)
-    warmup_time = time.perf_counter() - warmup_start
-    print(f"JIT warmup completed: {warmup_time:.2f}s")
-
-    print("\nGPU status after JIT warmup:")
-    monitor_comprehensive_gpu()
-
-    # Reset simulators before main simulation
-    print("\nResetting simulators...")
-    reset_start = time.perf_counter()
-    simulators = simulators.reset(model)
-    reset_time = time.perf_counter() - reset_start
-    print(f"Simulator reset completed: {reset_time:.2f}s")
-
     # Duplicate simulators to match batch size and set parameters
     print("\nDuplicating simulators to match batch size and setting parameters...")
     simulators = jit_duplicate_sim(simulators, batch_size)
@@ -137,6 +120,23 @@ def opt_gpu_example():
 
     print("\nGPU status after simulator reset:")
     monitor_comprehensive_gpu()
+
+    # Warmup run to compile JIT functions
+    print("\nPerforming JIT warmup...")
+    warmup_start = time.perf_counter()
+    simulators = jit_step_n(simulators, batch_steps)
+    warmup_time = time.perf_counter() - warmup_start
+    print(f"JIT warmup completed: {warmup_time:.2f}s")
+
+    print("\nGPU status after JIT warmup:")
+    monitor_comprehensive_gpu()
+
+    # Reset simulators before main simulation
+    print("\nResetting simulators...")
+    reset_start = time.perf_counter()
+    simulators = jit_reset(simulators)
+    reset_time = time.perf_counter() - reset_start
+    print(f"Simulator reset completed: {reset_time:.2f}s")
 
     # Main simulation loop using multistep batching for better performance
     print(f"\nStarting main simulation ({episode_length} steps, {batch_steps} steps per batch)...")
