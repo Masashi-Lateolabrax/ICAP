@@ -166,9 +166,11 @@ def main(settings: Settings):
         os.path.join(save_dir, "optimization_log.pkl")
     )
     fittness_graph_path = os.path.join(save_dir, "loss_history.png")
+    pheromone_graph_path = os.path.join(save_dir, "pheromone_history.png")
 
     analysis_mod.collect_loss(save_dir, settings, saved_individuals, SimulatorForDebugging)
     analysis_mod.plot_fitness(save_dir, fittness_graph_path)
+    analysis_mod.plot_pheromone_history(pheromone_graph_path, saved_individuals)
 
     # Analyze a specific individual from a specific generation (e.g., generation 0)
     for g in [0, -1]:
