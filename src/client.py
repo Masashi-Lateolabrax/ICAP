@@ -49,7 +49,7 @@ class Evaluator:
             backend.step()
         
         fitness = backend.calc_total_score()
-        max_gas_pheromone = backend.get_total_gas_pheromone()
+        max_gas_pheromone = backend.get_max_gas_pheromone()
         
         return fitness, max_gas_pheromone
 

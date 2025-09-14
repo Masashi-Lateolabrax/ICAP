@@ -53,6 +53,7 @@ class Simulator(BasicSimulator):
 
         self.parameters: Individual = individual
         self.scores: list[Loss] = []
+        self._max_pheromone: float = 0.0
 
         self.sensors: list[list[SensorInterface]] = [
             self._create_sensors(settings, r, self.robot_values, self.food_values, self.nest_site)
@@ -66,6 +67,9 @@ class Simulator(BasicSimulator):
         self.input_tensor = torch.from_numpy(self.input_ndarray)
 
         mujoco.mj_step(self.model, self.data)
+
+    def get_max_gas_pheromone(self) -> float:
+        return self._max_pheromone
 
     def reset(self):
         mujoco.mj_resetData(self.model, self.data)
@@ -124,6 +128,9 @@ class Simulator(BasicSimulator):
             self.add_pheromone(robot_positions, self.output_ndarray[:, 2])
             self._pheromone_field.add_liquid_by_cell(self._pheromone_cells)
             self._pheromone_field.update(self.settings.Simulation.TIME_STEP)
+
+            max_pheromone = self._pheromone_field.get_max_value()
+            self._max_pheromone = max(self._max_pheromone, max_pheromone)
 
         for food in self.food_values:
             if np.linalg.norm(food.xpos - self.nest_site.xpos[0:2]) <= self.settings.Nest.RADIUS:
