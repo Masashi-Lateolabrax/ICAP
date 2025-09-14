@@ -11,3 +11,4 @@ from src.analysis_mod.for_individual.plot_pheromone import plot_total_gas_pherom
 
 from src.analysis_mod.for_history.collect_loss import collect_loss
 from src.analysis_mod.for_history.plot_bests import plot_fitness
+from src.analysis_mod.for_history.pheromone import plot_pheromone_history
