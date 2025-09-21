@@ -6,7 +6,7 @@ from ..prelude import *
 from .cell import PheromoneFieldCell
 
 
-def dDistribution_dt(
+def dDiffusion_dt(
         gas_values: jnp.ndarray,
         mask: jnp.ndarray,
         diffusion_coefficient: float,
