@@ -124,7 +124,7 @@ def update_with_rk4(
 
     k2_gas, k2_liquid = d_dt(
         liquid_values=liquid_values + 0.5 * dt * k1_liquid,
-        gas_values=gas_values + 0.5 * dt * k1_gas,
+        gas_values=gas_values.at[1:-1, 1:-1, 1:-1].add(0.5 * dt * k1_gas),
         mask=mask,
         h=h,
         saturating_concentration=saturating_concentration,
@@ -135,7 +135,7 @@ def update_with_rk4(
 
     k3_gas, k3_liquid = d_dt(
         liquid_values=liquid_values + 0.5 * dt * k2_liquid,
-        gas_values=gas_values + 0.5 * dt * k2_gas,
+        gas_values=gas_values.at[1:-1, 1:-1, 1:-1].add(0.5 * dt * k2_gas),
         mask=mask,
         h=h,
         saturating_concentration=saturating_concentration,
@@ -146,7 +146,7 @@ def update_with_rk4(
 
     k4_gas, k4_liquid = d_dt(
         liquid_values=liquid_values + dt * k3_liquid,
-        gas_values=gas_values + dt * k3_gas,
+        gas_values=gas_values.at[1:-1, 1:-1, 1:-1].add(dt * k3_gas),
         mask=mask,
         h=h,
         saturating_concentration=saturating_concentration,
@@ -155,7 +155,10 @@ def update_with_rk4(
         padding_value=padding_value
     )
 
-    gas_values = jnp.maximum(0.0, gas_values + dt * (k1_gas + 2 * k2_gas + 2 * k3_gas + k4_gas) / 6)
+    gas_values = jnp.maximum(
+        0.0,
+        gas_values.at[1:-1, 1:-1, 1:-1].add(dt * (k1_gas + 2 * k2_gas + 2 * k3_gas + k4_gas) / 6)
+    )
     liquid_values = jnp.maximum(0.0, liquid_values + dt * (k1_liquid + 2 * k2_liquid + 2 * k3_liquid + k4_liquid) / 6)
 
     return gas_values, liquid_values
@@ -197,7 +200,7 @@ class PheromoneField:
 
         self._values_liquid = jnp.zeros(self.shape, dtype=jnp.float32)  # [mol]
         self._values_gas = jnp.zeros((ny + 2, nx + 2, self.nz + 2), dtype=jnp.float32)  # [mol/m^3]
-        self.mask = jnp.ones(self.shape, dtype=jnp.bool_)
+        self.mask = jnp.ones(self.shape + 2, dtype=jnp.bool_)
 
     def reset(self):
         ny, nx = self.shape
