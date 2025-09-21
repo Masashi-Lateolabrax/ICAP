@@ -24,14 +24,14 @@ def dDiffusion_dt(
     z=0 to z=1: h, z=1 to z=2: 2*h, z=2 to z=3: 4*h, etc.
     """
     # Set boundary conditions: padding for x,y boundaries
-    gas_values = gas_values.at[0, :, :].set(padding_value)   # x=0 boundary
+    gas_values = gas_values.at[0, :, :].set(padding_value)  # x=0 boundary
     gas_values = gas_values.at[-1, :, :].set(padding_value)  # x=max boundary
-    gas_values = gas_values.at[:, 0, :].set(padding_value)   # y=0 boundary
+    gas_values = gas_values.at[:, 0, :].set(padding_value)  # y=0 boundary
     gas_values = gas_values.at[:, -1, :].set(padding_value)  # y=max boundary
-    
+
     # Z-direction boundaries: Neumann (copy) at bottom, Dirichlet (zero) at top
     gas_values = gas_values.at[:, :, 0].set(gas_values[:, :, 1])  # z=0: copy from z=1
-    gas_values = gas_values.at[:, :, -1].set(0)                   # z=max: zero concentration
+    gas_values = gas_values.at[:, :, -1].set(0)  # z=max: zero concentration
 
     # Interior points for finite difference calculation
     center = gas_values[1:-1, 1:-1, 1:-1]
@@ -48,38 +48,20 @@ def dDiffusion_dt(
     # For non-uniform grid with spacing h below and 2h above current point:
     # ∂²c/∂z² = (c(z+2h) - 3c(z) + 2c(z-h)) / (3h²)
     # where h = z_weights[i] * h for each layer i
-    d_upper = gas_values[1:-1, 1:-1, 2:] - center    # c(z+2h) - c(z)
+    d_upper = gas_values[1:-1, 1:-1, 2:] - center  # c(z+2h) - c(z)
     d_lower = gas_values[1:-1, 1:-1, 0:-2] - center  # c(z-h) - c(z)
-    
+
     # Generate exponential spacing weights: [1, 2, 4, 8, 16, ...] for each z-layer
     z_weights = [2 ** i for i in range(gas_values.shape[2] - 2)]
     z_weights = jnp.array(z_weights, dtype=jnp.float32)
-    
+
     # Apply asymmetric difference formula: (d_upper + 2*d_lower) / (3*h²)
     vertical = (d_upper + 2 * d_lower) / (3 * (z_weights[None, None, :] * h) ** 2)
 
     # Total diffusion: D * (∇²c_horizontal + ∇²c_vertical)
     return diffusion_coefficient * (horizontal + vertical)
-def dEvaporation_dt(
-        gas_values: jnp.ndarray,
-        liquid_values: jnp.ndarray,
-        saturation_pressure: float,
-        evaporation_rate: float,
-) -> jnp.ndarray:
-    evaporation = (saturation_pressure - gas_values[1:-1, 1:-1]) * evaporation_rate
-    evaporation = jnp.minimum(evaporation, liquid_values)
-    return evaporation
 
 
-@jit
-def dDecrease_dt(
-        gas_values: jnp.ndarray,
-        decrease_rate: float,
-) -> jnp.ndarray:
-    return gas_values * decrease_rate
-
-
-@jit
 def d_dt(
         liquid_values: jnp.ndarray,
         gas_values: jnp.ndarray,
@@ -89,7 +71,7 @@ def d_dt(
         diffusion_coefficient: float,
         padding_value: float,
 ) -> tuple[jnp.ndarray, jnp.ndarray]:
-    d_diffusion = dDiffusion_dt( # Unit: mol/(m^3·s)
+    d_diffusion = dDiffusion_dt(  # Unit: mol/(m^3·s)
         gas_values=gas_values,
         mask=mask,
         diffusion_coefficient=diffusion_coefficient,
@@ -100,12 +82,12 @@ def d_dt(
     source_exist = liquid_values > 0
     decreasing_cell = d_diffusion[:, :, 0] < 0
     evaporation_cell = decreasing_cell & source_exist
-    decreasing = d_diffusion[:, :, 0] * evaporation_cell # Unit: mol/(m^3·s)
-    evaporation = (saturation_concentration + decreasing) * (h ** 3) # Unit: mol/s
-    evaporation = jnp.minimum(evaporation, liquid_values) # Unit: mol/s
+    decreasing = d_diffusion[:, :, 0] * evaporation_cell  # Unit: mol/(m^3·s)
+    evaporation = (saturation_concentration + decreasing) * (h ** 3)  # Unit: mol/s
+    evaporation = jnp.minimum(evaporation, liquid_values)  # Unit: mol/s
 
-    d_gas = d_diffusion + evaporation / (h ** 3) # Unit: mol/(m^3·s)
-    d_liquid = -evaporation # Unit: mol/s
+    d_gas = d_diffusion + evaporation / (h ** 3)  # Unit: mol/(m^3·s)
+    d_liquid = -evaporation  # Unit: mol/s
 
     return d_gas, d_liquid
 
