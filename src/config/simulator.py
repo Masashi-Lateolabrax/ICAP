@@ -127,7 +127,7 @@ class Simulator(BasicSimulator):
         if self._pheromone_field is not None:
             self.add_pheromone(robot_positions, self.output_ndarray[:, 2])
             self._pheromone_field.add_liquid_by_cell(self._pheromone_cells)
-            self._pheromone_field.update(self.settings.Simulation.TIME_STEP)
+            self._pheromone_field.step(self.settings.Simulation.TIME_STEP)
 
             max_pheromone = self._pheromone_field.get_max_value()
             self._max_pheromone = max(self._max_pheromone, max_pheromone)
