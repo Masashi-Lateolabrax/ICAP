@@ -250,8 +250,8 @@ class PheromoneField:
         for c in cell:
             c.add_value = 0.0
 
-    def _step_with_rk4(self, dt: float):
-        dt = dt / self.iter_
+    def _step_with_rk4(self):
+        dt = self.dt / self.iter_
         for _ in range(self.iter_):
             self._values_gas, self._values_liquid = update_with_rk4(
                 liquid_values=self._values_liquid,
@@ -265,4 +265,4 @@ class PheromoneField:
             )
 
     def step(self):
-        self._step_with_rk4(self.dt)
+        self._step_with_rk4()
