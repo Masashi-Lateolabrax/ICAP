@@ -84,34 +84,28 @@ def d_dt(
         liquid_values: jnp.ndarray,
         gas_values: jnp.ndarray,
         mask: jnp.ndarray,
-        dx: float,
-        saturation_pressure: float,
+        h: float,
+        saturation_concentration: float,
         diffusion_coefficient: float,
-        evaporation_rate: float,
-        decrease_rate: float,
         padding_value: float,
 ) -> tuple[jnp.ndarray, jnp.ndarray]:
-    d_evaporation = dEvaporation_dt(
-        gas_values=gas_values,
-        liquid_values=liquid_values,
-        saturation_pressure=saturation_pressure,
-        evaporation_rate=evaporation_rate
-    )
-    d_distribution = dDistribution_dt(
+    d_diffusion = dDiffusion_dt( # Unit: mol/(m^3·s)
         gas_values=gas_values,
         mask=mask,
         diffusion_coefficient=diffusion_coefficient,
-        dx=dx,
+        h=h,
         padding_value=padding_value
     )
-    d_decrease = dDecrease_dt(
-        gas_values=gas_values,
-        decrease_rate=decrease_rate
-    )
 
-    d_gas = (-d_decrease).at[1:-1, 1:-1].add(d_distribution)
-    d_gas = d_gas.at[1:-1, 1:-1].add(d_evaporation)
-    d_liquid = -d_evaporation
+    source_exist = liquid_values > 0
+    decreasing_cell = d_diffusion[:, :, 0] < 0
+    evaporation_cell = decreasing_cell & source_exist
+    decreasing = d_diffusion[:, :, 0] * evaporation_cell # Unit: mol/(m^3·s)
+    evaporation = (saturation_concentration + decreasing) * (h ** 3) # Unit: mol/s
+    evaporation = jnp.minimum(evaporation, liquid_values) # Unit: mol/s
+
+    d_gas = d_diffusion + evaporation / (h ** 3) # Unit: mol/(m^3·s)
+    d_liquid = -evaporation # Unit: mol/s
 
     return d_gas, d_liquid
 
