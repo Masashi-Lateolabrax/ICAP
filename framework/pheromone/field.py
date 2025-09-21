@@ -21,7 +21,7 @@ def dDistribution_dt(
     - Non-uniform asymmetric 3-point stencil for vertical (z) direction
     
     The z-direction uses exponentially spaced layers with intervals:
-    z=0 to z=1: dx, z=1 to z=2: 2*dx, z=2 to z=3: 4*dx, etc.
+    z=0 to z=1: h, z=1 to z=2: 2*h, z=2 to z=3: 4*h, etc.
     """
     # Set boundary conditions: padding for x,y boundaries
     gas_values = gas_values.at[0, :, :].set(padding_value)   # x=0 boundary
@@ -37,7 +37,7 @@ def dDistribution_dt(
     center = gas_values[1:-1, 1:-1, 1:-1]
 
     # Horizontal diffusion: standard centered difference (∇²c in x,y)
-    # ∂²c/∂x² + ∂²c/∂y² = (c_{i+1,j} + c_{i-1,j} + c_{i,j+1} + c_{i,j-1} - 4c_{i,j}) / dx²
+    # ∂²c/∂x² + ∂²c/∂y² = (c_{i+1,j} + c_{i-1,j} + c_{i,j+1} + c_{i,j-1} - 4c_{i,j}) / h²
     d_left = (gas_values[1:-1, 0:-2, 1:-1] - center) * mask[1:-1, 0:-2, None]
     d_right = (gas_values[1:-1, 2:, 1:-1] - center) * mask[1:-1, 2:, None]
     d_top = (gas_values[0:-2, 1:-1, 1:-1] - center) * mask[0:-2, 1:-1, None]
@@ -47,7 +47,7 @@ def dDistribution_dt(
     # Vertical diffusion: non-uniform asymmetric 3-point stencil (∇²c in z)
     # For non-uniform grid with spacing h below and 2h above current point:
     # ∂²c/∂z² = (c(z+2h) - 3c(z) + 2c(z-h)) / (3h²)
-    # where h = z_weights[i] * dx for each layer i
+    # where h = z_weights[i] * h for each layer i
     d_upper = gas_values[1:-1, 1:-1, 2:] - center    # c(z+2h) - c(z)
     d_lower = gas_values[1:-1, 1:-1, 0:-2] - center  # c(z-h) - c(z)
     
