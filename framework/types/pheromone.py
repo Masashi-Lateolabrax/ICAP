@@ -47,7 +47,7 @@ class Material:
         normal_pressure = 1  # atm
 
         a = (10 ** -3) * (temperature ** 1.75) * (1 / self.molar_mass + 1 / self.AIR_MOLAR_MASS) ** 0.5
-        b = normal_pressure * (self.diffusion_volume ** 0.3 + self.AIR_DIFFUSION_VOLUME ** 0.3) ** 2
+        b = normal_pressure * (self.diffusion_volume ** (1/3) + self.AIR_DIFFUSION_VOLUME ** (1/3)) ** 2
         diffusion = a / b  # cm^2/s
         return diffusion * 1e-4  # m^2/s
 
