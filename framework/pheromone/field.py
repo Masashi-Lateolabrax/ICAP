@@ -234,7 +234,7 @@ class PheromoneField:
         return np.array(self._values_liquid[ys, xs])
 
     def get_gas_all(self) -> np.ndarray:
-        return np.array(self._values_gas[1:-1, 1:-1, 0])
+        return np.array(self._values_gas[1:-1, 1:-1, 1])
 
     def get_liquid_all(self) -> np.ndarray:
         return np.array(self._values_liquid)
