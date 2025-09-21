@@ -162,7 +162,6 @@ class PheromoneField:
             ny: int,
             dx: float,  # [m]
             material: Material,
-            decrease_rate: float,
             temperature: float,  # [K]
             dt: float,  # [s] - time step
             iter_: int = 1,
@@ -185,7 +184,6 @@ class PheromoneField:
         self.saturating_concentration = saturation_pressure / (Material.GAS_CONSTANT * temperature)  # [mol/m^3]
         self.dt = dt  # Store dt as instance variable
         self.diffusion_coefficient = material.diffusion_coefficient(temperature)  # [m^2/s]
-        self.decrease_rate = decrease_rate
         self.temperature = temperature
         self.padding_value = 0.0
 
