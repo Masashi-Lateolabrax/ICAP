@@ -164,6 +164,7 @@ class PheromoneField:
             evaporation_rate: float,
             decrease_rate: float,
             temperature: float,  # [K]
+            dt: float,  # [s] - time step
             iter_: int = 1,
     ):
         # Parameter validation
@@ -183,7 +184,8 @@ class PheromoneField:
         self.dx = dx
 
         saturation_pressure = material.saturation_pressure(temperature)  # [Pa]
-        self.saturation_concentration = saturation_pressure / (Material.GAS_CONSTANT * temperature)  # [mol/m^3]
+        self.saturating_concentration = saturation_pressure / (Material.GAS_CONSTANT * temperature)  # [mol/m^3]
+        self.dt = dt  # Store dt as instance variable
         self.diffusion_coefficient = material.diffusion_coefficient(temperature)  # [m^2/s]
         self.evaporation_rate = evaporation_rate
         self.decrease_rate = decrease_rate
