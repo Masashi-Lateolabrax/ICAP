@@ -24,10 +24,10 @@ def dDiffusion_dt(
     z=0 to z=1: h, z=1 to z=2: 2*h, z=2 to z=3: 4*h, etc.
     """
     # Set boundary conditions: padding for x,y boundaries
-    gas_values = gas_values.at[0, :, :].set(padding_value)  # x=0 boundary
-    gas_values = gas_values.at[-1, :, :].set(padding_value)  # x=max boundary
-    gas_values = gas_values.at[:, 0, :].set(padding_value)  # y=0 boundary
-    gas_values = gas_values.at[:, -1, :].set(padding_value)  # y=max boundary
+    gas_values = gas_values.at[0, :, :].set(padding_value)  # y=0 boundary (top edge)
+    gas_values = gas_values.at[-1, :, :].set(padding_value)  # y=max boundary (bottom edge)
+    gas_values = gas_values.at[:, 0, :].set(padding_value)  # x=0 boundary (left edge)
+    gas_values = gas_values.at[:, -1, :].set(padding_value)  # x=max boundary (right edge)
 
     # Z-direction boundaries: Neumann (copy) at bottom, Dirichlet (zero) at top
     gas_values = gas_values.at[:, :, 0].set(gas_values[:, :, 1])  # z=0: copy from z=1
