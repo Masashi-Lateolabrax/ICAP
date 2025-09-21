@@ -153,8 +153,8 @@ def update_with_rk4(
         padding_value=padding_value
     )
 
-    gas_values = jnp.maximum(0.0, gas_values + (k1_gas + 2 * k2_gas + 2 * k3_gas + k4_gas) / 6)
-    liquid_values = jnp.maximum(0.0, liquid_values + (k1_liquid + 2 * k2_liquid + 2 * k3_liquid + k4_liquid) / 6)
+    gas_values = jnp.maximum(0.0, gas_values + dt * (k1_gas + 2 * k2_gas + 2 * k3_gas + k4_gas) / 6)
+    liquid_values = jnp.maximum(0.0, liquid_values + dt * (k1_liquid + 2 * k2_liquid + 2 * k3_liquid + k4_liquid) / 6)
 
     return gas_values, liquid_values
 
