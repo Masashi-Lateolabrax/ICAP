@@ -64,7 +64,7 @@ class Simulator(BasicSimulator):
         )
 
         self._pheromone_field.add_liquid_by_cell(self._pheromone_cells)
-        self._pheromone_field.update(self.settings.Simulation.TIME_STEP)
+        self._pheromone_field.step(self.settings.Simulation.TIME_STEP)
         mujoco.mj_step(self.model, self.data)
 
     def get_scores(self) -> list[float]:
