@@ -1,3 +1,4 @@
+import jax
 import numpy as np
 import jax.numpy as jnp
 
@@ -101,6 +102,7 @@ def d_dt(
     return d_gas, d_liquid
 
 
+@jax.jit
 def update_with_rk4(
         liquid_values: jnp.ndarray,
         gas_values: jnp.ndarray,
