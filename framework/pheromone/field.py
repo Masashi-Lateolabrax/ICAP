@@ -175,11 +175,11 @@ class PheromoneField:
         if iter_ <= 0:
             raise ValueError("Iteration count must be positive")
 
-        self.shape = jnp.array((ny, nx), dtype=jnp.int32)
+        self.shape = jnp.array((ny, nx, 5), dtype=jnp.int32)
         self.dx = dx
 
-        self.saturation_pressure = material.saturation_pressure(temperature)
-        self.diffusion_coefficient = material.diffusion_coefficient(temperature)
+        self.saturation_pressure = material.saturation_pressure(temperature)  # [kPa]
+        self.diffusion_coefficient = material.diffusion_coefficient(temperature)  # [m^2/s]
         self.evaporation_rate = evaporation_rate
         self.decrease_rate = decrease_rate
         self.temperature = temperature
@@ -187,8 +187,8 @@ class PheromoneField:
 
         self.iter_ = iter_
 
-        self._values_liquid = jnp.zeros(self.shape, dtype=jnp.float32)
-        self._values_gas = jnp.zeros(self.shape + 2, dtype=jnp.float32)
+        self._values_liquid = jnp.zeros(self.shape, dtype=jnp.float32)  # [molecules]
+        self._values_gas = jnp.zeros(self.shape + 2, dtype=jnp.float32)  # [molecules]
         self.mask = jnp.ones(self.shape + 2, dtype=jnp.bool_)
 
     def reset(self):
@@ -196,38 +196,40 @@ class PheromoneField:
         self._values_gas = jnp.zeros(self.shape + 2, dtype=jnp.float32)
 
     def set_neumann_boundary(self):
-        self.mask = self.mask.at[0, :].set(0)
-        self.mask = self.mask.at[-1, :].set(0)
-        self.mask = self.mask.at[:, 0].set(0)
-        self.mask = self.mask.at[:, -1].set(0)
+        self.mask = self.mask.at[0, :, :].set(0)
+        self.mask = self.mask.at[-1, :, :].set(0)
+        self.mask = self.mask.at[:, 0, :].set(0)
+        self.mask = self.mask.at[:, -1, :].set(0)
 
     def set_dirichlet_boundary(self, value: float):
         self.padding_value = value
-        self.mask = self.mask.at[0, :].set(1)
-        self.mask = self.mask.at[-1, :].set(1)
-        self.mask = self.mask.at[:, 0].set(1)
-        self.mask = self.mask.at[:, -1].set(1)
+        self.mask = self.mask.at[0, :, :].set(1)
+        self.mask = self.mask.at[-1, :, :].set(1)
+        self.mask = self.mask.at[:, 0, :].set(1)
+        self.mask = self.mask.at[:, -1, :].set(1)
 
-    def get_gas(self, xs, ys) -> np.ndarray:
+    def get_gas(self, xs, ys, zs=0) -> np.ndarray:
         xs = jnp.clip(xs, 0, self.shape[1]) + 1
         ys = jnp.clip(ys, 0, self.shape[0]) + 1
-        return np.array(self._values_gas[ys, xs])
+        zs = jnp.clip(zs, 0, self.shape[2] - 1)
+        return np.array(self._values_gas[ys, xs, zs])
 
-    def get_liquid(self, xs, ys) -> np.ndarray:
+    def get_liquid(self, xs, ys, zs=0) -> np.ndarray:
         xs = jnp.clip(xs, 0, self.shape[1] - 1)
         ys = jnp.clip(ys, 0, self.shape[0] - 1)
-        return np.array(self._values_liquid[ys, xs])
+        zs = jnp.clip(zs, 0, self.shape[2] - 1)
+        return np.array(self._values_liquid[ys, xs, zs])
 
     def get_gas_all(self) -> np.ndarray:
-        return np.array(self._values_gas[1:-1, 1:-1])
+        return np.array(self._values_gas[1:-1, 1:-1, 0])
 
     def get_liquid_all(self) -> np.ndarray:
         return np.array(self._values_liquid)
 
-    def add_liquid(self, xs, ys, values):
+    def add_liquid(self, xs, ys, values):  # values: [molecules]
         xs = jnp.clip(xs, 0, self.shape[1] - 1)
         ys = jnp.clip(ys, 0, self.shape[0] - 1)
-        self._values_liquid = self._values_liquid.at[ys, xs].add(values)
+        self._values_liquid = self._values_liquid.at[ys, xs, 0].add(values)
 
     def add_liquid_by_cell(self, cell: list[PheromoneFieldCell]):
         xs = jnp.array([c.index_x for c in cell if c.add_value > 0])
@@ -240,7 +242,7 @@ class PheromoneField:
         xs = jnp.clip(xs, 0, self.shape[1] - 1)
         ys = jnp.clip(ys, 0, self.shape[0] - 1)
 
-        self._values_liquid = self._values_liquid.at[ys, xs].add(vs)
+        self._values_liquid = self._values_liquid.at[ys, xs, 0].add(vs)
 
         for c in cell:
             c.add_value = 0.0
