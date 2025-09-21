@@ -242,7 +242,7 @@ class PheromoneField:
     def add_liquid(self, xs, ys, values):  # values: [molecules]
         xs = jnp.clip(xs, 0, self.shape[1] - 1)
         ys = jnp.clip(ys, 0, self.shape[0] - 1)
-        self._values_liquid = self._values_liquid.at[ys, xs].add(values)
+        self._values_liquid = self._values_liquid.at[ys, xs].add(values * self.dt)
 
     def add_liquid_by_cell(self, cell: list[PheromoneFieldCell]):
         xs = jnp.array([c.index_x for c in cell if c.add_value > 0])
@@ -255,7 +255,7 @@ class PheromoneField:
         xs = jnp.clip(xs, 0, self.shape[1] - 1)
         ys = jnp.clip(ys, 0, self.shape[0] - 1)
 
-        self._values_liquid = self._values_liquid.at[ys, xs].add(vs)
+        self._values_liquid = self._values_liquid.at[ys, xs].add(vs * self.dt)
 
         for c in cell:
             c.add_value = 0.0
