@@ -13,7 +13,7 @@ class DiffusionVolumes:
 
 # Reference(Gas Constant): https://physics.nist.gov/cgi-bin/cuu/Value?r|search_for=gas+constant
 class Material:
-    GAS_CONSTANT: float = 8.314462618  # J/(mol·K)
+    GAS_CONSTANT: float = 8.314462618  # J/(mol·K)=Pa·m³/(mol·K)
     AIR_MOLAR_MASS: float = 28.96  # g/mol
     AIR_DIFFUSION_VOLUME: float = 19.7
 
