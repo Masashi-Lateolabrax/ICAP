@@ -37,6 +37,13 @@ class Material:
         return pressure_bar * 1e5  # Pa
 
     def diffusion_coefficient(self, temperature: float) -> float:
+        """
+        Calculate diffusion coefficient using the Fuller-Schettler-Giddings equation.
+
+        Returns:
+            float: Diffusion coefficient in m^2/s.
+        """
+
         normal_pressure = 1  # atm
 
         a = (10 ** -3) * (temperature ** 1.75) * (1 / self.molar_mass + 1 / self.AIR_MOLAR_MASS) ** 0.5
