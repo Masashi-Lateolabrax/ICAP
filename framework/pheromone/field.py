@@ -1,6 +1,5 @@
 import numpy as np
 import jax.numpy as jnp
-from jax import jit
 
 from ..prelude import *
 from .cell import PheromoneFieldCell
@@ -102,7 +101,6 @@ def d_dt(
     return d_gas, d_liquid
 
 
-@jit
 def update_with_rk4(
         liquid_values: jnp.ndarray,
         gas_values: jnp.ndarray,
