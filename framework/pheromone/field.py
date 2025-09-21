@@ -156,11 +156,11 @@ class PheromoneField:
             self,
             nx: int,
             ny: int,
-            dx: float,
+            dx: float,  # [m]
             material: Material,
             evaporation_rate: float,
             decrease_rate: float,
-            temperature: float,
+            temperature: float,  # [K]
             iter_: int = 1,
     ):
         # Parameter validation
