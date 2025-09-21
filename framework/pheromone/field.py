@@ -161,7 +161,6 @@ class PheromoneField:
             ny: int,
             dx: float,  # [m]
             material: Material,
-            evaporation_rate: float,
             decrease_rate: float,
             temperature: float,  # [K]
             dt: float,  # [s] - time step
@@ -172,8 +171,6 @@ class PheromoneField:
             raise ValueError("Grid dimensions must be positive")
         if dx <= 0:
             raise ValueError("Grid spacing dx must be positive")
-        if evaporation_rate < 0 or decrease_rate < 0:
-            raise ValueError("Rates must be non-negative")
         if temperature <= 0:
             raise ValueError("Temperature must be positive")
         if iter_ <= 0:
@@ -187,7 +184,6 @@ class PheromoneField:
         self.saturating_concentration = saturation_pressure / (Material.GAS_CONSTANT * temperature)  # [mol/m^3]
         self.dt = dt  # Store dt as instance variable
         self.diffusion_coefficient = material.diffusion_coefficient(temperature)  # [m^2/s]
-        self.evaporation_rate = evaporation_rate
         self.decrease_rate = decrease_rate
         self.temperature = temperature
         self.padding_value = 0.0
