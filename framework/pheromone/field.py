@@ -84,12 +84,12 @@ def d_dt(
     decreasing_cell = d_diffusion[:, :, 0] < 0
     evaporation_cell = decreasing_cell & source_exist
     decreasing = d_diffusion[:, :, 0] * evaporation_cell  # Unit: mol/(m^3·s)
-    evaporation = (saturating_concentration + decreasing * dt) * (h ** 3)  # Unit: mol
-    evaporation = jnp.minimum(evaporation, liquid_values)  # Unit: mol
-    evaporation = evaporation / ((h ** 3) * dt)  # Unit: mol/(m^3·s)
+    evaporation_mol = (saturating_concentration + decreasing * dt) * (h ** 3)  # Unit: mol
+    evaporation_mol = jnp.minimum(evaporation_mol, liquid_values)  # Unit: mol
+    evaporation_rate = evaporation_mol / ((h ** 3) * dt)  # Unit: mol/(m^3·s)
 
-    d_gas = d_diffusion.at[:, :, 0].add(evaporation)  # Unit: mol/(m^3·s)
-    d_liquid = -evaporation / dt  # Unit: mol/s
+    d_gas = d_diffusion.at[:, :, 0].add(evaporation_rate)  # Unit: mol/(m^3·s)
+    d_liquid = -evaporation_mol / dt  # Unit: mol/s
 
     return d_gas, d_liquid
 
