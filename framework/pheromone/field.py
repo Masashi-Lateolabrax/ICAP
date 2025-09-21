@@ -24,6 +24,7 @@ def dDiffusion_dt(
     z=0 to z=1: h, z=1 to z=2: 2*h, z=2 to z=3: 4*h, etc.
     """
     # Set boundary conditions: padding for x,y boundaries
+    # IMPORTANT: Array indexing is [y, x, z] order (row, column, depth)
     gas_values = gas_values.at[0, :, :].set(padding_value)  # y=0 boundary (top edge)
     gas_values = gas_values.at[-1, :, :].set(padding_value)  # y=max boundary (bottom edge)
     gas_values = gas_values.at[:, 0, :].set(padding_value)  # x=0 boundary (left edge)
@@ -48,6 +49,13 @@ def dDiffusion_dt(
     # For non-uniform grid with spacing h below and 2h above current point:
     # ∂²c/∂z² = (c(z+2h) - 3c(z) + 2c(z-h)) / (3h²)
     # where h = z_weights[i] * h for each layer i
+    # 
+    # NOTE: The following implementation is mathematically correct.
+    # Expanding: (d_upper + 2*d_lower) / (3h²) where:
+    # d_upper = c(z+2h) - c(z)
+    # d_lower = c(z-h) - c(z)  
+    # Results in: (c(z+2h) - c(z) + 2*(c(z-h) - c(z))) / (3h²)
+    #           = (c(z+2h) - 3*c(z) + 2*c(z-h)) / (3h²) ✓
     d_upper = gas_values[1:-1, 1:-1, 2:] - center  # c(z+2h) - c(z)
     d_lower = gas_values[1:-1, 1:-1, 0:-2] - center  # c(z-h) - c(z)
 
