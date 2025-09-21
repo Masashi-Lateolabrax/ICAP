@@ -148,9 +148,8 @@ class BasicEnvironment(BasicMuJoCoSimulator, ABC):
                 ny=settings.Pheromone.HEIGHT_NUM,
                 dx=settings.Pheromone.CELL_SIZE,
                 material=settings.Pheromone.MATERIAL,
-                evaporation_rate=settings.Pheromone.EVAPORATION_RATE,
-                decrease_rate=settings.Pheromone.DECREASE_RATE,
                 temperature=settings.Pheromone.TEMPERATURE,
+                dt=settings.Simulation.TIME_STEP,
                 iter_=settings.Pheromone.ITERATIONS_PER_STEP,
             )
             self._pheromone_cells = [s.get_cell(self.model) for s in pheromone_cell_specs]
