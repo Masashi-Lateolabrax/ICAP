@@ -30,7 +30,8 @@ def dDistribution_dt(
 
     d_upper = gas_values[1:-1, 1:-1, 2:] - center
     d_lower = gas_values[1:-1, 1:-1, 0:-2] - center
-    z_weights = jnp.array([1, 2, 4, 8, 16], dtype=jnp.float32)
+    z_weights = [2 ** i for i in range(gas_values.shape[2] - 2)]
+    z_weights = jnp.array(z_weights, dtype=jnp.float32)
     vertical = (d_upper + 2 * d_lower) / (3 * (z_weights[None, None, :] * dx) ** 2)
 
     return diffusion_coefficient * (horizontal + vertical)
