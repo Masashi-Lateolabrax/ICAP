@@ -261,11 +261,9 @@ class PheromoneField:
                 liquid_values=self._values_liquid,
                 gas_values=self._values_gas,
                 mask=self.mask,
-                dx=self.dx,
-                saturation_pressure=self.saturation_pressure,
+                h=self.dx,
+                saturating_concentration=self.saturating_concentration,
                 diffusion_coefficient=self.diffusion_coefficient,
-                evaporation_rate=self.evaporation_rate,
-                decrease_rate=self.decrease_rate,
                 dt=dt,
                 padding_value=self.padding_value,
             )
