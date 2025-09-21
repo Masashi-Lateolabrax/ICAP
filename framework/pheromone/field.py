@@ -268,5 +268,5 @@ class PheromoneField:
                 padding_value=self.padding_value,
             )
 
-    def update(self, dt: float):
-        self._update_with_rk4(dt)
+    def update(self):
+        self._update_with_rk4(self.dt)
