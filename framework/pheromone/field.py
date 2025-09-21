@@ -6,7 +6,6 @@ from ..prelude import *
 from .cell import PheromoneFieldCell
 
 
-@jit
 def dDistribution_dt(
         gas_values: jnp.ndarray,
         mask: jnp.ndarray,
@@ -14,20 +13,27 @@ def dDistribution_dt(
         dx: float,
         padding_value: float,
 ) -> jnp.ndarray:
-    gas_values = gas_values.at[0, :].set(padding_value)
-    gas_values = gas_values.at[-1, :].set(padding_value)
-    gas_values = gas_values.at[:, 0].set(padding_value)
-    gas_values = gas_values.at[:, -1].set(padding_value)
+    gas_values = gas_values.at[0, :, :].set(padding_value)
+    gas_values = gas_values.at[-1, :, :].set(padding_value)
+    gas_values = gas_values.at[:, 0, :].set(padding_value)
+    gas_values = gas_values.at[:, -1, :].set(padding_value)
+    gas_values = gas_values.at[:, :, 0].set(gas_values[:, :, 1])
+    gas_values = gas_values.at[:, :, -1].set(0)
 
-    center = gas_values[1:-1, 1:-1]
-    d_left = (gas_values[1:-1, 0:-2] - center) * mask[1:-1, 0:-2]
-    d_right = (gas_values[1:-1, 2:] - center) * mask[1:-1, 2:]
-    d_top = (gas_values[0:-2, 1:-1] - center) * mask[0:-2, 1:-1]
-    d_bottom = (gas_values[2:, 1:-1] - center) * mask[2:, 1:-1]
-    return diffusion_coefficient * (d_top + d_bottom + d_left + d_right) / (dx * dx)
+    center = gas_values[1:-1, 1:-1, 1:-1]
 
+    d_left = (gas_values[1:-1, 0:-2, 1:-1] - center) * mask[1:-1, 0:-2, None]
+    d_right = (gas_values[1:-1, 2:, 1:-1] - center) * mask[1:-1, 2:, None]
+    d_top = (gas_values[0:-2, 1:-1, 1:-1] - center) * mask[0:-2, 1:-1, None]
+    d_bottom = (gas_values[2:, 1:-1, 1:-1] - center) * mask[2:, 1:-1, None]
+    horizontal = (d_top + d_bottom + d_left + d_right) / (dx * dx)
 
-@jit
+    d_upper = gas_values[1:-1, 1:-1, 2:] - center
+    d_lower = gas_values[1:-1, 1:-1, 0:-2] - center
+    z_weights = jnp.array([1, 2, 4, 8, 16], dtype=jnp.float32)
+    vertical = (d_upper + 2 * d_lower) / (3 * (z_weights[None, None, :] * dx) ** 2)
+
+    return diffusion_coefficient * (horizontal + vertical)
 def dEvaporation_dt(
         gas_values: jnp.ndarray,
         liquid_values: jnp.ndarray,
