@@ -187,7 +187,8 @@ class PheromoneField:
         self.nz = 5  # Z-dimension size
         self.dx = dx
 
-        self.saturation_pressure = material.saturation_pressure(temperature)  # [kPa]
+        saturation_pressure = material.saturation_pressure(temperature)  # [Pa]
+        self.saturation_concentration = saturation_pressure / (Material.GAS_CONSTANT * temperature)  # [mol/m^3]
         self.diffusion_coefficient = material.diffusion_coefficient(temperature)  # [m^2/s]
         self.evaporation_rate = evaporation_rate
         self.decrease_rate = decrease_rate
@@ -196,8 +197,8 @@ class PheromoneField:
 
         self.iter_ = iter_
 
-        self._values_liquid = jnp.zeros(self.shape, dtype=jnp.float32)  # [molecules]
-        self._values_gas = jnp.zeros((ny + 2, nx + 2, self.nz + 2), dtype=jnp.float32)  # [molecules]
+        self._values_liquid = jnp.zeros(self.shape, dtype=jnp.float32)  # [mol]
+        self._values_gas = jnp.zeros((ny + 2, nx + 2, self.nz + 2), dtype=jnp.float32)  # [mol/m^3]
         self.mask = jnp.ones(self.shape, dtype=jnp.bool_)
 
     def reset(self):
