@@ -98,11 +98,9 @@ def update_with_rk4(
         liquid_values: jnp.ndarray,
         gas_values: jnp.ndarray,
         mask: jnp.ndarray,
-        dx: float,
-        saturation_pressure: float,
+        h: float,
+        saturating_concentration: float,
         diffusion_coefficient: float,
-        evaporation_rate: float,
-        decrease_rate: float,
         dt: float,
         padding_value: float,
 ) -> tuple[jnp.ndarray, jnp.ndarray]:
@@ -110,11 +108,10 @@ def update_with_rk4(
         liquid_values=liquid_values,
         gas_values=gas_values,
         mask=mask,
-        dx=dx,
-        saturation_pressure=saturation_pressure,
+        h=h,
+        saturating_concentration=saturating_concentration,
         diffusion_coefficient=diffusion_coefficient,
-        evaporation_rate=evaporation_rate,
-        decrease_rate=decrease_rate,
+        dt=dt,
         padding_value=padding_value,
     )
 
@@ -122,11 +119,10 @@ def update_with_rk4(
         liquid_values=liquid_values + 0.5 * dt * k1_liquid,
         gas_values=gas_values + 0.5 * dt * k1_gas,
         mask=mask,
-        dx=dx,
-        saturation_pressure=saturation_pressure,
+        h=h,
+        saturating_concentration=saturating_concentration,
         diffusion_coefficient=diffusion_coefficient,
-        evaporation_rate=evaporation_rate,
-        decrease_rate=decrease_rate,
+        dt=dt,
         padding_value=padding_value
     )
 
@@ -134,11 +130,10 @@ def update_with_rk4(
         liquid_values=liquid_values + 0.5 * dt * k2_liquid,
         gas_values=gas_values + 0.5 * dt * k2_gas,
         mask=mask,
-        dx=dx,
-        saturation_pressure=saturation_pressure,
+        h=h,
+        saturating_concentration=saturating_concentration,
         diffusion_coefficient=diffusion_coefficient,
-        evaporation_rate=evaporation_rate,
-        decrease_rate=decrease_rate,
+        dt=dt,
         padding_value=padding_value
     )
 
@@ -146,11 +141,10 @@ def update_with_rk4(
         liquid_values=liquid_values + dt * k3_liquid,
         gas_values=gas_values + dt * k3_gas,
         mask=mask,
-        dx=dx,
-        saturation_pressure=saturation_pressure,
+        h=h,
+        saturating_concentration=saturating_concentration,
         diffusion_coefficient=diffusion_coefficient,
-        evaporation_rate=evaporation_rate,
-        decrease_rate=decrease_rate,
+        dt=dt,
         padding_value=padding_value
     )
 
