@@ -31,9 +31,10 @@ class Material:
         Calculate saturation pressure using the Antoine equation.
 
         Returns:
-            float: Saturation pressure in kPa.
+            float: Saturation pressure in Pa.
         """
-        return 10 ** (self.antoine_a - (self.antoine_b / (temperature + self.antoine_c))) * 100
+        pressure_bar = 10 ** (self.antoine_a - (self.antoine_b / (temperature + self.antoine_c)))  # bar(=100 kPa)
+        return pressure_bar * 1e5  # Pa
 
     def diffusion_coefficient(self, temperature: float) -> float:
         normal_pressure = 1  # atm
