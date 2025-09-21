@@ -10,30 +10,55 @@ def dDistribution_dt(
         gas_values: jnp.ndarray,
         mask: jnp.ndarray,
         diffusion_coefficient: float,
-        dx: float,
+        h: float,
         padding_value: float,
 ) -> jnp.ndarray:
-    gas_values = gas_values.at[0, :, :].set(padding_value)
-    gas_values = gas_values.at[-1, :, :].set(padding_value)
-    gas_values = gas_values.at[:, 0, :].set(padding_value)
-    gas_values = gas_values.at[:, -1, :].set(padding_value)
-    gas_values = gas_values.at[:, :, 0].set(gas_values[:, :, 1])
-    gas_values = gas_values.at[:, :, -1].set(0)
+    """
+    Calculate time derivative of gas concentration distribution using 3D diffusion equation.
+    
+    Uses finite difference method with:
+    - Standard 5-point stencil for horizontal (x,y) directions
+    - Non-uniform asymmetric 3-point stencil for vertical (z) direction
+    
+    The z-direction uses exponentially spaced layers with intervals:
+    z=0 to z=1: dx, z=1 to z=2: 2*dx, z=2 to z=3: 4*dx, etc.
+    """
+    # Set boundary conditions: padding for x,y boundaries
+    gas_values = gas_values.at[0, :, :].set(padding_value)   # x=0 boundary
+    gas_values = gas_values.at[-1, :, :].set(padding_value)  # x=max boundary
+    gas_values = gas_values.at[:, 0, :].set(padding_value)   # y=0 boundary
+    gas_values = gas_values.at[:, -1, :].set(padding_value)  # y=max boundary
+    
+    # Z-direction boundaries: Neumann (copy) at bottom, Dirichlet (zero) at top
+    gas_values = gas_values.at[:, :, 0].set(gas_values[:, :, 1])  # z=0: copy from z=1
+    gas_values = gas_values.at[:, :, -1].set(0)                   # z=max: zero concentration
 
+    # Interior points for finite difference calculation
     center = gas_values[1:-1, 1:-1, 1:-1]
 
+    # Horizontal diffusion: standard centered difference (∇²c in x,y)
+    # ∂²c/∂x² + ∂²c/∂y² = (c_{i+1,j} + c_{i-1,j} + c_{i,j+1} + c_{i,j-1} - 4c_{i,j}) / dx²
     d_left = (gas_values[1:-1, 0:-2, 1:-1] - center) * mask[1:-1, 0:-2, None]
     d_right = (gas_values[1:-1, 2:, 1:-1] - center) * mask[1:-1, 2:, None]
     d_top = (gas_values[0:-2, 1:-1, 1:-1] - center) * mask[0:-2, 1:-1, None]
     d_bottom = (gas_values[2:, 1:-1, 1:-1] - center) * mask[2:, 1:-1, None]
-    horizontal = (d_top + d_bottom + d_left + d_right) / (dx * dx)
+    horizontal = (d_top + d_bottom + d_left + d_right) / (h * h)
 
-    d_upper = gas_values[1:-1, 1:-1, 2:] - center
-    d_lower = gas_values[1:-1, 1:-1, 0:-2] - center
+    # Vertical diffusion: non-uniform asymmetric 3-point stencil (∇²c in z)
+    # For non-uniform grid with spacing h below and 2h above current point:
+    # ∂²c/∂z² = (c(z+2h) - 3c(z) + 2c(z-h)) / (3h²)
+    # where h = z_weights[i] * dx for each layer i
+    d_upper = gas_values[1:-1, 1:-1, 2:] - center    # c(z+2h) - c(z)
+    d_lower = gas_values[1:-1, 1:-1, 0:-2] - center  # c(z-h) - c(z)
+    
+    # Generate exponential spacing weights: [1, 2, 4, 8, 16, ...] for each z-layer
     z_weights = [2 ** i for i in range(gas_values.shape[2] - 2)]
     z_weights = jnp.array(z_weights, dtype=jnp.float32)
-    vertical = (d_upper + 2 * d_lower) / (3 * (z_weights[None, None, :] * dx) ** 2)
+    
+    # Apply asymmetric difference formula: (d_upper + 2*d_lower) / (3*h²)
+    vertical = (d_upper + 2 * d_lower) / (3 * (z_weights[None, None, :] * h) ** 2)
 
+    # Total diffusion: D * (∇²c_horizontal + ∇²c_vertical)
     return diffusion_coefficient * (horizontal + vertical)
 def dEvaporation_dt(
         gas_values: jnp.ndarray,
