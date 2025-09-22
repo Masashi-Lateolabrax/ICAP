@@ -104,7 +104,7 @@ def _d_dt(
 
 
 @partial(jax.jit, static_argnames=(
-        "saturation_pressure", "diffusion_coefficient", "evaporation_rate", "decrease_rate", "padding_value",
+        "h", "saturation_concentration", "diffusion_coefficient", "dt", "padding_value",
 ), inline=True)
 def _step_with_rk4(
         liquid_values: jnp.ndarray,  # [mol] - liquid pheromone amount
@@ -173,8 +173,7 @@ def _step_with_rk4(
 @partial(
     jax.jit,
     static_argnames=(
-            "saturation_pressure", "diffusion_coefficient", "evaporation_rate", "decrease_rate", "padding_value",
-            "iter_"
+            "dx", "saturation_concentration", "diffusion_coefficient", "dt", "padding_value", "iter_"
     ),
     donate_argnames=("liquid_values", "gas_values"),
     inline=True,
