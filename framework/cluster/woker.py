@@ -1,0 +1,57 @@
+import asyncio
+import uuid
+from typing import Optional
+
+from .packets import (
+    AsyncTaskTunnel, AsyncTaskTunnelChild, AsyncTaskPacket, AsyncTaskPacketType, WorkerPacket
+)
+from .utils import relay_routine
+
+
+async def worker_routine(address: str, port: int, timeout: float, tunnel: AsyncTaskTunnelChild):
+    connection = await asyncio.open_connection(address, port)
+    reader: asyncio.StreamReader = connection[0]
+    writer: asyncio.StreamWriter = connection[1]
+
+    while relay_routine(reader, writer, tunnel, timeout):
+        pass
+
+
+class WorkerClient:
+    def __init__(self):
+        self.routine_handler: Optional[asyncio.Task] = None
+        self.tunnel = AsyncTaskTunnel()
+        self._child_id: Optional[uuid.UUID] = None
+
+    async def start(self, address: str, port: int, timeout: float):
+        if self.routine_handler is not None:
+            raise
+
+        child = self.tunnel.spawn_child()
+        self._child_id = child.uuid
+        self.routine_handler = asyncio.create_task(
+            worker_routine(address, port, timeout, child)
+        )
+
+    async def stop(self):
+        await self.tunnel.send(self._child_id, AsyncTaskPacket.stop_packet())
+
+    async def receive(self, timeout: float) -> Optional[WorkerPacket]:
+        response = await self.tunnel.receive(self._child_id, timeout, AsyncTaskPacketType.WORKER_PACKET)
+        if response is None:
+            return None
+        if response.is_timeout():
+            return WorkerPacket.timeout_packet()
+        if not isinstance(response.content, WorkerPacket):
+            raise ValueError("Invalid response type. Expected WorkerPacket.")
+        return response.content
+
+    async def send_worker_load(self, load: float):
+        packet = WorkerPacket.load_packet(load)
+        packet = AsyncTaskPacket.worker_packet(packet)
+        await self.tunnel.send(self._child_id, packet)
+
+    async def send_worker_state(self, gpu_usage: float, working: bool):
+        packet = WorkerPacket.state_packet(gpu_usage, working)
+        packet = AsyncTaskPacket.worker_packet(packet)
+        await self.tunnel.send(self._child_id, packet)
