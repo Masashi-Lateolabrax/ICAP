@@ -46,12 +46,12 @@ class WorkerPacket:
         return cls(WorkerPacketType.LOAD, load)
 
     @classmethod
-    def state_packet(cls, gpu_usage: float = None, working: bool = None):
-        return cls(WorkerPacketType.STATE, StatePacket(gpu_usage, working))
-
-    @classmethod
     def request_state(cls):
         return cls(WorkerPacketType.STATE, None)
+
+    @classmethod
+    def state_packet(cls, gpu_usage: float, working: bool):
+        return cls(WorkerPacketType.STATE, StatePacket(gpu_usage, working))
 
     def as_bytes(self) -> bytes:
         type_bytes = self.type.value.to_bytes(4, 'big')
