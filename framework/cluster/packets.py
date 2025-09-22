@@ -99,7 +99,7 @@ class AsyncTaskTunnel:
     def __init__(self):
         self.parent_queue = {}
         self.child_queue = {}
-        self._buf_child_queue = {}
+        self._buf_child_queue: dict[uuid.UUID, list[_AsyncTaskPacket]] = {}
 
     def spawn_child(self):
         id_ = uuid.uuid4()
