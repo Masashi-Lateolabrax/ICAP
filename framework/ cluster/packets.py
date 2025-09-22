@@ -1,6 +1,7 @@
 import asyncio
 import enum
 import pickle
+import uuid
 
 
 class AsyncTaskPacketType(enum.Enum):
@@ -18,7 +19,8 @@ class AsyncTaskPacket:
 
 
 class AsyncTaskTunnelChild:
-    def __init__(self, parent_queue: asyncio.Queue, child_queue: asyncio.Queue):
+    def __init__(self, id_: uuid.UUID, parent_queue: asyncio.Queue, child_queue: asyncio.Queue):
+        self.uuid = id_
         self.parent_queue = parent_queue
         self.child_queue = child_queue
 
@@ -27,8 +29,8 @@ class AsyncTaskTunnelChild:
             raise TypeError("packet must be an instance of AsyncTaskPacket")
         await self.child_queue.put(packet)
 
-    async def receive(self) -> AsyncTaskPacket:
-        data = await self.parent_queue.get()
+    async def receive(self, timeout: float = None) -> AsyncTaskPacket:
+        data = await asyncio.wait_for(self.parent_queue.get(), timeout=timeout)
         if not isinstance(data, AsyncTaskPacket):
             raise TypeError("data must be an instance of AsyncTaskPacket")
         return data
@@ -36,19 +38,24 @@ class AsyncTaskTunnelChild:
 
 class AsyncTaskTunnel:
     def __init__(self):
-        self.parent_queue = asyncio.Queue()
-        self.child_queue = asyncio.Queue()
+        self.parent_queue = {}
+        self.child_queue = {}
 
     def spawn_child(self):
-        return AsyncTaskTunnelChild(self.child_queue, self.parent_queue)
+        id_ = uuid.uuid4()
+        parent_queue = asyncio.Queue()
+        child_queue = asyncio.Queue()
+        self.parent_queue[id_] = parent_queue
+        self.child_queue[id_] = child_queue
+        return AsyncTaskTunnelChild(id_, child_queue, parent_queue)
 
-    async def send(self, packet: AsyncTaskPacket):
+    async def send(self, id_: uuid.UUID, packet: AsyncTaskPacket):
         if not isinstance(packet, AsyncTaskPacket):
             raise TypeError("packet must be an instance of AsyncTaskPacket")
-        await self.parent_queue.put(packet)
+        await self.child_queue[id_].put(packet)
 
-    async def receive(self) -> AsyncTaskPacket:
-        data = await self.child_queue.get()
+    async def receive(self, id_: uuid.UUID, timeout: float = None) -> AsyncTaskPacket:
+        data = await asyncio.wait_for(self.parent_queue[id_].get(), timeout=timeout)
         if not isinstance(data, AsyncTaskPacket):
             raise TypeError("data must be an instance of AsyncTaskPacket")
         return data
