@@ -5,6 +5,7 @@ import uuid
 
 
 class AsyncTaskPacketType(enum.Enum):
+    TIMEOUT = -1
     STOP = 1
     PAYLOAD = 2
 
@@ -13,6 +14,10 @@ class AsyncTaskPacket:
     def __init__(self, type_: AsyncTaskPacketType, content):
         self.type: AsyncTaskPacketType = type_
         self.content = content
+
+    @classmethod
+    def timeout_packet(cls):
+        return cls(AsyncTaskPacketType.TIMEOUT, None)
 
     @classmethod
     def stop_packet(cls):
@@ -35,7 +40,11 @@ class AsyncTaskTunnelChild:
         await self.child_queue.put(packet)
 
     async def receive(self, timeout: float = None) -> AsyncTaskPacket:
-        data = await asyncio.wait_for(self.parent_queue.get(), timeout=timeout)
+        try:
+            data = await asyncio.wait_for(self.parent_queue.get(), timeout=timeout)
+        except asyncio.TimeoutError:
+            data = AsyncTaskPacket.timeout_packet()
+
         if not isinstance(data, AsyncTaskPacket):
             raise TypeError("data must be an instance of AsyncTaskPacket")
         return data
@@ -60,7 +69,10 @@ class AsyncTaskTunnel:
         await self.child_queue[id_].put(packet)
 
     async def receive(self, id_: uuid.UUID, timeout: float = None) -> AsyncTaskPacket:
-        data = await asyncio.wait_for(self.parent_queue[id_].get(), timeout=timeout)
+        try:
+            data = await asyncio.wait_for(self.parent_queue[id_].get(), timeout=timeout)
+        except asyncio.TimeoutError:
+            data = AsyncTaskPacket.timeout_packet()
         if not isinstance(data, AsyncTaskPacket):
             raise TypeError("data must be an instance of AsyncTaskPacket")
         return data
