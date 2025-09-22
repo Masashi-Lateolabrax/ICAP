@@ -29,7 +29,5 @@ class Controller(torch.nn.Module):
         return sum(p.numel() for p in self.parameters())
 
     def forward(self, input_):
-        print(input_)
         x = self.sequential(input_)
-
         return torch.sigmoid(x)
