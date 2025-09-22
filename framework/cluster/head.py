@@ -6,27 +6,7 @@ from .packets import (
     AsyncTaskPacketType, AsyncTaskPacket, AsyncTaskTunnel, AsyncTaskTunnelChild,
     WorkerPacket, StatePacket
 )
-
-
-async def _send_payload(writer: asyncio.StreamWriter, payload: WorkerPacket):
-    payload_bytes = payload.as_bytes()
-    payload_size = len(payload_bytes)
-    if payload_size < 4:
-        raise ValueError("Payload size must be at least 4 bytes.")
-
-    writer.write(payload_size.to_bytes(4, byteorder='big'))
-    writer.write(payload_bytes)
-    await writer.drain()
-
-
-async def _receive_payload(reader: asyncio.StreamReader, timeout: float) -> WorkerPacket:
-    size_data = await asyncio.wait_for(reader.readexactly(4), timeout=timeout)
-    payload_size = int.from_bytes(size_data, byteorder='big')
-    if payload_size < 4:
-        raise ValueError("Payload size must be at least 4 bytes.")
-
-    payload_data = await asyncio.wait_for(reader.readexactly(payload_size), timeout=timeout)
-    return WorkerPacket.from_bytes(payload_data)
+from .utils import receive_payload, send_payload
 
 
 async def head_routine(
@@ -42,10 +22,10 @@ async def head_routine(
             payload = packet.content
             if not isinstance(payload, WorkerPacket):
                 raise ValueError("Invalid packet content type. Expected WorkerPacket for PAYLOAD type.")
-            await _send_payload(writer, payload)
+            await send_payload(writer, payload)
 
         try:
-            response = await _receive_payload(reader, timeout)
+            response = await receive_payload(reader, timeout)
         except asyncio.TimeoutError:
             continue
 
