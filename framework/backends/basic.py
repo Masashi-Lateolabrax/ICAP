@@ -63,13 +63,12 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
         data = mjx.put_data(mj_model, mj_data)
 
         pheromone = PheromoneField.new(
+            dt=settings.Simulation.TIME_STEP,
             nx=settings.Pheromone.WIDTH_NUM,
             ny=settings.Pheromone.HEIGHT_NUM,
             dx=settings.Pheromone.CELL_SIZE,
-            material=settings.Pheromone.MATERIAL,
-            evaporation_rate=settings.Pheromone.EVAPORATION_RATE,
-            decrease_rate=settings.Pheromone.DECREASE_RATE,
             temperature=settings.Simulation.TEMPERATURE,
+            material=settings.Pheromone.MATERIAL,
             iter_=settings.Pheromone.ITERATIONS_PER_STEP
         )
 
