@@ -366,9 +366,9 @@ class BasicSimulatorWithEnv(SimPheromoneTrait, SimEvaluateTrait, SimRenderTrait)
             in_axes=(0, None),
             out_axes=0
         )(this.food_items.positions, this.consts)
-        losses = fr_losses + fn_losses + this.loss_offset
+        losses = fr_losses + fn_losses
 
-        loss = jnp.sum(losses, keepdims=True)
+        loss = jnp.sum(losses) + this.loss_offset
         loss_offset = this.loss_offset + jnp.dot(relocation_occurred, losses)
 
         return this.update(
