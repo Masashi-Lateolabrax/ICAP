@@ -145,10 +145,6 @@ class WorkerPacket:
         self.type: WorkerPacketType = type_
         self.content = content
 
-        type_bytes = self.type.value.to_bytes(4, 'big')
-        content_bytes = pickle.dumps(self.content) if self.content is not None else b''
-        self.bytes = type_bytes + content_bytes
-
     @classmethod
     def from_bytes(cls, data: bytes) -> "WorkerPacket":
         if len(data) < 4:
@@ -161,8 +157,7 @@ class WorkerPacket:
         content = pickle.loads(data[4:]) if len(data) > 4 else None
         return cls(type_, content)
 
-    def size(self) -> int:
-        return len(self.bytes)
-
     def as_bytes(self) -> bytes:
-        return self.bytes
+        type_bytes = self.type.value.to_bytes(4, 'big')
+        content_bytes = pickle.dumps(self.content) if self.content is not None else b''
+        return type_bytes + content_bytes
