@@ -103,7 +103,7 @@ def update_with_rk4(
         diffusion_coefficient: float,
         dt: float,
         padding_value: float,
-) -> tuple[jnp.ndarray, jnp.ndarray]:
+) -> tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
     k1_gas, k1_grad = d_dt(
         gas_values=gas_values,
         mask=mask,
@@ -136,6 +136,8 @@ def update_with_rk4(
         padding_value=padding_value
     )
 
+    grad = (k1_grad + 2 * k2_grad + 2 * k3_grad + k4_grad) / 6
+
     evaporation_mol = (saturation_concentration - gas_values[1:-1, 1:-1, 1]) * (liquid_values > 0) * (h ** 3)
     evaporation_mol = jnp.minimum(evaporation_mol, liquid_values)
     evaporation_con = evaporation_mol / (h ** 3)
@@ -151,7 +153,7 @@ def update_with_rk4(
         liquid_values - evaporation_mol
     )
 
-    return gas_values, liquid_values
+    return gas_values, liquid_values, grad
 
 
 class PheromoneField:
@@ -190,6 +192,7 @@ class PheromoneField:
 
         self._values_liquid = jnp.zeros(self.shape, dtype=jnp.float32)  # [mol]
         self._values_gas = jnp.zeros((ny + 2, nx + 2, self.nz + 2), dtype=jnp.float32)  # [mol/m^3]
+        self._grad = jnp.zeros(self.shape, dtype=jnp.float32)
         self.mask = jnp.ones(self.shape + 2, dtype=jnp.bool_)
 
     def reset(self):
@@ -251,7 +254,7 @@ class PheromoneField:
     def _step_with_rk4(self):
         dt = self.dt / self.iter_
         for _ in range(self.iter_):
-            self._values_gas, self._values_liquid = update_with_rk4(
+            self._values_gas, self._values_liquid, self.grad, = update_with_rk4(
                 liquid_values=self._values_liquid,
                 gas_values=self._values_gas,
                 mask=self.mask,
