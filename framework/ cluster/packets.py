@@ -1,5 +1,6 @@
 import asyncio
 import enum
+import pickle
 
 
 class AsyncTaskPacketType(enum.Enum):
@@ -51,3 +52,30 @@ class AsyncTaskTunnel:
         if not isinstance(data, AsyncTaskPacket):
             raise TypeError("data must be an instance of AsyncTaskPacket")
         return data
+
+
+class WorkerPacketType(enum.Enum):
+    ONEWAY = 1
+    REQUEST = 2
+    RETURN = 4
+
+    TASK = 8
+    RESULT = 16
+    STATE = 32
+    LOAD = 64
+
+
+class WorkerPacket:
+    def __init__(self, type_: WorkerPacketType, content):
+        self.type: WorkerPacketType = type_
+        self.content = content
+
+        type_bytes = self.type.value.to_bytes(4, 'big')
+        content_bytes = pickle.dumps(self.content) if self.content is not None else b''
+        self.bytes = type_bytes + content_bytes
+
+    def size(self) -> int:
+        return len(self.bytes)
+
+    def as_bytes(self) -> bytes:
+        return self.bytes
