@@ -60,11 +60,11 @@ class Head:
         self.tunnel = AsyncTaskTunnel()
         self.server = None
 
-    async def start(self, address, port):
+    async def start(self, address, port, timeout: float):
         if self.server is not None:
             raise RuntimeError("Server is already running")
         self.server = await asyncio.start_server(
-            partial(head_routine, tunnel=self.tunnel.spawn_child()),
+            partial(head_routine, tunnel=self.tunnel.spawn_child(), timeout=timeout),
             address, port
         )
 
