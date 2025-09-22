@@ -238,3 +238,8 @@ class TaskPacket:
 class StatePacket:
     gpu_usage: float
     working: bool
+
+
+@dataclasses.dataclass
+class ResultPacket:
+    result: list[tuple[np.ndarray, float]]
