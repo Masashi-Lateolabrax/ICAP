@@ -34,7 +34,7 @@ async def head_routine(
         if packet.type == AsyncTaskPacketType.STOP:
             break
 
-        if packet.type == AsyncTaskPacketType.PAYLOAD:
+        if packet.type == AsyncTaskPacketType.WORKER_PACKET:
             payload = packet.content
             if not isinstance(payload, WorkerPacket):
                 raise ValueError("Invalid packet content type. Expected WorkerPacket for PAYLOAD type.")
@@ -47,7 +47,7 @@ async def head_routine(
 
         if not isinstance(response, WorkerPacket):
             raise ValueError("Invalid response type. Expected WorkerPacket.")
-        response_packet = AsyncTaskPacket(AsyncTaskPacketType.PAYLOAD, response)
+        response_packet = AsyncTaskPacket(AsyncTaskPacketType.WORKER_PACKET, response)
         await tunnel.send(response_packet)
 
 
