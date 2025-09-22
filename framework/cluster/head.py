@@ -1,5 +1,6 @@
 import asyncio
 from functools import partial
+from typing import Optional
 
 from .packets import (
     AsyncTaskPacketType, AsyncTaskPacket, AsyncTaskTunnel, AsyncTaskTunnelChild,
@@ -79,10 +80,15 @@ class Head:
 
     async def _send_and_receive_worker_packet(
             self, id_, worker_packet: WorkerPacket, timeout: float
-    ) -> WorkerPacket:
+    ) -> Optional[WorkerPacket]:
         packet = AsyncTaskPacket(AsyncTaskPacketType.WORKER_PACKET, worker_packet)
 
         response = await self.tunnel.send_and_receive(id_, packet, timeout, AsyncTaskPacketType.WORKER_PACKET)
+
+        if response is None:
+            return None
+        if response.is_timeout():
+            return WorkerPacket.timeout_packet()
         if not isinstance(response.content, WorkerPacket):
             raise ValueError("Invalid response type. Expected WorkerPacket.")
 
