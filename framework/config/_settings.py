@@ -134,7 +134,7 @@ class Pheromone:
     CELL_SIZE: float = 0.1
     WIDTH_NUM: int = int(Simulation.WORLD_WIDTH / CELL_SIZE)
     HEIGHT_NUM: int = int(Simulation.WORLD_HEIGHT / CELL_SIZE)
-    ITERATIONS_PER_STEP: int = 1
+    ITERATIONS_PER_STEP: int = 8
     MATERIAL: Material = ETHANOL
 
 
