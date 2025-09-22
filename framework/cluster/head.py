@@ -89,14 +89,8 @@ class Head:
         return response.content
 
     async def get_worker_load(self, id_, num_payloads: int, timeout: float) -> float:
-        packet = AsyncTaskPacket(
-            AsyncTaskPacketType.WORKER_PACKET,
-            WorkerPacket.request_load(num_payloads)
-        )
-
-        response = await self.tunnel.send_and_receive(id_, packet, timeout, AsyncTaskPacketType.WORKER_PACKET)
-        if not isinstance(response.content, WorkerPacket):
-            raise ValueError("Invalid response type. Expected WorkerPacket.")
+        packet = WorkerPacket.request_load(num_payloads)
+        response = await self._send_and_receive_worker_packet(id_, packet, timeout)
 
         if not isinstance(response.content.content, float):
             raise ValueError("Invalid response type. Expected float.")
