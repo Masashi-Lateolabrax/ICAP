@@ -5,13 +5,13 @@ from .packets import AsyncTaskPacketType, AsyncTaskPacket, AsyncTaskTunnel, Asyn
 
 
 async def _send_payload(writer: asyncio.StreamWriter, payload: WorkerPacket):
-    payload_size = payload.size()
+    payload_bytes = payload.as_bytes()
+    payload_size = len(payload_bytes)
     if payload_size < 4:
         raise ValueError("Payload size must be at least 4 bytes.")
-    writer.write(payload_size.to_bytes(4, byteorder='big'))
-    await writer.drain()
 
-    writer.write(payload.as_bytes())
+    writer.write(payload_size.to_bytes(4, byteorder='big'))
+    writer.write(payload_bytes)
     await writer.drain()
 
 
