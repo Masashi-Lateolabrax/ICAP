@@ -108,12 +108,18 @@ class Simulator(BasicSimulator):
 
     def step(self):
         robot_positions = np.array([robot.xpos for robot in self.robot_values])
+        robot_v_direction = np.array([robot.xdirection for robot in self.robot_values])
+        robot_h_direction = np.array([(v_direction[1], -v_direction[0]) for v_direction in robot_v_direction])
 
         if self.timer.tick():
             with torch.no_grad():
                 input_ = self.create_input_for_controller()
                 if self._pheromone_field is not None:
                     self.input_ndarray[:, 6] = self.get_pheromone(robot_positions) / 3.5
+
+                    pheromone_grad = self.get_pheromone_grad(robot_positions)
+                    self.input_ndarray[:, 7] = np.sum(pheromone_grad * robot_v_direction, axis=1)
+                    self.input_ndarray[:, 8] = np.sum(pheromone_grad * robot_h_direction, axis=1)
 
                 output = self.controller.forward(input_)
                 self.output_ndarray = output.numpy()
