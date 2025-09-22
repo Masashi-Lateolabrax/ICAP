@@ -11,6 +11,10 @@ class AsyncTaskPacket:
         self.type: AsyncTaskPacketType = type_
         self.content = content
 
+    @classmethod
+    def stop_packet(cls):
+        return cls(AsyncTaskPacketType.STOP, None)
+
 
 class AsyncTaskTunnelChild:
     def __init__(self, parent_queue: asyncio.Queue, child_queue: asyncio.Queue):
