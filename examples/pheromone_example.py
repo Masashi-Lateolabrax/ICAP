@@ -60,7 +60,7 @@ class Simulator(BasicSimulator):
 
         self.add_pheromone(
             np.array([r.xpos for r in self.robot_values]),
-            np.array([1.0])
+            np.array([2e-2])
         )
 
         self._pheromone_field.add_liquid_by_cell(self._pheromone_cells)
