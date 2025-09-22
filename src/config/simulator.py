@@ -26,7 +26,7 @@ class Simulator(BasicSimulator):
                 robot=robot_values,
                 d_gain=settings.Robot.ROBOT_SENSOR_GAIN,
                 offset=settings.Robot.RADIUS * 2,
-                target_sites=[other.site for j, other in enumerate(all_robot_values) if other is robot_values]
+                target_sites=[other.site for j, other in enumerate(all_robot_values) if other is not robot_values]
             ),
             PreprocessedOmniSensor(
                 robot=robot_values,
