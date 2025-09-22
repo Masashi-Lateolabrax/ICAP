@@ -98,6 +98,8 @@ class Head:
         packet = WorkerPacket.request_load(num_payloads)
         response = await self._send_and_receive_worker_packet(id_, packet, timeout)
 
+        if response is None or response.is_timeout():
+            return float("inf")
         if not isinstance(response.content.content, float):
             raise ValueError("Invalid response type. Expected float.")
 
