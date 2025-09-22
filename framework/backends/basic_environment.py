@@ -189,11 +189,15 @@ class BasicEnvironment(BasicMuJoCoSimulator, ABC):
             return
 
         if self._pheromone_field:
-            color_max = 1.0
+            # pheromone: np.ndarray = self._pheromone_field.get_liquid_all()
+            # color_max = 1e-3
             pheromone: np.ndarray = self._pheromone_field.get_gas_all()
+            color_max = 3
+
+            pheromone = np.clip(pheromone / color_max, 0, 1)
             for cell in self._pheromone_cells:
                 pheromone_value = float(pheromone[cell.index_y, cell.index_x])
-                rgba: tuple[float, float, float] = (pheromone_value / color_max, 0.0, 1 - pheromone_value / color_max)
+                rgba: tuple[float, float, float] = (pheromone_value, 0.0, 1 - pheromone_value)
                 cell.set_color(*rgba, 0.5)
 
         super().render(img_buf, pos, lookat)
