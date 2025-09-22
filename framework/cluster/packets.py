@@ -119,29 +119,59 @@ class AsyncTaskTunnel:
     async def receive(
             self, id_: uuid.UUID, timeout: float = None, expect_type: AsyncTaskPacketType = None
     ) -> Optional[_AsyncTaskPacket]:
-        if len(self._buf_child_queue[id_]) > 0:
-            data = self._buf_child_queue[id_].pop(0)
+        """
+        Asynchronously receive a packet from the specified task queue.
 
-        else:
+        This method implements a complex packet retrieval system that handles buffering,
+        type filtering, and timeout management. It first checks buffered packets, then
+        attempts to receive from the queue, optionally filtering by packet type.
+
+        Args:
+            id_ (uuid.UUID): The unique identifier of the task queue to receive from.
+            timeout (float, optional): Maximum time to wait for a packet in seconds.
+                If None, waits indefinitely. Defaults to None.
+            expect_type (AsyncTaskPacketType, optional): Expected packet type to filter for.
+                If specified, packets of other types will be buffered for later retrieval.
+                Defaults to None (accept any packet type).
+
+        Returns:
+            Optional[_AsyncTaskPacket]: The received packet, timeout packet if timeout occurred,
+            or None if no matching packet type was found within the timeout period.
+
+        Raises:
+            TypeError: If the received data is not an instance of _AsyncTaskPacket.
+
+        Behavior:
+            1. First checks if buffered packets exist for the given ID and returns the first one
+            2. If no buffered packets, waits for a new packet from the queue
+            3. If expect_type is specified, continues receiving until a matching type is found
+            4. Non-matching packets are buffered in _buf_child_queue for later retrieval
+            5. Returns timeout packet if timeout occurs during any wait operation
+        """
+        if len(self._buf_child_queue[id_]) > 0:
+            for i, data in enumerate(self._buf_child_queue[id_]):
+                if expect_type is not None and data.type == expect_type:
+                    return self._buf_child_queue[id_].pop(i)
+
+        try:
+            data = await asyncio.wait_for(self.parent_queue[id_].get(), timeout=timeout)
+        except asyncio.TimeoutError:
+            return _AsyncTaskPacket.timeout_packet()
+
+        if not isinstance(data, _AsyncTaskPacket):
+            raise TypeError("data must be an instance of AsyncTaskPacket")
+
+        while expect_type is not None and data.type != expect_type:
+            self._buf_child_queue[id_].append(data)
+
+            data = None
             try:
                 data = await asyncio.wait_for(self.parent_queue[id_].get(), timeout=timeout)
             except asyncio.TimeoutError:
-                return _AsyncTaskPacket.timeout_packet()
+                break
 
             if not isinstance(data, _AsyncTaskPacket):
                 raise TypeError("data must be an instance of AsyncTaskPacket")
-
-            while expect_type is not None and data.type != expect_type:
-                self._buf_child_queue[id_].append(data)
-
-                data = None
-                try:
-                    data = await asyncio.wait_for(self.parent_queue[id_].get(), timeout=timeout)
-                except asyncio.TimeoutError:
-                    break
-
-                if not isinstance(data, _AsyncTaskPacket):
-                    raise TypeError("data must be an instance of AsyncTaskPacket")
 
         return data
 
