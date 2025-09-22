@@ -213,6 +213,11 @@ class PheromoneField:
         self.mask = self.mask.at[:, 0].set(1)
         self.mask = self.mask.at[:, -1].set(1)
 
+    def get_grad(self, xs, ys) -> np.ndarray:
+        xs = jnp.clip(xs, 0, self.shape[1] - 1)
+        ys = jnp.clip(ys, 0, self.shape[0] - 1)
+        return np.array(self.grad[ys, xs])
+
     def get_gas(self, xs, ys, zs=0) -> np.ndarray:
         xs = jnp.clip(xs, 0, self.shape[1] - 1) + 1
         ys = jnp.clip(ys, 0, self.shape[0] - 1) + 1
