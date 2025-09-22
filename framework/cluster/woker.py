@@ -2,6 +2,8 @@ import asyncio
 import uuid
 from typing import Optional
 
+import numpy as np
+
 from .packets import (
     AsyncTaskTunnel, AsyncTaskTunnelChild, AsyncTaskPacket, AsyncTaskPacketType, WorkerPacket
 )
@@ -53,5 +55,10 @@ class WorkerClient:
 
     async def send_worker_state(self, gpu_usage: float, working: bool):
         packet = WorkerPacket.state_packet(gpu_usage, working)
+        packet = AsyncTaskPacket.worker_packet(packet)
+        await self.tunnel.send(self._child_id, packet)
+
+    async def send_worker_result(self, result: list[tuple[np.ndarray, float]]):
+        packet = WorkerPacket.result_packet(result)
         packet = AsyncTaskPacket.worker_packet(packet)
         await self.tunnel.send(self._child_id, packet)
