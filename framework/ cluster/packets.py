@@ -93,6 +93,9 @@ class AsyncTaskTunnel:
             raise TypeError("data must be an instance of AsyncTaskPacket")
         return data
 
+    def get_ids(self) -> list[uuid.UUID]:
+        return list(self.child_queue.keys())
+
 
 class WorkerPacketType(enum.Enum):
     ONEWAY = 1
