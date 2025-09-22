@@ -2,6 +2,7 @@ import asyncio
 import enum
 import pickle
 import uuid
+from typing import Optional
 
 
 class WorkerPacketType(enum.Enum):
