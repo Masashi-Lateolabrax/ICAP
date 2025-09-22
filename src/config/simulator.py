@@ -26,7 +26,7 @@ class Simulator(BasicSimulator):
                 robot=robot_values,
                 d_gain=settings.Robot.ROBOT_SENSOR_GAIN,
                 offset=settings.Robot.RADIUS * 2,
-                target_sites=[other.site for j, other in enumerate(all_robot_values) if other is robot_values]
+                target_sites=[other.site for j, other in enumerate(all_robot_values) if other is not robot_values]
             ),
             PreprocessedOmniSensor(
                 robot=robot_values,
@@ -62,7 +62,7 @@ class Simulator(BasicSimulator):
 
         self.dummy_foods: list[DummyFoodValues] = []
 
-        self.input_ndarray = np.zeros((settings.Robot.NUM, 2 * 3 + 1), dtype=np.float32)
+        self.input_ndarray = np.zeros((settings.Robot.NUM, 2 * 3 + 3), dtype=np.float32)
         self.output_ndarray = np.zeros((settings.Robot.NUM, 3), dtype=np.float32)
         self.input_tensor = torch.from_numpy(self.input_ndarray)
 
@@ -108,12 +108,18 @@ class Simulator(BasicSimulator):
 
     def step(self):
         robot_positions = np.array([robot.xpos for robot in self.robot_values])
+        robot_v_direction = np.array([robot.xdirection for robot in self.robot_values])
+        robot_h_direction = np.array([(v_direction[1], -v_direction[0]) for v_direction in robot_v_direction])
 
         if self.timer.tick():
             with torch.no_grad():
                 input_ = self.create_input_for_controller()
                 if self._pheromone_field is not None:
-                    self.input_ndarray[:, 6] = self.get_pheromone(robot_positions)
+                    self.input_ndarray[:, 6] = self.get_pheromone(robot_positions) / 3.5
+
+                    pheromone_grad = self.get_pheromone_grad(robot_positions)
+                    self.input_ndarray[:, 7] = np.sum(pheromone_grad * robot_v_direction, axis=1)
+                    self.input_ndarray[:, 8] = np.sum(pheromone_grad * robot_h_direction, axis=1)
 
                 output = self.controller.forward(input_)
                 self.output_ndarray = output.numpy()
@@ -125,9 +131,9 @@ class Simulator(BasicSimulator):
             )
 
         if self._pheromone_field is not None:
-            self.add_pheromone(robot_positions, self.output_ndarray[:, 2])
+            self.add_pheromone(robot_positions, self.output_ndarray[:, 2] * self.settings.Robot.MAX_PHEROMONE_SECRETION)
             self._pheromone_field.add_liquid_by_cell(self._pheromone_cells)
-            self._pheromone_field.update(self.settings.Simulation.TIME_STEP)
+            self._pheromone_field.step()
 
             max_pheromone = self._pheromone_field.get_max_value()
             self._max_pheromone = max(self._max_pheromone, max_pheromone)

@@ -148,9 +148,8 @@ class BasicEnvironment(BasicMuJoCoSimulator, ABC):
                 ny=settings.Pheromone.HEIGHT_NUM,
                 dx=settings.Pheromone.CELL_SIZE,
                 material=settings.Pheromone.MATERIAL,
-                evaporation_rate=settings.Pheromone.EVAPORATION_RATE,
-                decrease_rate=settings.Pheromone.DECREASE_RATE,
                 temperature=settings.Pheromone.TEMPERATURE,
+                dt=settings.Simulation.TIME_STEP,
                 iter_=settings.Pheromone.ITERATIONS_PER_STEP,
             )
             self._pheromone_cells = [s.get_cell(self.model) for s in pheromone_cell_specs]
@@ -180,6 +179,10 @@ class BasicEnvironment(BasicMuJoCoSimulator, ABC):
         indexes = np.array([(cell.index_x, cell.index_y) for cell in self._get_pheromone_cells(positions)])
         return self._pheromone_field.get_gas(indexes[:, 0], indexes[:, 1])
 
+    def get_pheromone_grad(self, positions: np.ndarray) -> np.ndarray:
+        indexes = np.array([(cell.index_x, cell.index_y) for cell in self._get_pheromone_cells(positions)])
+        return self._pheromone_field.get_grad(indexes[:, 0], indexes[:, 1])
+
     def get_total_liquid_pheromone(self) -> float:
         if self._pheromone_field is None:
             return 0.0
@@ -190,11 +193,15 @@ class BasicEnvironment(BasicMuJoCoSimulator, ABC):
             return
 
         if self._pheromone_field:
-            color_max = 1.0
+            # pheromone: np.ndarray = self._pheromone_field.get_liquid_all()
+            # color_max = 1e-3
             pheromone: np.ndarray = self._pheromone_field.get_gas_all()
+            color_max = 3
+
+            pheromone = np.clip(pheromone / color_max, 0, 1)
             for cell in self._pheromone_cells:
                 pheromone_value = float(pheromone[cell.index_y, cell.index_x])
-                rgba: tuple[float, float, float] = (pheromone_value / color_max, 0.0, 1 - pheromone_value / color_max)
+                rgba: tuple[float, float, float] = (pheromone_value, 0.0, 1 - pheromone_value)
                 cell.set_color(*rgba, 0.5)
 
         super().render(img_buf, pos, lookat)
