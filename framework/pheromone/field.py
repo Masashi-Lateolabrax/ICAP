@@ -192,7 +192,7 @@ class PheromoneField:
 
         self._values_liquid = jnp.zeros(self.shape, dtype=jnp.float32)  # [mol]
         self._values_gas = jnp.zeros((ny + 2, nx + 2, self.nz + 2), dtype=jnp.float32)  # [mol/m^3]
-        self._grad = jnp.zeros(self.shape, dtype=jnp.float32)
+        self._grad = jnp.zeros((ny, nx, 2), dtype=jnp.float32)
         self.mask = jnp.ones(self.shape + 2, dtype=jnp.bool_)
 
     def reset(self):
@@ -216,7 +216,7 @@ class PheromoneField:
     def get_grad(self, xs, ys) -> np.ndarray:
         xs = jnp.clip(xs, 0, self.shape[1] - 1)
         ys = jnp.clip(ys, 0, self.shape[0] - 1)
-        return np.array(self._grad[ys, xs])
+        return np.array(self._grad[ys, xs, :])
 
     def get_gas(self, xs, ys, zs=0) -> np.ndarray:
         xs = jnp.clip(xs, 0, self.shape[1] - 2) + 1
