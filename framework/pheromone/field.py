@@ -71,15 +71,12 @@ def dDiffusion_dt(
 
 
 def d_dt(
-        liquid_values: jnp.ndarray,
         gas_values: jnp.ndarray,
         mask: jnp.ndarray,
         h: float,
-        saturating_concentration: float,
         diffusion_coefficient: float,
-        dt: float,
         padding_value: float,
-) -> tuple[jnp.ndarray, jnp.ndarray]:
+) -> jnp.ndarray:
     d_diffusion = dDiffusion_dt(  # Unit: mol/(m^3·s)
         gas_values=gas_values,
         mask=mask,
@@ -88,18 +85,9 @@ def d_dt(
         padding_value=padding_value
     )
 
-    source_exist = liquid_values > 0
-    decreasing_cell = d_diffusion[:, :, 0] < 0
-    evaporation_cell = decreasing_cell & source_exist
-    decreasing = d_diffusion[:, :, 0] * evaporation_cell  # Unit: mol/(m^3·s)
-    evaporation_mol = (saturating_concentration + decreasing * dt) * (h ** 3)  # Unit: mol
-    evaporation_mol = jnp.minimum(evaporation_mol, liquid_values)  # Unit: mol
-    evaporation_rate = evaporation_mol / ((h ** 3) * dt)  # Unit: mol/(m^3·s)
+    d_gas = d_diffusion  # Unit: mol/(m^3·s)
 
-    d_gas = d_diffusion.at[:, :, 0].add(evaporation_rate)  # Unit: mol/(m^3·s)
-    d_liquid = -evaporation_mol / dt  # Unit: mol/s
-
-    return d_gas, d_liquid
+    return d_gas
 
 
 @jax.jit
@@ -108,60 +96,57 @@ def update_with_rk4(
         gas_values: jnp.ndarray,
         mask: jnp.ndarray,
         h: float,
-        saturating_concentration: float,
+        saturation_concentration: float,
         diffusion_coefficient: float,
         dt: float,
         padding_value: float,
 ) -> tuple[jnp.ndarray, jnp.ndarray]:
-    k1_gas, k1_liquid = d_dt(
-        liquid_values=liquid_values,
+    k1_gas = d_dt(
         gas_values=gas_values,
         mask=mask,
         h=h,
-        saturating_concentration=saturating_concentration,
         diffusion_coefficient=diffusion_coefficient,
-        dt=dt,
         padding_value=padding_value,
     )
 
-    k2_gas, k2_liquid = d_dt(
-        liquid_values=liquid_values + 0.5 * dt * k1_liquid,
+    k2_gas = d_dt(
         gas_values=gas_values.at[1:-1, 1:-1, 1:-1].add(0.5 * dt * k1_gas),
         mask=mask,
         h=h,
-        saturating_concentration=saturating_concentration,
         diffusion_coefficient=diffusion_coefficient,
-        dt=dt,
         padding_value=padding_value
     )
 
-    k3_gas, k3_liquid = d_dt(
-        liquid_values=liquid_values + 0.5 * dt * k2_liquid,
+    k3_gas = d_dt(
         gas_values=gas_values.at[1:-1, 1:-1, 1:-1].add(0.5 * dt * k2_gas),
         mask=mask,
         h=h,
-        saturating_concentration=saturating_concentration,
         diffusion_coefficient=diffusion_coefficient,
-        dt=dt,
         padding_value=padding_value
     )
 
-    k4_gas, k4_liquid = d_dt(
-        liquid_values=liquid_values + dt * k3_liquid,
+    k4_gas = d_dt(
         gas_values=gas_values.at[1:-1, 1:-1, 1:-1].add(dt * k3_gas),
         mask=mask,
         h=h,
-        saturating_concentration=saturating_concentration,
         diffusion_coefficient=diffusion_coefficient,
-        dt=dt,
         padding_value=padding_value
     )
 
+    evaporation_mol = (saturation_concentration - gas_values[1:-1, 1:-1, 1]) * (liquid_values > 0) * (h ** 3)
+    evaporation_mol = jnp.minimum(evaporation_mol, liquid_values)
+    evaporation_con = evaporation_mol / (h ** 3)
+
+    d_gas_values = ((k1_gas + 2 * k2_gas + 2 * k3_gas + k4_gas) / 6).at[:, :, 0].add(evaporation_con)
     gas_values = jnp.maximum(
         0.0,
-        gas_values.at[1:-1, 1:-1, 1:-1].add(dt * (k1_gas + 2 * k2_gas + 2 * k3_gas + k4_gas) / 6)
+        gas_values.at[1:-1, 1:-1, 1:-1].add(d_gas_values)
     )
-    liquid_values = jnp.maximum(0.0, liquid_values + dt * (k1_liquid + 2 * k2_liquid + 2 * k3_liquid + k4_liquid) / 6)
+
+    liquid_values = jnp.maximum(
+        0.0,
+        liquid_values - evaporation_mol
+    )
 
     return gas_values, liquid_values
 
@@ -192,7 +177,7 @@ class PheromoneField:
         self.dx = dx
 
         saturation_pressure = material.saturation_pressure(temperature)  # [Pa]
-        self.saturating_concentration = saturation_pressure / (Material.GAS_CONSTANT * temperature)  # [mol/m^3]
+        self.saturation_concentration = saturation_pressure / (Material.GAS_CONSTANT * temperature)  # [mol/m^3]
         self.dt = dt  # Store dt as instance variable
         self.diffusion_coefficient = material.diffusion_coefficient(temperature)  # [m^2/s]
         self.temperature = temperature
@@ -268,7 +253,7 @@ class PheromoneField:
                 gas_values=self._values_gas,
                 mask=self.mask,
                 h=self.dx,
-                saturating_concentration=self.saturating_concentration,
+                saturation_concentration=self.saturation_concentration,
                 diffusion_coefficient=self.diffusion_coefficient,
                 dt=dt,
                 padding_value=self.padding_value,
