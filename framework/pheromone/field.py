@@ -219,9 +219,9 @@ class PheromoneField:
         return np.array(self.grad[ys, xs])
 
     def get_gas(self, xs, ys, zs=0) -> np.ndarray:
-        xs = jnp.clip(xs, 0, self.shape[1] - 1) + 1
-        ys = jnp.clip(ys, 0, self.shape[0] - 1) + 1
-        zs = jnp.clip(zs, 0, self.nz - 1) + 1
+        xs = jnp.clip(xs, 0, self.shape[1] - 2) + 1
+        ys = jnp.clip(ys, 0, self.shape[0] - 2) + 1
+        zs = jnp.clip(zs, 0, self.nz - 2) + 1
         return np.array(self._values_gas[ys, xs, zs])
 
     def get_liquid(self, xs, ys) -> np.ndarray:
