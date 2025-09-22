@@ -50,6 +50,9 @@ class WorkerPacket:
         content_bytes = pickle.dumps(self.content) if self.content is not None else b''
         return type_bytes + content_bytes
 
+    def is_timeout(self) -> bool:
+        return self.type == WorkerPacketType.TIMEOUT
+
 
 class AsyncTaskPacketType(enum.Enum):
     TIMEOUT = -1
