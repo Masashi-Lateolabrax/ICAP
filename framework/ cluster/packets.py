@@ -52,6 +52,12 @@ class AsyncTaskTunnelChild:
 
         if not isinstance(data, AsyncTaskPacket):
             raise TypeError("data must be an instance of AsyncTaskPacket")
+
+        if data.type == AsyncTaskPacketType.ROLL_CALL:
+            # Automatically respond to roll call
+            await self.send(AsyncTaskPacket.roll_call_packet(self.uuid))
+            return await self.receive(timeout)
+
         return data
 
 
