@@ -130,14 +130,10 @@ class AsyncTaskTunnel:
 
 
 class WorkerPacketType(enum.Enum):
-    ONEWAY = 1
-    REQUEST = 2
-    RETURN = 4
-
-    TASK = 8
-    RESULT = 16
-    STATE = 32
-    LOAD = 64
+    TASK = 1
+    RESULT = 2
+    STATE = 3
+    LOAD = 4
 
 
 class WorkerPacket:
