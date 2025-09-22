@@ -1,6 +1,6 @@
 import asyncio
 
-from .packets import WorkerPacket
+from .packets import AsyncTaskTunnelChild, AsyncTaskPacket, AsyncTaskPacketType, WorkerPacket
 
 
 async def send_payload(writer: asyncio.StreamWriter, payload: WorkerPacket):
@@ -22,3 +22,30 @@ async def receive_payload(reader: asyncio.StreamReader, timeout: float) -> Worke
 
     payload_data = await asyncio.wait_for(reader.readexactly(payload_size), timeout=timeout)
     return WorkerPacket.from_bytes(payload_data)
+
+
+async def relay_routine(
+        reader: asyncio.StreamReader, writer: asyncio.StreamWriter, tunnel: AsyncTaskTunnelChild, timeout: float
+) -> bool:
+    packet: AsyncTaskPacket = await tunnel.receive()
+
+    if packet.type == AsyncTaskPacketType.STOP:
+        return False
+
+    if packet.type == AsyncTaskPacketType.WORKER_PACKET:
+        payload = packet.content
+        if not isinstance(payload, WorkerPacket):
+            raise ValueError("Invalid packet content type. Expected WorkerPacket for PAYLOAD type.")
+        await send_payload(writer, payload)
+
+    try:
+        response = await receive_payload(reader, timeout)
+    except asyncio.TimeoutError:
+        return True
+
+    if not isinstance(response, WorkerPacket):
+        raise ValueError("Invalid response type. Expected WorkerPacket.")
+    response_packet = AsyncTaskPacket(AsyncTaskPacketType.WORKER_PACKET, response)
+    await tunnel.send(response_packet)
+
+    return True
