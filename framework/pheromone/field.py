@@ -79,7 +79,7 @@ def d_dt(
         h: float,
         diffusion_coefficient: float,
         padding_value: float,
-) -> jnp.ndarray:
+) -> tuple[jnp.ndarray, jnp.ndarray]:
     d_diffusion, d_dx, d_dy = dDiffusion_dt(  # Unit: mol/(m^3·s)
         gas_values=gas_values,
         mask=mask,
@@ -90,7 +90,7 @@ def d_dt(
 
     d_gas = d_diffusion  # Unit: mol/(m^3·s)
 
-    return d_gas
+    return d_gas, jnp.stack([d_dx, d_dy], axis=2)
 
 
 @jax.jit
@@ -104,7 +104,7 @@ def update_with_rk4(
         dt: float,
         padding_value: float,
 ) -> tuple[jnp.ndarray, jnp.ndarray]:
-    k1_gas = d_dt(
+    k1_gas, k1_grad = d_dt(
         gas_values=gas_values,
         mask=mask,
         h=h,
@@ -112,7 +112,7 @@ def update_with_rk4(
         padding_value=padding_value,
     )
 
-    k2_gas = d_dt(
+    k2_gas, k2_grad = d_dt(
         gas_values=gas_values.at[1:-1, 1:-1, 1:-1].add(0.5 * dt * k1_gas),
         mask=mask,
         h=h,
@@ -120,7 +120,7 @@ def update_with_rk4(
         padding_value=padding_value
     )
 
-    k3_gas = d_dt(
+    k3_gas, k3_grad = d_dt(
         gas_values=gas_values.at[1:-1, 1:-1, 1:-1].add(0.5 * dt * k2_gas),
         mask=mask,
         h=h,
@@ -128,7 +128,7 @@ def update_with_rk4(
         padding_value=padding_value
     )
 
-    k4_gas = d_dt(
+    k4_gas, k4_grad = d_dt(
         gas_values=gas_values.at[1:-1, 1:-1, 1:-1].add(dt * k3_gas),
         mask=mask,
         h=h,
