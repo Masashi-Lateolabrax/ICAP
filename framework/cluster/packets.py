@@ -36,6 +36,10 @@ class WorkerPacket:
     def request_load(cls, num_payloads: int):
         return cls(WorkerPacketType.LOAD, num_payloads)
 
+    @classmethod
+    def state_packet(cls, gpu_usage: float = None, working: bool = None):
+        return cls(WorkerPacketType.STATE, StatePacket(gpu_usage, working))
+
     def as_bytes(self) -> bytes:
         type_bytes = self.type.value.to_bytes(4, 'big')
         content_bytes = pickle.dumps(self.content) if self.content is not None else b''
