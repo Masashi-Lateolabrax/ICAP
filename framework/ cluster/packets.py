@@ -8,6 +8,7 @@ class AsyncTaskPacketType(enum.Enum):
     TIMEOUT = -1
     STOP = 1
     PAYLOAD = 2
+    ROLL_CALL = 3
 
 
 class AsyncTaskPacket:
@@ -26,6 +27,10 @@ class AsyncTaskPacket:
     @classmethod
     def payload_packet(cls, content: "WorkerPacket"):
         return cls(AsyncTaskPacketType.PAYLOAD, content)
+
+    @classmethod
+    def roll_call_packet(cls, content=None):
+        return cls(AsyncTaskPacketType.ROLL_CALL, content)
 
 
 class AsyncTaskTunnelChild:
