@@ -4,6 +4,8 @@ import pickle
 import uuid
 from typing import Optional
 
+import numpy as np
+
 
 class WorkerPacketType(enum.Enum):
     TASK = 1
@@ -201,3 +203,8 @@ class AsyncTaskTunnel:
                 del self._buf_child_queue[id_]
 
         return response
+
+
+class TaskPacket:
+    def __init__(self, parameter: np.ndarray):
+        self.parameter = parameter
