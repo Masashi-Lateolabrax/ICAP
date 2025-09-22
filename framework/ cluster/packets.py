@@ -115,6 +115,18 @@ class AsyncTaskTunnel:
             except asyncio.TimeoutError:
                 return False
 
+    async def calling_roll(self, timeout: float) -> list[uuid.UUID]:
+        response = []
+
+        for id_ in self.child_queue.keys():
+            if await self._send_roll_call_packet(id_, timeout):
+                response.append(id_)
+            else:
+                del self.parent_queue[id_]
+                del self.child_queue[id_]
+                del self._buf_child_queue[id_]
+
+        return response
 
 
 class WorkerPacketType(enum.Enum):
