@@ -21,12 +21,12 @@ class AsyncTaskTunnelChild:
         self.parent_queue = parent_queue
         self.child_queue = child_queue
 
-    async def send_to_parent(self, packet: AsyncTaskPacket):
+    async def send(self, packet: AsyncTaskPacket):
         if not isinstance(packet, AsyncTaskPacket):
             raise TypeError("packet must be an instance of AsyncTaskPacket")
         await self.child_queue.put(packet)
 
-    async def receive_from_parent(self) -> AsyncTaskPacket:
+    async def receive(self) -> AsyncTaskPacket:
         data = await self.parent_queue.get()
         if not isinstance(data, AsyncTaskPacket):
             raise TypeError("data must be an instance of AsyncTaskPacket")
@@ -41,12 +41,12 @@ class AsyncTaskTunnel:
     def spawn_child(self):
         return AsyncTaskTunnelChild(self.child_queue, self.parent_queue)
 
-    async def send_to_child(self, packet: AsyncTaskPacket):
+    async def send(self, packet: AsyncTaskPacket):
         if not isinstance(packet, AsyncTaskPacket):
             raise TypeError("packet must be an instance of AsyncTaskPacket")
         await self.parent_queue.put(packet)
 
-    async def receive_from_child(self) -> AsyncTaskPacket:
+    async def receive(self) -> AsyncTaskPacket:
         data = await self.child_queue.get()
         if not isinstance(data, AsyncTaskPacket):
             raise TypeError("data must be an instance of AsyncTaskPacket")
