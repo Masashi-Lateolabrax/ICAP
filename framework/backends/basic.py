@@ -130,7 +130,7 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
     def step(self, model: mjx.Model) -> Self:
         return self.update(
             data=mjx.step(model, self.data),
-            pheromone=self._pheromone.update(self.consts.dt)
+            pheromone=self._pheromone.step()
         )
 
     @partial(jax.jit, static_argnames=("n", "unroll"), inline=True, donate_argnames=("self",))
