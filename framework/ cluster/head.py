@@ -66,3 +66,6 @@ class Head:
 
     async def stop(self):
         await self.tunnel.send(AsyncTaskPacket.stop_packet())
+
+    async def cleanup(self, timeout: float = 5):
+        await self.tunnel.calling_roll(timeout)
