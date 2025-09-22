@@ -153,6 +153,10 @@ class WorkerPacket:
         content = pickle.loads(data[4:]) if len(data) > 4 else None
         return cls(type_, content)
 
+    @classmethod
+    def request_load(cls, num_payloads: int):
+        return cls(WorkerPacketType.LOAD, num_payloads)
+
     def as_bytes(self) -> bytes:
         type_bytes = self.type.value.to_bytes(4, 'big')
         content_bytes = pickle.dumps(self.content) if self.content is not None else b''
