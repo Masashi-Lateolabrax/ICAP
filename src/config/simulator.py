@@ -113,7 +113,7 @@ class Simulator(BasicSimulator):
             with torch.no_grad():
                 input_ = self.create_input_for_controller()
                 if self._pheromone_field is not None:
-                    self.input_ndarray[:, 6] = self.get_pheromone(robot_positions)
+                    self.input_ndarray[:, 6] = self.get_pheromone(robot_positions) / 3.5
 
                 output = self.controller.forward(input_)
                 self.output_ndarray = output.numpy()
