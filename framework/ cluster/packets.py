@@ -45,7 +45,7 @@ class AsyncTaskPacketType(enum.Enum):
     ROLL_CALL = 3
 
 
-class AsyncTaskPacket:
+class _AsyncTaskPacket:
     def __init__(self, type_: AsyncTaskPacketType, content):
         self.type: AsyncTaskPacketType = type_
         self.content = content
@@ -73,23 +73,23 @@ class AsyncTaskTunnelChild:
         self.parent_queue = parent_queue
         self.child_queue = child_queue
 
-    async def send(self, packet: AsyncTaskPacket):
-        if not isinstance(packet, AsyncTaskPacket):
+    async def send(self, packet: _AsyncTaskPacket):
+        if not isinstance(packet, _AsyncTaskPacket):
             raise TypeError("packet must be an instance of AsyncTaskPacket")
         await self.child_queue.put(packet)
 
-    async def receive(self, timeout: float = None) -> AsyncTaskPacket:
+    async def receive(self, timeout: float = None) -> _AsyncTaskPacket:
         try:
             data = await asyncio.wait_for(self.parent_queue.get(), timeout=timeout)
         except asyncio.TimeoutError:
-            data = AsyncTaskPacket.timeout_packet()
+            data = _AsyncTaskPacket.timeout_packet()
 
-        if not isinstance(data, AsyncTaskPacket):
+        if not isinstance(data, _AsyncTaskPacket):
             raise TypeError("data must be an instance of AsyncTaskPacket")
 
         if data.type == AsyncTaskPacketType.ROLL_CALL:
             # Automatically respond to roll call
-            await self.send(AsyncTaskPacket.roll_call_packet(self.uuid))
+            await self.send(_AsyncTaskPacket.roll_call_packet(self.uuid))
             return await self.receive(timeout)
 
         return data
@@ -110,20 +110,20 @@ class AsyncTaskTunnel:
         self._buf_child_queue[id_] = []
         return AsyncTaskTunnelChild(id_, child_queue, parent_queue)
 
-    async def send(self, id_: uuid.UUID, packet: AsyncTaskPacket):
-        if not isinstance(packet, AsyncTaskPacket):
+    async def _send(self, id_: uuid.UUID, packet: _AsyncTaskPacket):
+        if not isinstance(packet, _AsyncTaskPacket):
             raise TypeError("packet must be an instance of AsyncTaskPacket")
         await self.child_queue[id_].put(packet)
 
-    async def receive(self, id_: uuid.UUID, timeout: float = None) -> AsyncTaskPacket:
+    async def _receive(self, id_: uuid.UUID, timeout: float = None) -> _AsyncTaskPacket:
         if len(self._buf_child_queue[id_]) > 0:
             data = self._buf_child_queue[id_].pop(0)
         else:
             try:
                 data = await asyncio.wait_for(self.parent_queue[id_].get(), timeout=timeout)
             except asyncio.TimeoutError:
-                data = AsyncTaskPacket.timeout_packet()
-        if not isinstance(data, AsyncTaskPacket):
+                data = _AsyncTaskPacket.timeout_packet()
+        if not isinstance(data, _AsyncTaskPacket):
             raise TypeError("data must be an instance of AsyncTaskPacket")
         return data
 
@@ -131,13 +131,13 @@ class AsyncTaskTunnel:
         return list(self.child_queue.keys())
 
     async def _send_roll_call_packet(self, id_: uuid.UUID, timeout: float) -> bool:
-        await self.child_queue[id_].put(AsyncTaskPacket.roll_call_packet())
+        await self.child_queue[id_].put(_AsyncTaskPacket.ping_packet())
 
         while True:
             try:
                 data = await asyncio.wait_for(self.parent_queue[id_].get(), timeout=timeout)
 
-                if not isinstance(data, AsyncTaskPacket):
+                if not isinstance(data, _AsyncTaskPacket):
                     raise TypeError("data must be an instance of AsyncTaskPacket")
 
                 if data.type == AsyncTaskPacketType.ROLL_CALL:
