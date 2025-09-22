@@ -1,7 +1,10 @@
 import asyncio
 from functools import partial
 
-from .packets import AsyncTaskPacketType, AsyncTaskPacket, AsyncTaskTunnel, AsyncTaskTunnelChild, WorkerPacket
+from .packets import (
+    AsyncTaskPacketType, AsyncTaskPacket, AsyncTaskTunnel, AsyncTaskTunnelChild,
+    WorkerPacket, StatePacket
+)
 
 
 async def _send_payload(writer: asyncio.StreamWriter, payload: WorkerPacket):
