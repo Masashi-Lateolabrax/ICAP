@@ -2,11 +2,11 @@ import asyncio
 from functools import partial
 from typing import Optional
 
-from .packets import (
+from ._packets import (
     AsyncTaskPacketType, AsyncTaskPacket, AsyncTaskTunnel, AsyncTaskTunnelChild,
     WorkerPacket, StatePacket
 )
-from .utils import relay_routine
+from ._utils import relay_routine
 
 
 async def head_routine(

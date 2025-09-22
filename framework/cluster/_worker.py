@@ -4,10 +4,10 @@ from typing import Optional
 
 import numpy as np
 
-from .packets import (
+from ._packets import (
     AsyncTaskTunnel, AsyncTaskTunnelChild, AsyncTaskPacket, AsyncTaskPacketType, WorkerPacket
 )
-from .utils import relay_routine
+from ._utils import relay_routine
 
 
 async def worker_routine(address: str, port: int, timeout: float, tunnel: AsyncTaskTunnelChild):

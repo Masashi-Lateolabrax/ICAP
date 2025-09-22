@@ -1,3 +1,3 @@
-from .packets import WorkerPacketType, WorkerPacket
-from .head import Head
-from .woker import WorkerClient
+from ._packets import WorkerPacketType, WorkerPacket
+from ._head import Head
+from ._worker import WorkerClient
