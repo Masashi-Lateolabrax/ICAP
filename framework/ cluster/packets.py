@@ -96,6 +96,26 @@ class AsyncTaskTunnel:
     def get_ids(self) -> list[uuid.UUID]:
         return list(self.child_queue.keys())
 
+    async def _send_roll_call_packet(self, id_: uuid.UUID, timeout: float) -> bool:
+        await self.child_queue[id_].put(AsyncTaskPacket.roll_call_packet())
+
+        while True:
+            try:
+                data = await asyncio.wait_for(self.parent_queue[id_].get(), timeout=timeout)
+
+                if not isinstance(data, AsyncTaskPacket):
+                    raise TypeError("data must be an instance of AsyncTaskPacket")
+
+                if data.type == AsyncTaskPacketType.ROLL_CALL:
+                    if data.content == id_:
+                        return True
+
+                self._buf_child_queue[id_].append(data)
+
+            except asyncio.TimeoutError:
+                return False
+
+
 
 class WorkerPacketType(enum.Enum):
     ONEWAY = 1
