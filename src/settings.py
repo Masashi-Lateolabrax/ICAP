@@ -149,8 +149,6 @@ MySettings.Pheromone.HEIGHT_NUM = int(MySettings.Simulation.WORLD_HEIGHT / MySet
 
 MySettings.Pheromone.ITERATIONS_PER_STEP = 1
 
-MySettings.Pheromone.EVAPORATION_RATE = 0.1
-MySettings.Pheromone.DECREASE_RATE = 0.0
 MySettings.Pheromone.TEMPERATURE = 300
 MySettings.Pheromone.MATERIAL = ETHANOL
 ###################################################################################
