@@ -6,6 +6,7 @@ import uuid
 
 class AsyncTaskPacketType(enum.Enum):
     STOP = 1
+    PAYLOAD = 2
 
 
 class AsyncTaskPacket:
@@ -16,6 +17,10 @@ class AsyncTaskPacket:
     @classmethod
     def stop_packet(cls):
         return cls(AsyncTaskPacketType.STOP, None)
+
+    @classmethod
+    def payload_packet(cls, content: "WorkerPacket"):
+        return cls(AsyncTaskPacketType.PAYLOAD, content)
 
 
 class AsyncTaskTunnelChild:
