@@ -149,6 +149,18 @@ class WorkerPacket:
         content_bytes = pickle.dumps(self.content) if self.content is not None else b''
         self.bytes = type_bytes + content_bytes
 
+    @classmethod
+    def from_bytes(cls, data: bytes) -> "WorkerPacket":
+        if len(data) < 4:
+            raise ValueError("data must be at least 4 bytes long")
+        type_value = int.from_bytes(data[:4], 'big')
+        try:
+            type_ = WorkerPacketType(type_value)
+        except ValueError:
+            raise ValueError(f"Invalid WorkerPacketType value: {type_value}")
+        content = pickle.loads(data[4:]) if len(data) > 4 else None
+        return cls(type_, content)
+
     def size(self) -> int:
         return len(self.bytes)
 
