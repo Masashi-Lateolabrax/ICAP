@@ -41,7 +41,7 @@ class WorkerPacket:
 class AsyncTaskPacketType(enum.Enum):
     TIMEOUT = -1
     STOP = 1
-    PAYLOAD = 2
+    WORKER_PACKET = 2
     PING = 3
 
 
@@ -59,8 +59,8 @@ class _AsyncTaskPacket:
         return cls(AsyncTaskPacketType.STOP, None)
 
     @classmethod
-    def payload_packet(cls, content: "WorkerPacket"):
-        return cls(AsyncTaskPacketType.PAYLOAD, content)
+    def worker_packet(cls, content: WorkerPacket):
+        return cls(AsyncTaskPacketType.WORKER_PACKET, content)
 
     @classmethod
     def ping_packet(cls, content=None):
