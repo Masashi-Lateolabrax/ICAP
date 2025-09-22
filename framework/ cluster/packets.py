@@ -42,7 +42,7 @@ class AsyncTaskPacketType(enum.Enum):
     TIMEOUT = -1
     STOP = 1
     PAYLOAD = 2
-    ROLL_CALL = 3
+    PING = 3
 
 
 class _AsyncTaskPacket:
@@ -63,8 +63,8 @@ class _AsyncTaskPacket:
         return cls(AsyncTaskPacketType.PAYLOAD, content)
 
     @classmethod
-    def roll_call_packet(cls, content=None):
-        return cls(AsyncTaskPacketType.ROLL_CALL, content)
+    def ping_packet(cls, content=None):
+        return cls(AsyncTaskPacketType.PING, content)
 
 
 class AsyncTaskTunnelChild:
@@ -87,9 +87,9 @@ class AsyncTaskTunnelChild:
         if not isinstance(data, _AsyncTaskPacket):
             raise TypeError("data must be an instance of AsyncTaskPacket")
 
-        if data.type == AsyncTaskPacketType.ROLL_CALL:
+        if data.type == AsyncTaskPacketType.PING:
             # Automatically respond to roll call
-            await self.send(_AsyncTaskPacket.roll_call_packet(self.uuid))
+            await self.send(_AsyncTaskPacket.ping_packet(self.uuid))
             return await self.receive(timeout)
 
         return data
@@ -130,7 +130,7 @@ class AsyncTaskTunnel:
     def get_ids(self) -> list[uuid.UUID]:
         return list(self.child_queue.keys())
 
-    async def _send_roll_call_packet(self, id_: uuid.UUID, timeout: float) -> bool:
+    async def _send_ping(self, id_: uuid.UUID, timeout: float) -> bool:
         await self.child_queue[id_].put(_AsyncTaskPacket.ping_packet())
 
         while True:
@@ -140,7 +140,7 @@ class AsyncTaskTunnel:
                 if not isinstance(data, _AsyncTaskPacket):
                     raise TypeError("data must be an instance of AsyncTaskPacket")
 
-                if data.type == AsyncTaskPacketType.ROLL_CALL:
+                if data.type == AsyncTaskPacketType.PING:
                     if data.content == id_:
                         return True
 
@@ -149,11 +149,11 @@ class AsyncTaskTunnel:
             except asyncio.TimeoutError:
                 return False
 
-    async def calling_roll(self, timeout: float) -> list[uuid.UUID]:
+    async def send_ping(self, timeout: float) -> list[uuid.UUID]:
         response = []
 
         for id_ in self.child_queue.keys():
-            if await self._send_roll_call_packet(id_, timeout):
+            if await self._send_ping(id_, timeout):
                 response.append(id_)
             else:
                 del self.parent_queue[id_]
