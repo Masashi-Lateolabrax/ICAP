@@ -9,6 +9,7 @@ import numpy as np
 
 
 class WorkerPacketType(enum.Enum):
+    TIMEOUT = -1
     TASK = 1
     RESULT = 2
     STATE = 3
@@ -31,6 +32,10 @@ class WorkerPacket:
             raise ValueError(f"Invalid WorkerPacketType value: {type_value}")
         content = pickle.loads(data[4:]) if len(data) > 4 else None
         return cls(type_, content)
+
+    @classmethod
+    def timeout_packet(cls):
+        return cls(WorkerPacketType.TIMEOUT, None)
 
     @classmethod
     def request_load(cls, num_payloads: int):
