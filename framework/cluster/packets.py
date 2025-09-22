@@ -61,6 +61,10 @@ class WorkerPacket:
     def is_timeout(self) -> bool:
         return self.type == WorkerPacketType.TIMEOUT
 
+    @classmethod
+    def result_packet(cls, result: list[tuple[np.ndarray, float]]):
+        return cls(WorkerPacketType.RESULT, ResultPacket(result))
+
 
 class AsyncTaskPacketType(enum.Enum):
     TIMEOUT = -1
