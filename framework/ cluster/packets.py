@@ -4,6 +4,40 @@ import pickle
 import uuid
 
 
+class WorkerPacketType(enum.Enum):
+    TASK = 1
+    RESULT = 2
+    STATE = 3
+    LOAD = 4
+
+
+class WorkerPacket:
+    def __init__(self, type_: WorkerPacketType, content):
+        self.type: WorkerPacketType = type_
+        self.content = content
+
+    @classmethod
+    def from_bytes(cls, data: bytes) -> "WorkerPacket":
+        if len(data) < 4:
+            raise ValueError("data must be at least 4 bytes long")
+        type_value = int.from_bytes(data[:4], 'big')
+        try:
+            type_ = WorkerPacketType(type_value)
+        except ValueError:
+            raise ValueError(f"Invalid WorkerPacketType value: {type_value}")
+        content = pickle.loads(data[4:]) if len(data) > 4 else None
+        return cls(type_, content)
+
+    @classmethod
+    def request_load(cls, num_payloads: int):
+        return cls(WorkerPacketType.LOAD, num_payloads)
+
+    def as_bytes(self) -> bytes:
+        type_bytes = self.type.value.to_bytes(4, 'big')
+        content_bytes = pickle.dumps(self.content) if self.content is not None else b''
+        return type_bytes + content_bytes
+
+
 class AsyncTaskPacketType(enum.Enum):
     TIMEOUT = -1
     STOP = 1
@@ -127,37 +161,3 @@ class AsyncTaskTunnel:
                 del self._buf_child_queue[id_]
 
         return response
-
-
-class WorkerPacketType(enum.Enum):
-    TASK = 1
-    RESULT = 2
-    STATE = 3
-    LOAD = 4
-
-
-class WorkerPacket:
-    def __init__(self, type_: WorkerPacketType, content):
-        self.type: WorkerPacketType = type_
-        self.content = content
-
-    @classmethod
-    def from_bytes(cls, data: bytes) -> "WorkerPacket":
-        if len(data) < 4:
-            raise ValueError("data must be at least 4 bytes long")
-        type_value = int.from_bytes(data[:4], 'big')
-        try:
-            type_ = WorkerPacketType(type_value)
-        except ValueError:
-            raise ValueError(f"Invalid WorkerPacketType value: {type_value}")
-        content = pickle.loads(data[4:]) if len(data) > 4 else None
-        return cls(type_, content)
-
-    @classmethod
-    def request_load(cls, num_payloads: int):
-        return cls(WorkerPacketType.LOAD, num_payloads)
-
-    def as_bytes(self) -> bytes:
-        type_bytes = self.type.value.to_bytes(4, 'big')
-        content_bytes = pickle.dumps(self.content) if self.content is not None else b''
-        return type_bytes + content_bytes
