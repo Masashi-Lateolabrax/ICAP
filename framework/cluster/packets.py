@@ -185,7 +185,7 @@ class AsyncTaskTunnel:
     async def send_and_receive(
             self, id_: uuid.UUID, packet: AsyncTaskPacket, timeout: float = None,
             expect_type: AsyncTaskPacketType = None
-    ) -> AsyncTaskPacket:
+    ) -> Optional[AsyncTaskPacket]:
         await self.send(id_, packet)
         return await self.receive(id_, timeout, expect_type)
 
