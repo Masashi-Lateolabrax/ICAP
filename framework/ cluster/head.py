@@ -25,13 +25,30 @@ async def _receive_payload(reader: asyncio.StreamReader, timeout: float) -> Work
     return WorkerPacket.from_bytes(payload_data)
 
 
-async def head_routine(reader: asyncio.StreamReader, writer: asyncio.StreamWriter, tunnel: AsyncTaskTunnelChild):
-    running = True
-    while running:
+async def head_routine(
+        reader: asyncio.StreamReader, writer: asyncio.StreamWriter, tunnel: AsyncTaskTunnelChild, timeout: float
+):
+    while True:
         packet: AsyncTaskPacket = await tunnel.receive()
 
         if packet.type == AsyncTaskPacketType.STOP:
-            running = False
+            break
+
+        if packet.type == AsyncTaskPacketType.PAYLOAD:
+            payload = packet.content
+            if not isinstance(payload, WorkerPacket):
+                raise ValueError("Invalid packet content type. Expected WorkerPacket for PAYLOAD type.")
+            await _send_payload(writer, payload)
+
+        try:
+            response = await _receive_payload(reader, timeout)
+        except asyncio.TimeoutError:
+            continue
+
+        if not isinstance(response, WorkerPacket):
+            raise ValueError("Invalid response type. Expected WorkerPacket.")
+        response_packet = AsyncTaskPacket(AsyncTaskPacketType.PAYLOAD, response)
+        await tunnel.send(response_packet)
 
 
 class Head:
