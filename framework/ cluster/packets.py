@@ -127,6 +127,12 @@ class AsyncTaskTunnel:
             raise TypeError("data must be an instance of AsyncTaskPacket")
         return data
 
+    async def send_and_receive(
+            self, id_: uuid.UUID, packet: _AsyncTaskPacket, timeout: float = None
+    ) -> _AsyncTaskPacket:
+        await self.send(id_, packet)
+        return await self.receive(id_, timeout)
+
     def get_ids(self) -> list[uuid.UUID]:
         return list(self.child_queue.keys())
 
