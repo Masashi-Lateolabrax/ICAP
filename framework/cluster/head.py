@@ -68,7 +68,7 @@ class Head:
         await self.tunnel.send(AsyncTaskPacket.stop_packet())
 
     async def cleanup(self, timeout: float = 5):
-        await self.tunnel.calling_roll(timeout)
+        await self.tunnel.send_ping(timeout)
 
     async def get_ids(self):
         return self.tunnel.get_ids()
