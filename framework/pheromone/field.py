@@ -19,12 +19,12 @@ def _set_boundary(values, fill):
 
 
 def _dDiffusion_dt(
-        gas_values: jnp.ndarray,
-        mask: jnp.ndarray,
-        diffusion_coefficient: float,
-        h: float,
-        padding_value: float,
-) -> tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
+        gas_values: jnp.ndarray,  # [mol/m³] - gas concentration field
+        mask: jnp.ndarray,  # [dimensionless] - boundary mask
+        diffusion_coefficient: float,  # [m²/s] - diffusion coefficient
+        h: float,  # [m] - spatial step size
+        padding_value: float,  # [mol/m³] - boundary padding value
+) -> tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:  # ([mol/(m³·s)], [mol/(m⁴·s)], [mol/(m⁴·s)]) 
     """
     Calculate time derivative of gas concentration distribution using 3D diffusion equation.
 
@@ -54,8 +54,8 @@ def _dDiffusion_dt(
     d_top = (gas_values[0:-2, 1:-1, 1:-1] - center) * mask[0:-2, 1:-1, None]
     d_bottom = (gas_values[2:, 1:-1, 1:-1] - center) * mask[2:, 1:-1, None]
 
-    d_dx = (d_left[:, :, 0] - d_right[:, :, 0]) * 0.5 / h  # ∂c/∂x
-    d_dy = (d_top[:, :, 0] - d_bottom[:, :, 0]) * 0.5 / h  # ∂c/∂y
+    d_dx = (d_left[:, :, 0] - d_right[:, :, 0]) * 0.5 / h  # [mol/(m⁴·s)] - ∂c/∂x concentration gradient
+    d_dy = (d_top[:, :, 0] - d_bottom[:, :, 0]) * 0.5 / h  # [mol/(m⁴·s)] - ∂c/∂y concentration gradient
     horizontal = (d_top + d_bottom + d_left + d_right) / (h * h)
 
     # Vertical diffusion: non-uniform asymmetric 3-point stencil (∇²c in z)
@@ -84,12 +84,12 @@ def _dDiffusion_dt(
 
 
 def _d_dt(
-        gas_values: jnp.ndarray,
-        mask: jnp.ndarray,
-        h: float,
-        diffusion_coefficient: float,
-        padding_value: float,
-) -> tuple[jnp.ndarray, jnp.ndarray]:
+        gas_values: jnp.ndarray,  # [mol/m³] - gas concentration field
+        mask: jnp.ndarray,  # [dimensionless] - boundary mask
+        h: float,  # [m] - spatial step size
+        diffusion_coefficient: float,  # [m²/s] - diffusion coefficient
+        padding_value: float,  # [mol/m³] - boundary padding value
+) -> tuple[jnp.ndarray, jnp.ndarray]:  # ([mol/(m³·s)], [mol/(m⁴·s)]) - (gas concentration rate, gradient)
     d_diffusion, d_dx, d_dy = _dDiffusion_dt(  # Unit: mol/(m^3·s)
         gas_values=gas_values,
         mask=mask,
@@ -107,15 +107,16 @@ def _d_dt(
         "saturation_pressure", "diffusion_coefficient", "evaporation_rate", "decrease_rate", "padding_value",
 ), inline=True)
 def _step_with_rk4(
-        liquid_values: jnp.ndarray,
-        gas_values: jnp.ndarray,
-        mask: jnp.ndarray,
-        h: float,
-        saturation_concentration: float,
-        diffusion_coefficient: float,
-        dt: float,
-        padding_value: float,
-) -> tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
+        liquid_values: jnp.ndarray,  # [mol] - liquid pheromone amount
+        gas_values: jnp.ndarray,  # [mol/m³] - gas concentration field
+        mask: jnp.ndarray,  # [dimensionless] - boundary mask
+        h: float,  # [m] - spatial step size
+        saturation_concentration: float,  # [mol/m³] - saturation concentration
+        diffusion_coefficient: float,  # [m²/s] - diffusion coefficient
+        dt: float,  # [s] - time step
+        padding_value: float,  # [mol/m³] - boundary padding value
+) -> tuple[
+    jnp.ndarray, jnp.ndarray, jnp.ndarray]:  # ([mol/m³], [mol], [mol/(m⁴·s)]) - (gas field, liquid field, gradient)
     k1_gas, k1_grad = _d_dt(
         gas_values=gas_values,
         mask=mask,
@@ -150,9 +151,10 @@ def _step_with_rk4(
 
     grad = (k1_grad + 2 * k2_grad + 2 * k3_grad + k4_grad) / 6
 
+    # [mol] - evaporation amount
     evaporation_mol = (saturation_concentration - gas_values[1:-1, 1:-1, 1]) * (liquid_values > 0) * (h ** 3)
-    evaporation_mol = jnp.minimum(evaporation_mol, liquid_values)
-    evaporation_con = evaporation_mol / (h ** 3)
+    evaporation_mol = jnp.minimum(evaporation_mol, liquid_values)  # [mol] - limited by available liquid
+    evaporation_con = evaporation_mol / (h ** 3)  # [mol/m³] - evaporation concentration
 
     d_gas_values = ((k1_gas + 2 * k2_gas + 2 * k3_gas + k4_gas) / 6).at[:, :, 0].add(evaporation_con)
     gas_values = jnp.maximum(
@@ -178,16 +180,16 @@ def _step_with_rk4(
     inline=True,
 )
 def _iter_update_with_rk4(
-        liquid_values: jnp.ndarray,
-        gas_values: jnp.ndarray,
-        mask: jnp.ndarray,
-        dx: float,
-        saturation_concentration: float,
-        diffusion_coefficient: float,
-        dt: float,
-        padding_value: float,
-        iter_: int = 1,
-) -> tuple[jax.Array, jax.Array, jax.Array]:
+        liquid_values: jnp.ndarray,  # [mol] - liquid pheromone amount
+        gas_values: jnp.ndarray,  # [mol/m³] - gas concentration field
+        mask: jnp.ndarray,  # [dimensionless] - boundary mask
+        dx: float,  # [m] - spatial step size
+        saturation_concentration: float,  # [mol/m³] - saturation concentration
+        diffusion_coefficient: float,  # [m²/s] - diffusion coefficient
+        dt: float,  # [s] - time step
+        padding_value: float,  # [mol/m³] - boundary padding value
+        iter_: int = 1,  # [dimensionless] - number of sub-iterations
+) -> tuple[jax.Array, jax.Array, jax.Array]:  # ([mol/m³], [mol], [mol/(m⁴·s)]) - (gas field, liquid field, gradient)
     dt = dt / iter_
 
     def body_fn(carry: tuple[jax.Array, jax.Array, jax.Array], _x):
@@ -213,23 +215,23 @@ def _iter_update_with_rk4(
 
 @jax_dataclass
 class PheromoneField:
-    dt: float = field(pytree_node=False)
+    dt: float = field(pytree_node=False)  # [s] - time step for simulation
 
-    nx: int = field(pytree_node=False)
-    ny: int = field(pytree_node=False)
-    nz: int = field(pytree_node=False)
-    dx: float = field(pytree_node=False)
+    nx: int = field(pytree_node=False)  # [dimensionless] - grid points in x direction
+    ny: int = field(pytree_node=False)  # [dimensionless] - grid points in y direction
+    nz: int = field(pytree_node=False)  # [dimensionless] - grid points in z direction
+    dx: float = field(pytree_node=False)  # [m] - spatial resolution
 
-    saturation_concentration: float = field(pytree_node=False)
-    diffusion_coefficient: float = field(pytree_node=False)
+    saturation_concentration: float = field(pytree_node=False)  # [mol/m³] - maximum gas concentration
+    diffusion_coefficient: float = field(pytree_node=False)  # [m²/s] - pheromone diffusion rate
 
-    values_liquid: jnp.ndarray  # Shape: (x, y)
-    _values_gas: jnp.ndarray  # Shape: (x+2, y+2)
-    grad: jnp.ndarray
-    mask: jnp.ndarray  # Shape: (x+2, y+2)
+    values_liquid: jnp.ndarray  # [mol] - liquid pheromone amount, Shape: (ny, nx)
+    _values_gas: jnp.ndarray  # [mol/m³] - gas concentration field, Shape: (ny+2, nx+2, nz+2)
+    grad: jnp.ndarray  # [mol/(m⁴·s)] - concentration gradient, Shape: (ny, nx, 2)
+    mask: jnp.ndarray  # [dimensionless] - boundary condition mask, Shape: (ny+2, nx+2)
 
-    padding_value: float = field(pytree_node=False)
-    iter_: int = field(pytree_node=False)
+    padding_value: float = field(pytree_node=False)  # [mol/m³] - boundary padding concentration
+    iter_: int = field(pytree_node=False)  # [dimensionless] - RK4 sub-iterations per step
 
     @property
     def values_gas(self) -> jnp.ndarray:
@@ -238,15 +240,15 @@ class PheromoneField:
     @classmethod
     def new(
             cls,
-            dt: float,  # [s] - time step
-            nx: int,
-            ny: int,
-            dx: float,
-            temperature: float,
-            material: Material,
-            padding_value: float = 0.0,
-            iter_: int = 1,
-            nz: int = 5,
+            dt: float,  # [s] - simulation time step
+            nx: int,  # [dimensionless] - grid points in x direction
+            ny: int,  # [dimensionless] - grid points in y direction
+            dx: float,  # [m] - spatial resolution
+            temperature: float,  # [K] - environmental temperature
+            material: Material,  # [dimensionless] - pheromone material properties
+            padding_value: float = 0.0,  # [mol/m³] - boundary padding concentration
+            iter_: int = 1,  # [dimensionless] - RK4 sub-iterations per step
+            nz: int = 5,  # [dimensionless] - vertical layers for z-diffusion
     ) -> Self:
         saturation_pressure = material.saturation_pressure(temperature)
         saturation_concentration = saturation_pressure / (Material.GAS_CONSTANT * temperature)  # [mol/m^3]
