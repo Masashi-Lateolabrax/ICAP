@@ -79,6 +79,9 @@ class AsyncTaskPacket:
     def ping_packet(cls, content=None):
         return cls(AsyncTaskPacketType.PING, content)
 
+    def is_timeout(self) -> bool:
+        return self.type == AsyncTaskPacketType.TIMEOUT
+
 
 class AsyncTaskTunnelChild:
     def __init__(self, id_: uuid.UUID, parent_queue: asyncio.Queue, child_queue: asyncio.Queue):
