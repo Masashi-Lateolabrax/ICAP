@@ -256,6 +256,9 @@ class PheromoneField:
         for c in cell:
             c.add_value = 0.0
 
+    def get_max_value(self) -> float:
+        return float(jnp.max(self._values_gas))
+
     def _step_with_rk4(self):
         dt = self.dt / self.iter_
         for _ in range(self.iter_):
