@@ -66,6 +66,11 @@ class Simulator(BasicSimulator):
         self.output_ndarray = np.zeros((settings.Robot.NUM, 3), dtype=np.float32)
         self.input_tensor = torch.from_numpy(self.input_ndarray)
 
+        # Pre-allocated arrays for step() method optimization
+        self._robot_positions = np.zeros((settings.Robot.NUM, 2), dtype=np.float32)
+        self._robot_v_direction = np.zeros((settings.Robot.NUM, 2), dtype=np.float32)
+        self._robot_h_direction = np.zeros((settings.Robot.NUM, 2), dtype=np.float32)
+
         mujoco.mj_step(self.model, self.data)
 
     def get_max_gas_pheromone(self) -> float:
@@ -107,19 +112,22 @@ class Simulator(BasicSimulator):
         return self.input_tensor
 
     def step(self):
-        robot_positions = np.array([robot.xpos for robot in self.robot_values])
-        robot_v_direction = np.array([robot.xdirection for robot in self.robot_values])
-        robot_h_direction = np.array([(v_direction[1], -v_direction[0]) for v_direction in robot_v_direction])
+        # Use pre-allocated arrays to avoid memory allocation overhead
+        for i, robot in enumerate(self.robot_values):
+            self._robot_positions[i] = robot.xpos
+            self._robot_v_direction[i] = robot.xdirection
+            self._robot_h_direction[i, 0] = robot.xdirection[1]
+            self._robot_h_direction[i, 1] = -robot.xdirection[0]
 
         if self.timer.tick():
             with torch.no_grad():
                 input_ = self.create_input_for_controller()
                 if self._pheromone_field is not None:
-                    self.input_ndarray[:, 6] = self.get_pheromone(robot_positions) / 3.5
+                    self.input_ndarray[:, 6] = self.get_pheromone(self._robot_positions) / 3.5
 
-                    pheromone_grad = self.get_pheromone_grad(robot_positions)
-                    self.input_ndarray[:, 7] = np.sum(pheromone_grad * robot_v_direction, axis=1)
-                    self.input_ndarray[:, 8] = np.sum(pheromone_grad * robot_h_direction, axis=1)
+                    pheromone_grad = self.get_pheromone_grad(self._robot_positions)
+                    self.input_ndarray[:, 7] = np.sum(pheromone_grad * self._robot_v_direction, axis=1)
+                    self.input_ndarray[:, 8] = np.sum(pheromone_grad * self._robot_h_direction, axis=1)
 
                 output = self.controller.forward(input_)
                 self.output_ndarray = output.numpy()
@@ -131,7 +139,7 @@ class Simulator(BasicSimulator):
             )
 
         if self._pheromone_field is not None:
-            self.add_pheromone(robot_positions, self.output_ndarray[:, 2] * self.settings.Robot.MAX_PHEROMONE_SECRETION)
+            self.add_pheromone(self._robot_positions, self.output_ndarray[:, 2] * self.settings.Robot.MAX_PHEROMONE_SECRETION)
             self._pheromone_field.add_liquid_by_cell(self._pheromone_cells)
             self._pheromone_field.step()
 
