@@ -61,6 +61,7 @@ class Robot:
     RADIUS = 0.175
     DISTANCE_BETWEEN_WHEELS = 0.175 * 2 * 0.8
     MAX_SPEED = 0.8
+    MAX_PHEROMONE_SECRETION = 2e-2
     MASS = 10
 
     COLOR = (1, 1, 0, 1)
