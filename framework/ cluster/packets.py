@@ -82,10 +82,13 @@ class AsyncTaskTunnel:
         await self.child_queue[id_].put(packet)
 
     async def receive(self, id_: uuid.UUID, timeout: float = None) -> AsyncTaskPacket:
-        try:
-            data = await asyncio.wait_for(self.parent_queue[id_].get(), timeout=timeout)
-        except asyncio.TimeoutError:
-            data = AsyncTaskPacket.timeout_packet()
+        if len(self._buf_child_queue[id_]) > 0:
+            data = self._buf_child_queue[id_].pop(0)
+        else:
+            try:
+                data = await asyncio.wait_for(self.parent_queue[id_].get(), timeout=timeout)
+            except asyncio.TimeoutError:
+                data = AsyncTaskPacket.timeout_packet()
         if not isinstance(data, AsyncTaskPacket):
             raise TypeError("data must be an instance of AsyncTaskPacket")
         return data
