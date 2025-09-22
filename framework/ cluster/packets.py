@@ -110,12 +110,12 @@ class AsyncTaskTunnel:
         self._buf_child_queue[id_] = []
         return AsyncTaskTunnelChild(id_, child_queue, parent_queue)
 
-    async def _send(self, id_: uuid.UUID, packet: _AsyncTaskPacket):
+    async def send(self, id_: uuid.UUID, packet: _AsyncTaskPacket):
         if not isinstance(packet, _AsyncTaskPacket):
             raise TypeError("packet must be an instance of AsyncTaskPacket")
         await self.child_queue[id_].put(packet)
 
-    async def _receive(self, id_: uuid.UUID, timeout: float = None) -> _AsyncTaskPacket:
+    async def receive(self, id_: uuid.UUID, timeout: float = None) -> _AsyncTaskPacket:
         if len(self._buf_child_queue[id_]) > 0:
             data = self._buf_child_queue[id_].pop(0)
         else:
