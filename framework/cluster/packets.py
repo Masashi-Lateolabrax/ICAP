@@ -46,7 +46,7 @@ class AsyncTaskPacketType(enum.Enum):
     PING = 3
 
 
-class _AsyncTaskPacket:
+class AsyncTaskPacket:
     def __init__(self, type_: AsyncTaskPacketType, content):
         self.type: AsyncTaskPacketType = type_
         self.content = content
@@ -74,23 +74,23 @@ class AsyncTaskTunnelChild:
         self.parent_queue = parent_queue
         self.child_queue = child_queue
 
-    async def send(self, packet: _AsyncTaskPacket):
-        if not isinstance(packet, _AsyncTaskPacket):
+    async def send(self, packet: AsyncTaskPacket):
+        if not isinstance(packet, AsyncTaskPacket):
             raise TypeError("packet must be an instance of AsyncTaskPacket")
         await self.child_queue.put(packet)
 
-    async def receive(self, timeout: float = None) -> _AsyncTaskPacket:
+    async def receive(self, timeout: float = None) -> AsyncTaskPacket:
         try:
             data = await asyncio.wait_for(self.parent_queue.get(), timeout=timeout)
         except asyncio.TimeoutError:
-            data = _AsyncTaskPacket.timeout_packet()
+            data = AsyncTaskPacket.timeout_packet()
 
-        if not isinstance(data, _AsyncTaskPacket):
+        if not isinstance(data, AsyncTaskPacket):
             raise TypeError("data must be an instance of AsyncTaskPacket")
 
         if data.type == AsyncTaskPacketType.PING:
             # Automatically respond to roll call
-            await self.send(_AsyncTaskPacket.ping_packet(self.uuid))
+            await self.send(AsyncTaskPacket.ping_packet(self.uuid))
             return await self.receive(timeout)
 
         return data
@@ -100,7 +100,7 @@ class AsyncTaskTunnel:
     def __init__(self):
         self.parent_queue = {}
         self.child_queue = {}
-        self._buf_child_queue: dict[uuid.UUID, list[_AsyncTaskPacket]] = {}
+        self._buf_child_queue: dict[uuid.UUID, list[AsyncTaskPacket]] = {}
 
     def spawn_child(self):
         id_ = uuid.uuid4()
@@ -111,14 +111,14 @@ class AsyncTaskTunnel:
         self._buf_child_queue[id_] = []
         return AsyncTaskTunnelChild(id_, child_queue, parent_queue)
 
-    async def send(self, id_: uuid.UUID, packet: _AsyncTaskPacket):
-        if not isinstance(packet, _AsyncTaskPacket):
+    async def send(self, id_: uuid.UUID, packet: AsyncTaskPacket):
+        if not isinstance(packet, AsyncTaskPacket):
             raise TypeError("packet must be an instance of AsyncTaskPacket")
         await self.child_queue[id_].put(packet)
 
     async def receive(
             self, id_: uuid.UUID, timeout: float = None, expect_type: AsyncTaskPacketType = None
-    ) -> Optional[_AsyncTaskPacket]:
+    ) -> Optional[AsyncTaskPacket]:
         """
         Asynchronously receive a packet from the specified task queue.
 
@@ -135,7 +135,7 @@ class AsyncTaskTunnel:
                 Defaults to None (accept any packet type).
 
         Returns:
-            Optional[_AsyncTaskPacket]: The received packet, timeout packet if timeout occurred,
+            Optional[AsyncTaskPacket]: The received packet, timeout packet if timeout occurred,
             or None if no matching packet type was found within the timeout period.
 
         Raises:
@@ -156,9 +156,9 @@ class AsyncTaskTunnel:
         try:
             data = await asyncio.wait_for(self.parent_queue[id_].get(), timeout=timeout)
         except asyncio.TimeoutError:
-            return _AsyncTaskPacket.timeout_packet()
+            return AsyncTaskPacket.timeout_packet()
 
-        if not isinstance(data, _AsyncTaskPacket):
+        if not isinstance(data, AsyncTaskPacket):
             raise TypeError("data must be an instance of AsyncTaskPacket")
 
         while expect_type is not None and data.type != expect_type:
@@ -170,15 +170,15 @@ class AsyncTaskTunnel:
             except asyncio.TimeoutError:
                 break
 
-            if not isinstance(data, _AsyncTaskPacket):
+            if not isinstance(data, AsyncTaskPacket):
                 raise TypeError("data must be an instance of AsyncTaskPacket")
 
         return data
 
     async def send_and_receive(
-            self, id_: uuid.UUID, packet: _AsyncTaskPacket, timeout: float = None,
+            self, id_: uuid.UUID, packet: AsyncTaskPacket, timeout: float = None,
             expect_type: AsyncTaskPacketType = None
-    ) -> _AsyncTaskPacket:
+    ) -> AsyncTaskPacket:
         await self.send(id_, packet)
         return await self.receive(id_, timeout, expect_type)
 
@@ -186,7 +186,7 @@ class AsyncTaskTunnel:
         return list(self.child_queue.keys())
 
     async def _send_ping(self, id_: uuid.UUID, timeout: float) -> bool:
-        response = await self.send_and_receive(id_, _AsyncTaskPacket.ping_packet(), timeout, AsyncTaskPacketType.PING)
+        response = await self.send_and_receive(id_, AsyncTaskPacket.ping_packet(), timeout, AsyncTaskPacketType.PING)
         return response is not None and response.type != AsyncTaskPacketType.TIMEOUT
 
     async def send_ping(self, timeout: float) -> list[uuid.UUID]:
