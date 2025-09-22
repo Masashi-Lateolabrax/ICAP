@@ -53,7 +53,6 @@ async def head_routine(
 
 class Head:
     def __init__(self):
-        self.workers: list[Worker] = []
         self.tunnel = AsyncTaskTunnel()
         self.server = None
 
