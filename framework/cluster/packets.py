@@ -186,23 +186,8 @@ class AsyncTaskTunnel:
         return list(self.child_queue.keys())
 
     async def _send_ping(self, id_: uuid.UUID, timeout: float) -> bool:
-        await self.child_queue[id_].put(_AsyncTaskPacket.ping_packet())
-
-        while True:
-            try:
-                data = await asyncio.wait_for(self.parent_queue[id_].get(), timeout=timeout)
-
-                if not isinstance(data, _AsyncTaskPacket):
-                    raise TypeError("data must be an instance of AsyncTaskPacket")
-
-                if data.type == AsyncTaskPacketType.PING:
-                    if data.content == id_:
-                        return True
-
-                self._buf_child_queue[id_].append(data)
-
-            except asyncio.TimeoutError:
-                return False
+        response = await self.send_and_receive(id_, _AsyncTaskPacket.ping_packet(), timeout, AsyncTaskPacketType.PING)
+        return response is not None and response.type != AsyncTaskPacketType.TIMEOUT
 
     async def send_ping(self, timeout: float) -> list[uuid.UUID]:
         response = []
