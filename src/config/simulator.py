@@ -62,7 +62,7 @@ class Simulator(BasicSimulator):
 
         self.dummy_foods: list[DummyFoodValues] = []
 
-        self.input_ndarray = np.zeros((settings.Robot.NUM, 2 * 3 + 1), dtype=np.float32)
+        self.input_ndarray = np.zeros((settings.Robot.NUM, 2 * 3 + 3), dtype=np.float32)
         self.output_ndarray = np.zeros((settings.Robot.NUM, 3), dtype=np.float32)
         self.input_tensor = torch.from_numpy(self.input_ndarray)
 
