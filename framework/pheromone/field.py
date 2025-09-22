@@ -190,6 +190,7 @@ def _iter_update_with_rk4(
         iter_: int = 1,  # [dimensionless] - number of sub-iterations
 ) -> tuple[jax.Array, jax.Array, jax.Array]:  # ([mol/m³], [mol], [mol/(m⁴·s)]) - (gas field, liquid field, gradient)
     dt = dt / iter_
+    nx, ny = liquid_values.shape
 
     def body_fn(carry: tuple[jax.Array, jax.Array, jax.Array], _x):
         g_values, l_values, _grad = carry
@@ -207,7 +208,7 @@ def _iter_update_with_rk4(
 
     return jax.lax.scan(
         body_fn,
-        (gas_values, liquid_values, liquid_values),
+        (gas_values, liquid_values, jnp.zeros((ny, nx, 2))),
         length=iter_,
     )[0]
 
