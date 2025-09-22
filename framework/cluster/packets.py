@@ -1,4 +1,5 @@
 import asyncio
+import dataclasses
 import enum
 import pickle
 import uuid
@@ -208,3 +209,9 @@ class AsyncTaskTunnel:
 class TaskPacket:
     def __init__(self, parameter: np.ndarray):
         self.parameter = parameter
+
+
+@dataclasses.dataclass
+class StatePacket:
+    gpu_usage: float
+    working: bool
