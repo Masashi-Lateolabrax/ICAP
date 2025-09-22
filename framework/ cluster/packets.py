@@ -115,16 +115,33 @@ class AsyncTaskTunnel:
             raise TypeError("packet must be an instance of AsyncTaskPacket")
         await self.child_queue[id_].put(packet)
 
-    async def receive(self, id_: uuid.UUID, timeout: float = None) -> _AsyncTaskPacket:
+    async def receive(
+            self, id_: uuid.UUID, timeout: float = None, expect_type: AsyncTaskPacketType = None
+    ) -> Optional[_AsyncTaskPacket]:
         if len(self._buf_child_queue[id_]) > 0:
             data = self._buf_child_queue[id_].pop(0)
+
         else:
             try:
                 data = await asyncio.wait_for(self.parent_queue[id_].get(), timeout=timeout)
             except asyncio.TimeoutError:
-                data = _AsyncTaskPacket.timeout_packet()
-        if not isinstance(data, _AsyncTaskPacket):
-            raise TypeError("data must be an instance of AsyncTaskPacket")
+                return _AsyncTaskPacket.timeout_packet()
+
+            if not isinstance(data, _AsyncTaskPacket):
+                raise TypeError("data must be an instance of AsyncTaskPacket")
+
+            while expect_type is not None and data.type != expect_type:
+                self._buf_child_queue[id_].append(data)
+
+                data = None
+                try:
+                    data = await asyncio.wait_for(self.parent_queue[id_].get(), timeout=timeout)
+                except asyncio.TimeoutError:
+                    break
+
+                if not isinstance(data, _AsyncTaskPacket):
+                    raise TypeError("data must be an instance of AsyncTaskPacket")
+
         return data
 
     async def send_and_receive(
