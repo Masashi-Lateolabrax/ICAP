@@ -43,10 +43,12 @@ class Head:
     async def start(self, address, port, timeout: float):
         if self.server is not None:
             raise RuntimeError("Server is already running")
-        self.server = await asyncio.start_server(
-            partial(head_routine, tunnel=self.tunnel.spawn_child(), timeout=timeout),
-            address, port
-        )
+
+        def body_fn():
+            child = self.tunnel.spawn_child()
+            return partial(head_routine, tunnel=child, timeout=timeout)
+
+        self.server = await asyncio.start_server(body_fn(), address, port)
 
     async def stop(self):
         for id_ in self.tunnel.get_ids():
