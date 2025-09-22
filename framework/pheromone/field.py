@@ -12,7 +12,7 @@ def dDiffusion_dt(
         diffusion_coefficient: float,
         h: float,
         padding_value: float,
-) -> jnp.ndarray:
+) -> tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
     """
     Calculate time derivative of gas concentration distribution using 3D diffusion equation.
     
@@ -43,6 +43,9 @@ def dDiffusion_dt(
     d_right = (gas_values[1:-1, 2:, 1:-1] - center) * mask[1:-1, 2:, None]
     d_top = (gas_values[0:-2, 1:-1, 1:-1] - center) * mask[0:-2, 1:-1, None]
     d_bottom = (gas_values[2:, 1:-1, 1:-1] - center) * mask[2:, 1:-1, None]
+
+    d_dx = (d_left[:, :, 0] - d_right[:, :, 0]) * 0.5 / h  # ∂c/∂x
+    d_dy = (d_top[:, :, 0] - d_bottom[:, :, 0]) * 0.5 / h  # ∂c/∂y
     horizontal = (d_top + d_bottom + d_left + d_right) / (h * h)
 
     # Vertical diffusion: non-uniform asymmetric 3-point stencil (∇²c in z)
@@ -67,7 +70,7 @@ def dDiffusion_dt(
     vertical = (d_upper + 2 * d_lower) / (3 * (z_weights[None, None, :] * h) ** 2)
 
     # Total diffusion: D * (∇²c_horizontal + ∇²c_vertical)
-    return diffusion_coefficient * (horizontal + vertical)
+    return diffusion_coefficient * (horizontal + vertical), d_dx, d_dy
 
 
 def d_dt(
@@ -77,7 +80,7 @@ def d_dt(
         diffusion_coefficient: float,
         padding_value: float,
 ) -> jnp.ndarray:
-    d_diffusion = dDiffusion_dt(  # Unit: mol/(m^3·s)
+    d_diffusion, d_dx, d_dy = dDiffusion_dt(  # Unit: mol/(m^3·s)
         gas_values=gas_values,
         mask=mask,
         diffusion_coefficient=diffusion_coefficient,
