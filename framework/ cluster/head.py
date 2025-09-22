@@ -69,3 +69,6 @@ class Head:
 
     async def cleanup(self, timeout: float = 5):
         await self.tunnel.calling_roll(timeout)
+
+    async def get_ids(self):
+        return self.tunnel.get_ids()
