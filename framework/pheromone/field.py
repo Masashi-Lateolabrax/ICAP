@@ -216,7 +216,7 @@ class PheromoneField:
     def get_grad(self, xs, ys) -> np.ndarray:
         xs = jnp.clip(xs, 0, self.shape[1] - 1)
         ys = jnp.clip(ys, 0, self.shape[0] - 1)
-        return np.array(self.grad[ys, xs])
+        return np.array(self._grad[ys, xs])
 
     def get_gas(self, xs, ys, zs=0) -> np.ndarray:
         xs = jnp.clip(xs, 0, self.shape[1] - 2) + 1
@@ -262,7 +262,7 @@ class PheromoneField:
     def _step_with_rk4(self):
         dt = self.dt / self.iter_
         for _ in range(self.iter_):
-            self._values_gas, self._values_liquid, self.grad, = update_with_rk4(
+            self._values_gas, self._values_liquid, self._grad, = update_with_rk4(
                 liquid_values=self._values_liquid,
                 gas_values=self._values_gas,
                 mask=self.mask,
