@@ -138,9 +138,19 @@ class LoadBalancer:
                 if diff == 0:
                     break
 
-                keys = [k for k, v in allocation.items() if v - int(v) > 0]
-                max_pc = max(keys, key=lambda pc: allocation[pc])
-                allocation[max_pc] = int(allocation[max_pc] + 1)
+                fractional_parts = {k: v - int(v) for k, v in allocation.items() if v - int(v) > 0}
+                if len(fractional_parts) == 0:
+                    break
+
+                if diff > 0:
+                    max_pc = max(fractional_parts, key=lambda pc: fractional_parts[pc])
+                    allocation[max_pc] = int(allocation[max_pc] + 1)
+                    continue
+                else:
+                    min_pc = min(fractional_parts, key=lambda pc: fractional_parts[pc])
+                    if allocation[min_pc] > 0:
+                        allocation[min_pc] = max(int(allocation[min_pc] - 1), 0)
+                    continue
 
             return {pc_id: int(v) for pc_id, v in allocation.items()}
         else:
