@@ -156,9 +156,10 @@ class AsyncTaskTunnel:
         del self.parent_queue[id_]
         del self._buf_child_queue[id_]
 
-    async def send_ping(self, id_: uuid.UUID):
+    async def send_ping(self, id_: uuid.UUID) -> "PingPacket":
         packet = AsyncTaskPacket.ping_packet(id_)
         await self.send(id_, packet)
+        return packet.content
 
 
 class TaskPacket:
