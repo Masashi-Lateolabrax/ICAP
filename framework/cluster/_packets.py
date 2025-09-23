@@ -179,8 +179,11 @@ class AsyncTaskTunnel:
             5. Returns timeout packet if timeout occurs during any wait operation
         """
         if len(self._buf_child_queue[id_]) > 0:
+            if expect_type is None:
+                return self._buf_child_queue[id_].pop(0)
+
             for i, data in enumerate(self._buf_child_queue[id_]):
-                if expect_type is not None and data.type == expect_type:
+                if data.type == expect_type:
                     return self._buf_child_queue[id_].pop(i)
 
         try:
