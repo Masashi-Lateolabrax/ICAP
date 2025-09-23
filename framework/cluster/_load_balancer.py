@@ -102,7 +102,8 @@ class LoadBalancer:
 
         if n_pcs == 0:
             return None
-
+        if remaining_tasks <= 0:
+            raise ValueError("remaining_tasks must be positive")
         for pc_id, perf in sufficient_data_pcs.items():
             if np.isnan(perf.get(1)):
                 return None
