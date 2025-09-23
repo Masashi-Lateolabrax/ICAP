@@ -43,6 +43,36 @@ class AsyncTaskTunnelChild:
         return data
 
 
+class SingleAsyncTaskTunnel:
+    def __init__(self):
+        self.id = uuid.uuid4()
+        self.receiver = asyncio.Queue()
+        self.sender = asyncio.Queue()
+
+    def get_id(self) -> uuid.UUID:
+        return self.id
+
+    async def send(self, packet: AsyncTaskPacket):
+        if not isinstance(packet, AsyncTaskPacket):
+            raise TypeError("packet must be an instance of AsyncTaskPacket")
+        await self.sender.put(packet)
+
+    def empty(self) -> bool:
+        return self.receiver.empty()
+
+    async def receive(self, timeout: float = None) -> Optional[AsyncTaskPacket]:
+        queue = self.receiver.get()
+        try:
+            data = await asyncio.wait_for(queue, timeout=timeout)
+        except asyncio.TimeoutError:
+            return None
+
+        if not isinstance(data, AsyncTaskPacket):
+            raise TypeError("data must be an instance of AsyncTaskPacket")
+
+        return data
+
+
 class AsyncTaskTunnel:
     def __init__(self):
         self.receiver = {}
