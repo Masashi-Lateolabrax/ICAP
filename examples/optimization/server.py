@@ -64,12 +64,12 @@ async def main():
                     current_batch[worker_id].append(candidates.pop(0))
             pass
 
-            # Send current batch to workers
+            # Send current batch to workers (batch = list of candidates → 2D array)
             for worker_id, batch in current_batch.items():
                 task = TaskContent(np.array(batch))
                 await head.send_worker_task(worker_id, task)
 
-            # Collect results for current batch
+            # Collect results for current batch (result.result = [(candidate, fitness), ...])
             for worker_id in current_batch.keys():
                 result = await head.get_worker_result(worker_id)
                 if result:
