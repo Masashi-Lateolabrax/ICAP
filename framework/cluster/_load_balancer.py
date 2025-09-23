@@ -15,7 +15,7 @@ class Performance:
         self.performance[task_count] = (1 - alpha) * current + alpha * processing_time
 
     def get(self, task_count: int) -> float:
-        if task_count == 0:
+        if task_count <= 0:
             return 0.0
         return self.performance.get(task_count, float("nan"))
 
