@@ -43,6 +43,17 @@ class Performance:
         return max(0.0, result)
 
 
+def _objective_func(num_tasks: int, perf: dict[uuid.UUID, Performance], load_balance: dict[uuid.UUID, int]) -> float:
+    if set(perf.keys()) != set(load_balance.keys()):
+        raise ValueError("Keys of perf and load_balance must match")
+
+    num_allocated_tasks = sum([n for n in load_balance.values()])
+    if num_allocated_tasks == 0:
+        raise ValueError("No tasks allocated in load_balance")
+
+    processing_times = max([perf[i].get(n) for i, n in load_balance.items()])
+    return processing_times * np.ceil(num_tasks / num_allocated_tasks)
+
 
 class LoadBalancer:
     def __init__(self):
