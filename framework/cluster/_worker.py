@@ -51,11 +51,6 @@ class WorkerClient:
 
         return self.buffer.pop(0)
 
-    async def send_worker_load(self, load: float):
-        packet = WorkerPacket.load_packet(load)
-        packet = AsyncTaskPacket.worker_packet(packet)
-        await self.tunnel.send(packet)
-
     async def send_worker_state(self, gpu_usage: float, working: bool):
         packet = WorkerPacket.state_packet(gpu_usage, working)
         packet = AsyncTaskPacket.worker_packet(packet)

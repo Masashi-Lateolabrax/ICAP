@@ -12,7 +12,6 @@ class WorkerPacketType(enum.Enum):
     TASK = 1
     RESULT = 2
     STATE = 3
-    LOAD = 4
 
 
 class WorkerPacket:
@@ -31,14 +30,6 @@ class WorkerPacket:
             raise ValueError(f"Invalid WorkerPacketType value: {type_value}")
         content = pickle.loads(data[4:]) if len(data) > 4 else None
         return cls(type_, content)
-
-    @classmethod
-    def request_load(cls, num_payloads: int):
-        return cls(WorkerPacketType.LOAD, num_payloads)
-
-    @classmethod
-    def load_packet(cls, load: float):
-        return cls(WorkerPacketType.LOAD, load)
 
     @classmethod
     def request_state(cls):
