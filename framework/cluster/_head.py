@@ -69,13 +69,10 @@ class Head:
             WorkerPacket.request_state()
         )
 
-    async def get_worker_state(self, id_, timeout: float) -> Optional[StateContent]:
-        packet = WorkerPacket.request_state()
-        response = await self._send_and_receive_worker_packet(id_, packet, timeout)
-
-        if response is None or response.is_timeout():
+    async def get_worker_state(self, id_) -> Optional[StateContent]:
+        response = await self.tunnel.receive(id_, WorkerPacketType.STATE)
+        if response is None:
             return None
-        if not isinstance(response.content.content, StateContent):
-            raise ValueError("Invalid response type. Expected StatePacket.")
-
-        return response.content.content
+        if not isinstance(response.content, StateContent):
+            raise ValueError("Invalid response type. Expected StateContent.")
+        return response.content
