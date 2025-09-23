@@ -2,9 +2,11 @@ import asyncio
 from functools import partial
 from typing import Optional
 
+from ._contents import StateContent
 from ._packets import (
-    AsyncTaskPacketType, AsyncTaskPacket, AsyncTaskTunnel, AsyncTaskTunnelChild,
-    WorkerPacket, StateContent
+    AsyncTaskTunnel, AsyncTaskTunnelChild,
+    AsyncTaskPacketType, AsyncTaskPacket,
+    WorkerPacket,
 )
 from ._utils import relay_routine
 
