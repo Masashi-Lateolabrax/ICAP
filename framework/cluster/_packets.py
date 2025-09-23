@@ -247,3 +247,4 @@ class StatePacket:
 @dataclasses.dataclass
 class ResultPacket:
     result: list[tuple[np.ndarray, float]]
+    rejected: bool = False
