@@ -19,6 +19,30 @@ class Performance:
             return 0.0
         return self.performance_time.get(task_count, float("nan"))
 
+    def interpolate(self, task_count: int) -> float:
+        if task_count in self.performance_time:
+            return self.performance_time[task_count]
+
+        if len(self.performance_time) < 2:
+            return float("nan")
+
+        keys = np.array(list(self.performance_time.keys()))
+
+        dists = np.abs(keys - task_count)
+        indexes = np.argsort(dists)[:2]
+
+        x1, x2 = int(keys[indexes[0]]), int(keys[indexes[1]])
+        y1, y2 = self.performance_time[x1], self.performance_time[x2]
+
+        if x1 == x2:
+            return y1
+
+        slope = (y2 - y1) / (x2 - x1)
+        result = y1 + slope * (task_count - x1)
+
+        return max(0.0, result)
+
+
 
 class LoadBalancer:
     def __init__(self):
