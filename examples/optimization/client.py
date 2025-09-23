@@ -82,7 +82,7 @@ async def evaluation(
             simulator = jit_set_params(base_simulator, parameters[:1])
             simulator = jit_run(simulator)
             results = simulator.evaluate()
-            loss = np.array(results["loss"])
+            loss = np.array([results["loss"]])
 
         else:
             raise ValueError("Batch size must be at least 1.")
