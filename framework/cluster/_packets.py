@@ -1,5 +1,6 @@
 import asyncio
 import dataclasses
+import datetime
 import enum
 import pickle
 import uuid
@@ -157,6 +158,14 @@ class AsyncTaskTunnel:
 class TaskPacket:
     def __init__(self, parameter: np.ndarray):
         self.parameter = parameter
+
+
+@dataclasses.dataclass
+class PingPacket:
+    def __init__(self, id_: uuid.UUID):
+        self.id = id_
+        self.create_time = datetime.datetime.now(tz=datetime.UTC)
+        self.response_time: Optional[datetime.datetime] = None
 
 
 @dataclasses.dataclass
