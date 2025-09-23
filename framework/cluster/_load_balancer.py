@@ -48,7 +48,8 @@ def _objective_func(num_tasks: int, perf: dict[uuid.UUID, Performance], load_bal
         raise ValueError("No tasks allocated in load_balance")
 
     processing_times = max([perf[i].get(n) for i, n in load_balance.items()])
-    return processing_times * np.ceil(num_tasks / num_allocated_tasks)
+    log_processing_times = np.log1p(processing_times)
+    return log_processing_times * np.ceil(num_tasks / num_allocated_tasks)
 
 
 class LoadBalancer:
@@ -116,11 +117,13 @@ class LoadBalancer:
         def constraint(x):
             return sum(x) - remaining_tasks
 
-        x0 = [remaining_tasks / n_pcs] * n_pcs
+        perf_weights = [1.0 / sufficient_data_pcs[pc_id].get(1) for pc_id in pc_ids]
+        weight_sum = sum(perf_weights)
+        x0 = [remaining_tasks * w / weight_sum for w in perf_weights]
 
         result = optimize.minimize(
             objective, x0,
-            method='SLSQP',
+            method='trust-constr',
             constraints={'type': 'eq', 'fun': constraint},
             bounds=[(0, remaining_tasks) for _ in range(n_pcs)]
         )
