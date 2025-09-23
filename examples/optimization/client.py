@@ -29,7 +29,7 @@ async def evaluation(
     dim = PracticalController.dim()
     episode_length = int(settings.Simulation.TIME_LENGTH / settings.Simulation.TIME_STEP)
 
-    mj_model, base_simulators = PracticalSimulator.new(
+    mj_model, base_simulator = PracticalSimulator.new(
         settings,
         PracticalController(jnp.zeros(dim)),
         jax.random.PRNGKey(0)
@@ -38,7 +38,7 @@ async def evaluation(
 
     _, base_simulators = jax.lax.scan(
         lambda c, _x: (c, c.reset(model)),
-        init=base_simulators,
+        init=base_simulator,
         xs=jnp.ones((max_batch_size,), dtype=jnp.int32),
     )
 
