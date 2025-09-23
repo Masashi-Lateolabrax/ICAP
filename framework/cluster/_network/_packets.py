@@ -4,7 +4,7 @@ import uuid
 
 import numpy as np
 
-from ._contents import StateContent, PingContent, ResultContent
+from framework.cluster._network._contents import StateContent, PingContent, ResultContent
 
 
 class WorkerPacketType(enum.Enum):

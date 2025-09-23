@@ -3,8 +3,8 @@ import datetime
 import uuid
 from typing import Optional
 
-from ._contents import PingContent
-from ._packets import AsyncTaskPacketType, AsyncTaskPacket
+from framework.cluster._network._contents import PingContent
+from framework.cluster._network._packets import AsyncTaskPacketType, AsyncTaskPacket
 
 
 class AsyncTaskTunnelChild:
