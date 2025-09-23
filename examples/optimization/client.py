@@ -1,4 +1,5 @@
 import dataclasses
+import datetime
 from functools import partial
 import argparse
 import asyncio
@@ -12,7 +13,7 @@ from flax import nnx
 from mujoco import mjx
 
 from framework.prelude import Settings
-from framework.cluster import WorkerClient, ResultContent, TaskContent
+from framework.cluster import WorkerClient, ResultContent, TaskContent, WorkerPacket, WorkerPacketType
 
 from examples.config import PracticalSimulator, PracticalController
 
@@ -61,6 +62,8 @@ async def evaluation(
             print("Received invalid task packet.")
             continue
 
+        start_time = datetime.datetime.now(tz=datetime.UTC)
+
         parameters = packet.parameter
         batch_size = min(parameters.shape[0], max_batch_size)
 
@@ -73,8 +76,12 @@ async def evaluation(
 
         loss = np.array(results["loss"])
 
+        end_time = datetime.datetime.now(tz=datetime.UTC)
+
         result_content = ResultContent(
             result=[(p, l) for p, l in zip(parameters[:batch_size], loss)],
+            start_time=start_time,
+            end_time=end_time,
         )
 
         await sender.put(result_content)
