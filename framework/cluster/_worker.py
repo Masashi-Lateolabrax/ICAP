@@ -1,12 +1,9 @@
 import asyncio
-import uuid
 from typing import Optional
 
 import numpy as np
 
-from ._packets import (
-    AsyncTaskTunnel, AsyncTaskTunnelChild, AsyncTaskPacket, AsyncTaskPacketType, WorkerPacket
-)
+from ._network import SingleAsyncTaskTunnel, AsyncTaskTunnelChild, AsyncTaskPacket, AsyncTaskPacketType, WorkerPacket
 from ._utils import relay_routine
 
 
@@ -22,17 +19,14 @@ async def worker_routine(address: str, port: int, timeout: float, tunnel: AsyncT
 class WorkerClient:
     def __init__(self):
         self.routine_handler: Optional[asyncio.Task] = None
-        self.tunnel = AsyncTaskTunnel()
-        self._child_id: Optional[uuid.UUID] = None
+        self.tunnel = SingleAsyncTaskTunnel()
 
     async def start(self, address: str, port: int, timeout: float):
         if self.routine_handler is not None:
             raise
 
-        child = self.tunnel.spawn_child()
-        self._child_id = child.uuid
         self.routine_handler = asyncio.create_task(
-            worker_routine(address, port, timeout, child)
+            worker_routine(address, port, timeout, self.tunnel.spawn_child())
         )
 
     async def stop(self):
