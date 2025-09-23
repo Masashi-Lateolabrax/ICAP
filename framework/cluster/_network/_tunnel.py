@@ -62,7 +62,7 @@ class AsyncTaskTunnel:
             raise TypeError("packet must be an instance of AsyncTaskPacket")
         await self.sender[id_].put(packet)
 
-    async def empty(self, id_: uuid.UUID = None) -> bool | dict[uuid.UUID, bool]:
+    def empty(self, id_: uuid.UUID = None) -> bool | dict[uuid.UUID, bool]:
         if id_ is not None:
             return self.receiver[id_].empty()
         return {i: q.empty() for i, q in self.receiver.items()}
