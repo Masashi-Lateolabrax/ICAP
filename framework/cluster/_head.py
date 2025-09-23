@@ -1,9 +1,10 @@
 import asyncio
+import uuid
 from functools import partial
 from typing import Optional
 
 from ._network import (
-    StateContent,
+    StateContent, TaskContent,
     AsyncTaskPacket, WorkerPacket, WorkerPacketType,
     ManagedTunnel, AsyncTaskTunnelChild
 )
@@ -76,3 +77,7 @@ class Head:
         if not isinstance(response.content, StateContent):
             raise ValueError("Invalid response type. Expected StateContent.")
         return response.content
+
+    async def send_worker_task(self, id_: uuid.UUID, task: TaskContent):
+        packet = WorkerPacket(WorkerPacketType.TASK, task)
+        await self.send(id_, packet)
