@@ -66,12 +66,13 @@ class ManagedTunnel:
                 dead_ids.append(id_)
         return dead_ids
 
-    async def cleanup(self, timeout: float):
+    async def cleanup(self, timeout: float) -> list[uuid.UUID]:
         dead_ids = await self._check_dead_tunnel(timeout)
         for id_ in dead_ids:
             del self.buffer[id_]
             del self.ping[id_]
             self.tunnel.del_id(id_)
+        return dead_ids
 
     def _receive_filtered(
             self, id_: uuid.UUID, expect_worker_type: WorkerPacketType
