@@ -151,9 +151,10 @@ class AsyncTaskTunnel:
     def get_ids(self) -> list[uuid.UUID]:
         return list(self.child_queue.keys())
 
-    async def _send_ping(self, id_: uuid.UUID, timeout: float) -> bool:
-        response = await self.send_and_receive(id_, AsyncTaskPacket.ping_packet(), timeout, AsyncTaskPacketType.PING)
-        return response is not None and response.type != AsyncTaskPacketType.TIMEOUT
+    def del_id(self, id_: uuid.UUID):
+        del self.child_queue[id_]
+        del self.parent_queue[id_]
+        del self._buf_child_queue[id_]
 
     async def send_ping(self, timeout: float) -> list[uuid.UUID]:
         response = []
