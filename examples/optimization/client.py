@@ -92,7 +92,7 @@ async def main():
     parser.add_argument("--host", type=str, help="Server host address")
     parser.add_argument("--port", type=int, help="Server port number")
     parser.add_argument("--max-batch-size", type=int, default=1, help="Number of tasks to evaluate in batch")
-    parser.add_argument("--worker-timeout", type=int, default=600, help="TODO")
+    parser.add_argument("--retry-interval", type=int, default=15, help="TODO")
     parser.add_argument("--net-timeout", type=int, default=5, help="TODO")
     args = parser.parse_args()
 
@@ -107,7 +107,7 @@ async def main():
     host = args.host
     port = args.port
     max_batch_size = args.max_batch_size
-    worker_timeout = args.worker_timeout
+    retry_interval = args.retry_interval
     net_timeout = args.net_timeout
 
     settings = Settings()
@@ -138,7 +138,7 @@ async def main():
         if packet is None:
             print("Failed to receive packet from server.")
             count += 1
-            await asyncio.sleep(15)
+            await asyncio.sleep(retry_interval)
             continue
         count = 0
 
