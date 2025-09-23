@@ -39,6 +39,70 @@ class Performance:
         return max(0.0, result)
 
 
+def _optimize_remaining_tasks(
+        remaining_tasks: int, sufficient_data_pcs: dict[uuid.UUID, Performance]
+) -> dict[uuid.UUID, int] | None:
+    pc_ids = list(sufficient_data_pcs.keys())
+    n_pcs = len(pc_ids)
+
+    if n_pcs == 0:
+        return None
+    if remaining_tasks <= 0:
+        raise ValueError("remaining_tasks must be positive")
+    for pc_id, perf in sufficient_data_pcs.items():
+        if np.isnan(perf.get(1)):
+            return None
+
+    def objective(x):
+        allocation_ = {}
+        for i in range(n_pcs):
+            task_count = max(0, int(round(x[i])))
+            allocation_[pc_ids[i]] = task_count
+        return _objective_func(remaining_tasks, sufficient_data_pcs, allocation_)
+
+    def constraint(x):
+        return sum(x) - remaining_tasks
+
+    perf_weights = [1.0 / sufficient_data_pcs[pc_id].get(1) for pc_id in pc_ids]
+    weight_sum = sum(perf_weights)
+    x0 = [remaining_tasks * w / weight_sum for w in perf_weights]
+
+    result = optimize.minimize(
+        objective, x0,
+        method='trust-constr',
+        constraints={'type': 'eq', 'fun': constraint},
+        bounds=[(0, remaining_tasks) for _ in range(n_pcs)]
+    )
+
+    if result.success and result.fun != float('inf'):
+        allocation = {pc_ids[i]: max(0, result.x[i]) for i in range(n_pcs)}
+
+        # Integer rounding correction: guaranteed termination in ≤n_pcs iterations
+        while True:
+            current_total = sum([int(v) for v in allocation.values()])
+            diff = remaining_tasks - current_total
+            if diff == 0:
+                break
+
+            fractional_parts = {k: v - int(v) for k, v in allocation.items() if v - int(v) > 0}
+            if len(fractional_parts) == 0:
+                break
+
+            if diff > 0:
+                max_pc = max(fractional_parts, key=lambda pc: fractional_parts[pc])
+                allocation[max_pc] = int(allocation[max_pc] + 1)  # Progress: total +1
+                continue
+            else:
+                min_pc = min(fractional_parts, key=lambda pc: fractional_parts[pc])
+                if allocation[min_pc] > 0:
+                    allocation[min_pc] = max(int(allocation[min_pc] - 1), 0)  # Progress: total -1
+                continue
+
+        return {pc_id: int(v) for pc_id, v in allocation.items()}
+    else:
+        return None
+
+
 def _objective_func(num_tasks: int, perf: dict[uuid.UUID, Performance], load_balance: dict[uuid.UUID, int]) -> float:
     if set(perf.keys()) != set(load_balance.keys()):
         raise ValueError("Keys of perf and load_balance must match")
@@ -83,7 +147,7 @@ class LoadBalancer:
         if len(sufficient_data_pcs) == 0:
             return res
 
-        optimal_allocation = self._optimize_remaining_tasks(remaining_tasks, sufficient_data_pcs)
+        optimal_allocation = _optimize_remaining_tasks(remaining_tasks, sufficient_data_pcs)
 
         if optimal_allocation is None:
             optimal_allocation = {i: 1 for i in sufficient_data_pcs.keys()}
@@ -92,70 +156,6 @@ class LoadBalancer:
             res[pc_id] = res.get(pc_id, 0) + count
 
         return res
-
-    def _optimize_remaining_tasks(
-            self, remaining_tasks: int, sufficient_data_pcs: dict[uuid.UUID, Performance]
-    ) -> dict[uuid.UUID, int] | None:
-
-        pc_ids = list(sufficient_data_pcs.keys())
-        n_pcs = len(pc_ids)
-
-        if n_pcs == 0:
-            return None
-        if remaining_tasks <= 0:
-            raise ValueError("remaining_tasks must be positive")
-        for pc_id, perf in sufficient_data_pcs.items():
-            if np.isnan(perf.get(1)):
-                return None
-
-        def objective(x):
-            allocation_ = {}
-            for i in range(n_pcs):
-                task_count = max(0, int(round(x[i])))
-                allocation_[pc_ids[i]] = task_count
-            return _objective_func(remaining_tasks, sufficient_data_pcs, allocation_)
-
-        def constraint(x):
-            return sum(x) - remaining_tasks
-
-        perf_weights = [1.0 / sufficient_data_pcs[pc_id].get(1) for pc_id in pc_ids]
-        weight_sum = sum(perf_weights)
-        x0 = [remaining_tasks * w / weight_sum for w in perf_weights]
-
-        result = optimize.minimize(
-            objective, x0,
-            method='trust-constr',
-            constraints={'type': 'eq', 'fun': constraint},
-            bounds=[(0, remaining_tasks) for _ in range(n_pcs)]
-        )
-
-        if result.success and result.fun != float('inf'):
-            allocation = {pc_ids[i]: max(0, result.x[i]) for i in range(n_pcs)}
-
-            # Integer rounding correction: guaranteed termination in ≤n_pcs iterations
-            while True:
-                current_total = sum([int(v) for v in allocation.values()])
-                diff = remaining_tasks - current_total
-                if diff == 0:
-                    break
-
-                fractional_parts = {k: v - int(v) for k, v in allocation.items() if v - int(v) > 0}
-                if len(fractional_parts) == 0:
-                    break
-
-                if diff > 0:
-                    max_pc = max(fractional_parts, key=lambda pc: fractional_parts[pc])
-                    allocation[max_pc] = int(allocation[max_pc] + 1)  # Progress: total +1
-                    continue
-                else:
-                    min_pc = min(fractional_parts, key=lambda pc: fractional_parts[pc])
-                    if allocation[min_pc] > 0:
-                        allocation[min_pc] = max(int(allocation[min_pc] - 1), 0)  # Progress: total -1
-                    continue
-
-            return {pc_id: int(v) for pc_id, v in allocation.items()}
-        else:
-            return None
 
     def record_task_performance(self, worker_id: uuid.UUID, task_count: int, processing_time: float):
         if worker_id in self.performance_table:
