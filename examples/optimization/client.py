@@ -1,3 +1,4 @@
+import dataclasses
 from functools import partial
 import argparse
 import asyncio
@@ -11,9 +12,14 @@ from flax import nnx
 from mujoco import mjx
 
 from framework.prelude import Settings
-from framework.cluster import WorkerPacket, WorkerPacketType, WorkerClient, TaskContent
+from framework.cluster import WorkerClient, ResultContent, TaskContent
 
 from examples.config import PracticalSimulator, PracticalController
+
+
+@dataclasses.dataclass
+class Signal:
+    stop: bool = False
 
 
 async def evaluation(
@@ -46,22 +52,32 @@ async def evaluation(
         return jax.vmap(lambda s: s.step_n(model, episode_length))(sims)
 
     while True:
-        packet: TaskContent = await receiver.get()
+        packet = await receiver.get()
+        if isinstance(packet, Signal):
+            if packet.stop:
+                print("Stopping evaluation routine.")
+                break
         if packet is None or not isinstance(packet, TaskContent):
             print("Received invalid task packet.")
             continue
 
-        parameters = jnp.array(packet.parameter)
+        parameters = packet.parameter
         batch_size = min(parameters.shape[0], max_batch_size)
 
-        simulators = jax.tree.map(
-            lambda x: x[:batch_size],
-            base_simulators
-        )
+        simulators = jax.tree.map(lambda x: x[:batch_size], base_simulators)
 
         simulators = jit_set_params(simulators, parameters[:batch_size])
         simulators = jit_run(simulators)
 
+        results = jax.tree.map(lambda x: x.evaluate(), simulators)
+
+        loss = np.array(results["loss"])
+
+        result_content = ResultContent(
+            result=[(p, l) for p, l in zip(parameters[:batch_size], loss)],
+        )
+
+        await sender.put(result_content)
 
 async def main():
     parser = argparse.ArgumentParser(description="ICAP Optimization Client")
