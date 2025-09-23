@@ -37,7 +37,7 @@ class Head:
             await self.tunnel.send(id_, AsyncTaskPacket.stop_packet())
 
     async def cleanup(self, timeout: float = 5):
-        await self.tunnel.send_ping(timeout)
+        await self.tunnel.cleanup(timeout)
 
     async def get_ids(self):
         return self.tunnel.get_ids()
