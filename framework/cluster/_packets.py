@@ -1,5 +1,4 @@
 import asyncio
-import dataclasses
 import datetime
 import enum
 import pickle
@@ -8,6 +7,7 @@ from typing import Optional
 
 import numpy as np
 
+from ._contents import StateContent, PingContent, ResultContent
 
 
 class WorkerPacketType(enum.Enum):
