@@ -79,5 +79,7 @@ class Head:
         return response.content
 
     async def send_worker_task(self, id_: uuid.UUID, task: TaskContent):
-        packet = WorkerPacket(WorkerPacketType.TASK, task)
-        await self.send(id_, packet)
+        await self.send(
+            id_,
+            WorkerPacket(WorkerPacketType.TASK, task)
+        )
