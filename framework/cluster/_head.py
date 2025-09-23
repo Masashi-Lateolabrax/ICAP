@@ -42,6 +42,12 @@ class Head:
     async def get_ids(self):
         return self.tunnel.get_ids()
 
+    async def send(self, id_, packet: WorkerPacket):
+        packet = AsyncTaskPacket.worker_packet(packet)
+        await self.tunnel.send(id_, packet)
+
+
+
     async def _send_and_receive_worker_packet(
             self, id_, worker_packet: WorkerPacket, timeout: float
     ) -> Optional[WorkerPacket]:
