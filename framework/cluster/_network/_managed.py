@@ -99,7 +99,13 @@ class ManagedTunnel:
         if len(self.buffer[id_]) == 0:
             return None
 
-        async_packet = self.buffer[id_].pop(0)
+        if expect_worker_type is None:
+            async_packet = self.buffer[id_].pop(0)
+        else:
+            async_packet = self._receive_filtered(id_, expect_worker_type)
+
+        if async_packet is None:
+            return None
         if async_packet.type != AsyncTaskPacketType.WORKER_PACKET:
             raise ValueError("Invalid packet type. Expected WorkerPacket.")
         if not isinstance(async_packet.content, WorkerPacket):
