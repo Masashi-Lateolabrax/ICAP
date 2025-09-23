@@ -22,7 +22,7 @@ class Performance:
         if len(self.performance_time) < 2:
             return float("nan")
 
-        keys = np.array(list(self.performance_time.keys()))
+        keys = np.fromiter(self.performance_time.keys(), dtype=int)
 
         dists = np.abs(keys - task_count)
         indexes = np.argsort(dists)[:2]
