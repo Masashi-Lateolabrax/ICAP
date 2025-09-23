@@ -106,7 +106,12 @@ class AsyncTaskTunnelChild:
 
         if data.type == AsyncTaskPacketType.PING:
             # Automatically respond to roll call
-            await self.send(AsyncTaskPacket.ping_packet(self.uuid))
+            if not isinstance(data.content, PingPacket):
+                raise ValueError("Invalid ping packet content")
+            if data.content.id != self.uuid:
+                raise ValueError("Ping packet ID does not match tunnel ID")
+            data.content.response_time = datetime.datetime.now(tz=datetime.UTC)
+            await self.send(data)
             return await self.receive(timeout)
 
         return data
