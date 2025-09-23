@@ -9,7 +9,6 @@ import numpy as np
 
 
 class WorkerPacketType(enum.Enum):
-    TIMEOUT = -1
     TASK = 1
     RESULT = 2
     STATE = 3
@@ -34,10 +33,6 @@ class WorkerPacket:
         return cls(type_, content)
 
     @classmethod
-    def timeout_packet(cls):
-        return cls(WorkerPacketType.TIMEOUT, None)
-
-    @classmethod
     def request_load(cls, num_payloads: int):
         return cls(WorkerPacketType.LOAD, num_payloads)
 
@@ -57,9 +52,6 @@ class WorkerPacket:
         type_bytes = self.type.value.to_bytes(4, 'big')
         content_bytes = pickle.dumps(self.content) if self.content is not None else b''
         return type_bytes + content_bytes
-
-    def is_timeout(self) -> bool:
-        return self.type == WorkerPacketType.TIMEOUT
 
     @classmethod
     def result_packet(cls, result: list[tuple[np.ndarray, float]]):
