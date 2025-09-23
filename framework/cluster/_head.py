@@ -3,9 +3,9 @@ from functools import partial
 from typing import Optional
 
 from ._network import (
-    StateContent, PingContent,
-    AsyncTaskPacketType, AsyncTaskPacket, WorkerPacket,
-    AsyncTaskTunnel, AsyncTaskTunnelChild
+    StateContent,
+    AsyncTaskPacket, WorkerPacket, WorkerPacketType,
+    ManagedTunnel, AsyncTaskTunnelChild
 )
 from ._utils import relay_routine
 
@@ -19,7 +19,7 @@ async def head_routine(
 
 class Head:
     def __init__(self):
-        self.tunnel = AsyncTaskTunnel()
+        self.tunnel = ManagedTunnel()
         self.server = None
 
     async def start(self, address, port, timeout: float):
