@@ -3,7 +3,7 @@ import uuid
 from typing import Optional
 
 from . import PingContent
-from ._packets import WorkerPacket
+from ._packets import WorkerPacket, WorkerPacketType
 from ._tunnel import AsyncTaskTunnel, AsyncTaskTunnelChild, AsyncTaskPacketType, AsyncTaskPacket
 
 
@@ -73,7 +73,26 @@ class ManagedTunnel:
             del self.ping[id_]
             self.tunnel.del_id(id_)
 
-    async def receive(self, id_: uuid.UUID) -> Optional[WorkerPacket]:
+    def _receive_filtered(
+            self, id_: uuid.UUID, expect_worker_type: WorkerPacketType
+    ) -> Optional[AsyncTaskPacket]:
+        packet = None
+
+        for i in range(0, len(self.buffer[id_])):
+            packet = self.buffer[id_][i]
+
+            if packet.type != AsyncTaskPacketType.WORKER_PACKET:
+                continue
+            if not isinstance(packet.content, WorkerPacket):
+                raise ValueError("Invalid response type. Expected WorkerPacket.")
+
+            if packet.content.type == expect_worker_type:
+                self.buffer[id_].pop(i)
+                break
+
+        return packet
+
+    async def receive(self, id_: uuid.UUID, expect_worker_type: WorkerPacketType = None) -> Optional[WorkerPacket]:
         await self._update_buffer()
         if id_ not in self.buffer:
             raise ValueError("Invalid id")
