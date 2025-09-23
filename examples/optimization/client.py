@@ -86,6 +86,7 @@ async def evaluation(
 
         await sender.put(result_content)
 
+
 async def main():
     parser = argparse.ArgumentParser(description="ICAP Optimization Client")
     parser.add_argument("--host", type=str, help="Server host address")
@@ -129,14 +130,15 @@ async def main():
     client = WorkerClient()
     await client.start(host, port, timeout=net_timeout)
 
-    task = None
+    task_content = None
     count = 0
     while count < 5:
-        packet: WorkerPacket = await client.receive(timeout=net_timeout)
+        packet: WorkerPacket = await client.receive()
 
-        if packet is None or packet.is_timeout():
+        if packet is None:
+            print("Failed to receive packet from server.")
             count += 1
-            print("Failed to receive initial packet from server.")
+            await asyncio.sleep(15)
             continue
         count = 0
 
@@ -144,22 +146,25 @@ async def main():
             if not isinstance(packet.content, TaskContent):
                 print("Received invalid packet from server.")
                 continue
-            if task is not None:
+            if task_content is not None:
                 print("Previous task is still being processed. Ignoring new task.")
                 continue
+            task_content = packet.content
+            await sender.put(task_content)
 
-        if task is not None:
-            receiver.get()
+        elif packet.type == WorkerPacketType.STATE:
+            await client.send_worker_state(
+                gpu_usage=float("nan"),
+                working=task_content is not None
+            )
 
-            result: list[tuple[np.ndarray, float]] = task.result()
-            await client.send_worker_result(result)
-            task = None
-
-    connect_to_server(
-        settings.Server.HOST,
-        settings.Server.PORT,
-        evaluation_function=rosenbrock_function,
-    )
+        if task is not None and not receiver.empty():
+            content = await receiver.get()
+            if not isinstance(content, ResultContent):
+                print("Received invalid result from evaluation.")
+                continue
+            task_content = None
+            await client.send_worker_result(content)
 
 
 if __name__ == "__main__":
