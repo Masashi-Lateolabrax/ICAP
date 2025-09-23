@@ -56,7 +56,6 @@ def _objective_func(num_tasks: int, perf: dict[uuid.UUID, Performance], load_bal
 class LoadBalancer:
     def __init__(self):
         self.performance_table: dict[uuid.UUID, Performance] = {}
-        self._buf_table: dict[uuid.UUID, int] = {}
 
     def remove(self, id_: uuid.UUID):
         if id_ in self.performance_table:
