@@ -28,4 +28,6 @@ class StateContent:
 @dataclasses.dataclass
 class ResultContent:
     result: list[tuple[np.ndarray, float]]
+    start_time: Optional[datetime.datetime]
+    end_time: Optional[datetime.datetime]
     rejected: bool = False

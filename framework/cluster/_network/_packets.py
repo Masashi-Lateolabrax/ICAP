@@ -1,3 +1,4 @@
+import datetime
 import enum
 import pickle
 import uuid
@@ -53,8 +54,14 @@ class WorkerPacket:
         return type_bytes + content_bytes
 
     @classmethod
-    def result_packet(cls, result: list[tuple[np.ndarray, float]]):
-        return cls(WorkerPacketType.RESULT, ResultContent(result))
+    def result_packet(
+            cls, result: list[tuple[np.ndarray, float]], start_time: datetime.datetime, end_time: datetime.datetime
+    ):
+        return cls(WorkerPacketType.RESULT, ResultContent(result, start_time, end_time))
+
+    @classmethod
+    def reject_packet(cls):
+        return cls(WorkerPacketType.RESULT, ResultContent([], None, None, rejected=True))
 
 
 class AsyncTaskPacketType(enum.Enum):
