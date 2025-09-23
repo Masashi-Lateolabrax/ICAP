@@ -191,13 +191,9 @@ class AsyncTaskTunnel:
             4. Non-matching packets are buffered in _buf_child_queue for later retrieval
             5. Returns timeout packet if timeout occurs during any wait operation
         """
-        if len(self._buf_child_queue[id_]) > 0:
-            if expect_type is None:
-                return self._buf_child_queue[id_].pop(0)
-
-            for i, data in enumerate(self._buf_child_queue[id_]):
-                if data.type == expect_type:
-                    return self._buf_child_queue[id_].pop(i)
+        data = self._take_from_buf(id_, expect_type)
+        if data is not None:
+            return data
 
         try:
             data = await asyncio.wait_for(self.parent_queue[id_].get(), timeout=timeout)
