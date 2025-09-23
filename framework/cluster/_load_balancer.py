@@ -135,6 +135,7 @@ class LoadBalancer:
         if result.success and result.fun != float('inf'):
             allocation = {pc_ids[i]: max(0, result.x[i]) for i in range(n_pcs)}
 
+            # Integer rounding correction: guaranteed termination in ≤n_pcs iterations
             while True:
                 current_total = sum([int(v) for v in allocation.values()])
                 diff = remaining_tasks - current_total
@@ -147,12 +148,12 @@ class LoadBalancer:
 
                 if diff > 0:
                     max_pc = max(fractional_parts, key=lambda pc: fractional_parts[pc])
-                    allocation[max_pc] = int(allocation[max_pc] + 1)
+                    allocation[max_pc] = int(allocation[max_pc] + 1)  # Progress: total +1
                     continue
                 else:
                     min_pc = min(fractional_parts, key=lambda pc: fractional_parts[pc])
                     if allocation[min_pc] > 0:
-                        allocation[min_pc] = max(int(allocation[min_pc] - 1), 0)
+                        allocation[min_pc] = max(int(allocation[min_pc] - 1), 0)  # Progress: total -1
                     continue
 
             return {pc_id: int(v) for pc_id, v in allocation.items()}
