@@ -75,47 +75,35 @@ class SingleAsyncTaskTunnel:
 
 class AsyncTaskTunnel:
     def __init__(self):
-        self.receiver = {}
-        self.sender = {}
-        self._buf_child_queue: dict[uuid.UUID, list[AsyncTaskPacket]] = {}
+        self.tunnel: dict[uuid.UUID, SingleAsyncTaskTunnel] = {}
 
     def spawn_child(self):
-        id_ = uuid.uuid4()
-        receiver = asyncio.Queue()
-        sender = asyncio.Queue()
-        self.receiver[id_] = receiver
-        self.sender[id_] = sender
-        return AsyncTaskTunnelChild(id_, sender, receiver)
+        single = SingleAsyncTaskTunnel()
+        self.tunnel[single.get_id()] = single
+        return AsyncTaskTunnelChild(
+            id_=single.get_id(),
+            receiver=single.sender,
+            sender=single.receiver
+        )
 
     async def send(self, id_: uuid.UUID, packet: AsyncTaskPacket):
-        if not isinstance(packet, AsyncTaskPacket):
-            raise TypeError("packet must be an instance of AsyncTaskPacket")
-        await self.sender[id_].put(packet)
+        if id_ not in self.tunnel:
+            raise KeyError(f"No tunnel with ID {id_}")
+        await self.tunnel[id_].send(packet)
 
     def empty(self, id_: uuid.UUID = None) -> bool | dict[uuid.UUID, bool]:
         if id_ is not None:
-            return self.receiver[id_].empty()
-        return {i: q.empty() for i, q in self.receiver.items()}
+            return self.tunnel[id_].empty()
+        return {i: q.empty() for i, q in self.tunnel.items()}
 
     async def receive(self, id_: uuid.UUID, timeout: float = None) -> Optional[AsyncTaskPacket]:
-        queue = self.receiver.get(id_)
-        try:
-            data = await asyncio.wait_for(queue, timeout=timeout)
-        except asyncio.TimeoutError:
-            return None
-
-        if not isinstance(data, AsyncTaskPacket):
-            raise TypeError("data must be an instance of AsyncTaskPacket")
-
-        return data
+        return await self.tunnel[id_].receive(timeout)
 
     def get_ids(self) -> list[uuid.UUID]:
-        return list(self.sender.keys())
+        return list(self.tunnel.keys())
 
     def del_id(self, id_: uuid.UUID):
-        del self.sender[id_]
-        del self.receiver[id_]
-        del self._buf_child_queue[id_]
+        del self.tunnel[id_]
 
     async def send_ping(self, id_: uuid.UUID) -> PingContent:
         packet = AsyncTaskPacket.ping_packet(id_)
