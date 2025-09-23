@@ -87,11 +87,7 @@ class AsyncTaskTunnel:
     def spawn_child(self):
         single = SingleAsyncTaskTunnel()
         self.tunnel[single.get_id()] = single
-        return AsyncTaskTunnelChild(
-            id_=single.get_id(),
-            receiver=single.sender,
-            sender=single.receiver
-        )
+        return single.spawn_child()
 
     async def send(self, id_: uuid.UUID, packet: AsyncTaskPacket):
         if id_ not in self.tunnel:
