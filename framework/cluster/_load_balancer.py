@@ -47,6 +47,9 @@ def _objective_func(num_tasks: int, perf: dict[uuid.UUID, Performance], load_bal
     if num_allocated_tasks == 0:
         raise ValueError("No tasks allocated in load_balance")
 
+    if not all([perf[i].has_enough_data() for i in load_balance.keys()]):
+        raise ValueError("Not all performances have enough data")
+
     processing_times = max([perf[i].get(n) for i, n in load_balance.items()])
     log_processing_times = np.log1p(processing_times)
     return log_processing_times * np.ceil(num_tasks / num_allocated_tasks)
