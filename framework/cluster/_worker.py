@@ -30,7 +30,7 @@ class WorkerClient:
         )
 
     async def stop(self):
-        await self.tunnel.send(self._child_id, AsyncTaskPacket.stop_packet())
+        await self.tunnel.send(AsyncTaskPacket.stop_packet())
 
     async def receive(self, timeout: float) -> Optional[WorkerPacket]:
         response = await self.tunnel.receive(self._child_id, timeout, AsyncTaskPacketType.WORKER_PACKET)
