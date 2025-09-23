@@ -49,17 +49,17 @@ class Head:
     async def receive(self, id_) -> Optional[WorkerPacket]:
         return await self.tunnel.receive(id_)
 
+    async def request_worker_load(self, id_, num_payloads: int):
+        await self.send(
+            id_,
+            WorkerPacket.request_load(num_payloads)
+        )
 
-    async def get_worker_load(self, id_, num_payloads: int, timeout: float) -> float:
-        packet = WorkerPacket.request_load(num_payloads)
-        response = await self._send_and_receive_worker_packet(id_, packet, timeout)
-
-        if response is None or response.is_timeout():
-            return float("inf")
-        if not isinstance(response.content.content, float):
+    async def get_worker_load(self, id_) -> Optional[float]:
+        response = await self.tunnel.receive(id_, WorkerPacketType.LOAD)
+        if not isinstance(response.content, float):
             raise ValueError("Invalid response type. Expected float.")
-
-        return response.content.content
+        return response.content
 
     async def get_worker_state(self, id_, timeout: float) -> Optional[StateContent]:
         packet = WorkerPacket.request_state()
