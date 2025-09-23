@@ -9,6 +9,31 @@ from typing import Optional
 import numpy as np
 
 
+class TaskPacket:
+    def __init__(self, parameter: np.ndarray):
+        self.parameter = parameter
+
+
+@dataclasses.dataclass
+class PingPacket:
+    def __init__(self, id_: uuid.UUID):
+        self.id = id_
+        self.create_time = datetime.datetime.now(tz=datetime.UTC)
+        self.response_time: Optional[datetime.datetime] = None
+
+
+@dataclasses.dataclass
+class StatePacket:
+    gpu_usage: float
+    working: bool
+
+
+@dataclasses.dataclass
+class ResultPacket:
+    result: list[tuple[np.ndarray, float]]
+    rejected: bool = False
+
+
 class WorkerPacketType(enum.Enum):
     TASK = 1
     RESULT = 2
@@ -160,28 +185,3 @@ class AsyncTaskTunnel:
         packet = AsyncTaskPacket.ping_packet(id_)
         await self.send(id_, packet)
         return packet.content
-
-
-class TaskPacket:
-    def __init__(self, parameter: np.ndarray):
-        self.parameter = parameter
-
-
-@dataclasses.dataclass
-class PingPacket:
-    def __init__(self, id_: uuid.UUID):
-        self.id = id_
-        self.create_time = datetime.datetime.now(tz=datetime.UTC)
-        self.response_time: Optional[datetime.datetime] = None
-
-
-@dataclasses.dataclass
-class StatePacket:
-    gpu_usage: float
-    working: bool
-
-
-@dataclasses.dataclass
-class ResultPacket:
-    result: list[tuple[np.ndarray, float]]
-    rejected: bool = False
