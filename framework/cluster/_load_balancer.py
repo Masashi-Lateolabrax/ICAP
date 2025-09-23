@@ -34,6 +34,16 @@ class LoadBalancer:
             self.performance_table[id_] = Performance()
         self.performance_table[id_].register(task_count, performance)
 
+    def convert_num_tasks_to_time(self, balance: dict[uuid.UUID, int]) -> dict[uuid.UUID, float]:
+        result = {}
+        for id_, task_count in balance.items():
+            if id_ not in self.performance_table:
+                result[id_] = float("nan")
+                continue
+            perf = self.performance_table[id_]
+            result[id_] = perf.get(task_count)
+        return result
+
     def calc_estimated_time(self, balance: dict[uuid.UUID, int]) -> float:
         estimated_processing_time = 0
         for id_, task_count in balance.items():
