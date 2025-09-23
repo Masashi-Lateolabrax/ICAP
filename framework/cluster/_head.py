@@ -63,6 +63,12 @@ class Head:
             raise ValueError("Invalid response type. Expected float.")
         return response.content
 
+    async def request_worker_state(self, id_):
+        await self.send(
+            id_,
+            WorkerPacket.request_state()
+        )
+
     async def get_worker_state(self, id_, timeout: float) -> Optional[StateContent]:
         packet = WorkerPacket.request_state()
         response = await self._send_and_receive_worker_packet(id_, packet, timeout)
