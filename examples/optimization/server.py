@@ -65,8 +65,8 @@ async def main():
             pass
 
             # Send current batch to workers
-            for worker_id, candidate in current_batch.items():
-                task = TaskContent(np.array(candidate))
+            for worker_id, batch in current_batch.items():
+                task = TaskContent(np.array(batch))
                 await head.send_worker_task(worker_id, task)
 
             # Collect results for current batch
@@ -76,9 +76,8 @@ async def main():
                     if result.start_time and result.end_time:
                         duration = (result.end_time - result.start_time).total_seconds()
                         task_count = len(result.result)
-                        load_balancer.record_task_performance(worker_id, task_count, duration)
+                        load_balancer.register_performance(worker_id, task_count, duration)
                         fitness.extend(result.result)
-                    break
 
         # Update CMA-ES
         cma.tell(fitness)
