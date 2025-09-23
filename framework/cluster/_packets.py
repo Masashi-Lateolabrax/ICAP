@@ -122,7 +122,6 @@ class AsyncTaskTunnel:
         child_queue = asyncio.Queue()
         self.parent_queue[id_] = parent_queue
         self.child_queue[id_] = child_queue
-        self._buf_child_queue[id_] = []
         return AsyncTaskTunnelChild(id_, child_queue, parent_queue)
 
     async def send(self, id_: uuid.UUID, packet: AsyncTaskPacket):
