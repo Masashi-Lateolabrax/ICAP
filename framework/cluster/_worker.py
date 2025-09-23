@@ -20,6 +20,7 @@ class WorkerClient:
     def __init__(self):
         self.routine_handler: Optional[asyncio.Task] = None
         self.tunnel = SingleAsyncTaskTunnel()
+        self.buffer: list[WorkerPacket] = []
 
     async def start(self, address: str, port: int, timeout: float):
         if self.routine_handler is not None:
@@ -32,15 +33,21 @@ class WorkerClient:
     async def stop(self):
         await self.tunnel.send(AsyncTaskPacket.stop_packet())
 
-    async def receive(self, timeout: float) -> Optional[WorkerPacket]:
-        response = await self.tunnel.receive(self._child_id, timeout, AsyncTaskPacketType.WORKER_PACKET)
-        if response is None:
+    async def receive(self) -> Optional[WorkerPacket]:
+        while not self.tunnel.empty():
+            response = await self.tunnel.receive()
+            if response is None:
+                raise RuntimeError("There is not reachable")
+            if response.type != AsyncTaskPacketType.WORKER_PACKET:
+                raise ValueError("Invalid packet type. Expected WORKER_PACKET.")
+            if not isinstance(response.content, WorkerPacket):
+                raise ValueError("Invalid packet content. Expected WorkerPacket.")
+            self.buffer.append(response.content)
+
+        if len(self.buffer) == 0:
             return None
-        if response.is_timeout():
-            return WorkerPacket.timeout_packet()
-        if not isinstance(response.content, WorkerPacket):
-            raise ValueError("Invalid response type. Expected WorkerPacket.")
-        return response.content
+
+        return self.buffer.pop(0)
 
     async def send_worker_load(self, load: float):
         packet = WorkerPacket.load_packet(load)
