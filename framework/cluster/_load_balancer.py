@@ -67,6 +67,28 @@ class LoadBalancer:
             self.performance_table[id_] = Performance()
         self.performance_table[id_].register(task_count, time)
 
+    def calc_balance(self, total_tasks: int) -> dict[uuid.UUID, int]:
+        if len(self.performance_table) == 0:
+            return {}
+
+        res = {i: 1 for i, perfs in self.performance_table.items() if not perfs.has_enugh_data()}
+        remaining_tasks = total_tasks - len(res)
+        
+        if remaining_tasks <= 0:
+            return res
+        
+        sufficient_data_pcs = {i: perf for i, perf in self.performance_table.items() if perf.has_enugh_data()}
+        
+        if len(sufficient_data_pcs) == 0:
+            return res
+        
+        optimal_allocation = self._optimize_remaining_tasks(remaining_tasks, sufficient_data_pcs)
+        
+        for pc_id, count in optimal_allocation.items():
+            res[pc_id] = res.get(pc_id, 0) + count
+            
+        return res
+
     def convert_num_tasks_to_time(self, balance: dict[uuid.UUID, int]) -> dict[uuid.UUID, float]:
         result = {}
         for id_, task_count in balance.items():
