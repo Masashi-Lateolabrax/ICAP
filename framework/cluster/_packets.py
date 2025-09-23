@@ -59,7 +59,6 @@ class WorkerPacket:
 
 
 class AsyncTaskPacketType(enum.Enum):
-    TIMEOUT = -1
     STOP = 1
     WORKER_PACKET = 2
     PING = 3
@@ -69,10 +68,6 @@ class AsyncTaskPacket:
     def __init__(self, type_: AsyncTaskPacketType, content):
         self.type: AsyncTaskPacketType = type_
         self.content = content
-
-    @classmethod
-    def timeout_packet(cls):
-        return cls(AsyncTaskPacketType.TIMEOUT, None)
 
     @classmethod
     def stop_packet(cls):
@@ -85,9 +80,6 @@ class AsyncTaskPacket:
     @classmethod
     def ping_packet(cls, content=None):
         return cls(AsyncTaskPacketType.PING, content)
-
-    def is_timeout(self) -> bool:
-        return self.type == AsyncTaskPacketType.TIMEOUT
 
 
 class AsyncTaskTunnelChild:
