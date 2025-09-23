@@ -71,14 +71,21 @@ async def evaluation(
         parameters = packet.parameter
         batch_size = min(parameters.shape[0], max_batch_size)
 
-        simulators = jax.tree.map(lambda x: x[:batch_size], base_simulators)
+        if batch_size > 1:
+            simulators = jax.tree.map(lambda x: x[:batch_size], base_simulators)
+            simulators = jit_set_params(simulators, parameters[:batch_size])
+            simulators = jit_run(simulators)
+            results = jax.tree.map(lambda x: x.evaluate(), simulators)
+            loss = np.array(results["loss"])
 
-        simulators = jit_set_params(simulators, parameters[:batch_size])
-        simulators = jit_run(simulators)
+        elif batch_size == 1:
+            simulator = jit_set_params(base_simulator, parameters[:1])
+            simulator = jit_run(simulator)
+            results = simulator.evaluate()
+            loss = np.array(results["loss"])
 
-        results = jax.tree.map(lambda x: x.evaluate(), simulators)
-
-        loss = np.array(results["loss"])
+        else:
+            raise ValueError("Batch size must be at least 1.")
 
         end_time = datetime.datetime.now(tz=datetime.UTC)
 
