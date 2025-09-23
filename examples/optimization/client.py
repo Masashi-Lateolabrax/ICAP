@@ -49,8 +49,12 @@ async def evaluation(
         return sims
 
     @partial(nnx.jit, donate_argnames=("sims",))
-    def jit_run(sims):
+    def jit_run_batch(sims):
         return jax.vmap(lambda s: s.step_n(model, episode_length))(sims)
+
+    @partial(nnx.jit, donate_argnames=("sims",))
+    def jit_run(sim):
+        return sim.step_n(model, episode_length)
 
     while True:
         packet = await receiver.get()  # Receive task from main function
