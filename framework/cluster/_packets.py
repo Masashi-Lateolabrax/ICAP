@@ -146,6 +146,19 @@ class AsyncTaskTunnel:
             raise TypeError("packet must be an instance of AsyncTaskPacket")
         await self.child_queue[id_].put(packet)
 
+    def _take_from_buf(self, id_: uuid.UUID, expect_type: AsyncTaskPacketType) -> Optional[AsyncTaskPacket]:
+        if len(self._buf_child_queue[id_]) == 0:
+            return None
+
+        if expect_type is None:
+            return self._buf_child_queue[id_].pop(0)
+
+        for i, data in enumerate(self._buf_child_queue[id_]):
+            if data.type == expect_type:
+                return self._buf_child_queue[id_].pop(i)
+
+        return None
+
     async def receive(
             self, id_: uuid.UUID, timeout: float = None, expect_type: AsyncTaskPacketType = None
     ) -> Optional[AsyncTaskPacket]:
