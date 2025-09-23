@@ -123,25 +123,25 @@ class AsyncTaskTunnelChild:
 
 class AsyncTaskTunnel:
     def __init__(self):
-        self.parent_queue = {}
-        self.child_queue = {}
+        self.receiver = {}
+        self.sender = {}
         self._buf_child_queue: dict[uuid.UUID, list[AsyncTaskPacket]] = {}
 
     def spawn_child(self):
         id_ = uuid.uuid4()
-        parent_queue = asyncio.Queue()
-        child_queue = asyncio.Queue()
-        self.parent_queue[id_] = parent_queue
-        self.child_queue[id_] = child_queue
-        return AsyncTaskTunnelChild(id_, child_queue, parent_queue)
+        receiver = asyncio.Queue()
+        sender = asyncio.Queue()
+        self.receiver[id_] = receiver
+        self.sender[id_] = sender
+        return AsyncTaskTunnelChild(id_, sender, receiver)
 
     async def send(self, id_: uuid.UUID, packet: AsyncTaskPacket):
         if not isinstance(packet, AsyncTaskPacket):
             raise TypeError("packet must be an instance of AsyncTaskPacket")
-        await self.child_queue[id_].put(packet)
+        await self.sender[id_].put(packet)
 
     async def receive(self, id_: uuid.UUID, timeout: float = None) -> Optional[AsyncTaskPacket]:
-        queue = self.parent_queue.get(id_)
+        queue = self.receiver.get(id_)
         try:
             data = await asyncio.wait_for(queue, timeout=timeout)
         except asyncio.TimeoutError:
@@ -153,11 +153,11 @@ class AsyncTaskTunnel:
         return data
 
     def get_ids(self) -> list[uuid.UUID]:
-        return list(self.child_queue.keys())
+        return list(self.sender.keys())
 
     def del_id(self, id_: uuid.UUID):
-        del self.child_queue[id_]
-        del self.parent_queue[id_]
+        del self.sender[id_]
+        del self.receiver[id_]
         del self._buf_child_queue[id_]
 
     async def send_ping(self, id_: uuid.UUID) -> PingContent:
