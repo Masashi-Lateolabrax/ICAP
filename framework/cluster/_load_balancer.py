@@ -49,3 +49,9 @@ class LoadBalancer:
         time_list = [t for id_, t in time_table.items() if np.isnan(t)]
         return max(time_list) if len(time_list) > 0 else float("nan")
 
+    def _get_adjacent_performance(self, id_: uuid.UUID, num_task: int) -> tuple[float, float, float]:
+        if id_ not in self.performance_table:
+            return float("nan"), float("nan"), float("nan")
+        perf = self.performance_table[id_]
+        return perf.get(num_task - 1), perf.get(num_task), perf.get(num_task + 1)
+
