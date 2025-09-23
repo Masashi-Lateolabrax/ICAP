@@ -109,3 +109,7 @@ class LoadBalancer:
         perf = self.performance_table[id_]
         return perf.get(num_task - 1), perf.get(num_task), perf.get(num_task + 1)
 
+
+    def record_task_performance(self, worker_id: uuid.UUID, task_count: int, processing_time: float):
+        if worker_id in self.performance_table:
+            self.performance_table[worker_id].register(task_count, processing_time)
