@@ -79,7 +79,8 @@ class AsyncTaskPacket:
         return cls(AsyncTaskPacketType.WORKER_PACKET, content)
 
     @classmethod
-    def ping_packet(cls, content=None):
+    def ping_packet(cls, id_: uuid.UUID):
+        content = PingPacket(id_)
         return cls(AsyncTaskPacketType.PING, content)
 
 
