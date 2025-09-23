@@ -86,10 +86,7 @@ class LoadBalancer:
         optimal_allocation = self._optimize_remaining_tasks(remaining_tasks, sufficient_data_pcs)
 
         if optimal_allocation is None:
-            pc_ids = list(sufficient_data_pcs.keys())
-            for i in range(remaining_tasks):
-                res[pc_ids[i % len(pc_ids)]] += 1
-            return res
+            optimal_allocation = {i: 1 for i in sufficient_data_pcs.keys()}
 
         for pc_id, count in optimal_allocation.items():
             res[pc_id] = res.get(pc_id, 0) + count
