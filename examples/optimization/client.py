@@ -53,7 +53,7 @@ async def evaluation(
         return jax.vmap(lambda s: s.step_n(model, episode_length))(sims)
 
     while True:
-        packet = await receiver.get()
+        packet = await receiver.get()  # Receive task from main function
         if isinstance(packet, Signal):
             if packet.stop:
                 print("Stopping evaluation routine.")
@@ -84,7 +84,7 @@ async def evaluation(
             end_time=end_time,
         )
 
-        await sender.put(result_content)
+        await sender.put(result_content)  # Send result back to main function
 
 
 async def main():
@@ -123,8 +123,8 @@ async def main():
     print("Press Ctrl+C to disconnect")
     print("=" * 50)
 
-    sender = asyncio.Queue()
-    receiver = asyncio.Queue()
+    sender = asyncio.Queue()  # Queue for sending tasks TO evaluation function
+    receiver = asyncio.Queue()  # Queue for receiving results FROM evaluation function
     task = asyncio.create_task(evaluation(settings, sender, receiver, max_batch_size))
 
     client = WorkerClient()
@@ -150,7 +150,7 @@ async def main():
                 print("Previous task is still being processed. Ignoring new task.")
                 continue
             task_content = packet.content
-            await sender.put(task_content)
+            await sender.put(task_content)  # Send task to evaluation function
 
         elif packet.type == WorkerPacketType.STATE:
             await client.send_worker_state(
@@ -159,7 +159,7 @@ async def main():
             )
 
         if task is not None and not receiver.empty():
-            content = await receiver.get()
+            content = await receiver.get()  # Receive result from evaluation function
             if not isinstance(content, ResultContent):
                 print("Received invalid result from evaluation.")
                 continue
