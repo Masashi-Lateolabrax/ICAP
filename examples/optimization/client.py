@@ -140,7 +140,7 @@ async def main():
             count += 1
             await asyncio.sleep(retry_interval)
             continue
-        count = 0
+        count = 0  # Reset counter on successful packet
 
         if packet.type == WorkerPacketType.TASK:
             if not isinstance(packet.content, TaskContent):
@@ -165,6 +165,11 @@ async def main():
                 continue
             task_content = None
             await client.send_worker_result(content)
+
+    print("Connection lost after multiple failed attempts.")
+    # Stop evaluation task
+    await sender.put(Signal(stop=True))
+    await task
 
 
 if __name__ == "__main__":
