@@ -195,8 +195,9 @@ class AsyncTaskTunnel:
         if data is not None:
             return data
 
+        queue = self.parent_queue.get(id_)
         try:
-            data = await asyncio.wait_for(self.parent_queue[id_].get(), timeout=timeout)
+            data = await asyncio.wait_for(queue, timeout=timeout)
         except asyncio.TimeoutError:
             return AsyncTaskPacket.timeout_packet()
 
@@ -208,7 +209,7 @@ class AsyncTaskTunnel:
 
             data = None
             try:
-                data = await asyncio.wait_for(self.parent_queue[id_].get(), timeout=timeout)
+                data = await asyncio.wait_for(queue, timeout=timeout)
             except asyncio.TimeoutError:
                 break
 
