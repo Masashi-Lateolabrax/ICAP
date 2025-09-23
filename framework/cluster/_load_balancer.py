@@ -45,14 +45,7 @@ class LoadBalancer:
         return result
 
     def calc_estimated_time(self, balance: dict[uuid.UUID, int]) -> float:
-        estimated_processing_time = 0
-        for id_, task_count in balance.items():
-            if id_ not in self.performance_table:
-                return float("nan")
-            perf = self.performance_table[id_]
-            speed = perf.get(task_count)
-            if np.isnan(speed):
-                return float("nan")
-            if speed > estimated_processing_time:
-                estimated_processing_time = speed
-        return estimated_processing_time
+        time_table = self.convert_num_tasks_to_time(balance)
+        time_list = [t for id_, t in time_table.items() if np.isnan(t)]
+        return max(time_list) if len(time_list) > 0 else float("nan")
+
