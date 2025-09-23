@@ -48,7 +48,7 @@ async def evaluation(
         sims = jax.vmap(lambda sim: sim.reset(model))(sims)
         return sims
 
-    @partial(nnx.jit, static_argnames=("n",), donate_argnames=("sims",))
+    @partial(nnx.jit, donate_argnames=("sims",))
     def jit_run(sims):
         return jax.vmap(lambda s: s.step_n(model, episode_length))(sims)
 
