@@ -45,7 +45,7 @@ async def relay_routine(
 
     if not isinstance(response, WorkerPacket):
         raise ValueError("Invalid response type. Expected WorkerPacket.")
-    response_packet = AsyncTaskPacket(AsyncTaskPacketType.WORKER_PACKET, response)
+    response_packet = AsyncTaskPacket.worker_packet(response)
     await tunnel.send(response_packet)
 
     return True
