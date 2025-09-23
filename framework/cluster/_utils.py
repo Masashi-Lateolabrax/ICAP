@@ -1,6 +1,6 @@
 import asyncio
 
-from ._packets import AsyncTaskTunnelChild, AsyncTaskPacket, AsyncTaskPacketType, WorkerPacket
+from ._network import AsyncTaskTunnelChild, AsyncTaskPacket, AsyncTaskPacketType, WorkerPacket
 
 
 async def send_payload(writer: asyncio.StreamWriter, payload: WorkerPacket):
