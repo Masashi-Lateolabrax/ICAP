@@ -10,6 +10,9 @@ class Performance:
     def __init__(self):
         self.performance_time: dict[int, float] = {}
 
+    def has_enugh_data(self) -> bool:
+        return len(self.performance_time) >= 2
+
     def register(self, task_count: int, processing_time: float, alpha: float = 0.2):
         current = self.performance_time.get(task_count, 0.0)
         self.performance_time[task_count] = (1 - alpha) * current + alpha * processing_time
