@@ -57,6 +57,8 @@ class Head:
 
     async def get_worker_load(self, id_) -> Optional[float]:
         response = await self.tunnel.receive(id_, WorkerPacketType.LOAD)
+        if response is None:
+            return None
         if not isinstance(response.content, float):
             raise ValueError("Invalid response type. Expected float.")
         return response.content
