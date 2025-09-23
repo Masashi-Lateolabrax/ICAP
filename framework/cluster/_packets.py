@@ -9,13 +9,13 @@ from typing import Optional
 import numpy as np
 
 
-class TaskPacket:
+class TaskContent:
     def __init__(self, parameter: np.ndarray):
         self.parameter = parameter
 
 
 @dataclasses.dataclass
-class PingPacket:
+class PingContent:
     def __init__(self, id_: uuid.UUID):
         self.id = id_
         self.create_time = datetime.datetime.now(tz=datetime.UTC)
@@ -23,13 +23,13 @@ class PingPacket:
 
 
 @dataclasses.dataclass
-class StatePacket:
+class StateContent:
     gpu_usage: float
     working: bool
 
 
 @dataclasses.dataclass
-class ResultPacket:
+class ResultContent:
     result: list[tuple[np.ndarray, float]]
     rejected: bool = False
 
@@ -72,7 +72,7 @@ class WorkerPacket:
 
     @classmethod
     def state_packet(cls, gpu_usage: float, working: bool):
-        return cls(WorkerPacketType.STATE, StatePacket(gpu_usage, working))
+        return cls(WorkerPacketType.STATE, StateContent(gpu_usage, working))
 
     def as_bytes(self) -> bytes:
         type_bytes = self.type.value.to_bytes(4, 'big')
@@ -81,7 +81,7 @@ class WorkerPacket:
 
     @classmethod
     def result_packet(cls, result: list[tuple[np.ndarray, float]]):
-        return cls(WorkerPacketType.RESULT, ResultPacket(result))
+        return cls(WorkerPacketType.RESULT, ResultContent(result))
 
 
 class AsyncTaskPacketType(enum.Enum):
@@ -105,7 +105,7 @@ class AsyncTaskPacket:
 
     @classmethod
     def ping_packet(cls, id_: uuid.UUID):
-        content = PingPacket(id_)
+        content = PingContent(id_)
         return cls(AsyncTaskPacketType.PING, content)
 
 
@@ -131,7 +131,7 @@ class AsyncTaskTunnelChild:
 
         if data.type == AsyncTaskPacketType.PING:
             # Automatically respond to roll call
-            if not isinstance(data.content, PingPacket):
+            if not isinstance(data.content, PingContent):
                 raise ValueError("Invalid ping packet content")
             if data.content.id != self.uuid:
                 raise ValueError("Ping packet ID does not match tunnel ID")
@@ -181,7 +181,7 @@ class AsyncTaskTunnel:
         del self.parent_queue[id_]
         del self._buf_child_queue[id_]
 
-    async def send_ping(self, id_: uuid.UUID) -> PingPacket:
+    async def send_ping(self, id_: uuid.UUID) -> PingContent:
         packet = AsyncTaskPacket.ping_packet(id_)
         await self.send(id_, packet)
         return packet.content

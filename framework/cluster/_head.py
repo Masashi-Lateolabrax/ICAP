@@ -4,7 +4,7 @@ from typing import Optional
 
 from ._packets import (
     AsyncTaskPacketType, AsyncTaskPacket, AsyncTaskTunnel, AsyncTaskTunnelChild,
-    WorkerPacket, StatePacket
+    WorkerPacket, StateContent
 )
 from ._utils import relay_routine
 
@@ -68,13 +68,13 @@ class Head:
 
         return response.content.content
 
-    async def get_worker_state(self, id_, timeout: float) -> Optional[StatePacket]:
+    async def get_worker_state(self, id_, timeout: float) -> Optional[StateContent]:
         packet = WorkerPacket.request_state()
         response = await self._send_and_receive_worker_packet(id_, packet, timeout)
 
         if response is None or response.is_timeout():
             return None
-        if not isinstance(response.content.content, StatePacket):
+        if not isinstance(response.content.content, StateContent):
             raise ValueError("Invalid response type. Expected StatePacket.")
 
         return response.content.content
