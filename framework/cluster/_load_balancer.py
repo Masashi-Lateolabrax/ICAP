@@ -8,7 +8,7 @@ class Performance:
     def __init__(self):
         self.performance_time: dict[int, float] = {}
 
-    def has_enugh_data(self) -> bool:
+    def has_enough_data(self) -> bool:
         return len(self.performance_time) >= 2
 
     def register(self, task_count: int, processing_time: float, alpha: float = 0.2):
@@ -68,13 +68,13 @@ class LoadBalancer:
         if len(self.performance_table) == 0:
             return {}
 
-        res = {i: 1 for i, perfs in self.performance_table.items() if not perfs.has_enugh_data()}
+        res = {i: 1 for i, perfs in self.performance_table.items() if not perfs.has_enough_data()}
         remaining_tasks = total_tasks - len(res)
 
         if remaining_tasks <= 0:
             return res
 
-        sufficient_data_pcs = {i: perf for i, perf in self.performance_table.items() if perf.has_enugh_data()}
+        sufficient_data_pcs = {i: perf for i, perf in self.performance_table.items() if perf.has_enough_data()}
 
         if len(sufficient_data_pcs) == 0:
             return res
