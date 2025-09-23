@@ -1,9 +1,11 @@
 import asyncio
 from typing import Optional
 
-import numpy as np
-
-from ._network import SingleAsyncTaskTunnel, AsyncTaskTunnelChild, AsyncTaskPacket, AsyncTaskPacketType, WorkerPacket
+from ._network import (
+    SingleAsyncTaskTunnel, AsyncTaskTunnelChild,
+    AsyncTaskPacketType, AsyncTaskPacket, WorkerPacketType, WorkerPacket,
+    ResultContent,
+)
 from ._utils import relay_routine
 
 
@@ -59,7 +61,7 @@ class WorkerClient:
         packet = AsyncTaskPacket.worker_packet(packet)
         await self.tunnel.send(packet)
 
-    async def send_worker_result(self, result: list[tuple[np.ndarray, float]]):
-        packet = WorkerPacket.result_packet(result)
+    async def send_worker_result(self, result: ResultContent):
+        packet = WorkerPacket(WorkerPacketType.RESULT, result)
         packet = AsyncTaskPacket.worker_packet(packet)
         await self.tunnel.send(packet)
