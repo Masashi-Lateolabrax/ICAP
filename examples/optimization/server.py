@@ -70,7 +70,7 @@ async def main():
                 await head.send_worker_task(worker_id, task)
 
             # Collect results for current batch
-            for worker_id in worker_ids:
+            for worker_id in current_batch.keys():
                 result = await head.get_worker_result(worker_id)
                 if result:
                     if result.start_time and result.end_time:
