@@ -33,7 +33,6 @@ async def main():
 
         print(f"\nGeneration {generation + 1}")
 
-        dead_worker_ids = set(await head.cleanup())
         worker_ids = set(await head.get_ids())
         if not worker_ids:
             print("No workers connected. Waiting...")
@@ -45,13 +44,14 @@ async def main():
         candidates = [cma.ask() for _ in range(args.population_size)]
         fitness: list[tuple[np.ndarray, float]] = []
 
-        # Load balancing
-        for i in worker_ids:
-            load_balancer.register_performance(i)
-        for i in dead_worker_ids:
-            load_balancer.remove(i)
-
         while len(candidates) > 0:
+            # Load balancing
+            dead_worker_ids = set(await head.cleanup())
+            worker_ids = set(await head.get_ids())
+            for i in worker_ids:
+                load_balancer.register_performance(i)
+            for i in dead_worker_ids:
+                load_balancer.remove(i)
             task_allocation = load_balancer.calc_balance(len(candidates))
 
             # Split candidates according to current allocation
