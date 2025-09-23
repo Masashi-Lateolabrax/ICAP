@@ -29,10 +29,10 @@ class LoadBalancer:
         if id_ in self.performance_table:
             del self.performance_table[id_]
 
-    def register_performance(self, id_: uuid.UUID, task_count: int, performance: float):
+    def register_performance(self, id_: uuid.UUID, task_count: int, time: float):
         if id_ not in self.performance_table:
             self.performance_table[id_] = Performance()
-        self.performance_table[id_].register(task_count, performance)
+        self.performance_table[id_].register(task_count, time)
 
     def convert_num_tasks_to_time(self, balance: dict[uuid.UUID, int]) -> dict[uuid.UUID, float]:
         result = {}
