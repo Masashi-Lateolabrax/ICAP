@@ -4,7 +4,7 @@ from functools import partial
 from typing import Optional
 
 from ._network import (
-    StateContent, TaskContent,
+    StateContent, TaskContent, ResultContent,
     AsyncTaskPacket, WorkerPacket, WorkerPacketType,
     ManagedTunnel, AsyncTaskTunnelChild
 )
@@ -83,3 +83,11 @@ class Head:
             id_,
             WorkerPacket(WorkerPacketType.TASK, task)
         )
+
+    async def get_worker_result(self, id_: uuid.UUID) -> Optional[ResultContent]:
+        response = await self.tunnel.receive(id_, WorkerPacketType.RESULT)
+        if response is None:
+            return None
+        if not isinstance(response.content, ResultContent):
+            raise ValueError("Invalid response type. Expected TaskContent.")
+        return response.content
