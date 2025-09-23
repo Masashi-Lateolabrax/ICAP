@@ -49,6 +49,13 @@ class SingleAsyncTaskTunnel:
         self.receiver = asyncio.Queue()
         self.sender = asyncio.Queue()
 
+    def spawn_child(self):
+        return AsyncTaskTunnelChild(
+            id_=self.id,
+            receiver=self.sender,
+            sender=self.receiver
+        )
+
     def get_id(self) -> uuid.UUID:
         return self.id
 
