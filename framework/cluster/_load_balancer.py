@@ -1,6 +1,6 @@
 import uuid
 
-from scipy.optimize import minimize
+from scipy import optimize
 import numpy as np
 
 
@@ -81,32 +81,66 @@ class LoadBalancer:
 
         optimal_allocation = self._optimize_remaining_tasks(remaining_tasks, sufficient_data_pcs)
 
+        if optimal_allocation is None:
+            pc_ids = list(sufficient_data_pcs.keys())
+            for i in range(remaining_tasks):
+                res[pc_ids[i % len(pc_ids)]] += 1
+            return res
+
         for pc_id, count in optimal_allocation.items():
             res[pc_id] = res.get(pc_id, 0) + count
 
         return res
 
-    def convert_num_tasks_to_time(self, balance: dict[uuid.UUID, int]) -> dict[uuid.UUID, float]:
-        result = {}
-        for id_, task_count in balance.items():
-            if id_ not in self.performance_table:
-                result[id_] = float("nan")
-                continue
-            perf = self.performance_table[id_]
-            result[id_] = perf.get(task_count)
-        return result
+    def _optimize_remaining_tasks(
+            self, remaining_tasks: int, sufficient_data_pcs: dict[uuid.UUID, Performance]
+    ) -> dict[uuid.UUID, int] | None:
 
-    def calc_estimated_time(self, balance: dict[uuid.UUID, int]) -> float:
-        time_table = self.convert_num_tasks_to_time(balance)
-        time_list = [t for id_, t in time_table.items() if np.isnan(t)]
-        return max(time_list) if len(time_list) > 0 else float("nan")
+        pc_ids = list(sufficient_data_pcs.keys())
+        n_pcs = len(pc_ids)
 
-    def _get_adjacent_performance(self, id_: uuid.UUID, num_task: int) -> tuple[float, float, float]:
-        if id_ not in self.performance_table:
-            return float("nan"), float("nan"), float("nan")
-        perf = self.performance_table[id_]
-        return perf.get(num_task - 1), perf.get(num_task), perf.get(num_task + 1)
+        if n_pcs == 0:
+            return None
 
+        for pc_id, perf in sufficient_data_pcs.items():
+            if np.isnan(perf.get(1)):
+                return None
+
+        def objective(x):
+            allocation_ = {}
+            for i in range(n_pcs):
+                task_count = max(0, int(round(x[i])))
+                allocation_[pc_ids[i]] = task_count
+            return _objective_func(remaining_tasks, sufficient_data_pcs, allocation_)
+
+        def constraint(x):
+            return sum(x) - remaining_tasks
+
+        x0 = [remaining_tasks / n_pcs] * n_pcs
+
+        result = optimize.minimize(
+            objective, x0,
+            method='SLSQP',
+            constraints={'type': 'eq', 'fun': constraint},
+            bounds=[(0, remaining_tasks) for _ in range(n_pcs)]
+        )
+
+        if result.success and result.fun != float('inf'):
+            allocation = {pc_ids[i]: max(0, result.x[i]) for i in range(n_pcs)}
+
+            while True:
+                current_total = sum([int(v) for v in allocation.values()])
+                diff = remaining_tasks - current_total
+                if diff == 0:
+                    break
+
+                keys = [k for k, v in allocation.items() if v - int(v) > 0]
+                max_pc = max(keys, key=lambda pc: allocation[pc])
+                allocation[max_pc] = int(allocation[max_pc] + 1)
+
+            return {pc_id: int(v) for pc_id, v in allocation.items()}
+        else:
+            return None
 
     def record_task_performance(self, worker_id: uuid.UUID, task_count: int, processing_time: float):
         if worker_id in self.performance_table:
