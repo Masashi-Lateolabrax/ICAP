@@ -19,6 +19,9 @@ class WorkerPacket:
         self.type: WorkerPacketType = type_
         self.content = content
 
+    def __repr__(self):
+        return f"<WorkerPacket type={self.type.name} content={self.content}>"
+
     @classmethod
     def from_bytes(cls, data: bytes) -> "WorkerPacket":
         if len(data) < 4:
