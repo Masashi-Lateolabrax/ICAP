@@ -77,8 +77,6 @@ class ManagedTunnel:
     def _receive_filtered(
             self, id_: uuid.UUID, expect_worker_type: WorkerPacketType
     ) -> Optional[AsyncTaskPacket]:
-        packet = None
-
         for i in range(0, len(self.buffer[id_])):
             packet = self.buffer[id_][i]
 
@@ -88,10 +86,9 @@ class ManagedTunnel:
                 raise ValueError("Invalid response type. Expected WorkerPacket.")
 
             if packet.content.type == expect_worker_type:
-                self.buffer[id_].pop(i)
-                break
+                return self.buffer[id_].pop(i)
 
-        return packet
+        return None
 
     async def receive(self, id_: uuid.UUID, expect_worker_type: WorkerPacketType = None) -> Optional[WorkerPacket]:
         await self._update_buffer()

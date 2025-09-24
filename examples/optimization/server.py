@@ -56,18 +56,20 @@ async def main():
             for i in all_worker_ids:
                 await head.request_worker_state(i)
                 res = await head.get_worker_state(i)
-                if res is not None and not res.working:
+                if res is not None and not ic(res.working):
                     waiting_ids.append(i)
             worker_ids = ic(set(waiting_ids))
 
             if not worker_ids:
-                await asyncio.sleep(5)
+                await asyncio.sleep(10)
                 continue
 
             # Load balancing
+            for i in worker_ids:
+                load_balancer.register_performance(i)
             for i in dead_worker_ids:
                 load_balancer.remove(i)
-            task_allocation = load_balancer.calc_balance(worker_ids, len(candidates))
+            task_allocation = ic(load_balancer.calc_balance(worker_ids, len(candidates)))
 
             # Split candidates according to current allocation
             current_batch = {}

@@ -65,7 +65,7 @@ class Head:
         return response.content
 
     async def send_worker_task(self, id_: uuid.UUID, task: TaskContent):
-        await self.send(
+        await self.tunnel.send(
             id_,
             WorkerPacket(WorkerPacketType.TASK, task)
         )
@@ -75,5 +75,5 @@ class Head:
         if response is None:
             return None
         if not isinstance(response.content, ResultContent):
-            raise ValueError("Invalid response type. Expected TaskContent.")
+            raise ValueError("Invalid response type. Expected ResultContent.")
         return response.content
