@@ -1,5 +1,6 @@
 import uuid
 
+from icecream import ic
 from scipy import optimize
 import numpy as np
 
@@ -133,7 +134,7 @@ class LoadBalancer:
         self.performance_table[id_].register(task_count, time)
 
     def calc_balance(self, available_worker: set[uuid.UUID], total_tasks: int) -> dict[uuid.UUID, int]:
-        if len(self.performance_table) == 0:
+        if ic(len(self.performance_table)) == 0:
             return {}
 
         performance_table = {i: perf for i, perf in self.performance_table.items() if i in available_worker}
