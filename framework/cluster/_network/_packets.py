@@ -5,7 +5,7 @@ import uuid
 
 import numpy as np
 
-from ._contents import StateContent, PingContent, ResultContent
+from ._contents import StateContent, PingContent, ResultContent, TaskContent
 
 
 class WorkerPacketType(enum.Enum):
