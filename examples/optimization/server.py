@@ -65,6 +65,8 @@ async def main():
                 continue
 
             # Load balancing
+            for i in worker_ids:
+                load_balancer.register_performance(i)
             for i in dead_worker_ids:
                 load_balancer.remove(i)
             task_allocation = ic(load_balancer.calc_balance(worker_ids, len(candidates)))
