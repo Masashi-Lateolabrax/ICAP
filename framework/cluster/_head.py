@@ -1,7 +1,8 @@
 import asyncio
 import uuid
-from functools import partial
 from typing import Optional
+
+from icecream import ic
 
 from ._network import (
     StateContent, TaskContent, ResultContent,
@@ -14,6 +15,8 @@ from ._utils import relay_routine
 async def head_routine(
         reader: asyncio.StreamReader, writer: asyncio.StreamWriter, tunnel: AsyncTaskTunnelChild, timeout: float
 ):
+    ic(writer.get_extra_info('peername'))
+    ic(tunnel.uuid)
     while await relay_routine(reader, writer, tunnel, timeout):
         pass
 
@@ -28,6 +31,7 @@ class Head:
             raise RuntimeError("Server is already running")
 
         async def body_fn(reader, writer):
+            ic(writer.get_extra_info('peername'))
             child = self.tunnel.spawn_child()
             await head_routine(reader, writer, tunnel=child, timeout=timeout)
 

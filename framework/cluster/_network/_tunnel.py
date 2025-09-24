@@ -3,6 +3,8 @@ import datetime
 import uuid
 from typing import Optional
 
+from icecream import ic
+
 from framework.cluster._network._contents import PingContent
 from framework.cluster._network._packets import AsyncTaskPacketType, AsyncTaskPacket
 
@@ -23,7 +25,7 @@ class AsyncTaskTunnelChild:
 
     async def receive(self, timeout: float = None) -> Optional[AsyncTaskPacket]:
         try:
-            data = await asyncio.wait_for(self.receiver.get(), timeout=timeout)
+            data = ic(await asyncio.wait_for(self.receiver.get(), timeout=timeout))
         except asyncio.TimeoutError:
             return None
 

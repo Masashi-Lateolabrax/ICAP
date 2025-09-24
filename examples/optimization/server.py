@@ -1,11 +1,19 @@
 import argparse
 import asyncio
+import datetime
+import os
 
 import numpy as np
 from cmaes import CMA
+from icecream import ic
 
 from framework.cluster import Head, TaskContent, LoadBalancer
 from examples.config import PracticalController
+
+ic.configureOutput(
+    prefix=lambda: f'[{datetime.datetime.now().strftime("%H:%M:%S.%f")[:-3]}][PID:{os.getpid()}] SERVER| ',
+    includeContext=True
+)
 
 
 async def main():
@@ -43,14 +51,14 @@ async def main():
 
         while len(candidates) > 0:
             # Check worker status
-            dead_worker_ids = set(await head.cleanup())
-            all_worker_ids = set(await head.get_ids())
+            dead_worker_ids = ic(set(await head.cleanup()))
+            all_worker_ids = ic(set(await head.get_ids()))
             waiting_ids = []
             for i in all_worker_ids:
                 res = await head.get_worker_state(i)
                 if res is not None and not res.working:
                     waiting_ids.append(i)
-            worker_ids = set(waiting_ids)
+            worker_ids = ic(set(waiting_ids))
 
             if not worker_ids:
                 await asyncio.sleep(10)

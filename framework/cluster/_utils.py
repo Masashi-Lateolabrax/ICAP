@@ -1,5 +1,7 @@
 import asyncio
 
+from icecream import ic
+
 from ._network import AsyncTaskTunnelChild, AsyncTaskPacket, AsyncTaskPacketType, WorkerPacket
 
 
@@ -11,7 +13,7 @@ async def send_payload(writer: asyncio.StreamWriter, payload: WorkerPacket):
 
     writer.write(payload_size.to_bytes(4, byteorder='big'))
     writer.write(payload_bytes)
-    await writer.drain()
+    ic(await writer.drain())
 
 
 async def receive_payload(reader: asyncio.StreamReader, timeout: float) -> WorkerPacket:
@@ -27,13 +29,13 @@ async def receive_payload(reader: asyncio.StreamReader, timeout: float) -> Worke
 async def relay_routine(
         reader: asyncio.StreamReader, writer: asyncio.StreamWriter, tunnel: AsyncTaskTunnelChild, timeout: float
 ) -> bool:
-    packet: AsyncTaskPacket = await tunnel.receive()
+    packet: AsyncTaskPacket = ic(await tunnel.receive())
 
     if packet.type == AsyncTaskPacketType.STOP:
         return False
 
     if packet.type == AsyncTaskPacketType.WORKER_PACKET:
-        payload = packet.content
+        payload = ic(packet.content)
         if not isinstance(payload, WorkerPacket):
             raise ValueError("Invalid packet content type. Expected WorkerPacket for PAYLOAD type.")
         await send_payload(writer, payload)
