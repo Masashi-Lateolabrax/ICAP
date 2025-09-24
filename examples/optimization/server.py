@@ -1,6 +1,7 @@
 import argparse
 import asyncio
 import datetime
+import uuid
 
 import numpy as np
 from cmaes import CMA
@@ -46,6 +47,7 @@ async def main():
 
         # Get candidates and send to workers
         candidates = [cma.ask() for _ in range(args.population_size)]
+        assigned: dict[uuid.UUID, list[np.ndarray]] = {}
         fitness: list[tuple[np.ndarray, float]] = []
 
         while len(candidates) > 0:
@@ -86,16 +88,17 @@ async def main():
             task_allocation = ic(load_balancer.calc_balance(worker_ids, len(candidates)))
 
             # Split candidates according to current allocation
-            current_batch = {}
             for worker_id, task_count in task_allocation.items():
-                current_batch[worker_id] = []
+                if worker_id not in assigned:
+                    assigned[worker_id] = []
+
                 for _ in range(task_count):
                     if len(candidates) == 0:
                         break
-                    current_batch[worker_id].append(candidates.pop(0))
+                    assigned[worker_id].append(candidates.pop(0))
 
             # Send current batch to workers (batch = list of candidates → 2D array)
-            for worker_id, batch in current_batch.items():
+            for worker_id, batch in assigned.items():
                 task = TaskContent(np.array(batch))
                 await head.send_worker_task(worker_id, task)
 
