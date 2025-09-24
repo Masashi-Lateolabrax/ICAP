@@ -1,6 +1,8 @@
 import asyncio
 from typing import Optional
 
+from icecream import ic
+
 from ._network import (
     SingleAsyncTaskTunnel, AsyncTaskTunnelChild,
     AsyncTaskPacketType, AsyncTaskPacket, WorkerPacketType, WorkerPacket,
@@ -13,6 +15,8 @@ async def worker_routine(address: str, port: int, timeout: float, tunnel: AsyncT
     connection = await asyncio.open_connection(address, port)
     reader: asyncio.StreamReader = connection[0]
     writer: asyncio.StreamWriter = connection[1]
+
+    ic(writer.get_extra_info('sockname'))
 
     while await relay_routine(reader, writer, tunnel, timeout):
         pass
@@ -36,7 +40,7 @@ class WorkerClient:
         await self.tunnel.send(AsyncTaskPacket.stop_packet())
 
     async def receive(self) -> Optional[WorkerPacket]:
-        while not self.tunnel.empty():
+        while not ic(self.tunnel.empty()):
             response = await self.tunnel.receive()
             if response is None:
                 raise RuntimeError("There is not reachable")
