@@ -181,13 +181,18 @@ async def main():
                 working=task_content is not None
             )
 
-        if task is not None and not receiver.empty():
-            content = await receiver.get()  # Receive result from evaluation function
-            if not isinstance(content, ResultContent):
-                print("Received invalid result from evaluation.")
-                continue
-            task_content = None
-            await client.send_worker_result(content)
+        while not receiver.empty():
+            optimization_task_response = await receiver.get()
+
+            if isinstance(optimization_task_response, ResultContent):
+                if task_content is None:
+                    print("No task is being processed. Ignoring result.")
+                    continue
+                task_content = None
+                await client.send_worker_result(optimization_task_response)
+
+            else:
+                print("Received invalid result from evaluation function.")
 
     print("Connection lost after multiple failed attempts.")
     # Stop evaluation task
