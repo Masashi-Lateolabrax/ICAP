@@ -15,9 +15,10 @@ class WorkerPacketType(enum.Enum):
 
 
 class WorkerPacket:
-    def __init__(self, type_: WorkerPacketType, content):
+    def __init__(self, type_: WorkerPacketType, content, expiry: float = 1):
         self.type: WorkerPacketType = type_
         self.content = content
+        self.lifetime = datetime.datetime.now(tz=datetime.UTC) + datetime.timedelta(seconds=expiry)
 
     def __repr__(self):
         return f"<WorkerPacket type={self.type.name} content={self.content}>"
@@ -33,6 +34,9 @@ class WorkerPacket:
             raise ValueError(f"Invalid WorkerPacketType value: {type_value}")
         content = pickle.loads(data[4:]) if len(data) > 4 else None
         return cls(type_, content)
+
+    def is_expired(self) -> bool:
+        return datetime.datetime.now(tz=datetime.UTC) > self.lifetime
 
     @classmethod
     def request_state(cls):
