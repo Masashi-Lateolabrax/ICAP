@@ -51,6 +51,7 @@ class WorkerClient:
             if latest_state_packet["packet"] is None:
                 latest_state_packet["index"] = i
                 latest_state_packet["packet"] = packet
+                continue
             elif latest_state_packet["packet"].timestamp < packet.timestamp:
                 latest_state_packet["packet"] = packet
             self.buffer.pop(latest_state_packet["index"])
