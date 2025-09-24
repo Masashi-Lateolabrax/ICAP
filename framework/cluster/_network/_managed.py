@@ -112,17 +112,17 @@ class ManagedTunnel:
 
             if latest_state_packet["packet"] is None:
                 latest_state_packet["index"] = i
-                latest_state_packet["packet"] = packet
+                latest_state_packet["packet"] = packet.content
                 continue
 
             elif latest_state_packet["packet"].timestamp < packet.content.timestamp:
-                latest_state_packet["packet"] = packet
+                latest_state_packet["packet"] = packet.content
 
             self.buffer[id_].pop(latest_state_packet["index"])
             latest_state_packet["index"] = i
 
         if latest_state_packet["index"] is not None:
-            self.buffer[id_][latest_state_packet["index"]] = latest_state_packet["packet"]
+            self.buffer[id_][latest_state_packet["index"]].content = latest_state_packet["packet"]
 
     async def receive(self, id_: uuid.UUID, expect_worker_type: WorkerPacketType = None) -> Optional[WorkerPacket]:
         await self._update_buffer()
