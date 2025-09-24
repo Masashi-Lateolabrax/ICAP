@@ -82,7 +82,7 @@ async def evaluation(
         start_time = datetime.datetime.now(tz=datetime.UTC)
 
         parameters = packet.parameter
-        batch_size = min(parameters.shape[0], max_batch_size)
+        batch_size = min(ic(parameters.shape[0]), max_batch_size)
 
         if batch_size > 1:
             simulators = jax.tree.map(lambda x: x[:batch_size], base_simulators)
@@ -92,7 +92,7 @@ async def evaluation(
             loss = np.array(results["loss"])
 
         elif batch_size == 1:
-            base_simulator = jit_set_params(base_simulator, parameters[:1])
+            base_simulator = jit_set_params(base_simulator, parameters[0])
             base_simulator = jit_run(base_simulator)
             results = base_simulator.evaluate()
             loss = np.array([results["loss"]])
