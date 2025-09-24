@@ -75,5 +75,5 @@ class Head:
         if response is None:
             return None
         if not isinstance(response.content, ResultContent):
-            raise ValueError("Invalid response type. Expected TaskContent.")
+            raise ValueError("Invalid response type. Expected ResultContent.")
         return response.content
