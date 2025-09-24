@@ -47,7 +47,7 @@ async def main():
             all_worker_ids = set(await head.get_ids())
             waiting_ids = []
             for i in all_worker_ids:
-                res = head.get_worker_state(i)
+                res = await head.get_worker_state(i)
                 if res is not None and not res.working:
                     waiting_ids.append(i)
             worker_ids = set(waiting_ids)
