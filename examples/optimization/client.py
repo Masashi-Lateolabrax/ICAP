@@ -85,9 +85,9 @@ async def evaluation(
             loss = np.array(results["loss"])
 
         elif batch_size == 1:
-            simulator = jit_set_params(base_simulator, parameters[:1])
-            simulator = jit_run(simulator)
-            results = simulator.evaluate()
+            base_simulator = jit_set_params(base_simulator, parameters[:1])
+            base_simulator = jit_run(base_simulator)
+            results = base_simulator.evaluate()
             loss = np.array([results["loss"]])
 
         else:
