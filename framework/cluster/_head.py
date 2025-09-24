@@ -65,7 +65,7 @@ class Head:
         return response.content
 
     async def send_worker_task(self, id_: uuid.UUID, task: TaskContent):
-        await self.send(
+        await self.tunnel.send(
             id_,
             WorkerPacket(WorkerPacketType.TASK, task)
         )
