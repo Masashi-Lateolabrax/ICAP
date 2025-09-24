@@ -29,8 +29,9 @@ async def receive_payload(reader: asyncio.StreamReader, timeout: float) -> Worke
 async def relay_routine(
         reader: asyncio.StreamReader, writer: asyncio.StreamWriter, tunnel: AsyncTaskTunnelChild, timeout: float
 ) -> bool:
-    packet: AsyncTaskPacket = ic(await tunnel.receive(timeout=1))
-    if packet:
+    if not tunnel.empty():
+        packet: AsyncTaskPacket = ic(await tunnel.receive())
+
         if packet.type == AsyncTaskPacketType.STOP:
             return False
 
