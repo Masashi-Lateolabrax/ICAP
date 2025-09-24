@@ -39,6 +39,26 @@ class WorkerClient:
     async def stop(self):
         await self.tunnel.send(AsyncTaskPacket.stop_packet())
 
+    def _cleanup_buffer(self):
+        latest_state_packet = {
+            "index": None,
+            "packet": None
+        }
+        for i in reversed(range(len(self.buffer))):
+            packet = self.buffer[i]
+            if packet.type != WorkerPacketType.STATE:
+                continue
+            if latest_state_packet["packet"] is None:
+                latest_state_packet["index"] = i
+                latest_state_packet["packet"] = packet
+            elif latest_state_packet["packet"].timestamp < packet.timestamp:
+                latest_state_packet["packet"] = packet
+            self.buffer.pop(latest_state_packet["index"])
+            latest_state_packet["index"] = i
+
+        if latest_state_packet["index"] is not None:
+            self.buffer[latest_state_packet["index"]] = latest_state_packet["packet"]
+
     async def receive(self) -> Optional[WorkerPacket]:
         while not ic(self.tunnel.empty()):
             response = await self.tunnel.receive()
