@@ -1,8 +1,11 @@
 import argparse
 import asyncio
+
 import numpy as np
 from cmaes import CMA
+
 from framework.cluster import Head, TaskContent, LoadBalancer
+from examples.config import PracticalController
 
 
 async def main():
