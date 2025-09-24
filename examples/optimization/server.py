@@ -53,13 +53,9 @@ async def main():
                 continue
 
             # Load balancing
-            dead_worker_ids = set(await head.cleanup())
-            worker_ids = set(await head.get_ids())
-            for i in worker_ids:
-                load_balancer.register_performance(i)
             for i in dead_worker_ids:
                 load_balancer.remove(i)
-            task_allocation = load_balancer.calc_balance(len(candidates))
+            task_allocation = load_balancer.calc_balance(worker_ids, len(candidates))
 
             # Split candidates according to current allocation
             current_batch = {}
