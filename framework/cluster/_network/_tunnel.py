@@ -70,9 +70,8 @@ class SingleAsyncTaskTunnel:
         return self.receiver.empty()
 
     async def receive(self, timeout: float = None) -> Optional[AsyncTaskPacket]:
-        queue = self.receiver.get()
         try:
-            data = await asyncio.wait_for(queue, timeout=timeout)
+            data = await asyncio.wait_for(self.receiver.get(), timeout=timeout)
         except asyncio.TimeoutError:
             return None
 
