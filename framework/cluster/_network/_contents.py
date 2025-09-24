@@ -31,3 +31,7 @@ class ResultContent:
     start_time: Optional[datetime.datetime]
     end_time: Optional[datetime.datetime]
     rejected: Optional[TaskContent] = None
+
+    @classmethod
+    def reject_packet(cls, task_content: TaskContent):
+        return cls([], None, None, rejected=task_content)
