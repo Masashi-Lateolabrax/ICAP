@@ -59,7 +59,7 @@ async def evaluation(
     def jit_run_batch(sims):
         return jax.vmap(lambda s: s.step_n(model, episode_length))(sims)
 
-    @partial(nnx.jit, donate_argnames=("sims",))
+    @partial(nnx.jit, donate_argnames=("sim",))
     def jit_run(sim):
         return sim.step_n(model, episode_length)
 
