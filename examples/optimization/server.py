@@ -12,10 +12,11 @@ async def main():
     parser = argparse.ArgumentParser(description="ICAP CMA-ES Controller Optimization")
     parser.add_argument("--host", type=str, default="localhost")
     parser.add_argument("--port", type=int, required=True)
-    parser.add_argument("--controller-dim", type=int, default=20)
     parser.add_argument("--population-size", type=int, default=20)
     parser.add_argument("--max-generations", type=int, default=50)
     args = parser.parse_args()
+
+    dim = PracticalController.dim()
 
     head = Head()
     load_balancer = LoadBalancer()
@@ -23,12 +24,12 @@ async def main():
 
     # Initialize CMA-ES
     cma = CMA(
-        mean=np.zeros(args.controller_dim, dtype=np.float32),
+        mean=np.zeros(dim, dtype=np.float32),
         sigma=0.1,
         population_size=args.population_size,
     )
 
-    print(f"Starting optimization: dim={args.controller_dim}, pop={args.population_size}")
+    print(f"Starting optimization: dim={dim}, pop={args.population_size}")
 
     for generation in range(args.max_generations):
         if cma.should_stop():
