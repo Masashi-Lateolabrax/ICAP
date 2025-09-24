@@ -57,7 +57,7 @@ class WorkerPacket:
         return cls(WorkerPacketType.RESULT, ResultContent(result, start_time, end_time))
 
     @classmethod
-    def reject_packet(cls, task_content: "WorkerPacket"):
+    def reject_packet(cls, task_content: TaskContent):
         return cls(WorkerPacketType.RESULT, ResultContent([], None, None, rejected=task_content))
 
 
