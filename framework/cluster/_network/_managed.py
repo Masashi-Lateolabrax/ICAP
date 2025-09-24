@@ -3,6 +3,8 @@ import logging
 import uuid
 from typing import Optional
 
+from icecream import ic
+
 from . import PingContent
 from ._packets import WorkerPacket, WorkerPacketType
 from ._tunnel import AsyncTaskTunnel, AsyncTaskTunnelChild, AsyncTaskPacketType, AsyncTaskPacket
@@ -98,7 +100,7 @@ class ManagedTunnel:
         }
 
         for i in reversed(range(len(self.buffer[id_]))):
-            packet = self.buffer[id_][i]
+            packet = ic(self.buffer[id_][i])
 
             if packet.type == AsyncTaskPacketType.WORKER_PACKET and isinstance(packet.content, WorkerPacket):
                 logging.warning("Invalid packet content. Expected WorkerPacket.")
