@@ -137,7 +137,7 @@ class LoadBalancer:
             return {}
 
         performance_table = {i: perf for i, perf in self.performance_table.items() if i in available_worker}
-        res = {i: 1 for i, perfs in performance_table if not perfs.has_enough_data()}
+        res = {i: 1 for i, perfs in performance_table.items() if not perfs.has_enough_data()}
         remaining_tasks = total_tasks - len(res)
 
         if remaining_tasks <= 0:
