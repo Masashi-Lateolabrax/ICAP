@@ -91,7 +91,7 @@ async def main():
                 if result:
                     if result.rejected is not None:
                         for param in result.rejected.parameter:
-                            candidates.append(param)
+                            candidates.append(ic(param))
 
                     elif result.start_time and result.end_time:
                         duration = (result.end_time - result.start_time).total_seconds()
