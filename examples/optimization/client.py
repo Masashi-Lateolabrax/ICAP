@@ -5,6 +5,7 @@ import argparse
 import asyncio
 
 import numpy as np
+from icecream import ic
 
 import jax
 import jax.numpy as jnp
@@ -16,6 +17,11 @@ from framework.prelude import Settings
 from framework.cluster import WorkerClient, ResultContent, TaskContent, WorkerPacket, WorkerPacketType
 
 from examples.config import PracticalSimulator, PracticalController
+
+ic.configureOutput(
+    prefix=lambda: f'[{datetime.datetime.now().strftime("%H:%M:%S.%f")[:-3]}] CLIENT| ',
+    includeContext=True
+)
 
 
 @dataclasses.dataclass
