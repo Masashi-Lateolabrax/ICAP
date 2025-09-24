@@ -21,7 +21,8 @@ class WorkerPacket:
         self.lifetime = datetime.datetime.now(tz=datetime.UTC) + datetime.timedelta(seconds=expiry)
 
     def __repr__(self):
-        return f"<WorkerPacket type={self.type.name} content={self.content}>"
+        life = self.lifetime - datetime.datetime.now(tz=datetime.UTC)
+        return f"<WorkerPacket type={self.type.name} content={self.content} lifetime={life.total_seconds():.2f}s>"
 
     @classmethod
     def from_bytes(cls, data: bytes) -> "WorkerPacket":
