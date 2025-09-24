@@ -50,14 +50,20 @@ async def evaluation(
     )
 
     @partial(nnx.jit, donate_argnames=("sims",))
-    def jit_set_params(sims, params):
+    def jit_batch_set_params(sims, params):
         sims = jax.vmap(lambda s, p: s.update(controller=PracticalController(p)))(sims, params)
         sims = jax.vmap(lambda sim: sim.reset(model))(sims)
         return sims
 
     @partial(nnx.jit, donate_argnames=("sims",))
-    def jit_run_batch(sims):
+    def jit_batch_run(sims):
         return jax.vmap(lambda s: s.step_n(model, episode_length))(sims)
+
+    @partial(nnx.jit, donate_argnames=("sim",))
+    def jit_set_params(sim, params):
+        sim = sim.update(controller=PracticalController(params))
+        sim = sim.reset(model)
+        return sim
 
     @partial(nnx.jit, donate_argnames=("sim",))
     def jit_run(sim):
@@ -80,8 +86,8 @@ async def evaluation(
 
         if batch_size > 1:
             simulators = jax.tree.map(lambda x: x[:batch_size], base_simulators)
-            simulators = jit_set_params(simulators, parameters[:batch_size])
-            simulators = jit_run(simulators)
+            simulators = jit_batch_set_params(simulators, parameters[:batch_size])
+            simulators = jit_batch_run(simulators)
             results = jax.tree.map(lambda x: x.evaluate(), simulators)
             loss = np.array(results["loss"])
 
