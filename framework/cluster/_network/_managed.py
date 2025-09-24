@@ -94,30 +94,32 @@ class ManagedTunnel:
         return None
 
     def _cleanup_buffer(self, id_: uuid.UUID):
+        for i in reversed(range(len(self.buffer[id_]))):
+            packet = ic(self.buffer[id_][i])
+            if packet.type == AsyncTaskPacketType.WORKER_PACKET and isinstance(packet.content, WorkerPacket):
+                continue
+            logging.warning("Invalid packet content. Expected WorkerPacket.")
+            self.buffer[id_].pop(i)
+
         latest_state_packet: dict = {
             "index": None,
             "packet": None
         }
-
         for i in reversed(range(len(self.buffer[id_]))):
             packet = ic(self.buffer[id_][i])
-
-            if packet.type != AsyncTaskPacketType.WORKER_PACKET or not isinstance(packet.content, WorkerPacket):
-                logging.warning("Invalid packet content. Expected WorkerPacket.")
+            if packet.content.type != WorkerPacketType.STATE:
                 continue
 
-            if packet.content.type == WorkerPacketType.STATE:
-                if latest_state_packet["packet"] is None:
-                    latest_state_packet["index"] = i
-                    latest_state_packet["packet"] = packet
-                    continue
-                elif latest_state_packet["packet"].timestamp < packet.content.timestamp:
-                    latest_state_packet["packet"] = packet
-                self.buffer[id_].pop(latest_state_packet["index"])
+            if latest_state_packet["packet"] is None:
                 latest_state_packet["index"] = i
+                latest_state_packet["packet"] = packet
                 continue
 
-            self.buffer[id_].pop(i)
+            elif latest_state_packet["packet"].timestamp < packet.content.timestamp:
+                latest_state_packet["packet"] = packet
+
+            self.buffer[id_].pop(latest_state_packet["index"])
+            latest_state_packet["index"] = i
 
         if latest_state_packet["index"] is not None:
             self.buffer[id_][latest_state_packet["index"]] = latest_state_packet["packet"]
