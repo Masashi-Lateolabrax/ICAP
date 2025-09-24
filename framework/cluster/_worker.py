@@ -14,7 +14,7 @@ async def worker_routine(address: str, port: int, timeout: float, tunnel: AsyncT
     reader: asyncio.StreamReader = connection[0]
     writer: asyncio.StreamWriter = connection[1]
 
-    while relay_routine(reader, writer, tunnel, timeout):
+    while await relay_routine(reader, writer, tunnel, timeout):
         pass
 
 

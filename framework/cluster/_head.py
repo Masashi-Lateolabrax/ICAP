@@ -14,7 +14,7 @@ from ._utils import relay_routine
 async def head_routine(
         reader: asyncio.StreamReader, writer: asyncio.StreamWriter, tunnel: AsyncTaskTunnelChild, timeout: float
 ):
-    while relay_routine(reader, writer, tunnel, timeout):
+    while await relay_routine(reader, writer, tunnel, timeout):
         pass
 
 
