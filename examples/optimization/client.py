@@ -17,6 +17,7 @@ from framework.prelude import Settings
 from framework.cluster import WorkerClient, ResultContent, TaskContent, WorkerPacket, WorkerPacketType
 
 from examples.config import PracticalSimulator, PracticalController
+from framework.utils import force_garbage_collection
 
 ic.configureOutput(
     prefix=lambda: f'[{datetime.datetime.now().strftime("%H:%M:%S.%f")[:-3]}] CLIENT| ',
@@ -94,7 +95,7 @@ async def evaluation(
             raise ValueError("Batch size must be at least 1.")
 
         end_time = datetime.datetime.now(tz=datetime.UTC)
-
+        force_garbage_collection()
         result_content = ResultContent(
             result=[(p, l) for p, l in zip(parameters[:batch_size], loss)],
             start_time=start_time,
