@@ -1,7 +1,6 @@
 import argparse
 import asyncio
 import datetime
-import os
 
 import numpy as np
 from cmaes import CMA
@@ -11,7 +10,7 @@ from framework.cluster import Head, TaskContent, LoadBalancer
 from examples.config import PracticalController
 
 ic.configureOutput(
-    prefix=lambda: f'[{datetime.datetime.now().strftime("%H:%M:%S.%f")[:-3]}][PID:{os.getpid()}] SERVER| ',
+    prefix=lambda: f'[{datetime.datetime.now().strftime("%H:%M:%S.%f")[:-3]}] SERVER| ',
     includeContext=True
 )
 
