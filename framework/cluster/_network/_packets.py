@@ -57,8 +57,8 @@ class WorkerPacket:
         return cls(WorkerPacketType.RESULT, ResultContent(result, start_time, end_time))
 
     @classmethod
-    def reject_packet(cls):
-        return cls(WorkerPacketType.RESULT, ResultContent([], None, None, rejected=True))
+    def reject_packet(cls, task_content: "WorkerPacket"):
+        return cls(WorkerPacketType.RESULT, ResultContent([], None, None, rejected=task_content))
 
 
 class AsyncTaskPacketType(enum.Enum):
