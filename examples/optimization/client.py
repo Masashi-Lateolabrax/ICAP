@@ -108,6 +108,10 @@ async def evaluation(
             end_time=end_time,
         )
 
+        average = np.average([f for _, f in result_content.result])
+        speed = 1.0 / (end_time - start_time).total_seconds()
+        print(f"Evaluated {batch_size} tasks | Avg Fitness: {average:.4f} | Speed: {speed:.2f} tasks/s")
+
         await sender.put(result_content)  # Send result back to main function
 
 
