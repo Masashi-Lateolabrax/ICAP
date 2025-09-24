@@ -182,7 +182,7 @@ async def main():
             )
 
         while not receiver.empty():
-            optimization_task_response = await receiver.get()
+            optimization_task_response = ic(await receiver.get())
 
             if isinstance(optimization_task_response, ResultContent):
                 if task_content is None:
