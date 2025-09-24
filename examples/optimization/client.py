@@ -142,7 +142,7 @@ async def main():
     task_content = None
     count = 0
     while count < 5:
-        packet: WorkerPacket = await client.receive()
+        packet: WorkerPacket = ic(await client.receive())
 
         if packet is None:
             print("Failed to receive packet from server.")

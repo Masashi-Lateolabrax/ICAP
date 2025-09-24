@@ -41,13 +41,13 @@ async def relay_routine(
             await send_payload(writer, payload)
 
     try:
-        response = await receive_payload(reader, timeout)
+        response = ic(await receive_payload(reader, timeout))
     except asyncio.TimeoutError:
         return True
 
     if not isinstance(response, WorkerPacket):
         raise ValueError("Invalid response type. Expected WorkerPacket.")
-    response_packet = AsyncTaskPacket.worker_packet(response)
+    response_packet = ic(AsyncTaskPacket.worker_packet(response))
     await tunnel.send(response_packet)
 
     return True
