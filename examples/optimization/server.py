@@ -52,7 +52,7 @@ async def main():
                     waiting_ids.append(i)
             worker_ids = set(waiting_ids)
 
-            if not all_worker_ids:
+            if not worker_ids:
                 await asyncio.sleep(10)
                 continue
 
