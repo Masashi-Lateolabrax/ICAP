@@ -54,8 +54,17 @@ async def main():
             # Check worker status
             dead_worker_ids = ic(set(await head.cleanup()))
             all_worker_ids = ic(set(await head.get_ids()))
+
+            # Remove dead workers and reclaim their tasks
+            for i in dead_worker_ids:
+                load_balancer.remove(i)
+                for param in assigned[i]:
+                    candidates.append(param)
+                del assigned[i]
+
+            # Get IDs of idle workers
             waiting_ids = []
-            for i in all_worker_ids:
+            for i in all_worker_ids - set(assigned.keys()):
                 await head.request_worker_state(i)
                 res = await head.get_worker_state(i)
                 if res is not None and not ic(res.working):
@@ -63,7 +72,7 @@ async def main():
             worker_ids = ic(set(waiting_ids))
 
             # Collect results for current batch (result.result = [(candidate, fitness), ...])
-            for worker_id in all_worker_ids - worker_ids:
+            for worker_id in assigned.keys():
                 result = await head.get_worker_result(worker_id)
                 if result:
                     if result.rejected is not None:
@@ -76,6 +85,13 @@ async def main():
                         load_balancer.register_performance(worker_id, task_count, duration)
                         fitness.extend(result.result)
 
+                        for param, _ in result.result:
+                            assigned[worker_id].remove(param)
+                        for param in assigned[worker_id]:
+                            candidates.append(param)
+                        del assigned[worker_id]
+
+            # If no workers are available, wait and retry
             if not worker_ids:
                 await asyncio.sleep(10)
                 continue
@@ -83,8 +99,6 @@ async def main():
             # Load balancing
             for i in worker_ids:
                 load_balancer.register_performance(i)
-            for i in dead_worker_ids:
-                load_balancer.remove(i)
             task_allocation = ic(load_balancer.calc_balance(worker_ids, len(candidates)))
 
             # Split candidates according to current allocation
