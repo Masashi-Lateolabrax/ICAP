@@ -61,7 +61,7 @@ async def main():
             worker_ids = ic(set(waiting_ids))
 
             if not worker_ids:
-                await asyncio.sleep(5)
+                await asyncio.sleep(10)
                 continue
 
             # Load balancing
