@@ -18,10 +18,11 @@ class WorkerPacket:
     def __init__(self, type_: WorkerPacketType, content, expiry: float = 1):
         self.type: WorkerPacketType = type_
         self.content = content
-        self.lifetime = datetime.datetime.now(tz=datetime.UTC) + datetime.timedelta(seconds=expiry)
+        self.timestamp = datetime.datetime.now(tz=datetime.UTC)
+        self.expiry = expiry
 
     def __repr__(self):
-        life = self.lifetime - datetime.datetime.now(tz=datetime.UTC)
+        life = (self.timestamp + datetime.timedelta(seconds=self.expiry)) - datetime.datetime.now(tz=datetime.UTC)
         return f"<WorkerPacket type={self.type.name} content={self.content} lifetime={life.total_seconds():.2f}s>"
 
     @classmethod
