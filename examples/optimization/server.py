@@ -89,7 +89,11 @@ async def main():
             for worker_id in current_batch.keys():
                 result = await head.get_worker_result(worker_id)
                 if result:
-                    if result.start_time and result.end_time:
+                    if result.rejected is not None:
+                        for param in result.rejected.parameter:
+                            candidates.append(param)
+
+                    elif result.start_time and result.end_time:
                         duration = (result.end_time - result.start_time).total_seconds()
                         task_count = len(result.result)
                         load_balancer.register_performance(worker_id, task_count, duration)
