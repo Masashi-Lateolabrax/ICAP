@@ -66,6 +66,9 @@ class AsyncTaskPacket:
         self.type: AsyncTaskPacketType = type_
         self.content = content
 
+    def __repr__(self):
+        return f"<AsyncTaskPacket type={self.type.name} content={self.content}>"
+
     @classmethod
     def stop_packet(cls):
         return cls(AsyncTaskPacketType.STOP, None)
