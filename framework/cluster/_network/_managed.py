@@ -91,12 +91,42 @@ class ManagedTunnel:
 
         return None
 
+    def _cleanup_buffer(self, id_: uuid.UUID):
+        latest_state_packet: dict = {
+            "index": None,
+            "packet": None
+        }
+
+        for i in reversed(range(len(self.buffer[id_]))):
+            packet = self.buffer[id_][i]
+
+            if packet.type == AsyncTaskPacketType.WORKER_PACKET and isinstance(packet.content, WorkerPacket):
+                logging.warning("Invalid packet content. Expected WorkerPacket.")
+                continue
+
+            if packet.content.type == WorkerPacketType.STATE:
+                if latest_state_packet["packet"] is None:
+                    latest_state_packet["index"] = i
+                    latest_state_packet["packet"] = packet
+                    continue
+                elif latest_state_packet["packet"].timestamp < packet.content.timestamp:
+                    latest_state_packet["packet"] = packet
+                self.buffer[id_].pop(latest_state_packet["index"])
+                latest_state_packet["index"] = i
+                continue
+
+            self.buffer[id_].pop(i)
+
+        if latest_state_packet["index"] is not None:
+            self.buffer[id_][latest_state_packet["index"]] = latest_state_packet["packet"]
+
     async def receive(self, id_: uuid.UUID, expect_worker_type: WorkerPacketType = None) -> Optional[WorkerPacket]:
         await self._update_buffer()
         if id_ not in self.buffer:
             raise ValueError("Invalid id")
         if len(self.buffer[id_]) == 0:
             return None
+        self._cleanup_buffer(id_)
 
         if expect_worker_type is None:
             async_packet = self.buffer[id_].pop(0)
@@ -105,10 +135,6 @@ class ManagedTunnel:
 
         if async_packet is None:
             return None
-        if async_packet.type != AsyncTaskPacketType.WORKER_PACKET:
-            raise ValueError("Invalid packet type. Expected WorkerPacket.")
-        if not isinstance(async_packet.content, WorkerPacket):
-            raise ValueError("Invalid response type. Expected WorkerPacket.")
         return async_packet.content
 
     async def send(self, id_: uuid.UUID, packet: WorkerPacket):
