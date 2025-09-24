@@ -100,20 +100,12 @@ async def evaluation(
 
 async def main():
     parser = argparse.ArgumentParser(description="ICAP Optimization Client")
-    parser.add_argument("--host", type=str, help="Server host address")
-    parser.add_argument("--port", type=int, help="Server port number")
+    parser.add_argument("--host", default="localhost", type=str, help="Server host address")
+    parser.add_argument("--port", default=50000, type=int, help="Server port number")
     parser.add_argument("--max-batch-size", type=int, default=1, help="Number of tasks to evaluate in batch")
     parser.add_argument("--retry-interval", type=int, default=15, help="TODO")
     parser.add_argument("--net-timeout", type=int, default=5, help="TODO")
     args = parser.parse_args()
-
-    if not args.host:
-        print("Error: --host argument is required")
-        exit(1)
-
-    if not args.port:
-        print("Error: --port argument is required")
-        exit(1)
 
     host = args.host
     port = args.port
