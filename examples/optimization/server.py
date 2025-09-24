@@ -60,6 +60,20 @@ async def main():
                     waiting_ids.append(i)
             worker_ids = ic(set(waiting_ids))
 
+            # Collect results for current batch (result.result = [(candidate, fitness), ...])
+            for worker_id in all_worker_ids - worker_ids:
+                result = await head.get_worker_result(worker_id)
+                if result:
+                    if result.rejected is not None:
+                        for param in result.rejected.parameter:
+                            candidates.append(ic(param))
+
+                    elif result.start_time and result.end_time:
+                        duration = (result.end_time - result.start_time).total_seconds()
+                        task_count = len(result.result)
+                        load_balancer.register_performance(worker_id, task_count, duration)
+                        fitness.extend(result.result)
+
             if not worker_ids:
                 await asyncio.sleep(10)
                 continue
@@ -84,20 +98,6 @@ async def main():
             for worker_id, batch in current_batch.items():
                 task = TaskContent(np.array(batch))
                 await head.send_worker_task(worker_id, task)
-
-            # Collect results for current batch (result.result = [(candidate, fitness), ...])
-            for worker_id in current_batch.keys():
-                result = await head.get_worker_result(worker_id)
-                if result:
-                    if result.rejected is not None:
-                        for param in result.rejected.parameter:
-                            candidates.append(ic(param))
-
-                    elif result.start_time and result.end_time:
-                        duration = (result.end_time - result.start_time).total_seconds()
-                        task_count = len(result.result)
-                        load_balancer.register_performance(worker_id, task_count, duration)
-                        fitness.extend(result.result)
 
         # Update CMA-ES
         cma.tell(fitness)
