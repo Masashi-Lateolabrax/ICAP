@@ -53,6 +53,21 @@ class WorkerClient:
         if len(self.buffer) == 0:
             return None
 
+        state_idx = None
+        latest_timestamp = None
+        for i in reversed(range(len(self.buffer))):
+            packet = self.buffer[i]
+            if packet.type != WorkerPacketType.STATE:
+                continue
+            if state_idx is None:
+                state_idx = i
+                latest_timestamp = packet.timestamp
+                continue
+            self.buffer.pop(state_idx)
+            state_idx = i
+        if state_idx is not None:
+            self.buffer[state_idx].timestamp = latest_timestamp
+
         return self.buffer.pop(0)
 
     async def send_worker_state(self, gpu_usage: float, working: bool):
