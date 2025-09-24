@@ -33,18 +33,25 @@ async def main():
 
         print(f"\nGeneration {generation + 1}")
 
-        worker_ids = set(await head.get_ids())
-        if not worker_ids:
-            print("No workers connected. Waiting...")
-            await asyncio.sleep(30)
-            continue
-        print(f"Found {len(worker_ids)} workers")
-
         # Get candidates and send to workers
         candidates = [cma.ask() for _ in range(args.population_size)]
         fitness: list[tuple[np.ndarray, float]] = []
 
         while len(candidates) > 0:
+            # Check worker status
+            dead_worker_ids = set(await head.cleanup())
+            all_worker_ids = set(await head.get_ids())
+            waiting_ids = []
+            for i in all_worker_ids:
+                res = head.get_worker_state(i)
+                if res is not None and not res.working:
+                    waiting_ids.append(i)
+            worker_ids = set(waiting_ids)
+
+            if not all_worker_ids:
+                await asyncio.sleep(10)
+                continue
+
             # Load balancing
             dead_worker_ids = set(await head.cleanup())
             worker_ids = set(await head.get_ids())
