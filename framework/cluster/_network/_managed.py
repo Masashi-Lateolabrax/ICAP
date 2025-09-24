@@ -102,7 +102,7 @@ class ManagedTunnel:
         for i in reversed(range(len(self.buffer[id_]))):
             packet = ic(self.buffer[id_][i])
 
-            if packet.type == AsyncTaskPacketType.WORKER_PACKET and isinstance(packet.content, WorkerPacket):
+            if packet.type != AsyncTaskPacketType.WORKER_PACKET or not isinstance(packet.content, WorkerPacket):
                 logging.warning("Invalid packet content. Expected WorkerPacket.")
                 continue
 
