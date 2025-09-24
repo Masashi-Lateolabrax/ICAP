@@ -65,7 +65,6 @@ async def main():
                     if len(candidates) == 0:
                         break
                     current_batch[worker_id].append(candidates.pop(0))
-            pass
 
             # Send current batch to workers (batch = list of candidates → 2D array)
             for worker_id, batch in current_batch.items():
