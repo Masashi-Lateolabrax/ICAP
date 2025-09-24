@@ -37,9 +37,6 @@ class WorkerPacket:
         content = pickle.loads(data[4:]) if len(data) > 4 else None
         return cls(type_, content)
 
-    def is_expired(self) -> bool:
-        return datetime.datetime.now(tz=datetime.UTC) > self.lifetime
-
     @classmethod
     def request_state(cls):
         return cls(WorkerPacketType.STATE, None)

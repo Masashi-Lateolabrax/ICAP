@@ -109,9 +109,6 @@ class ManagedTunnel:
             raise ValueError("Invalid packet type. Expected WorkerPacket.")
         if not isinstance(async_packet.content, WorkerPacket):
             raise ValueError("Invalid response type. Expected WorkerPacket.")
-        if async_packet.content.is_expired():
-            logging.warn("Received expired packet: %s", async_packet.content)
-            return None
         return async_packet.content
 
     async def send(self, id_: uuid.UUID, packet: WorkerPacket):
