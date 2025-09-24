@@ -155,10 +155,12 @@ async def main():
             if not isinstance(packet.content, TaskContent):
                 print("Received invalid packet from server.")
                 continue
+
             if task_content is not None:
                 print("Previous task is still being processed. Rejecting new task.")
-                await client.send_worker_result(WorkerPacket.reject_packet(packet.content))
+                await client.send_worker_result(ResultContent.reject_packet(packet.content))
                 continue
+
             task_content = packet.content
             await sender.put(task_content)  # Send task to evaluation function
 
