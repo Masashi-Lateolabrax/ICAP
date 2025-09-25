@@ -51,8 +51,9 @@ class Head:
     async def get_ids(self) -> set[uuid.UUID]:
         return set(self.tunnel.keys())
 
-    def receive(self) -> dict[uuid.UUID, CoroutinePacket]:
+    def receive(self) -> dict[uuid.UUID, ClusterPacket]:
         received_packets = {}
+
         for i, t in self.tunnel.items():
             while True:
                 packet = t.receive()
@@ -61,14 +62,15 @@ class Head:
                     break
                 if packet.type != CoroutinePacketType.CLUSTER_PACKET:
                     continue
-                if not isinstance(packet.content, CoroutinePacket):
-                    raise ValueError("Invalid packet content. Expected CoroutinePacket.")
+                if not isinstance(packet.content, ClusterPacket):
+                    raise ValueError("Unexpected content type")
 
-                received_packets[i] = packet
+                received_packets[i] = packet.content
 
         return received_packets
 
-    async def send(self, id_: uuid.UUID, packet: CoroutinePacket):
+    async def send(self, id_: uuid.UUID, packet: ClusterPacket):
         if id_ not in self.tunnel:
             raise ValueError(f"Tunnel with id {id_} does not exist.")
+        packet = CoroutinePacket(CoroutinePacketType.CLUSTER_PACKET, packet)
         await self.tunnel[id_].send(packet)
