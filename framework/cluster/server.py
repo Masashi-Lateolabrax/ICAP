@@ -70,19 +70,11 @@ class Server:
 
         return pass_through
 
-    def get_results(self) -> dict[uuid.UUID, ClusterPacket]:
+    def receive(self) -> dict[uuid.UUID, ClusterPacket]:
         """Get results from all clients"""
         self._connection_manager.manage(self._head)
         packets: dict[uuid.UUID, ClusterPacket] = self._connection_manager.receive(self._head)
-
-        for client_id, packet in packets.items():
-            if packet.type == ClusterPacketType.RESULT and isinstance(packet.content, ResultContent):
-                if client_id not in self._client_states:
-                    raise RuntimeError("Client {} not found".format(client_id))
-                self._client_states[client_id].task = None
-
         packets: dict[uuid.UUID, ClusterPacket] = self._update_client_states(packets)
-
         return packets
 
     async def send_task(self, client_id: uuid.UUID, task_content: TaskContent) -> bool:
