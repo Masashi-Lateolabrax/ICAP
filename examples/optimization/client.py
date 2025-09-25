@@ -27,6 +27,8 @@ ic.configureOutput(
     includeContext=True
 )
 
+ic.disable()
+
 
 @dataclasses.dataclass
 class Signal:
