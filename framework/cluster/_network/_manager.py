@@ -23,6 +23,13 @@ class ConnectionManager:
             self.last_heartbeat[id_] = datetime.datetime.now(tz=datetime.UTC)
         return do_send_heartbeat
 
+    def _manage_head(self, connection: Head):
+        for i in connection.get_ids():
+            if self._manage_heartbeat(i):
+                heartbeat = HeartbeatContent()
+                packet = ClusterPacket(ClusterPacketType.HEARTBEAT, heartbeat)
+                packet = CoroutinePacket(CoroutinePacketType.CLUSTER_PACKET, packet)
+                connection.send(i, packet)
 
 class ManagedTunnel:
     def __init__(self):
