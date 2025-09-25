@@ -62,6 +62,13 @@ class Client:
         cluster_packet = ClusterPacket(ClusterPacketType.RESULT, result_content)
         await self._worker.send(cluster_packet)
 
+    async def send_reject(self, task: TaskContent):
+        if not self._worker:
+            return
+        result_content = ResultContent.create_rejected(task)
+        cluster_packet = ClusterPacket(ClusterPacketType.RESULT, result_content)
+        await self._worker.send(cluster_packet)
+
     async def send_state(self, gpu_usage: float = 0.0, working: bool = False):
         if not self._worker:
             return
