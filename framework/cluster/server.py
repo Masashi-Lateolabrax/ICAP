@@ -56,14 +56,10 @@ class SimpleServer:
             print(f"Client {client_id} not found")
             return False
 
-        try:
-            cluster_packet = ClusterPacket(ClusterPacketType.TASK, task_content)
-            coroutine_packet = CoroutinePacket(CoroutinePacketType.CLUSTER_PACKET, cluster_packet)
-            await self._head.send(client_id, coroutine_packet)
-            return True
-        except Exception as e:
-            print(f"Failed to send task to client {client_id}: {e}")
-            return False
+        cluster_packet = ClusterPacket(ClusterPacketType.TASK, task_content)
+        coroutine_packet = CoroutinePacket(CoroutinePacketType.CLUSTER_PACKET, cluster_packet)
+        await self._head.send(client_id, coroutine_packet)
+        return True
 
     def _update_client_states(self, packets: dict[uuid.UUID, ClusterPacket]) -> dict[uuid.UUID, ClusterPacket]:
         """Update client states from received packets"""
