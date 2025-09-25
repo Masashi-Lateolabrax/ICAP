@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import uuid
 
-from ..prelude import TaskContent, StateContent, ClusterPacket, ClusterPacketType, CoroutinePacket, CoroutinePacketType
+from ..prelude import TaskContent, StateContent, ClusterPacket, ClusterPacketType
 from ._network import Head, ConnectionManager
 
 
@@ -35,10 +35,14 @@ class SimpleServer:
 
     async def get_alive_clients(self) -> dict[uuid.UUID, ClientState]:
         """Get all clients that are currently alive"""
+        dead_ids = self._connection_manager.manage(self._head)
+        for dead_id in dead_ids:
+            self._client_states.pop(dead_id, None)
+
         return {
             client_id: state
             for client_id, state in self._client_states.items()
-            if client_id in self._head.get_ids()
+            if client_id in self._connection_manager.get_ids()
         }
 
     async def get_available_clients(self) -> dict[uuid.UUID, ClientState]:
