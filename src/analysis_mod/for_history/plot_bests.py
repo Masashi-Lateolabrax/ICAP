@@ -19,9 +19,10 @@ def plot_fitness(save_dir: str, filepath: str):
     val_seeds = losses["val"].keys()
     val_fitness = []
     for generation in range(train_fitness.shape[0]):
-        val_fitness.append(
-            np.mean([losses["val"][seed][generation] for seed in val_seeds])
-        )
+        for seed in val_seeds:
+            val_fitness.append(
+                np.mean([losses["val"][seed][generation]])
+            )
 
     gen_best_in_best = np.argmin(train_fitness)
     gen_best_in_val = np.argmin(val_fitness) if val_fitness else -1
