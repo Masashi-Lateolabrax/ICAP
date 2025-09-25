@@ -28,6 +28,7 @@ async def main():
     args = parser.parse_args()
 
     dim = PracticalController.dim()
+    population_size = args.population_size
     network_timeout = args.network_timeout
     heartbeat_interval = args.heartbeat_interval
     heartbeat_timeout = args.heartbeat_timeout
@@ -40,10 +41,10 @@ async def main():
     cma = CMA(
         mean=np.zeros(dim, dtype=np.float32),
         sigma=0.1,
-        population_size=args.population_size,
+        population_size=population_size,
     )
 
-    print(f"Starting optimization: dim={dim}, pop={args.population_size}")
+    print(f"Starting optimization: dim={dim}, pop={population_size}")
 
     for generation in range(args.max_generations):
         if cma.should_stop():
@@ -52,10 +53,10 @@ async def main():
         print(f"\nGeneration {generation + 1}")
 
         # Get candidates and send to workers
-        candidates = [cma.ask() for _ in range(args.population_size)]
+        candidates = [cma.ask() for _ in range(population_size)]
         fitness: list[tuple[np.ndarray, float]] = []
 
-        while len(fitness) < len(candidates):
+        while len(fitness) < population_size:
             dead_ids = server.manage()
             for dead_id in dead_ids:
                 load_balancer.remove(dead_id)
