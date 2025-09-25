@@ -24,13 +24,14 @@ def plot_fitness(save_dir: str, filepath: str):
         )
 
     gen_best_in_best = np.argmin(train_fitness)
-    gen_best_in_val = np.argmin(val_fitness)
+    gen_best_in_val = np.argmin(val_fitness) if val_fitness else -1
 
     fig = plt.figure(figsize=(8, 6))
     ax = fig.add_subplot(1, 1, 1)
 
     ax.plot(train_fitness, label="Train Fitness", color='blue')
-    ax.plot(val_fitness, label="Validation Fitness", color='orange')
+    if gen_best_in_best != -1:
+        ax.plot(val_fitness, label="Validation Fitness", color='orange')
 
     ax.set_xlabel("Generation")
     ax.set_ylabel("Fitness")
