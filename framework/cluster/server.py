@@ -67,15 +67,22 @@ class SimpleServer:
 
     def _update_client_states(self, packets: dict[uuid.UUID, ClusterPacket]) -> dict[uuid.UUID, ClusterPacket]:
         """Update client states from received packets"""
-        state_packets: dict[uuid.UUID, StateContent] = {
-            i: p.content for i, p in packets.items()
-            if p.type == ClusterPacketType.STATE and isinstance(p.content, StateContent)
-        }
+
+        pass_through: dict[uuid.UUID, ClusterPacket] = {}
+        state_packets: dict[uuid.UUID, StateContent] = {}
+        for i, p in packets.items():
+            if p.type == ClusterPacketType.STATE and isinstance(p.content, StateContent):
+                state_packets[i] = p.content
+            else:
+                pass_through[i] = p
+
         for client_id, state in state_packets.items():
             self._client_states[client_id] = ClientState(
                 working=state.working,
                 gpu_usage=state.gpu_usage
             )
+
+        return pass_through
 
     def get_results(self) -> dict[uuid.UUID, ClusterPacket]:
         """Get results from all clients"""
