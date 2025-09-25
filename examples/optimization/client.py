@@ -126,7 +126,7 @@ async def main():
     parser = argparse.ArgumentParser(description="ICAP Optimization Client")
     parser.add_argument("--host", default="localhost", type=str, help="Server host address")
     parser.add_argument("--port", default=50000, type=int, help="Server port number")
-    parser.add_argument("--max-batch-size", type=int, default=1, help="Number of tasks to evaluate in batch")
+    parser.add_argument("--max-batch-size", type=int, default=8, help="Number of tasks to evaluate in batch")
     parser.add_argument("--net-timeout", type=int, default=1, help="TODO")
     parser.add_argument("--heartbeat-interval", type=int, default=5, help="Interval in seconds to send state updates")
     parser.add_argument(
