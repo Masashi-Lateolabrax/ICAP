@@ -1,4 +1,5 @@
 import asyncio
+import uuid
 from typing import Optional
 
 from icecream import ic
@@ -31,6 +32,12 @@ class Worker:
     def __init__(self, tunnel: Tunnel, routine_handler: asyncio.Task):
         self.tunnel = tunnel
         self.routine_handler = routine_handler
+
+    @property
+    def id(self) -> uuid.UUID:
+        if self.tunnel is None:
+            raise RuntimeError("Worker is not started")
+        return self.tunnel.id
 
     async def stop(self):
         await self.tunnel.send(CoroutinePacket.stop_packet())
