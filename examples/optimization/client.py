@@ -159,7 +159,7 @@ async def main():
     while True:
         current_time = datetime.datetime.now(tz=datetime.UTC)
         if (current_time - last_state_sent_time).total_seconds() >= heartbeat_interval:
-            await client.send_worker_state(
+            await client.send_state(
                 gpu_usage=float("nan"),
                 working=task_content is not None
             )
