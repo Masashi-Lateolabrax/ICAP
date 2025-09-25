@@ -31,9 +31,9 @@ class Server:
         """Stop the server"""
         await self._head.stop()
 
-    def get_alive_clients(self) -> dict[uuid.UUID, ClientState]:
+    async def get_alive_clients(self) -> dict[uuid.UUID, ClientState]:
         """Get all clients that are currently alive"""
-        dead_ids = self._connection_manager.manage(self._head)
+        dead_ids = await self._connection_manager.manage(self._head)
         for dead_id in dead_ids:
             self._client_states.pop(dead_id, None)
 
@@ -43,9 +43,9 @@ class Server:
             if client_id in self._connection_manager.get_ids()
         }
 
-    def get_available_clients(self) -> dict[uuid.UUID, ClientState]:
+    async def get_available_clients(self) -> dict[uuid.UUID, ClientState]:
         """Get clients that are alive and not working"""
-        alive_clients = self.get_alive_clients()
+        alive_clients = await self.get_alive_clients()
         return {
             client_id: state
             for client_id, state in alive_clients.items()
