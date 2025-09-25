@@ -70,7 +70,7 @@ class ConnectionManager:
 
         return packet
 
-    def _receive_from_head(self, connection: Head) -> dict[uuid.UUID, CoroutinePacket]:
+    def _receive_from_head(self, connection: Head) -> dict[uuid.UUID, ClusterPacket]:
         received_packets = {}
         for id_, packet in connection.receive().items():
             packet = self._receive_from_connection(id_, packet)
@@ -78,13 +78,13 @@ class ConnectionManager:
                 received_packets[id_] = packet
         return received_packets
 
-    def _receive_from_worker(self, connection: Worker) -> dict[uuid.UUID, CoroutinePacket]:
+    def _receive_from_worker(self, connection: Worker) -> dict[uuid.UUID, ClusterPacket]:
         packet = self._receive_from_connection(connection.id, connection.receive())
         if packet is not None:
             return {connection.id: packet}
         return {}
 
-    def receive(self, connection: Head | Worker) -> dict[uuid.UUID, CoroutinePacket]:
+    def receive(self, connection: Head | Worker) -> dict[uuid.UUID, ClusterPacket]:
         if isinstance(connection, Head):
             return self._receive_from_head(connection)
         elif isinstance(connection, Worker):
