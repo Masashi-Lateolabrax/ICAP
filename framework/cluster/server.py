@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import uuid
 from typing import Optional
 
-from ..prelude import TaskContent, StateContent, ClusterPacket, ClusterPacketType
+from ..prelude import TaskContent, StateContent, ResultContent, ClusterPacket, ClusterPacketType
 from ._network import Head, ConnectionManager
 
 
@@ -12,7 +12,7 @@ class ClientState:
     working: bool
     gpu_usage: float
     task: Optional[TaskContent] = None
-    result: Optional[ClusterPacket] = None
+    result: Optional[ResultContent] = None
 
 
 class SimpleServer:
