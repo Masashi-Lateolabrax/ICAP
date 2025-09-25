@@ -83,9 +83,19 @@ class SimpleServer:
     async def send_task(self, client_id: uuid.UUID, task_content: TaskContent) -> bool:
         """Send a task to a specific client"""
         self._connection_manager.manage(self._head)
+
         if client_id not in self._head.get_ids():
             print(f"Client {client_id} not found")
             return False
+        elif client_id not in self._client_states:
+            return False
+        elif self._client_states[client_id].working:
+            return False
+        elif self._client_states[client_id].task is not None:
+            return False
+
+        current_state = self._client_states[client_id]
+        current_state.task = task_content
 
         cluster_packet = ClusterPacket(ClusterPacketType.TASK, task_content)
         await self._head.send(client_id, cluster_packet)
