@@ -55,5 +55,6 @@ class Worker:
             raise ValueError("Unexpected content type")
         return packet.content
 
-    async def send(self, packet: CoroutinePacket):
+    async def send(self, packet: ClusterPacket):
+        packet = CoroutinePacket(CoroutinePacketType.CLUSTER_PACKET, packet)
         await self.tunnel.send(packet)
