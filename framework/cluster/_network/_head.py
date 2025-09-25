@@ -48,7 +48,7 @@ class Head:
         await self.tunnel[id_].send(CoroutinePacket.stop_packet())
         del self.tunnel[id_]
 
-    async def get_ids(self) -> set[uuid.UUID]:
+    def get_ids(self) -> set[uuid.UUID]:
         return set(self.tunnel.keys())
 
     def receive(self) -> dict[uuid.UUID, ClusterPacket]:
