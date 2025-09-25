@@ -3,9 +3,25 @@ import logging
 import uuid
 from typing import Optional
 
-from . import PingContent
-from ._packets import WorkerPacket, WorkerPacketType
-from ._tunnel import AsyncTaskTunnel, AsyncTaskTunnelChild, AsyncTaskPacketType, AsyncTaskPacket
+from ...prelude import *
+from ._head import Head
+from ._worker import Worker
+
+
+class ConnectionManager:
+    def __init__(self, interval: float = 10.0):
+        self.last_heartbeat: dict[uuid.UUID, datetime.datetime] = {}
+        self.interval = interval
+
+    def _manage_heartbeat(self, id_: uuid.UUID) -> bool:
+        if id_ not in self.last_heartbeat:
+            self.last_heartbeat[id_] = datetime.datetime.now(tz=datetime.UTC)
+            return True
+        current = self.last_heartbeat[id_]
+        do_send_heartbeat = (current - self.last_heartbeat[id_]).total_seconds() > self.interval
+        if do_send_heartbeat:
+            self.last_heartbeat[id_] = datetime.datetime.now(tz=datetime.UTC)
+        return do_send_heartbeat
 
 
 class ManagedTunnel:
