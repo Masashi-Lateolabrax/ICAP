@@ -85,6 +85,13 @@ class ConnectionManager:
             return {connection.id: packet}
         return {}
 
+    def receive(self, connection: Head | Worker) -> dict[uuid.UUID, CoroutinePacket]:
+        if isinstance(connection, Head):
+            return self._receive_from_head(connection)
+        elif isinstance(connection, Worker):
+            return self._receive_from_worker(connection)
+        else:
+            raise ValueError("Invalid connection type")
 
     def spawn_child(self) -> AsyncTaskTunnelChild:
         child = self.tunnel.spawn_child()
