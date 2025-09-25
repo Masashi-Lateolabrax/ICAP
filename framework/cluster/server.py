@@ -60,13 +60,12 @@ class Server:
         pass_through: dict[uuid.UUID, ClusterPacket] = {}
 
         for i, p in packets.items():
+            if i not in self._client_states:
+                self._client_states[i] = ClientState(working=False, gpu_usage=0.0, task=None)
+
             if p.type == ClusterPacketType.STATE and isinstance(p.content, StateContent):
-                if i not in self._client_states:
-                    self._client_states[i] = ClientState(
-                        working=p.content.working,
-                        gpu_usage=p.content.gpu_usage,
-                        task=None
-                    )
+                self._client_states[i].working = p.content.working
+                self._client_states[i].gpu_usage = p.content.gpu_usage
 
             elif p.type == ClusterPacketType.RESULT and isinstance(p.content, ResultContent):
                 self._client_states[i].task = None
