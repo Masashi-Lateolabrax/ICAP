@@ -46,20 +46,13 @@ class Client:
         else:
             raise RuntimeError("Here is not reachable")
 
-    def get_task(self) -> Optional[TaskContent]:
+    def receive(self) -> Optional[ClusterPacket]:
         if not self._worker:
             return None
-
         packet = self._manager.receive(self._worker).get(self.id, None)
         if packet is None:
             return None
-
-        if packet.type != ClusterPacketType.TASK:
-            raise ValueError("Unexpected packet type")
-        if not isinstance(packet.content, TaskContent):
-            raise ValueError("Unexpected content type")
-
-        return packet.content
+        return packet
 
     async def send_result(self, fitness: list[tuple[np.ndarray, float]], start_time: datetime, end_time: datetime):
         if not self._worker:
