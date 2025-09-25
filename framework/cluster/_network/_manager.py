@@ -9,9 +9,10 @@ from ._worker import Worker
 
 
 class ConnectionManager:
-    def __init__(self, interval: float = 10.0):
+    def __init__(self, interval: float = 10.0, timeout: float = 30.0):
         self.last_heartbeat: dict[uuid.UUID, datetime.datetime] = {}
         self.interval = interval
+        self.timeout = timeout
 
     def _manage_heartbeat(self, id_: uuid.UUID) -> bool:
         if id_ not in self.last_heartbeat:
@@ -39,7 +40,7 @@ class ConnectionManager:
             packet = CoroutinePacket(CoroutinePacketType.CLUSTER_PACKET, packet)
             connection.send(packet)
 
-    def manage(self, connection: Head | Worker):
+    def manage(self, connection: Head | Worker) -> set[uuid.UUID]:
         if isinstance(connection, Head):
             self._manage_head(connection)
         elif isinstance(connection, Worker):
@@ -47,11 +48,14 @@ class ConnectionManager:
         else:
             raise ValueError("Invalid connection type")
 
-class ManagedTunnel:
-    def __init__(self):
-        self.tunnel = AsyncTaskTunnel()
-        self.buffer: dict[uuid.UUID, list[AsyncTaskPacket]] = {}
-        self.ping: dict[uuid.UUID, Optional[PingContent]] = {}
+        dead_ids = []
+        current = datetime.datetime.now(tz=datetime.UTC)
+        for id_, last in list(self.last_heartbeat.items()):
+            if (current - last).total_seconds() > self.timeout:
+                dead_ids.append(id_)
+                del self.last_heartbeat[id_]
+
+        return set(dead_ids)
 
     def spawn_child(self) -> AsyncTaskTunnelChild:
         child = self.tunnel.spawn_child()
