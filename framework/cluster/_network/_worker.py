@@ -19,7 +19,7 @@ async def worker_routine(address: str, port: int, timeout: float, tunnel: Tunnel
         pass
 
 
-class WorkerClient:
+class Worker:
     @classmethod
     async def start(cls, address: str, port: int, timeout: float):
         parent, child = Tunnel.create()
