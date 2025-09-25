@@ -61,7 +61,7 @@ class Head:
                 if packet is None:
                     break
                 if packet.type != CoroutinePacketType.CLUSTER_PACKET:
-                    continue
+                    raise ValueError("Unexpected packet type")
                 if not isinstance(packet.content, ClusterPacket):
                     raise ValueError("Unexpected content type")
 
