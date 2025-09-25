@@ -155,22 +155,13 @@ async def main():
     while count < 5:
         packet: WorkerPacket = ic(await client.receive())
 
-        if packet is None:
-            print("Failed to receive packet from server.")
-            count += 1
-            await asyncio.sleep(retry_interval)
-            continue
-        count = 0  # Reset counter on successful packet
-
         if packet.type == WorkerPacketType.TASK:
             if not isinstance(packet.content, TaskContent):
                 print("Received invalid packet from server.")
-                continue
 
             if task_content is not None:
                 print("Previous task is still being processed. Rejecting new task.")
                 await client.send_worker_result(ResultContent.reject_packet(packet.content))
-                continue
 
             task_content = packet.content
             await sender.put(task_content)  # Send task to evaluation function
@@ -180,6 +171,9 @@ async def main():
                 gpu_usage=float("nan"),
                 working=task_content is not None
             )
+
+        else:
+            print("Received invalid packet from server.")
 
         while not receiver.empty():
             optimization_task_response = ic(await receiver.get())
