@@ -107,8 +107,7 @@ async def main():
         best_fitness = min([f for _, f in fitness], default=float("inf"))
         print(f"Best fitness: {best_fitness:.4f}")
 
-    await head.stop()
-    await head.cleanup()
+    await server.stop()
 
 
 if __name__ == "__main__":
