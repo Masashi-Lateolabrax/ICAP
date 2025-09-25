@@ -28,7 +28,6 @@ class ConnectionManager:
             if self._manage_heartbeat(i):
                 heartbeat = HeartbeatContent()
                 packet = ClusterPacket(ClusterPacketType.HEARTBEAT, heartbeat)
-                packet = CoroutinePacket(CoroutinePacketType.CLUSTER_PACKET, packet)
                 connection.send(i, packet)
 
     def _manage_worker(self, connection: Worker):
@@ -36,7 +35,6 @@ class ConnectionManager:
         if self._manage_heartbeat(id_):
             heartbeat = HeartbeatContent()
             packet = ClusterPacket(ClusterPacketType.HEARTBEAT, heartbeat)
-            packet = CoroutinePacket(CoroutinePacketType.CLUSTER_PACKET, packet)
             connection.send(packet)
 
     def _manage_dead(self) -> list[uuid.UUID]:
