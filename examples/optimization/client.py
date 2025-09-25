@@ -34,7 +34,7 @@ class Signal:
 
 
 def evaluation(
-        settings: Settings, receiver: queue.Queue, sender: queue.Queue, max_batch_size: int
+        settings: Settings, receiver: queue.Queue, sender: queue.Queue, max_batch_size: int, batch_step: int = None
 ):
     dim = PracticalController.dim()
     episode_length = int(settings.Simulation.TIME_LENGTH / settings.Simulation.TIME_STEP)
@@ -58,9 +58,9 @@ def evaluation(
         sims = jax.vmap(lambda sim: sim.reset(model))(sims)
         return sims
 
-    @partial(nnx.jit, donate_argnames=("sims",))
-    def jit_batch_run(sims):
-        return jax.vmap(lambda s: s.step_n(model, episode_length))(sims)
+    @partial(nnx.jit, donate_argnames=("sims",), static_argnames=("n",))
+    def jit_batch_run(sims, n):
+        return jax.vmap(lambda s: s.step_n(model, n))(sims)
 
     @partial(nnx.jit, donate_argnames=("sim",))
     def jit_set_params(sim, params):
@@ -68,9 +68,9 @@ def evaluation(
         sim = sim.reset(model)
         return sim
 
-    @partial(nnx.jit, donate_argnames=("sim",))
-    def jit_run(sim):
-        return sim.step_n(model, episode_length)
+    @partial(nnx.jit, donate_argnames=("sim",), static_argnames=("n",))
+    def jit_run(sim, n):
+        return sim.step_n(model, n)
 
     while True:
         try:
@@ -97,13 +97,26 @@ def evaluation(
             if batch_size > 1:
                 simulators = jax.tree.map(lambda x: x[:batch_size], base_simulators)
                 simulators = jit_batch_set_params(simulators, current_parameters)
+
+                t = 0
+                while t < episode_length:
+                    n = episode_length if batch_step is None else min(batch_step, episode_length - t)
+                    simulators = jit_batch_run(simulators, n)
+                    t += n
+
                 simulators = jit_batch_run(simulators)
                 results = jax.tree.map(lambda x: x.evaluate(), simulators)
                 loss = np.array(results["loss"])
 
             elif batch_size == 1:
                 base_simulator = jit_set_params(base_simulator, current_parameters[0])
-                base_simulator = jit_run(base_simulator)
+
+                t = 0
+                while t < episode_length:
+                    n = episode_length if batch_step is None else min(batch_step, episode_length - t)
+                    base_simulator = jit_run(base_simulator, n)
+                    t += n
+
                 results = base_simulator.evaluate()
                 loss = np.array([results["loss"]])
 
