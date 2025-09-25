@@ -14,35 +14,36 @@ class AsyncTaskTunnelChild:
         self.uuid = id_
         self.receiver = receiver
         self.sender = sender
+        self._buffer: list[AsyncTaskPacket] = []
 
     async def send(self, packet: AsyncTaskPacket):
         if not isinstance(packet, AsyncTaskPacket):
             raise TypeError("packet must be an instance of AsyncTaskPacket")
         await self.sender.put(packet)
 
-    async def empty(self) -> bool:
-        return self.receiver.empty()
+    async def update(self):
+        while not self.receiver.empty():
+            packet = ic(self.receiver.get_nowait())
 
-    async def receive(self, timeout: float = None) -> Optional[AsyncTaskPacket]:
-        try:
-            data = ic(await asyncio.wait_for(self.receiver.get(), timeout=timeout))
-        except asyncio.TimeoutError:
-            return None
+            if not isinstance(packet, AsyncTaskPacket):
+                raise TypeError("packet must be an instance of AsyncTaskPacket")
 
-        if not isinstance(data, AsyncTaskPacket):
-            raise TypeError("data must be an instance of AsyncTaskPacket")
+            if packet.type == AsyncTaskPacketType.PING:
+                # Automatically respond to roll call
+                if not isinstance(packet.content, PingContent):
+                    raise ValueError("Invalid ping packet content")
+                if packet.content.id != self.uuid:
+                    raise ValueError("Ping packet ID does not match tunnel ID")
+                packet.content.response_time = datetime.datetime.now(tz=datetime.UTC)
+                await self.send(
+                    AsyncTaskPacket(type_=AsyncTaskPacketType.PING, content=packet.content)
+                )
+                continue
 
-        if data.type == AsyncTaskPacketType.PING:
-            # Automatically respond to roll call
-            if not isinstance(data.content, PingContent):
-                raise ValueError("Invalid ping packet content")
-            if data.content.id != self.uuid:
-                raise ValueError("Ping packet ID does not match tunnel ID")
-            data.content.response_time = datetime.datetime.now(tz=datetime.UTC)
-            await self.send(data)
-            return await self.receive(timeout)
+            self._buffer.append(packet)
 
-        return data
+    def receive(self, timeout: float = None) -> Optional[AsyncTaskPacket]:
+        return self._buffer.pop(0) if self._buffer else None
 
 
 class SingleAsyncTaskTunnel:
