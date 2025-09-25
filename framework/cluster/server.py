@@ -71,17 +71,20 @@ class Server:
 
         return pass_through
 
+    def manage(self) -> set[uuid.UUID]:
+        dead_ids = self._connection_manager.manage(self._head)
+        for dead_id in dead_ids:
+            self._client_states.pop(dead_id, None)
+        return dead_ids
+
     def receive(self) -> dict[uuid.UUID, ClusterPacket]:
         """Get results from all clients"""
-        self._connection_manager.manage(self._head)
         packets: dict[uuid.UUID, ClusterPacket] = self._connection_manager.receive(self._head)
         packets: dict[uuid.UUID, ClusterPacket] = self._update_client_states(packets)
         return packets
 
     async def send_task(self, client_id: uuid.UUID, task_content: TaskContent) -> bool:
         """Send a task to a specific client"""
-        self._connection_manager.manage(self._head)
-
         if client_id not in self._head.get_ids():
             print(f"Client {client_id} not found")
             return False
