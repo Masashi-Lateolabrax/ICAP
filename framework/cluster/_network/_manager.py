@@ -31,6 +31,14 @@ class ConnectionManager:
                 packet = CoroutinePacket(CoroutinePacketType.CLUSTER_PACKET, packet)
                 connection.send(i, packet)
 
+    def _manage_worker(self, connection: Worker):
+        id_ = connection.id
+        if self._manage_heartbeat(id_):
+            heartbeat = HeartbeatContent()
+            packet = ClusterPacket(ClusterPacketType.HEARTBEAT, heartbeat)
+            packet = CoroutinePacket(CoroutinePacketType.CLUSTER_PACKET, packet)
+            connection.send(packet)
+
 class ManagedTunnel:
     def __init__(self):
         self.tunnel = AsyncTaskTunnel()
