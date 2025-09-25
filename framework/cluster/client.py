@@ -27,6 +27,21 @@ class SimpleClient:
         print("SimpleClient disconnected")
 
     async def _send_state(self):
+    def _receive(self) -> Optional[ClusterPacket]:
+        """Receive task from server if available"""
+        if not self._worker:
+            return None
+
+        packet = self._worker.receive()
+        if packet is None:
+            return None
+        if packet.type != CoroutinePacketType.CLUSTER_PACKET:
+            raise ValueError("Unexpected packet type")
+        if not isinstance(packet.content, ClusterPacket):
+            raise ValueError("Unexpected content type")
+
+        return packet.content
+
         """Send current state to server"""
         if not self._worker:
             return
