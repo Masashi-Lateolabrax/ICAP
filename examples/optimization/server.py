@@ -79,7 +79,7 @@ async def main():
                         load_balancer.register_performance(client_id, task_count, duration)
                         fitness.extend(ic(result.result))
 
-            available_ids = set((await server.get_available_clients()).keys())
+            available_ids = ic(set((await server.get_available_clients()).keys()))
             if not available_ids:
                 await asyncio.sleep(10)
                 continue
