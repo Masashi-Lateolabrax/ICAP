@@ -42,7 +42,7 @@ class AsyncTaskTunnelChild:
 
             self._buffer.append(packet)
 
-    def receive(self, timeout: float = None) -> Optional[AsyncTaskPacket]:
+    def receive(self) -> Optional[AsyncTaskPacket]:
         return self._buffer.pop(0) if self._buffer else None
 
 
