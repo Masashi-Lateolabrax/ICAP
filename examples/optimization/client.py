@@ -20,7 +20,7 @@ from framework.prelude import *
 from framework.cluster import Client
 
 from examples.config import PracticalSimulator, PracticalController
-from framework.utils import force_garbage_collection
+from framework.utils import force_garbage_collection, monitor_comprehensive_gpu
 
 ic.configureOutput(
     prefix=lambda: f'[{datetime.datetime.now().strftime("%H:%M:%S.%f")[:-3]}] CLIENT| ',
@@ -103,6 +103,9 @@ def evaluation(
                     n = episode_length if batch_step is None else min(batch_step, episode_length - t)
                     simulators = jit_batch_run(simulators, n)
                     t += n
+                    if batch_step is not None:
+                        print(f"\nStep {t}/{episode_length}")
+                        monitor_comprehensive_gpu()
 
                 simulators = jit_batch_run(simulators)
                 results = jax.tree.map(lambda x: x.evaluate(), simulators)
@@ -116,6 +119,9 @@ def evaluation(
                     n = episode_length if batch_step is None else min(batch_step, episode_length - t)
                     base_simulator = jit_run(base_simulator, n)
                     t += n
+                    if batch_step is not None:
+                        print(f"\nStep {t}/{episode_length}")
+                        monitor_comprehensive_gpu()
 
                 results = base_simulator.evaluate()
                 loss = np.array([results["loss"]])
