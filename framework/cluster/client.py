@@ -41,11 +41,9 @@ class Client:
     async def manage(self):
         if not self._worker:
             return
-        if self.id not in dead_ids:
         dead_ids = ic(await self._manager.manage(self._worker))
+        if self.id in dead_ids:
             await self.stop()
-        else:
-            raise RuntimeError("Here is not reachable")
 
     def receive(self) -> Optional[ClusterPacket]:
         if not self._worker:
