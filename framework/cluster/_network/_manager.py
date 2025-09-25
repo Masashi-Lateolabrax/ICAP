@@ -58,7 +58,7 @@ class ConnectionManager:
 
         return set(self._manage_dead())
 
-    def _receive_from_connection(self, id_: uuid.UUID, packet: Optional[CoroutinePacket]) -> Optional[CoroutinePacket]:
+    def _receive_from_connection(self, id_: uuid.UUID, packet: Optional[ClusterPacket]) -> Optional[ClusterPacket]:
         if packet is None:
             return None
 
