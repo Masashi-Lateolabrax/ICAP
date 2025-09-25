@@ -59,26 +59,17 @@ class ConnectionManager:
 
         return set(self._manage_dead())
 
-    def _receive_from_connection(self, id_: uuid.UUID, packets: list[CoroutinePacket]) -> list[CoroutinePacket]:
+    def _receive_from_connection(self, id_: uuid.UUID, packet: Optional[CoroutinePacket]) -> Optional[CoroutinePacket]:
+        if packet is None:
+            return None
+
         current = datetime.datetime.now(tz=datetime.UTC)
         self.last_heartbeat[id_] = current
 
-        for i in reversed(range(len(packets))):
-            packet: CoroutinePacket = packets[i]
+        if isinstance(packet.content, ClusterPacket) and isinstance(packet.content.content, HeartbeatContent):
+            return None
 
-            if packet.type != CoroutinePacketType.CLUSTER_PACKET:
-                continue
-            if not isinstance(packet.content, ClusterPacket):
-                raise ValueError("Invalid response type. Expected ClusterPacket.")
-
-            if packet.content.type != ClusterPacketType.HEARTBEAT:
-                continue
-            if not isinstance(packet.content.content, HeartbeatContent):
-                raise ValueError("Invalid heartbeat packet content")
-
-            packets.pop(i)
-
-        return packets
+        return packet
 
     def _receive_from_head(self, connection: Head) -> dict[uuid.UUID, list[CoroutinePacket]]:
         received_packets = {}
