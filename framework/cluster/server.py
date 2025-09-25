@@ -49,7 +49,7 @@ class Server:
         return {
             client_id: state
             for client_id, state in alive_clients.items()
-            if not state.working
+            if not state.working and state.task is None
         }
 
     def _update_client_states(self, packets: dict[uuid.UUID, ClusterPacket]) -> dict[uuid.UUID, ClusterPacket]:
