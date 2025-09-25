@@ -2,6 +2,8 @@ from dataclasses import dataclass
 import uuid
 from typing import Optional
 
+from icecream import ic
+
 from ..prelude import TaskContent, StateContent, ResultContent, ClusterPacket, ClusterPacketType
 from ._network import Head, ConnectionManager
 
@@ -35,7 +37,7 @@ class Server:
         """Get all clients that are currently alive"""
         dead_ids = await self._connection_manager.manage(self._head)
         for dead_id in dead_ids:
-            self._client_states.pop(dead_id, None)
+            self._client_states.pop(ic(dead_id), None)
 
         return {
             client_id: state
@@ -46,11 +48,11 @@ class Server:
     async def get_available_clients(self) -> dict[uuid.UUID, ClientState]:
         """Get clients that are alive and not working"""
         alive_clients = await self.get_alive_clients()
-        return {
-            client_id: state
-            for client_id, state in alive_clients.items()
-            if not state.working and state.task is None
-        }
+        result = {}
+        for client_id, state in alive_clients.items():
+            if not ic(state.working) and ic(state.task) is None:
+                result[client_id] = state
+        return result
 
     def _update_client_states(self, packets: dict[uuid.UUID, ClusterPacket]) -> dict[uuid.UUID, ClusterPacket]:
         """Update client states from received packets"""
