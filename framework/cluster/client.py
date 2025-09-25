@@ -54,10 +54,9 @@ class Client:
             return None
         return packet
 
-    async def send_result(self, fitness: list[tuple[np.ndarray, float]], start_time: datetime, end_time: datetime):
+    async def send_result(self, result_content: ResultContent):
         if not self._worker:
             return
-        result_content = ResultContent(result=fitness, start_time=start_time, end_time=end_time)
         cluster_packet = ClusterPacket(ClusterPacketType.RESULT, result_content)
         await self._worker.send(cluster_packet)
 
