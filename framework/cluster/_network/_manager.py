@@ -93,3 +93,5 @@ class ConnectionManager:
         else:
             raise ValueError("Invalid connection type")
 
+    def get_ids(self) -> set[uuid.UUID]:
+        return set(self.last_heartbeat.keys())
