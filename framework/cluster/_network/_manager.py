@@ -23,19 +23,19 @@ class ConnectionManager:
             self.last_heartbeat[id_] = datetime.datetime.now(tz=datetime.UTC)
         return do_send_heartbeat
 
-    def _manage_head(self, connection: Head):
+    async def _manage_head(self, connection: Head):
         for i in connection.get_ids():
             if self._manage_heartbeat(i):
                 heartbeat = HeartbeatContent()
                 packet = ClusterPacket(ClusterPacketType.HEARTBEAT, heartbeat)
-                connection.send(i, packet)
+                await connection.send(i, packet)
 
-    def _manage_worker(self, connection: Worker):
+    async def _manage_worker(self, connection: Worker):
         id_ = connection.id
         if self._manage_heartbeat(id_):
             heartbeat = HeartbeatContent()
             packet = ClusterPacket(ClusterPacketType.HEARTBEAT, heartbeat)
-            connection.send(packet)
+            await connection.send(packet)
 
     def _manage_dead(self) -> list[uuid.UUID]:
         dead_ids = []
@@ -46,11 +46,11 @@ class ConnectionManager:
                 del self.last_heartbeat[id_]
         return dead_ids
 
-    def manage(self, connection: Head | Worker) -> set[uuid.UUID]:
+    async def manage(self, connection: Head | Worker) -> set[uuid.UUID]:
         if isinstance(connection, Head):
-            self._manage_head(connection)
+            await self._manage_head(connection)
         elif isinstance(connection, Worker):
-            self._manage_worker(connection)
+            await self._manage_worker(connection)
         else:
             raise ValueError("Invalid connection type")
 
