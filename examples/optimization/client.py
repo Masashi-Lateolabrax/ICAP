@@ -4,6 +4,8 @@ from functools import partial
 import argparse
 import asyncio
 from typing import Optional
+import threading
+import queue
 
 import numpy as np
 from icecream import ic
@@ -31,8 +33,8 @@ class Signal:
     stop: bool = False
 
 
-async def evaluation(
-        settings: Settings, receiver: asyncio.Queue, sender: asyncio.Queue, max_batch_size: int
+def evaluation(
+        settings: Settings, receiver: queue.Queue, sender: queue.Queue, max_batch_size: int
 ):
     dim = PracticalController.dim()
     episode_length = int(settings.Simulation.TIME_LENGTH / settings.Simulation.TIME_STEP)
@@ -71,7 +73,11 @@ async def evaluation(
         return sim.step_n(model, episode_length)
 
     while True:
-        packet = await receiver.get()  # Receive task from main function
+        try:
+            packet = receiver.get(timeout=1)  # Receive task from main function
+        except queue.Empty:
+            continue
+
         if isinstance(packet, Signal):
             if packet.stop:
                 print("Stopping evaluation routine.")
@@ -113,7 +119,7 @@ async def evaluation(
         speed = 1.0 / (end_time - start_time).total_seconds()
         print(f"Evaluated {batch_size} tasks | Avg Fitness: {average:.4f} | Speed: {speed:.2f} tasks/s")
 
-        await sender.put(result_content)  # Send result back to main function
+        sender.put(result_content)  # Send result back to main function  # Send result back to main function
 
 
 async def main():
@@ -148,9 +154,11 @@ async def main():
     print("Press Ctrl+C to disconnect")
     print("=" * 50)
 
-    sender = asyncio.Queue()  # Queue for sending tasks TO evaluation function
-    receiver = asyncio.Queue()  # Queue for receiving results FROM evaluation function
-    evaluation_coroutine = asyncio.create_task(evaluation(settings, sender, receiver, max_batch_size))
+    sender = queue.Queue()  # Queue for sending tasks TO evaluation function
+    receiver = queue.Queue()  # Queue for receiving results FROM evaluation function
+    evaluation_thread = threading.Thread(target=evaluation, args=(settings, sender, receiver, max_batch_size))
+    evaluation_thread.daemon = True
+    evaluation_thread.start()
 
     client = await Client.new(host, port, net_timeout, heartbeat_interval, heartbeat_timeout)
     task_content = None
@@ -165,8 +173,9 @@ async def main():
             )
             last_state_sent_time = current_time
 
-        if not receiver.empty():
-            content = receiver.get_nowait()
+        content = receiver.get_nowait() if not receiver.empty() else None
+
+        if content is not None:
             if not isinstance(content, ResultContent):
                 print("Received invalid result from evaluation.")
                 continue
@@ -190,12 +199,12 @@ async def main():
                 await client.send_worker_reject(packet.content)  # Reject new task
                 continue
             task_content = packet.content
-            await sender.put(task_content)  # Send task to evaluation function
+            sender.put(task_content)  # Send task to evaluation function
 
     # Stop evaluation task
     print("Shutting down client...")
-    await sender.put(Signal(stop=True))
-    await evaluation_coroutine
+    sender.put(Signal(stop=True))
+    evaluation_thread.join()
     await client.stop()
 
 
