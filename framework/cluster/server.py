@@ -89,7 +89,7 @@ class SimpleServer:
 
         packets: dict[uuid.UUID, CoroutinePacket] = self._head.receive()
         packets: dict[uuid.UUID, ClusterPacket] = {
-            i: p.content for i, p in packets if isinstance(p.content, ClusterPacket)
+            i: p.content for i, p in packets.items() if isinstance(p.content, ClusterPacket)
         }
         packets: dict[uuid.UUID, ClusterPacket] = self._update_client_states(packets)
 
