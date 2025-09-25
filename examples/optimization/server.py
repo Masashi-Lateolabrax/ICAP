@@ -6,7 +6,8 @@ import numpy as np
 from cmaes import CMA
 from icecream import ic
 
-from framework.cluster import Head, TaskContent, LoadBalancer
+from framework.prelude import *
+from framework.cluster import Server, LoadBalancer
 from examples.config import PracticalController
 
 ic.configureOutput(
@@ -21,13 +22,19 @@ async def main():
     parser.add_argument("--port", type=int, required=True)
     parser.add_argument("--population-size", type=int, default=20)
     parser.add_argument("--max-generations", type=int, default=50)
+    parser.add_argument("--network-timeout", type=float, default=5.0)
+    parser.add_argument("--heartbeat-interval", type=float, default=5.0)
+    parser.add_argument("--heartbeat-timeout", type=float, default=15.0)
     args = parser.parse_args()
 
     dim = PracticalController.dim()
+    network_timeout = args.network_timeout
+    heartbeat_interval = args.heartbeat_interval
+    heartbeat_timeout = args.heartbeat_timeout
 
-    head = Head()
+    server = Server(heartbeat_interval, heartbeat_timeout)
     load_balancer = LoadBalancer()
-    await head.start(args.host, args.port, 5.0)
+    await server.start(args.host, args.port, network_timeout)
 
     # Initialize CMA-ES
     cma = CMA(
