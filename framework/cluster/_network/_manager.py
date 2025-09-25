@@ -39,6 +39,14 @@ class ConnectionManager:
             packet = CoroutinePacket(CoroutinePacketType.CLUSTER_PACKET, packet)
             connection.send(packet)
 
+    def manage(self, connection: Head | Worker):
+        if isinstance(connection, Head):
+            self._manage_head(connection)
+        elif isinstance(connection, Worker):
+            self._manage_worker(connection)
+        else:
+            raise ValueError("Invalid connection type")
+
 class ManagedTunnel:
     def __init__(self):
         self.tunnel = AsyncTaskTunnel()
