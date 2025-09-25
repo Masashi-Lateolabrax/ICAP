@@ -154,26 +154,26 @@ async def main():
     count = 0
     while count < 5:
         packet: WorkerPacket = ic(await client.receive())
+        if packet is not None:
+            if packet.type == WorkerPacketType.TASK:
+                if not isinstance(packet.content, TaskContent):
+                    print("Received invalid packet from server.")
 
-        if packet.type == WorkerPacketType.TASK:
-            if not isinstance(packet.content, TaskContent):
+                if task_content is not None:
+                    print("Previous task is still being processed. Rejecting new task.")
+                    await client.send_worker_result(ResultContent.reject_packet(packet.content))
+
+                task_content = packet.content
+                await sender.put(task_content)  # Send task to evaluation function
+
+            elif packet.type == WorkerPacketType.STATE:
+                await client.send_worker_state(
+                    gpu_usage=float("nan"),
+                    working=task_content is not None
+                )
+
+            else:
                 print("Received invalid packet from server.")
-
-            if task_content is not None:
-                print("Previous task is still being processed. Rejecting new task.")
-                await client.send_worker_result(ResultContent.reject_packet(packet.content))
-
-            task_content = packet.content
-            await sender.put(task_content)  # Send task to evaluation function
-
-        elif packet.type == WorkerPacketType.STATE:
-            await client.send_worker_state(
-                gpu_usage=float("nan"),
-                working=task_content is not None
-            )
-
-        else:
-            print("Received invalid packet from server.")
 
         while not receiver.empty():
             optimization_task_response = ic(await receiver.get())
