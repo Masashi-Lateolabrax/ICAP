@@ -54,17 +54,6 @@ class SimpleServer:
             if not state.working
         }
 
-    async def send_task(self, client_id: uuid.UUID, task_content: TaskContent) -> bool:
-        """Send a task to a specific client"""
-        if client_id not in self._head.get_ids():
-            print(f"Client {client_id} not found")
-            return False
-
-        cluster_packet = ClusterPacket(ClusterPacketType.TASK, task_content)
-        coroutine_packet = CoroutinePacket(CoroutinePacketType.CLUSTER_PACKET, cluster_packet)
-        await self._head.send(client_id, coroutine_packet)
-        return True
-
     def _update_client_states(self, packets: dict[uuid.UUID, ClusterPacket]) -> dict[uuid.UUID, ClusterPacket]:
         """Update client states from received packets"""
 
@@ -94,3 +83,13 @@ class SimpleServer:
         packets: dict[uuid.UUID, ClusterPacket] = self._update_client_states(packets)
 
         return packets
+
+    async def send_task(self, client_id: uuid.UUID, task_content: TaskContent) -> bool:
+        """Send a task to a specific client"""
+        if client_id not in self._head.get_ids():
+            print(f"Client {client_id} not found")
+            return False
+
+        cluster_packet = ClusterPacket(ClusterPacketType.TASK, task_content)
+        await self._head.send(client_id, cluster_packet)
+        return True
