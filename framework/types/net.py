@@ -27,7 +27,11 @@ class ResultContent(Content):
     result: list[tuple[np.ndarray, float]]
     start_time: Optional[datetime.datetime]
     end_time: Optional[datetime.datetime]
-    rejected: bool = False
+    rejected: Optional[TaskContent] = None
+
+    @classmethod
+    def create_rejected(cls, task: TaskContent) -> Self:
+        return cls(result=[], start_time=None, end_time=None, rejected=task)
 
 
 class HeartbeatContent(Content):
