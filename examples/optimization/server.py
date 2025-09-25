@@ -55,7 +55,7 @@ async def main():
         candidates = [cma.ask() for _ in range(args.population_size)]
         fitness: list[tuple[np.ndarray, float]] = []
 
-        while len(candidates) > 0:
+        while len(fitness) < len(candidates):
             dead_ids = server.manage()
             for dead_id in dead_ids:
                 load_balancer.remove(dead_id)
