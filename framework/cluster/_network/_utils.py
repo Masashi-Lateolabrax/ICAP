@@ -18,12 +18,12 @@ async def send_payload(writer: asyncio.StreamWriter, payload: ClusterPacket):
 
 
 async def receive_payload(reader: asyncio.StreamReader, timeout: float) -> ClusterPacket:
-    size_data = await asyncio.wait_for(reader.readexactly(4), timeout=timeout)
+    size_data = ic(await asyncio.wait_for(reader.readexactly(4), timeout=timeout))
     payload_size = int.from_bytes(size_data, byteorder='big')
     if payload_size < 4:
         raise ValueError("Payload size must be at least 4 bytes.")
 
-    payload_data = await asyncio.wait_for(reader.readexactly(payload_size), timeout=timeout)
+    payload_data = ic(await asyncio.wait_for(reader.readexactly(payload_size), timeout=timeout))
     return ClusterPacket.from_bytes(payload_data)
 
 

@@ -30,14 +30,14 @@ class ConnectionManager:
         for i in connection.get_ids():
             if self._manage_heartbeat(i):
                 heartbeat = HeartbeatContent()
-                packet = ClusterPacket(ClusterPacketType.HEARTBEAT, heartbeat)
+                packet = ic(ClusterPacket(ClusterPacketType.HEARTBEAT, heartbeat))
                 await connection.send(i, packet)
 
     async def _manage_worker(self, connection: Worker):
         id_ = connection.id
         if self._manage_heartbeat(id_):
             heartbeat = HeartbeatContent()
-            packet = ClusterPacket(ClusterPacketType.HEARTBEAT, heartbeat)
+            packet = ic(ClusterPacket(ClusterPacketType.HEARTBEAT, heartbeat))
             await connection.send(packet)
 
     def _manage_dead(self) -> list[uuid.UUID]:

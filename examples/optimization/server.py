@@ -69,7 +69,7 @@ async def main():
 
                     if result.rejected is not None:
                         print(f"Client {client_id} rejected the task.")
-                        rejected_task = result.rejected
+                        rejected_task = ic(result.rejected)
                         for candidate in rejected_task.parameter:
                             candidates.append(candidate)
 
@@ -77,7 +77,7 @@ async def main():
                         duration = (result.end_time - result.start_time).total_seconds()
                         task_count = len(result.result)
                         load_balancer.register_performance(client_id, task_count, duration)
-                        fitness.extend(result.result)
+                        fitness.extend(ic(result.result))
 
             available_ids = set((await server.get_available_clients()).keys())
             if not available_ids:
