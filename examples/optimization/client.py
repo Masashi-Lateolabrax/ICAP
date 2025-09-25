@@ -135,7 +135,7 @@ async def main():
 
     sender = asyncio.Queue()  # Queue for sending tasks TO evaluation function
     receiver = asyncio.Queue()  # Queue for receiving results FROM evaluation function
-    task = asyncio.create_task(evaluation(settings, sender, receiver, max_batch_size))
+    evaluation_coroutine = asyncio.create_task(evaluation(settings, sender, receiver, max_batch_size))
 
     client = WorkerClient()
     await client.start(host, port, timeout=net_timeout)
