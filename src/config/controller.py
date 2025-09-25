@@ -8,13 +8,13 @@ class Controller(torch.nn.Module):
         super(Controller, self).__init__()
 
         self.sequential = torch.nn.Sequential(
-            torch.nn.Linear(7, 12),
+            torch.nn.Linear(9, 18),
             torch.nn.Mish(),
-            torch.nn.Linear(12, 12),
+            torch.nn.Linear(18, 18),
             torch.nn.Mish(),
-            torch.nn.Linear(12, 6),
+            torch.nn.Linear(18, 9),
             torch.nn.Mish(),
-            torch.nn.Linear(6, 3),
+            torch.nn.Linear(9, 3),
         )
 
         if parameters is not None:
@@ -30,8 +30,4 @@ class Controller(torch.nn.Module):
 
     def forward(self, input_):
         x = self.sequential(input_)
-
-        x[:, 0:2] = torch.clip(x[:, 0:2], -0.3, 1)
-        x[:, 2] = torch.sigmoid(x[:, 2])
-
-        return x
+        return torch.sigmoid(x)

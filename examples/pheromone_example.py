@@ -60,11 +60,11 @@ class Simulator(BasicSimulator):
 
         self.add_pheromone(
             np.array([r.xpos for r in self.robot_values]),
-            np.array([1.0])
+            np.array([2e-2])
         )
 
         self._pheromone_field.add_liquid_by_cell(self._pheromone_cells)
-        self._pheromone_field.update(self.settings.Simulation.TIME_STEP)
+        self._pheromone_field.step()
         mujoco.mj_step(self.model, self.data)
 
     def get_scores(self) -> list[float]:

@@ -26,7 +26,7 @@ class Simulator(BasicSimulator):
                 robot=robot_values,
                 d_gain=settings.Robot.ROBOT_SENSOR_GAIN,
                 offset=settings.Robot.RADIUS * 2,
-                target_sites=[other.site for j, other in enumerate(all_robot_values) if other is robot_values]
+                target_sites=[other.site for j, other in enumerate(all_robot_values) if other is not robot_values]
             ),
             PreprocessedOmniSensor(
                 robot=robot_values,
@@ -53,6 +53,7 @@ class Simulator(BasicSimulator):
 
         self.parameters: Individual = individual
         self.scores: list[Loss] = []
+        self._max_pheromone: float = 0.0
 
         self.sensors: list[list[SensorInterface]] = [
             self._create_sensors(settings, r, self.robot_values, self.food_values, self.nest_site)
@@ -61,11 +62,19 @@ class Simulator(BasicSimulator):
 
         self.dummy_foods: list[DummyFoodValues] = []
 
-        self.input_ndarray = np.zeros((settings.Robot.NUM, 2 * 3 + 1), dtype=np.float32)
+        self.input_ndarray = np.zeros((settings.Robot.NUM, 2 * 3 + 3), dtype=np.float32)
         self.output_ndarray = np.zeros((settings.Robot.NUM, 3), dtype=np.float32)
         self.input_tensor = torch.from_numpy(self.input_ndarray)
 
+        # Pre-allocated arrays for step() method optimization
+        self._robot_positions = np.zeros((settings.Robot.NUM, 2), dtype=np.float32)
+        self._robot_v_direction = np.zeros((settings.Robot.NUM, 2), dtype=np.float32)
+        self._robot_h_direction = np.zeros((settings.Robot.NUM, 2), dtype=np.float32)
+
         mujoco.mj_step(self.model, self.data)
+
+    def get_max_gas_pheromone(self) -> float:
+        return self._max_pheromone
 
     def reset(self):
         mujoco.mj_resetData(self.model, self.data)
@@ -103,13 +112,22 @@ class Simulator(BasicSimulator):
         return self.input_tensor
 
     def step(self):
-        robot_positions = np.array([robot.xpos for robot in self.robot_values])
+        # Use pre-allocated arrays to avoid memory allocation overhead
+        for i, robot in enumerate(self.robot_values):
+            self._robot_positions[i] = robot.xpos
+            self._robot_v_direction[i] = robot.xdirection
+            self._robot_h_direction[i, 0] = robot.xdirection[1]
+            self._robot_h_direction[i, 1] = -robot.xdirection[0]
 
         if self.timer.tick():
             with torch.no_grad():
                 input_ = self.create_input_for_controller()
                 if self._pheromone_field is not None:
-                    self.input_ndarray[:, 6] = self.get_pheromone(robot_positions)
+                    self.input_ndarray[:, 6] = self.get_pheromone(self._robot_positions) / 3.5
+
+                    pheromone_grad = self.get_pheromone_grad(self._robot_positions)
+                    self.input_ndarray[:, 7] = np.sum(pheromone_grad * self._robot_v_direction, axis=1)
+                    self.input_ndarray[:, 8] = np.sum(pheromone_grad * self._robot_h_direction, axis=1)
 
                 output = self.controller.forward(input_)
                 self.output_ndarray = output.numpy()
@@ -121,9 +139,12 @@ class Simulator(BasicSimulator):
             )
 
         if self._pheromone_field is not None:
-            self.add_pheromone(robot_positions, self.output_ndarray[:, 2])
+            self.add_pheromone(self._robot_positions, self.output_ndarray[:, 2] * self.settings.Robot.MAX_PHEROMONE_SECRETION)
             self._pheromone_field.add_liquid_by_cell(self._pheromone_cells)
-            self._pheromone_field.update(self.settings.Simulation.TIME_STEP)
+            self._pheromone_field.step()
+
+            max_pheromone = self._pheromone_field.get_max_value()
+            self._max_pheromone = max(self._max_pheromone, max_pheromone)
 
         for food in self.food_values:
             if np.linalg.norm(food.xpos - self.nest_site.xpos[0:2]) <= self.settings.Nest.RADIUS:

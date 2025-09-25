@@ -38,9 +38,9 @@ MySettings.Render.CAMERA_LOOKAT = (0.0, 0.0, 0.0)
 # Optimization settings
 ###################################################################################
 MySettings.Optimization.DIMENSION = None  # Will be set later based on the neural network dimension
-MySettings.Optimization.POPULATION = 50
-MySettings.Optimization.GENERATION = 500
-MySettings.Optimization.SIGMA = 5
+MySettings.Optimization.POPULATION = 250
+MySettings.Optimization.GENERATION = 150
+MySettings.Optimization.SIGMA = 1
 
 MySettings.Optimization.CLIP = ClippingFunctions.none
 ###################################################################################
@@ -53,6 +53,7 @@ MySettings.Robot.HEIGHT = 0.1
 MySettings.Robot.RADIUS = 0.175
 MySettings.Robot.DISTANCE_BETWEEN_WHEELS = 0.175 * 2 * 0.8
 MySettings.Robot.MAX_SPEED = 0.8
+MySettings.Robot.MAX_PHEROMONE_SECRETION = 2e-2
 MySettings.Robot.MASS = 10
 
 MySettings.Robot.COLOR = (1, 1, 0, 1)
@@ -94,7 +95,7 @@ MySettings.Food.COLOR = (0, 1, 1, 1)
 MySettings.Food.NUM = 2
 MySettings.Food.INITIAL_POSITION = [
     Position(2, 2),
-    Position(-2, -2),
+    Position(-2, 2),
 ]
 ###################################################################################
 
@@ -147,10 +148,8 @@ MySettings.Pheromone.CELL_SIZE = 0.1
 MySettings.Pheromone.WIDTH_NUM = int(MySettings.Simulation.WORLD_WIDTH / MySettings.Pheromone.CELL_SIZE)
 MySettings.Pheromone.HEIGHT_NUM = int(MySettings.Simulation.WORLD_HEIGHT / MySettings.Pheromone.CELL_SIZE)
 
-MySettings.Pheromone.ITERATIONS_PER_STEP = 1
+MySettings.Pheromone.ITERATIONS_PER_STEP = 8
 
-MySettings.Pheromone.EVAPORATION_RATE = 0.1
-MySettings.Pheromone.DECREASE_RATE = 0.0
 MySettings.Pheromone.TEMPERATURE = 300
 MySettings.Pheromone.MATERIAL = ETHANOL
 ###################################################################################

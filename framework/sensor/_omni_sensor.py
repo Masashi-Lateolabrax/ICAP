@@ -39,7 +39,8 @@ class OmniSensor(SensorInterface):
 
     def _update_positions(self):
         for i, p in enumerate(self.targets):
-            self.target_positions[i] = p.xpos[0:2]
+            self.target_positions[i, 0] = p.xpos[0]
+            self.target_positions[i, 1] = p.xpos[1]
 
     def get(self) -> np.ndarray:
         if len(self.targets) == 0:

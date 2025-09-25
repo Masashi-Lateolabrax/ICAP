@@ -61,6 +61,7 @@ class Robot:
     RADIUS = 0.175
     DISTANCE_BETWEEN_WHEELS = 0.175 * 2 * 0.8
     MAX_SPEED = 0.8
+    MAX_PHEROMONE_SECRETION = 2e-2
     MASS = 10
 
     COLOR = (1, 1, 0, 1)
@@ -131,9 +132,7 @@ class Pheromone:
     CELL_SIZE = 0.1
     WIDTH_NUM = int(Simulation.WORLD_WIDTH / CELL_SIZE)
     HEIGHT_NUM = int(Simulation.WORLD_HEIGHT / CELL_SIZE)
-    ITERATIONS_PER_STEP = 1
-    EVAPORATION_RATE = 0.1
-    DECREASE_RATE = 0.0
+    ITERATIONS_PER_STEP = 8
     TEMPERATURE = 300
     MATERIAL = ETHANOL
 
