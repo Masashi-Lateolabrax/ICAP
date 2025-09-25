@@ -93,25 +93,13 @@ async def main():
             current_batch = {}
             for worker_id, task_count in task_allocation.items():
                 current_batch[worker_id] = []
-                for _ in range(task_count):
-                    if len(candidates) == 0:
-                        break
+                for _ in range(min(task_count, len(candidates))):
                     current_batch[worker_id].append(candidates.pop(0))
 
             # Send current batch to workers (batch = list of candidates → 2D array)
             for worker_id, batch in current_batch.items():
                 task = TaskContent(np.array(batch))
-                await head.send_worker_task(worker_id, task)
-
-            # Collect results for current batch (result.result = [(candidate, fitness), ...])
-            for worker_id in current_batch.keys():
-                result = await head.get_worker_result(worker_id)
-                if result:
-                    if result.start_time and result.end_time:
-                        duration = (result.end_time - result.start_time).total_seconds()
-                        task_count = len(result.result)
-                        load_balancer.register_performance(worker_id, task_count, duration)
-                        fitness.extend(result.result)
+                await server.send_task(worker_id, task)
 
         # Update CMA-ES
         cma.tell(fitness)
