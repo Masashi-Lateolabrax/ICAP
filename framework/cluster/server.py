@@ -86,13 +86,11 @@ class SimpleServer:
 
     def get_results(self) -> dict[uuid.UUID, ClusterPacket]:
         """Get results from all clients"""
-        try:
-            packets = self._head.receive()
-            results = {}
-            for client_id, packet in packets.items():
-                if isinstance(packet.content, ClusterPacket):
-                    results[client_id] = packet.content
-            return results
-        except Exception as e:
-            print(f"Failed to get results: {e}")
-            return {}
+
+        packets: dict[uuid.UUID, CoroutinePacket] = self._head.receive()
+        packets: dict[uuid.UUID, ClusterPacket] = {
+            i: p.content for i, p in packets if isinstance(p.content, ClusterPacket)
+        }
+        packets: dict[uuid.UUID, ClusterPacket] = self._update_client_states(packets)
+
+        return packets
