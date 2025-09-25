@@ -80,6 +80,12 @@ class ConnectionManager:
 
         return packets
 
+    def _receive_from_head(self, connection: Head) -> dict[uuid.UUID, list[CoroutinePacket]]:
+        received_packets = {}
+        for id_, packets in connection.receive().items():
+            received_packets[id_] = self._receive_from_connection(id_, packets)
+        return received_packets
+
 
     def spawn_child(self) -> AsyncTaskTunnelChild:
         child = self.tunnel.spawn_child()
