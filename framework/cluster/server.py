@@ -22,18 +22,14 @@ class SimpleServer:
         self._head = Head()
         self._connection_manager = ConnectionManager(interval=5.0, timeout=heartbeat_timeout)
         self._client_states: dict[uuid.UUID, ClientState] = {}
-        self._running = False
 
     async def start(self, host: str, port: int, timeout: float = 5.0) -> None:
         """Start the server"""
         await self._head.start(host, port, timeout)
-        self._running = True
-
         print(f"SimpleServer started on {host}:{port}")
 
     async def stop(self) -> None:
         """Stop the server"""
-        self._running = False
         await self._head.stop()
 
     async def get_alive_clients(self) -> dict[uuid.UUID, ClientState]:
