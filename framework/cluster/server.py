@@ -71,8 +71,8 @@ class Server:
 
         return pass_through
 
-    def manage(self) -> set[uuid.UUID]:
-        dead_ids = self._connection_manager.manage(self._head)
+    async def manage(self) -> set[uuid.UUID]:
+        dead_ids = await self._connection_manager.manage(self._head)
         for dead_id in dead_ids:
             self._client_states.pop(dead_id, None)
         return dead_ids
