@@ -2,6 +2,8 @@ import datetime
 import uuid
 from typing import Optional
 
+from icecream import ic
+
 from ...prelude import *
 from ._head import Head
 from ._worker import Worker
@@ -9,18 +11,19 @@ from ._worker import Worker
 
 class ConnectionManager:
     def __init__(self, interval: float = 10.0, timeout: float = 30.0):
-        self.last_heartbeat: dict[uuid.UUID, datetime.datetime] = {}
+        self.last_receive_heartbeat: dict[uuid.UUID, datetime.datetime] = {}
+        self.last_send_heartbeat: dict[uuid.UUID, datetime.datetime] = {}
         self.interval = interval
         self.timeout = timeout
 
     def _manage_heartbeat(self, id_: uuid.UUID) -> bool:
-        if id_ not in self.last_heartbeat:
-            self.last_heartbeat[id_] = datetime.datetime.now(tz=datetime.UTC)
+        if id_ not in self.last_send_heartbeat:
+            self.last_send_heartbeat[id_] = datetime.datetime.now(tz=datetime.UTC)
             return True
-        current = self.last_heartbeat[id_]
-        do_send_heartbeat = (current - self.last_heartbeat[id_]).total_seconds() > self.interval
+        current = self.last_send_heartbeat[id_]
+        do_send_heartbeat = (current - self.last_send_heartbeat[id_]).total_seconds() > self.interval
         if do_send_heartbeat:
-            self.last_heartbeat[id_] = datetime.datetime.now(tz=datetime.UTC)
+            self.last_send_heartbeat[id_] = datetime.datetime.now(tz=datetime.UTC)
         return do_send_heartbeat
 
     async def _manage_head(self, connection: Head):
@@ -40,10 +43,10 @@ class ConnectionManager:
     def _manage_dead(self) -> list[uuid.UUID]:
         dead_ids = []
         current = datetime.datetime.now(tz=datetime.UTC)
-        for id_, last in list(self.last_heartbeat.items()):
-            if (current - last).total_seconds() > self.timeout:
-                dead_ids.append(id_)
-                del self.last_heartbeat[id_]
+        for id_, last in list(self.last_receive_heartbeat.items()):
+            if ic((current - last).total_seconds() > self.timeout):
+                dead_ids.append(ic(id_))
+                del self.last_receive_heartbeat[id_]
         return dead_ids
 
     async def manage(self, connection: Head | Worker) -> set[uuid.UUID]:
@@ -61,7 +64,7 @@ class ConnectionManager:
             return None
 
         current = datetime.datetime.now(tz=datetime.UTC)
-        self.last_heartbeat[id_] = current
+        self.last_receive_heartbeat[id_] = current
 
         if isinstance(packet.content, ClusterPacket) and isinstance(packet.content.content, HeartbeatContent):
             return None
@@ -91,4 +94,4 @@ class ConnectionManager:
             raise ValueError("Invalid connection type")
 
     def get_ids(self) -> set[uuid.UUID]:
-        return set(self.last_heartbeat.keys())
+        return set(self.last_receive_heartbeat.keys())
