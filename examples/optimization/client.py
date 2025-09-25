@@ -88,36 +88,42 @@ def evaluation(
 
         start_time = datetime.datetime.now(tz=datetime.UTC)
 
-        parameters = packet.parameter
-        batch_size = min(ic(parameters.shape[0]), max_batch_size)
+        result: list[tuple[np.ndarray, float]] = []
+        parameters: np.ndarray = packet.parameter
+        while len(result) < parameters.shape[0]:
+            batch_size = min(ic(parameters.shape[0] - len(result)), max_batch_size)
+            current_parameters = parameters[len(result):len(result) + batch_size, :]
 
-        if batch_size > 1:
-            simulators = jax.tree.map(lambda x: x[:batch_size], base_simulators)
-            simulators = jit_batch_set_params(simulators, parameters[:batch_size])
-            simulators = jit_batch_run(simulators)
-            results = jax.tree.map(lambda x: x.evaluate(), simulators)
-            loss = np.array(results["loss"])
+            if batch_size > 1:
+                simulators = jax.tree.map(lambda x: x[:batch_size], base_simulators)
+                simulators = jit_batch_set_params(simulators, current_parameters)
+                simulators = jit_batch_run(simulators)
+                results = jax.tree.map(lambda x: x.evaluate(), simulators)
+                loss = np.array(results["loss"])
 
-        elif batch_size == 1:
-            base_simulator = jit_set_params(base_simulator, parameters[0])
-            base_simulator = jit_run(base_simulator)
-            results = base_simulator.evaluate()
-            loss = np.array([results["loss"]])
+            elif batch_size == 1:
+                base_simulator = jit_set_params(base_simulator, current_parameters[0])
+                base_simulator = jit_run(base_simulator)
+                results = base_simulator.evaluate()
+                loss = np.array([results["loss"]])
 
-        else:
-            raise ValueError("Batch size must be at least 1.")
+            else:
+                raise ValueError("Batch size must be at least 1.")
+
+            result.extend([(p, l) for p, l in zip(current_parameters, loss)])
+
+            force_garbage_collection()
 
         end_time = datetime.datetime.now(tz=datetime.UTC)
-        force_garbage_collection()
         result_content = ResultContent(
-            result=[(p, l) for p, l in zip(parameters[:batch_size], loss)],
+            result=result,
             start_time=start_time,
             end_time=end_time,
         )
 
         average = np.average([f for _, f in result_content.result])
         speed = 1.0 / (end_time - start_time).total_seconds()
-        print(f"Evaluated {batch_size} tasks | Avg Fitness: {average:.4f} | Speed: {speed:.2f} tasks/s")
+        print(f"Evaluated {parameters.shape[0]} tasks | Avg Fitness: {average:.4f} | Speed: {speed:.2f} tasks/s")
 
         sender.put(result_content)  # Send result back to main function  # Send result back to main function
 
