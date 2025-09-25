@@ -190,6 +190,7 @@ async def main():
             await sender.put(task_content)  # Send task to evaluation function
 
     # Stop evaluation task
+    print("Shutting down client...")
     await sender.put(Signal(stop=True))
     await evaluation_coroutine
     await client.stop()
