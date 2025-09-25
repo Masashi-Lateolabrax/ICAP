@@ -14,7 +14,7 @@ class ClientState:
     task: Optional[TaskContent] = None
 
 
-class SimpleServer:
+class Server:
     """Minimal server for task distribution and heartbeat monitoring"""
 
     def __init__(self, heartbeat_timeout: float = 30.0):
