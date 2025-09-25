@@ -8,6 +8,13 @@ from ...prelude import *
 
 
 class Tunnel:
+    @classmethod
+    def create(cls) -> tuple['Tunnel', 'Tunnel']:
+        queue1: asyncio.Queue = asyncio.Queue()
+        queue2: asyncio.Queue = asyncio.Queue()
+        id_ = uuid.uuid4()
+        return cls(id_, queue1, queue2), cls(id_, queue2, queue1)
+
     def __init__(self, id_: uuid.UUID, receiver: asyncio.Queue, sender: asyncio.Queue):
         self.id = id_
         self.receiver = receiver
