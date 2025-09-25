@@ -79,19 +79,7 @@ async def main():
                         fitness.extend(result.result)
 
             available_ids = set(server.get_available_clients().keys())
-
-            # Check worker status
-            dead_worker_ids = ic(set(await head.cleanup()))
-            all_worker_ids = ic(set(await head.get_ids()))
-            waiting_ids = []
-            for i in all_worker_ids:
-                await head.request_worker_state(i)
-                res = await head.get_worker_state(i)
-                if res is not None and not ic(res.working):
-                    waiting_ids.append(i)
-            worker_ids = ic(set(waiting_ids))
-
-            if not worker_ids:
+            if not available_ids:
                 await asyncio.sleep(10)
                 continue
 
