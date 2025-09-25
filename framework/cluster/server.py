@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import uuid
 
-from ..prelude import TaskContent, ClusterPacket, ClusterPacketType, CoroutinePacket, CoroutinePacketType, Content
+from ..prelude import TaskContent, StateContent, ClusterPacket, ClusterPacketType, CoroutinePacket, CoroutinePacketType
 from ._network import Head, ConnectionManager
 
 
@@ -64,6 +64,18 @@ class SimpleServer:
         except Exception as e:
             print(f"Failed to send task to client {client_id}: {e}")
             return False
+
+    def _update_client_states(self, packets: dict[uuid.UUID, ClusterPacket]) -> dict[uuid.UUID, ClusterPacket]:
+        """Update client states from received packets"""
+        state_packets: dict[uuid.UUID, StateContent] = {
+            i: p.content for i, p in packets.items()
+            if p.type == ClusterPacketType.STATE and isinstance(p.content, StateContent)
+        }
+        for client_id, state in state_packets.items():
+            self._client_states[client_id] = ClientState(
+                working=state.working,
+                gpu_usage=state.gpu_usage
+            )
 
     def get_results(self) -> dict[uuid.UUID, ClusterPacket]:
         """Get results from all clients"""
