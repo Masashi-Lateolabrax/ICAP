@@ -133,7 +133,7 @@ def evaluation(
             else:
                 raise ValueError("Batch size must be at least 1.")
 
-            result.extend([(p, l) for p, l in zip(current_parameters, loss)])
+            result.extend([(p, float(l)) for p, l in zip(current_parameters, loss)])
 
             force_garbage_collection()
 
