@@ -59,8 +59,12 @@ class Server:
 
         for i, p in packets.items():
             if p.type == ClusterPacketType.STATE and isinstance(p.content, StateContent):
-                self._client_states[i].gpu_usage = p.content.gpu_usage
-                self._client_states[i].working = p.content.working
+                if i not in self._client_states:
+                    self._client_states[i] = ClientState(
+                        working=p.content.working,
+                        gpu_usage=p.content.gpu_usage,
+                        task=None
+                    )
 
             elif p.type == ClusterPacketType.RESULT and isinstance(p.content, ResultContent):
                 self._client_states[i].task = None
