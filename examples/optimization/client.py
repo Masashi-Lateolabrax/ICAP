@@ -3,6 +3,7 @@ import datetime
 from functools import partial
 import argparse
 import asyncio
+from typing import Optional
 
 import numpy as np
 from icecream import ic
@@ -13,8 +14,8 @@ from flax import nnx
 
 from mujoco import mjx
 
-from framework.prelude import Settings
-from framework.cluster import WorkerClient, ResultContent, TaskContent, WorkerPacket, WorkerPacketType
+from framework.prelude import *
+from framework.cluster import Client
 
 from examples.config import PracticalSimulator, PracticalController
 
