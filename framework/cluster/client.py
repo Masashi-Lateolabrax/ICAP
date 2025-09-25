@@ -57,7 +57,6 @@ class Client:
     async def send_result(self, fitness: list[tuple[np.ndarray, float]], start_time: datetime, end_time: datetime):
         if not self._worker:
             return
-
         result_content = ResultContent(result=fitness, start_time=start_time, end_time=end_time)
         cluster_packet = ClusterPacket(ClusterPacketType.RESULT, result_content)
         await self._worker.send(cluster_packet)
@@ -72,7 +71,6 @@ class Client:
     async def send_state(self, gpu_usage: float = 0.0, working: bool = False):
         if not self._worker:
             return
-
         state_content = StateContent(gpu_usage=gpu_usage, working=working)
         cluster_packet = ClusterPacket(ClusterPacketType.STATE, state_content)
         await self._worker.send(cluster_packet)
