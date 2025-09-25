@@ -71,12 +71,12 @@ class ConnectionManager:
 
         return packet
 
-    def _receive_from_head(self, connection: Head) -> dict[uuid.UUID, list[CoroutinePacket]]:
+    def _receive_from_head(self, connection: Head) -> dict[uuid.UUID, CoroutinePacket]:
         received_packets = {}
         for id_, packet in connection.receive().items():
             packet = self._receive_from_connection(id_, packet)
             if packet is not None:
-                received_packets[id_] = []
+                received_packets[id_] = packet
         return received_packets
 
     def _receive_from_worker(self, connection: Worker) -> dict[uuid.UUID, CoroutinePacket]:
