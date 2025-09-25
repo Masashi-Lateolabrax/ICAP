@@ -3,7 +3,10 @@ from .robot import RobotIDs, BatchedRobotIDs, RobotSpec, BatchedRobots, RobotOut
 from .food import FoodSpec, FoodIDs, BatchedFoodIDs, BatchedFood
 from .pheromone import Material, ETHANOL
 from .communication import TaskProgress, Task
-from .net import ClusterPacket, ClusterPacketType, CoroutinePacket, CoroutinePacketType
+from .net import (
+    ClusterPacket, ClusterPacketType, CoroutinePacket, CoroutinePacketType, Content, HeartbeatContent, ResultContent,
+    TaskContent, StateContent
+)
 from .utils import OptimizationResult, OptimizerResultSet
 
 __all__ = [
@@ -30,4 +33,9 @@ __all__ = [
     "ClusterPacketType",
     "CoroutinePacket",
     "CoroutinePacketType",
+    "Content",
+    "HeartbeatContent",
+    "ResultContent",
+    "TaskContent",
+    "StateContent",
 ]
