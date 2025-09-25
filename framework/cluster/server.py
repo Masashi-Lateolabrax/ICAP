@@ -92,8 +92,7 @@ class Server:
         elif self._client_states[client_id].task is not None:
             return False
 
-        current_state = self._client_states[client_id]
-        current_state.task = task_content
+        self._client_states[client_id].task = task_content
 
         cluster_packet = ClusterPacket(ClusterPacketType.TASK, task_content)
         await self._head.send(client_id, cluster_packet)
