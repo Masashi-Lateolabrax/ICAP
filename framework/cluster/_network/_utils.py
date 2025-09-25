@@ -28,7 +28,7 @@ async def receive_payload(reader: asyncio.StreamReader, timeout: float) -> Clust
 
 
 async def _relay_local_to_remote(writer: asyncio.StreamWriter, tunnel: Tunnel):
-    packet: CoroutinePacket = tunnel.receive()
+    packet: CoroutinePacket = ic(tunnel.receive())
     if packet is None:
         return False
 
@@ -57,6 +57,6 @@ async def _relay_remote_to_local(reader: asyncio.StreamReader, tunnel: Tunnel, t
 async def relay_routine(
         reader: asyncio.StreamReader, writer: asyncio.StreamWriter, tunnel: Tunnel, timeout: float
 ) -> bool:
-    stop_signal = await _relay_local_to_remote(writer, tunnel)
+    stop_signal = ic(await _relay_local_to_remote(writer, tunnel))
     await _relay_remote_to_local(reader, tunnel, timeout)
     return not stop_signal

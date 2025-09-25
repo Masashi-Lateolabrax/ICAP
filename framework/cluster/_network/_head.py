@@ -25,7 +25,7 @@ class Head:
             raise RuntimeError("Server is already running")
 
         async def body_fn(reader, writer):
-            parent, child = Tunnel.create()
+            parent, child = ic(Tunnel.create())
             self.tunnel[parent.id] = parent
             await head_routine(reader, writer, tunnel=child, timeout=timeout)
 

@@ -2,6 +2,7 @@ from typing import Optional
 from datetime import datetime
 
 import numpy as np
+from icecream import ic
 
 from ..prelude import *
 from ._network import Worker, ConnectionManager
@@ -40,8 +41,8 @@ class Client:
     async def manage(self):
         if not self._worker:
             return
-        dead_ids = await self._manager.manage(self._worker)
         if self.id not in dead_ids:
+        dead_ids = ic(await self._manager.manage(self._worker))
             await self.stop()
         else:
             raise RuntimeError("Here is not reachable")

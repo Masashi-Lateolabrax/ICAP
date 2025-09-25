@@ -57,7 +57,7 @@ async def main():
         fitness: list[tuple[np.ndarray, float]] = []
 
         while len(fitness) < population_size:
-            dead_ids = await server.manage()
+            dead_ids = ic(await server.manage())
             for dead_id in dead_ids:
                 load_balancer.remove(dead_id)
 
