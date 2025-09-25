@@ -62,6 +62,22 @@ async def main():
 
             packets = server.receive()
 
+            for client_id, packet in packets.items():
+                if packet.type == ClusterPacketType.RESULT and isinstance(packet.content, ResultContent):
+                    result: ResultContent = packet.content
+
+                    if result.rejected is not None:
+                        print(f"Client {client_id} rejected the task.")
+                        rejected_task = result.rejected
+                        for candidate in rejected_task.parameter:
+                            candidates.append(candidate)
+
+                    else:
+                        duration = (result.end_time - result.start_time).total_seconds()
+                        task_count = len(result.result)
+                        load_balancer.register_performance(client_id, task_count, duration)
+                        fitness.extend(result.result)
+
             available_ids = set(server.get_available_clients().keys())
 
             # Check worker status
