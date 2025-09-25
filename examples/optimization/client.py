@@ -151,8 +151,9 @@ async def main():
     await client.start(host, port, timeout=net_timeout)
 
     task_content = None
-    count = 0
-    while count < 5:
+    while True:
+        await asyncio.sleep(0.1)
+
         packet: WorkerPacket = ic(await client.receive())
         if packet is not None:
             if packet.type == WorkerPacketType.TASK:
