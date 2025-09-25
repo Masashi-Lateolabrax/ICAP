@@ -37,6 +37,15 @@ class Client:
             self._worker = None
         print("SimpleClient disconnected")
 
+    async def manage(self):
+        if not self._worker:
+            return
+        dead_ids = self._manager.manage(self._worker)
+        if self.id not in dead_ids:
+            await self.stop()
+        else:
+            raise RuntimeError("Here is not reachable")
+
     def get_task(self) -> Optional[TaskContent]:
         if not self._worker:
             return None
