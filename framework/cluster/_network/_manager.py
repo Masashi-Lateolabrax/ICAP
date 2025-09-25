@@ -17,13 +17,13 @@ class ConnectionManager:
         self.timeout = timeout
 
     def _manage_heartbeat(self, id_: uuid.UUID) -> bool:
+        current = datetime.datetime.now(tz=datetime.UTC)
         if id_ not in self.last_send_heartbeat:
-            self.last_send_heartbeat[id_] = datetime.datetime.now(tz=datetime.UTC)
+            self.last_send_heartbeat[id_] = current
             return True
-        current = self.last_send_heartbeat[id_]
         do_send_heartbeat = (current - self.last_send_heartbeat[id_]).total_seconds() > self.interval
         if do_send_heartbeat:
-            self.last_send_heartbeat[id_] = datetime.datetime.now(tz=datetime.UTC)
+            self.last_send_heartbeat[id_] = current
         return do_send_heartbeat
 
     async def _manage_head(self, connection: Head):
