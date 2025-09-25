@@ -56,18 +56,17 @@ class Server:
         """Update client states from received packets"""
 
         pass_through: dict[uuid.UUID, ClusterPacket] = {}
-        state_packets: dict[uuid.UUID, StateContent] = {}
+
         for i, p in packets.items():
             if p.type == ClusterPacketType.STATE and isinstance(p.content, StateContent):
-                state_packets[i] = p.content
+                self._client_states[i].gpu_usage = p.content.gpu_usage
+                self._client_states[i].working = p.content.working
+
+            elif p.type == ClusterPacketType.RESULT and isinstance(p.content, ResultContent):
+                self._client_states[i].task = None
+
             else:
                 pass_through[i] = p
-
-        for client_id, state in state_packets.items():
-            self._client_states[client_id] = ClientState(
-                working=state.working,
-                gpu_usage=state.gpu_usage
-            )
 
         return pass_through
 
