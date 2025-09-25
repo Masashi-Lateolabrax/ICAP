@@ -173,7 +173,10 @@ async def main():
             task_content = None
             await client.send_result(content)
 
-        await client.manage()
+        if ic(await client.manage()):
+            print("Connection lost. Exiting...")
+            break
+
         packet: Optional[ClusterPacket] = ic(client.receive())
         if packet is None:
             await asyncio.sleep(1)
