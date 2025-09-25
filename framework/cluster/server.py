@@ -64,6 +64,7 @@ class Server:
 
             elif p.type == ClusterPacketType.RESULT and isinstance(p.content, ResultContent):
                 self._client_states[i].task = None
+                pass_through[i] = p
 
             else:
                 pass_through[i] = p
