@@ -51,12 +51,9 @@ class Head:
     async def get_ids(self) -> set[uuid.UUID]:
         return set(self.tunnel.keys())
 
-    def receive(self) -> dict[uuid.UUID, list[CoroutinePacket]]:
+    def receive(self) -> dict[uuid.UUID, CoroutinePacket]:
         received_packets = {}
         for i, t in self.tunnel.items():
-            if i not in received_packets:
-                received_packets[i] = []
-
             while True:
                 packet = t.receive()
 
