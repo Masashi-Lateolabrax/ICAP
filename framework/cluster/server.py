@@ -17,9 +17,9 @@ class ClientState:
 class Server:
     """Minimal server for task distribution and heartbeat monitoring"""
 
-    def __init__(self, heartbeat_timeout: float = 30.0):
+    def __init__(self, heartbeat_interval: float = 5.0, heartbeat_timeout: float = 30.0):
         self._head = Head()
-        self._connection_manager = ConnectionManager(interval=5.0, timeout=heartbeat_timeout)
+        self._connection_manager = ConnectionManager(interval=heartbeat_interval, timeout=heartbeat_timeout)
         self._client_states: dict[uuid.UUID, ClientState] = {}
 
     async def start(self, host: str, port: int, timeout: float = 5.0) -> None:
