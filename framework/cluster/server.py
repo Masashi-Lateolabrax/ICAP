@@ -81,6 +81,8 @@ class SimpleServer:
             if packet.type == ClusterPacketType.RESULT and isinstance(packet.content, ResultContent):
                 if client_id not in self._client_states:
                     raise RuntimeError("Client {} not found".format(client_id))
+                self._client_states[client_id].result = packet.content
+                self._client_states[client_id].task = None
 
         packets: dict[uuid.UUID, ClusterPacket] = self._update_client_states(packets)
 
