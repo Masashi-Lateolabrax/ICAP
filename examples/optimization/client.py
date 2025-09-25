@@ -18,6 +18,7 @@ from framework.prelude import *
 from framework.cluster import Client
 
 from examples.config import PracticalSimulator, PracticalController
+from framework.utils import force_garbage_collection
 
 ic.configureOutput(
     prefix=lambda: f'[{datetime.datetime.now().strftime("%H:%M:%S.%f")[:-3]}] CLIENT| ',
@@ -50,16 +51,22 @@ async def evaluation(
     )
 
     @partial(nnx.jit, donate_argnames=("sims",))
-    def jit_set_params(sims, params):
+    def jit_batch_set_params(sims, params):
         sims = jax.vmap(lambda s, p: s.update(controller=PracticalController(p)))(sims, params)
         sims = jax.vmap(lambda sim: sim.reset(model))(sims)
         return sims
 
     @partial(nnx.jit, donate_argnames=("sims",))
-    def jit_run_batch(sims):
+    def jit_batch_run(sims):
         return jax.vmap(lambda s: s.step_n(model, episode_length))(sims)
 
-    @partial(nnx.jit, donate_argnames=("sims",))
+    @partial(nnx.jit, donate_argnames=("sim",))
+    def jit_set_params(sim, params):
+        sim = sim.update(controller=PracticalController(params))
+        sim = sim.reset(model)
+        return sim
+
+    @partial(nnx.jit, donate_argnames=("sim",))
     def jit_run(sim):
         return sim.step_n(model, episode_length)
 
@@ -76,31 +83,35 @@ async def evaluation(
         start_time = datetime.datetime.now(tz=datetime.UTC)
 
         parameters = packet.parameter
-        batch_size = min(parameters.shape[0], max_batch_size)
+        batch_size = min(ic(parameters.shape[0]), max_batch_size)
 
         if batch_size > 1:
             simulators = jax.tree.map(lambda x: x[:batch_size], base_simulators)
-            simulators = jit_set_params(simulators, parameters[:batch_size])
-            simulators = jit_run(simulators)
+            simulators = jit_batch_set_params(simulators, parameters[:batch_size])
+            simulators = jit_batch_run(simulators)
             results = jax.tree.map(lambda x: x.evaluate(), simulators)
             loss = np.array(results["loss"])
 
         elif batch_size == 1:
-            simulator = jit_set_params(base_simulator, parameters[:1])
-            simulator = jit_run(simulator)
-            results = simulator.evaluate()
+            base_simulator = jit_set_params(base_simulator, parameters[0])
+            base_simulator = jit_run(base_simulator)
+            results = base_simulator.evaluate()
             loss = np.array([results["loss"]])
 
         else:
             raise ValueError("Batch size must be at least 1.")
 
         end_time = datetime.datetime.now(tz=datetime.UTC)
-
+        force_garbage_collection()
         result_content = ResultContent(
             result=[(p, l) for p, l in zip(parameters[:batch_size], loss)],
             start_time=start_time,
             end_time=end_time,
         )
+
+        average = np.average([f for _, f in result_content.result])
+        speed = 1.0 / (end_time - start_time).total_seconds()
+        print(f"Evaluated {batch_size} tasks | Avg Fitness: {average:.4f} | Speed: {speed:.2f} tasks/s")
 
         await sender.put(result_content)  # Send result back to main function
 
@@ -130,6 +141,8 @@ async def main():
     print("OPTIMIZATION CLIENT")
     print("=" * 50)
     print(f"Server: {host}:{port}")
+    print("-" * 30)
+    print(f"Max batch size: {max_batch_size}")
     print("-" * 30)
     print("Connecting to server...")
     print("Press Ctrl+C to disconnect")
