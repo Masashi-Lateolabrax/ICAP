@@ -7,7 +7,7 @@ from ..prelude import *
 from ._network import Worker, ConnectionManager
 
 
-class SimpleClient:
+class Client:
     """Minimal client with periodic state sending and task processing"""
 
     @classmethod
