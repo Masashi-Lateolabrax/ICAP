@@ -137,49 +137,47 @@ async def main():
     receiver = asyncio.Queue()  # Queue for receiving results FROM evaluation function
     evaluation_coroutine = asyncio.create_task(evaluation(settings, sender, receiver, max_batch_size))
 
-    client = WorkerClient()
-    await client.start(host, port, timeout=net_timeout)
-
+    client = await Client.new(host, port, net_timeout, heartbeat_interval, heartbeat_timeout)
     task_content = None
-    count = 0
-    while count < 5:
-        packet: WorkerPacket = ic(await client.receive())
+    last_state_sent_time = datetime.datetime.now(tz=datetime.UTC)
 
-        if packet is None:
-            print("Failed to receive packet from server.")
-            count += 1
-            await asyncio.sleep(retry_interval)
-            continue
-        count = 0  # Reset counter on successful packet
-
-        if packet.type == WorkerPacketType.TASK:
-            if not isinstance(packet.content, TaskContent):
-                print("Received invalid packet from server.")
-                continue
-            if task_content is not None:
-                print("Previous task is still being processed. Ignoring new task.")
-                continue
-            task_content = packet.content
-            await sender.put(task_content)  # Send task to evaluation function
-
-        elif packet.type == WorkerPacketType.STATE:
+    while True:
+        current_time = datetime.datetime.now(tz=datetime.UTC)
+        if (current_time - last_state_sent_time).total_seconds() >= heartbeat_interval:
             await client.send_worker_state(
                 gpu_usage=float("nan"),
                 working=task_content is not None
             )
+            last_state_sent_time = current_time
 
-        if task is not None and not receiver.empty():
-            content = await receiver.get()  # Receive result from evaluation function
+        if not receiver.empty():
+            content = receiver.get_nowait()
             if not isinstance(content, ResultContent):
                 print("Received invalid result from evaluation.")
                 continue
             task_content = None
-            await client.send_worker_result(content)
+            await client.send_result(content)
 
-    print("Connection lost after multiple failed attempts.")
+        await client.manage()
+        packet: Optional[ClusterPacket] = ic(await client.receive())
+        if packet is None:
+            await asyncio.sleep(1)
+            continue
+
+        if packet.type == ClusterPacketType.TASK:
+            if not isinstance(packet.content, TaskContent):
+                raise ValueError("Received invalid task content.")
+            if task_content is not None:
+                print("Previous task is still being processed. Rejecting new task.")
+                await client.send_worker_reject(packet.content)  # Reject new task
+                continue
+            task_content = packet.content
+            await sender.put(task_content)  # Send task to evaluation function
+
     # Stop evaluation task
     await sender.put(Signal(stop=True))
-    await task
+    await evaluation_coroutine
+    await client.stop()
 
 
 if __name__ == "__main__":
