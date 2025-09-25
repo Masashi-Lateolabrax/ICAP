@@ -174,7 +174,7 @@ async def main():
             await client.send_result(content)
 
         await client.manage()
-        packet: Optional[ClusterPacket] = ic(await client.receive())
+        packet: Optional[ClusterPacket] = ic(client.receive())
         if packet is None:
             await asyncio.sleep(1)
             continue

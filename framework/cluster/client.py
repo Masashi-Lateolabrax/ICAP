@@ -40,7 +40,7 @@ class Client:
     async def manage(self):
         if not self._worker:
             return
-        dead_ids = self._manager.manage(self._worker)
+        dead_ids = await self._manager.manage(self._worker)
         if self.id not in dead_ids:
             await self.stop()
         else:
