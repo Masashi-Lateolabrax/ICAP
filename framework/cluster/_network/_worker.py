@@ -45,8 +45,15 @@ class Worker:
         self.routine_handler = None
         self.tunnel = None
 
-    def receive(self) -> Optional[CoroutinePacket]:
-        return self.tunnel.receive()
+    def receive(self) -> Optional[ClusterPacket]:
+        packet = self.tunnel.receive()
+        if packet is None:
+            return None
+        if packet.type != CoroutinePacketType.CLUSTER_PACKET:
+            raise ValueError("Unexpected packet type")
+        if not isinstance(packet.content, ClusterPacket):
+            raise ValueError("Unexpected content type")
+        return packet.content
 
     async def send(self, packet: CoroutinePacket):
         await self.tunnel.send(packet)
