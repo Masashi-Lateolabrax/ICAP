@@ -40,6 +40,15 @@ class ConnectionManager:
             packet = CoroutinePacket(CoroutinePacketType.CLUSTER_PACKET, packet)
             connection.send(packet)
 
+    def _manage_dead(self) -> list[uuid.UUID]:
+        dead_ids = []
+        current = datetime.datetime.now(tz=datetime.UTC)
+        for id_, last in list(self.last_heartbeat.items()):
+            if (current - last).total_seconds() > self.timeout:
+                dead_ids.append(id_)
+                del self.last_heartbeat[id_]
+        return dead_ids
+
     def manage(self, connection: Head | Worker) -> set[uuid.UUID]:
         if isinstance(connection, Head):
             self._manage_head(connection)
@@ -48,14 +57,7 @@ class ConnectionManager:
         else:
             raise ValueError("Invalid connection type")
 
-        dead_ids = []
-        current = datetime.datetime.now(tz=datetime.UTC)
-        for id_, last in list(self.last_heartbeat.items()):
-            if (current - last).total_seconds() > self.timeout:
-                dead_ids.append(id_)
-                del self.last_heartbeat[id_]
-
-        return set(dead_ids)
+        return set(self._manage_dead())
 
     def spawn_child(self) -> AsyncTaskTunnelChild:
         child = self.tunnel.spawn_child()
