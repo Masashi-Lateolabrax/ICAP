@@ -109,16 +109,18 @@ async def main():
     parser = argparse.ArgumentParser(description="ICAP Optimization Client")
     parser.add_argument("--host", default="localhost", type=str, help="Server host address")
     parser.add_argument("--port", default=50000, type=int, help="Server port number")
-    parser.add_argument("--max-batch-size", type=int, default=1, help="Number of tasks to evaluate in batch")
-    parser.add_argument("--retry-interval", type=int, default=15, help="TODO")
     parser.add_argument("--net-timeout", type=int, default=1, help="TODO")
+    parser.add_argument("--heartbeat-interval", type=int, default=5, help="Interval in seconds to send state updates")
+    parser.add_argument(
+        "--heartbeat-timeout", type=int, default=15, help="Timeout in seconds to detect lost connection"
+    )
     args = parser.parse_args()
 
     host = args.host
     port = args.port
-    max_batch_size = args.max_batch_size
-    retry_interval = args.retry_interval
     net_timeout = args.net_timeout
+    heartbeat_interval = args.heartbeat_interval
+    heartbeat_timeout = args.heartbeat_timeout
 
     settings = Settings()
 
@@ -126,8 +128,6 @@ async def main():
     print("OPTIMIZATION CLIENT")
     print("=" * 50)
     print(f"Server: {host}:{port}")
-    print("-" * 30)
-    print(f"Max batch size: {max_batch_size}")
     print("-" * 30)
     print("Connecting to server...")
     print("Press Ctrl+C to disconnect")
