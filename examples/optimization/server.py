@@ -56,6 +56,14 @@ async def main():
         fitness: list[tuple[np.ndarray, float]] = []
 
         while len(candidates) > 0:
+            dead_ids = server.manage()
+            for dead_id in dead_ids:
+                load_balancer.remove(dead_id)
+
+            packets = server.receive()
+
+            available_ids = set(server.get_available_clients().keys())
+
             # Check worker status
             dead_worker_ids = ic(set(await head.cleanup()))
             all_worker_ids = ic(set(await head.get_ids()))
