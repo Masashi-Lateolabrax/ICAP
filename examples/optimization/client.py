@@ -60,9 +60,9 @@ def evaluation(
         sims = jax.vmap(lambda sim: sim.reset(model))(sims)
         return sims
 
-    @partial(nnx.jit, donate_argnames=("sims",), static_argnames=("n",))
-    def jit_batch_run(sims, n):
-        return jax.vmap(lambda s: s.step_n(model, n))(sims)
+    @partial(nnx.jit, donate_argnames=("sims",), static_argnames=("step",))
+    def jit_batch_run(sims, step):
+        return jax.vmap(lambda s: s.step_n(model, step))(sims)
 
     @partial(nnx.jit, donate_argnames=("sim",))
     def jit_set_params(sim, params):
@@ -70,9 +70,9 @@ def evaluation(
         sim = sim.reset(model)
         return sim
 
-    @partial(nnx.jit, donate_argnames=("sim",), static_argnames=("n",))
-    def jit_run(sim, n):
-        return sim.step_n(model, n)
+    @partial(nnx.jit, donate_argnames=("sim",), static_argnames=("step",))
+    def jit_run(sim, step):
+        return sim.step_n(model, step)
 
     while True:
         try:
