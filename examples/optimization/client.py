@@ -96,6 +96,8 @@ def evaluation(
             batch_size = min(ic(parameters.shape[0] - len(result)), max_batch_size)
             current_parameters = parameters[len(result):len(result) + batch_size, :]
 
+            print(f"Processing batch: {len(result)} -> {len(result) + batch_size} / {parameters.shape[0]}")
+
             if batch_size > 1:
                 simulators = jax.tree.map(lambda x: x[:batch_size], base_simulators)
                 simulators = jit_batch_set_params(simulators, current_parameters)
@@ -183,7 +185,7 @@ async def main():
 
     sender = queue.Queue()  # Queue for sending tasks TO evaluation function
     receiver = queue.Queue()  # Queue for receiving results FROM evaluation function
-    evaluation_thread = threading.Thread(target=evaluation, args=(settings, sender, receiver, max_batch_size))
+    evaluation_thread = threading.Thread(target=evaluation, args=(settings, sender, receiver, max_batch_size, 100))
     evaluation_thread.daemon = True
     evaluation_thread.start()
 
