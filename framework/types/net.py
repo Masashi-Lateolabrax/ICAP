@@ -1,17 +1,49 @@
+import dataclasses
 import datetime
 import enum
 import pickle
-from typing import Self
+from typing import Self, Optional
+
+import numpy as np
+
+
+class Content:
+    pass
+
+
+@dataclasses.dataclass
+class TaskContent(Content):
+    parameter: np.ndarray
+
+
+@dataclasses.dataclass
+class StateContent(Content):
+    gpu_usage: float
+    working: bool
+
+
+@dataclasses.dataclass
+class ResultContent(Content):
+    result: list[tuple[np.ndarray, float]]
+    start_time: Optional[datetime.datetime]
+    end_time: Optional[datetime.datetime]
+    rejected: bool = False
+
+
+class HeartbeatContent(Content):
+    def __init__(self):
+        self.timestamp = datetime.datetime.now(tz=datetime.UTC)
 
 
 class ClusterPacketType(enum.Enum):
     TASK = 1
     RESULT = 2
     STATE = 3
+    HEARTBEAT = 4
 
 
 class ClusterPacket:
-    def __init__(self, type_: ClusterPacketType, content):
+    def __init__(self, type_: ClusterPacketType, content: Content):
         self.type: ClusterPacketType = type_
         self.content = content
         self.timestamp = datetime.datetime.now(tz=datetime.UTC)
