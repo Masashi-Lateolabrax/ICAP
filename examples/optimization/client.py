@@ -83,7 +83,7 @@ def evaluation(
             break
 
         if packet.warmup:
-            print(f"Starting warmup for {packet.warmup} iterations...")
+            print(f"Starting warmup")
 
         start_time = datetime.datetime.now(tz=datetime.UTC)
 
@@ -91,7 +91,7 @@ def evaluation(
         parameters: np.ndarray = packet.parameters
         while len(result) < parameters.shape[0]:
             batch_size = min(ic(parameters.shape[0] - len(result)), max_batch_size)
-            current_parameters = parameters[len(result):len(result) + batch_size, :]
+            current_parameters: np.ndarray = parameters[len(result):len(result) + batch_size, :]
 
             print(f"Processing batch: {len(result)} -> {len(result) + batch_size} / {parameters.shape[0]}")
 
@@ -237,7 +237,7 @@ async def main():
                     print("Previous task is still being processed. Rejecting new task.")
                     await client.send_reject(packet.content)  # Reject new task
                     continue
-                task_content = packet.content
+                task_content = Signal(parameters=packet.content.parameter)
                 sender.put(task_content)  # Send task to evaluation function
 
     # Stop evaluation task
