@@ -111,8 +111,7 @@ def evaluation(
                         print(f"\nStep {t}/{episode_length}")
                         monitor_comprehensive_gpu()
 
-                simulators = jit_batch_run(simulators)
-                results = jax.tree.map(lambda x: x.evaluate(), simulators)
+                results = jax.vmap(lambda x: x.evaluate())(simulators)
                 loss = np.array(results["loss"])
 
             elif batch_size == 1:
