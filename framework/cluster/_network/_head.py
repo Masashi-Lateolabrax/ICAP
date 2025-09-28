@@ -55,17 +55,16 @@ class Head:
         received_packets = {}
 
         for i, t in self.tunnel.items():
-            while True:
-                packet = t.receive()
+            packet = t.receive()
 
-                if packet is None:
-                    break
-                if packet.type != CoroutinePacketType.CLUSTER_PACKET:
-                    raise ValueError("Unexpected packet type")
-                if not isinstance(packet.content, ClusterPacket):
-                    raise ValueError("Unexpected content type")
+            if packet is None:
+                break
+            if packet.type != CoroutinePacketType.CLUSTER_PACKET:
+                raise ValueError("Unexpected packet type")
+            if not isinstance(packet.content, ClusterPacket):
+                raise ValueError("Unexpected content type")
 
-                received_packets[i] = packet.content
+            received_packets[i] = packet.content
 
         return received_packets
 
