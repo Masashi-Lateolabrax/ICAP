@@ -184,7 +184,7 @@ async def main():
 
     sender = queue.Queue()  # Queue for sending tasks TO evaluation function
     receiver = queue.Queue()  # Queue for receiving results FROM evaluation function
-    evaluation_thread = threading.Thread(target=evaluation, args=(settings, sender, receiver, max_batch_size, 100))
+    evaluation_thread = threading.Thread(target=evaluation, args=(settings, sender, receiver, max_batch_size))
     evaluation_thread.daemon = True
     evaluation_thread.start()
 
