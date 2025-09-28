@@ -74,13 +74,21 @@ class ConnectionManager:
 
         return received_packets
 
-    def _receive_from_worker(self, connection: Worker) -> dict[uuid.UUID, ClusterPacket]:
-        packet = self._receive_from_connection(connection.id, connection.receive())
-        if packet is not None:
-            return {connection.id: packet}
-        return {}
+    def _receive_from_worker(self, connection: Worker) -> dict[uuid.UUID, list[ClusterPacket]]:
+        current = datetime.datetime.now(tz=datetime.UTC)
+        packet = connection.receive()
 
-    def receive(self, connection: Head | Worker) -> dict[uuid.UUID, ClusterPacket]:
+        if packet is None:
+            return {}
+
+        self.last_receive_heartbeat[connection.id] = current
+
+        if isinstance(packet.content, HeartbeatContent):
+            return {}
+
+        return {connection.id: [packet]}
+
+    def receive(self, connection: Head | Worker) -> dict[uuid.UUID, list[ClusterPacket]]:
         if isinstance(connection, Head):
             return self._receive_from_head(connection)
         elif isinstance(connection, Worker):
