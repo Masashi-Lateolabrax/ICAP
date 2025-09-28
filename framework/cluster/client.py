@@ -45,13 +45,11 @@ class Client:
         if self.id in dead_ids:
             await self.stop()
 
-    def receive(self) -> Optional[ClusterPacket]:
+    def receive(self) -> list[ClusterPacket]:
         if not self._worker:
-            return None
-        packet = self._manager.receive(self._worker).get(self.id, None)
-        if packet is None:
-            return None
-        return packet
+            return []
+        packet_list = self._manager.receive(self._worker).get(self.id, [])
+        return packet_list
 
     async def send_result(self, result_content: ResultContent):
         if not self._worker:
