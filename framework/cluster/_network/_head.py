@@ -51,20 +51,25 @@ class Head:
     def get_ids(self) -> set[uuid.UUID]:
         return set(self.tunnel.keys())
 
-    def receive(self) -> dict[uuid.UUID, ClusterPacket]:
+    def receive(self) -> dict[uuid.UUID, list[ClusterPacket]]:
         received_packets = {}
 
         for i, t in self.tunnel.items():
-            packet = t.receive()
+            received_packets[i] = []
 
-            if packet is None:
-                break
-            if packet.type != CoroutinePacketType.CLUSTER_PACKET:
-                raise ValueError("Unexpected packet type")
-            if not isinstance(packet.content, ClusterPacket):
-                raise ValueError("Unexpected content type")
+            while True:
+                packet = t.receive()
 
-            received_packets[i] = packet.content
+                if packet is None:
+                    break
+                if packet.type != CoroutinePacketType.CLUSTER_PACKET:
+                    raise ValueError("Unexpected packet type")
+                if not isinstance(packet.content, ClusterPacket):
+                    raise ValueError("Unexpected content type")
+
+                received_packets[i].append(
+                    packet.content
+                )
 
         return received_packets
 
