@@ -3,7 +3,6 @@ import datetime
 from functools import partial
 import argparse
 import asyncio
-from typing import Optional
 import threading
 import queue
 
@@ -33,6 +32,8 @@ ic.disable()
 @dataclasses.dataclass
 class Signal:
     stop: bool = False
+    warmup: bool = False
+    parameters: np.ndarray = None
 
 
 def evaluation(
@@ -47,12 +48,6 @@ def evaluation(
         jax.random.PRNGKey(0)
     )
     model = mjx.put_model(mj_model)
-
-    _, base_simulators = jax.lax.scan(
-        lambda c, _x: (c, c.reset(model)),
-        init=base_simulator,
-        xs=jnp.ones((max_batch_size,), dtype=jnp.int32),
-    )
 
     @partial(nnx.jit, donate_argnames=("sims",))
     def jit_batch_set_params(sims, params):
@@ -80,18 +75,20 @@ def evaluation(
         except queue.Empty:
             continue
 
-        if isinstance(packet, Signal):
-            if packet.stop:
-                print("Stopping evaluation routine.")
-                break
-        if packet is None or not isinstance(packet, TaskContent):
-            print("Received invalid task packet.")
-            continue
+        if not isinstance(packet, Signal):
+            raise ValueError("Received invalid signal packet.")
+
+        if packet.stop:
+            print("Stopping evaluation routine.")
+            break
+
+        if packet.warmup:
+            print(f"Starting warmup for {packet.warmup} iterations...")
 
         start_time = datetime.datetime.now(tz=datetime.UTC)
 
         result: list[tuple[np.ndarray, float]] = []
-        parameters: np.ndarray = packet.parameter
+        parameters: np.ndarray = packet.parameters
         while len(result) < parameters.shape[0]:
             batch_size = min(ic(parameters.shape[0] - len(result)), max_batch_size)
             current_parameters = parameters[len(result):len(result) + batch_size, :]
@@ -99,7 +96,11 @@ def evaluation(
             print(f"Processing batch: {len(result)} -> {len(result) + batch_size} / {parameters.shape[0]}")
 
             if batch_size > 1:
-                simulators = jax.tree.map(lambda x: x[:batch_size], base_simulators)
+                _, simulators = jax.lax.scan(
+                    lambda c, _x: (c, c.reset(model)),
+                    init=base_simulator,
+                    xs=jnp.ones((batch_size,), dtype=jnp.int32),
+                )
                 simulators = jit_batch_set_params(simulators, current_parameters)
 
                 t = 0
@@ -137,17 +138,21 @@ def evaluation(
             force_garbage_collection()
 
         end_time = datetime.datetime.now(tz=datetime.UTC)
-        result_content = ResultContent(
-            result=result,
-            start_time=start_time,
-            end_time=end_time,
-        )
 
-        average = np.average([f for _, f in result_content.result])
+        if packet.warmup:
+            sender.put(packet)
+
+        else:
+            result_content = ResultContent(
+                result=result,
+                start_time=start_time,
+                end_time=end_time,
+            )
+            sender.put(result_content)  # Send result back to main function  # Send result back to main function
+
+        average = np.average([f for _, f in result])
         speed = 1.0 / (end_time - start_time).total_seconds()
         print(f"Evaluated {parameters.shape[0]} tasks | Avg Fitness: {average:.4f} | Speed: {speed:.2f} tasks/s")
-
-        sender.put(result_content)  # Send result back to main function  # Send result back to main function
 
 
 async def main():
@@ -189,8 +194,11 @@ async def main():
     evaluation_thread.start()
 
     client = await Client.new(host, port, net_timeout, heartbeat_interval, heartbeat_timeout)
-    task_content = None
+    task_content = Signal(warmup=True, parameters=np.zeros((1, PracticalController.dim()), dtype=np.float32))
     last_state_sent_time = datetime.datetime.now(tz=datetime.UTC)
+
+    # Warmup
+    sender.put(task_content)
 
     while True:
         current_time = datetime.datetime.now(tz=datetime.UTC)
@@ -204,11 +212,13 @@ async def main():
         content = receiver.get_nowait() if not receiver.empty() else None
 
         if content is not None:
-            if not isinstance(content, ResultContent):
-                print("Received invalid result from evaluation.")
-                continue
-            task_content = None
-            await client.send_result(content)
+            if isinstance(content, ResultContent):
+                task_content = None
+                await client.send_result(content)
+
+            elif isinstance(content, Signal) and content.warmup:
+                print("Finished warmup.")
+                task_content = None
 
         if ic(await client.manage()):
             print("Connection lost. Exiting...")
