@@ -54,25 +54,27 @@ class Server:
                 result[client_id] = state
         return result
 
-    def _update_client_states(self, packets: dict[uuid.UUID, ClusterPacket]) -> dict[uuid.UUID, ClusterPacket]:
+    def _update_client_states(self, packets: dict[uuid.UUID, list[ClusterPacket]]) -> dict[uuid.UUID, list[ClusterPacket]]:
         """Update client states from received packets"""
 
-        pass_through: dict[uuid.UUID, ClusterPacket] = {}
+        pass_through: dict[uuid.UUID, list[ClusterPacket]] = {}
 
-        for i, p in packets.items():
+        for i, packet_list in packets.items():
             if i not in self._client_states:
                 self._client_states[i] = ClientState(working=False, gpu_usage=0.0, task=None)
 
-            if p.type == ClusterPacketType.STATE and isinstance(p.content, StateContent):
-                self._client_states[i].working = p.content.working
-                self._client_states[i].gpu_usage = p.content.gpu_usage
+            pass_through[i] = []
+            for p in packet_list:
+                if p.type == ClusterPacketType.STATE and isinstance(p.content, StateContent):
+                    self._client_states[i].working = p.content.working
+                    self._client_states[i].gpu_usage = p.content.gpu_usage
 
-            elif p.type == ClusterPacketType.RESULT and isinstance(p.content, ResultContent):
-                self._client_states[i].task = None
-                pass_through[i] = p
+                elif p.type == ClusterPacketType.RESULT and isinstance(p.content, ResultContent):
+                    self._client_states[i].task = None
+                    pass_through[i].append(p)
 
-            else:
-                pass_through[i] = p
+                else:
+                    pass_through[i].append(p)
 
         return pass_through
 
