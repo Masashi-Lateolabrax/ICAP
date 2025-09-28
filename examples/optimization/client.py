@@ -215,20 +215,21 @@ async def main():
             print("Connection lost. Exiting...")
             break
 
-        packet: Optional[ClusterPacket] = ic(client.receive())
-        if packet is None:
+        packet_list: list[ClusterPacket] = ic(client.receive())
+        if not packet_list:
             await asyncio.sleep(1)
             continue
 
-        if packet.type == ClusterPacketType.TASK:
-            if not isinstance(packet.content, TaskContent):
-                raise ValueError("Received invalid task content.")
-            if task_content is not None:
-                print("Previous task is still being processed. Rejecting new task.")
-                await client.send_worker_reject(packet.content)  # Reject new task
-                continue
-            task_content = packet.content
-            sender.put(task_content)  # Send task to evaluation function
+        for packet in packet_list:
+            if packet.type == ClusterPacketType.TASK:
+                if not isinstance(packet.content, TaskContent):
+                    raise ValueError("Received invalid task content.")
+                if task_content is not None:
+                    print("Previous task is still being processed. Rejecting new task.")
+                    await client.send_reject(packet.content)  # Reject new task
+                    continue
+                task_content = packet.content
+                sender.put(task_content)  # Send task to evaluation function
 
     # Stop evaluation task
     print("Shutting down client...")
