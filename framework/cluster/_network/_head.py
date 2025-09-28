@@ -71,7 +71,7 @@ class Head:
                     packet.content
                 )
 
-        return received_packets
+        return ic(received_packets)
 
     async def send(self, id_: uuid.UUID, packet: ClusterPacket):
         if id_ not in self.tunnel:
