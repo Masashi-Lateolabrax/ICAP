@@ -151,8 +151,14 @@ def evaluation(
             sender.put(result_content)  # Send result back to main function  # Send result back to main function
 
         average = np.average([f for _, f in result])
-        speed = 1.0 / (end_time - start_time).total_seconds()
-        print(f"Evaluated {parameters.shape[0]} tasks | Avg Fitness: {average:.4f} | Speed: {speed:.2f} tasks/s")
+        simulation_time = (end_time - start_time).total_seconds()
+        speed = parameters.shape[0] / simulation_time
+        print(
+            f"Evaluated {parameters.shape[0]} tasks |"
+            f" Avg Fitness: {average:.4f} |"
+            f" Time: {simulation_time:.2f}s |"
+            f" Speed: {speed:.2f} tasks/s"
+        )
 
 
 async def main():
