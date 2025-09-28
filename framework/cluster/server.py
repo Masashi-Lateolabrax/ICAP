@@ -84,10 +84,10 @@ class Server:
             self._client_states.pop(dead_id, None)
         return dead_ids
 
-    def receive(self) -> dict[uuid.UUID, ClusterPacket]:
+    def receive(self) -> dict[uuid.UUID, list[ClusterPacket]]:
         """Get results from all clients"""
-        packets: dict[uuid.UUID, ClusterPacket] = self._connection_manager.receive(self._head)
-        packets: dict[uuid.UUID, ClusterPacket] = self._update_client_states(packets)
+        packets: dict[uuid.UUID, list[ClusterPacket]] = self._connection_manager.receive(self._head)
+        packets: dict[uuid.UUID, list[ClusterPacket]] = self._update_client_states(packets)
         return packets
 
     async def send_task(self, client_id: uuid.UUID, task_content: TaskContent) -> bool:
