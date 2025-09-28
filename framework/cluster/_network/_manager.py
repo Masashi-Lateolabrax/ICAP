@@ -59,24 +59,19 @@ class ConnectionManager:
 
         return set(self._manage_dead())
 
-    def _receive_from_connection(self, id_: uuid.UUID, packet: Optional[ClusterPacket]) -> Optional[ClusterPacket]:
-        if packet is None:
-            return None
-
+    def _receive_from_head(self, connection: Head) -> dict[uuid.UUID, list[ClusterPacket]]:
         current = datetime.datetime.now(tz=datetime.UTC)
-        self.last_receive_heartbeat[id_] = current
-
-        if isinstance(packet.content, ClusterPacket) and isinstance(packet.content.content, HeartbeatContent):
-            return None
-
-        return packet
-
-    def _receive_from_head(self, connection: Head) -> dict[uuid.UUID, ClusterPacket]:
         received_packets = {}
-        for id_, packet in connection.receive().items():
-            packet = self._receive_from_connection(id_, packet)
-            if packet is not None:
-                received_packets[id_] = packet
+
+        for id_, cluster_packet_list in connection.receive().items():
+            received_packets[id_] = []
+            self.last_receive_heartbeat[id_] = current
+
+            for cluster_packet in cluster_packet_list:
+                if isinstance(cluster_packet.content, HeartbeatContent):
+                    continue
+                received_packets[id_].append(cluster_packet)
+
         return received_packets
 
     def _receive_from_worker(self, connection: Worker) -> dict[uuid.UUID, ClusterPacket]:
