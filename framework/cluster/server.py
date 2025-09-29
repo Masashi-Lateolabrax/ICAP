@@ -33,26 +33,9 @@ class Server:
         """Stop the server"""
         await self._head.stop()
 
-    async def get_alive_clients(self) -> dict[uuid.UUID, ClientState]:
-        """Get all clients that are currently alive"""
-        dead_ids = await self._connection_manager.manage(self._head)
-        for dead_id in dead_ids:
-            self._client_states.pop(ic(dead_id), None)
-
-        return {
-            client_id: state
-            for client_id, state in self._client_states.items()
-            if client_id in self._connection_manager.get_ids()
-        }
-
-    async def get_available_clients(self) -> dict[uuid.UUID, ClientState]:
+    def get_available_clients(self) -> set[uuid.UUID]:
         """Get clients that are alive and not working"""
-        alive_clients = await self.get_alive_clients()
-        result = {}
-        for client_id, state in alive_clients.items():
-            if not ic(state.working) and ic(state.task) is None:
-                result[client_id] = state
-        return result
+        return set(i for i in self._head.get_ids() if self.is_ready(i))
 
     def _update_client_states(
             self, packets: dict[uuid.UUID, list[ClusterPacket]]
