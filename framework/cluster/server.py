@@ -65,9 +65,10 @@ class Server:
 
     async def manage(self) -> dict[uuid.UUID, Optional[TaskContent]]:
         await self._connection_manager.manage(self._head)
+        alive_ids = self._connection_manager.get_ids()
 
         res = {}
-        for i in self._connection_manager.get_ids():
+        for i in filter(lambda i_: i_ not in alive_ids, list(self._client_states.keys())):
             dead_client_state = self._client_states.pop(i, None)
             res[i] = dead_client_state.task
 
