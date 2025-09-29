@@ -89,6 +89,7 @@ async def main():
                 continue
 
             # Load balancing
+            # We should register IDs with task_count=0 and time=0.0 when these IDs are new.
             for i in available_ids:
                 load_balancer.register_performance(i)
             task_allocation = ic(load_balancer.calc_balance(available_ids, len(candidates)))
