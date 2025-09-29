@@ -107,21 +107,18 @@ class Server:
             return False
         return True
 
-
-    async def send_task(self, client_id: uuid.UUID, task_content: TaskContent) -> bool:
+    async def send_task(self, client_id: uuid.UUID, task_content: TaskContent):
         """Send a task to a specific client"""
         if client_id not in self._head.get_ids():
-            print(f"Client {client_id} not found")
-            return False
+            raise ValueError("Client ID not found")
         elif client_id not in self._client_states:
-            return False
+            raise ValueError("Client state not found")
         elif self._client_states[client_id].working:
-            return False
+            raise ValueError("Client is currently working")
         elif self._client_states[client_id].task is not None:
-            return False
+            raise ValueError("Client already has a task assigned")
 
         self._client_states[client_id].task = task_content
 
         cluster_packet = ClusterPacket(ClusterPacketType.TASK, task_content)
         await self._head.send(client_id, cluster_packet)
-        return True
