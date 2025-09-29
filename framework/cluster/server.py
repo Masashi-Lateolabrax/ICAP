@@ -54,7 +54,9 @@ class Server:
                 result[client_id] = state
         return result
 
-    def _update_client_states(self, packets: dict[uuid.UUID, list[ClusterPacket]]) -> dict[uuid.UUID, list[ClusterPacket]]:
+    def _update_client_states(
+            self, packets: dict[uuid.UUID, list[ClusterPacket]]
+    ) -> dict[uuid.UUID, list[ClusterPacket]]:
         """Update client states from received packets"""
 
         pass_through: dict[uuid.UUID, list[ClusterPacket]] = {}
