@@ -173,7 +173,7 @@ def main(settings: Settings):
     analysis_mod.plot_pheromone_history(pheromone_graph_path, saved_individuals)
 
     # Analyze a specific individual from a specific generation (e.g., generation 0)
-    settings.Pheromone.ACTIVE = False
+    # settings.Pheromone.ACTIVE = False
     for g in [len(saved_individuals) - 1]:
         rec: Rec = saved_individuals[g]
         individual: Individual = rec.best_individual
