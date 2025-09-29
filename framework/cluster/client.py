@@ -41,8 +41,8 @@ class Client:
     async def manage(self):
         if not self._worker:
             return
-        dead_ids = ic(await self._manager.manage(self._worker))
-        if self.id in dead_ids:
+        await self._manager.manage(self._worker)
+        if len(self._manager.get_ids()) == 0:
             await self.stop()
 
     def receive(self) -> list[ClusterPacket]:
