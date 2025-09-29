@@ -57,9 +57,12 @@ async def main():
         fitness: list[tuple[np.ndarray, float]] = []
 
         while len(fitness) < population_size:
-            dead_ids = ic(await server.manage())
-            for dead_id in dead_ids:
-                load_balancer.remove(dead_id)
+            dead = ic(await server.manage())
+            for id_, task in dead:
+                load_balancer.remove(id_)
+                if task is not None:
+                    for candidate in task.parameter:
+                        candidates.append(candidate)
 
             packets = server.receive()
 
