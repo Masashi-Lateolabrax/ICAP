@@ -65,6 +65,7 @@ async def main():
                         candidates.append(candidate)
 
             packets = server.receive()
+            available_ids = ic(server.get_available_clients())
 
             for client_id, packet_list in packets.items():
                 for packet in packet_list:
@@ -83,7 +84,6 @@ async def main():
                             load_balancer.register_performance(client_id, task_count, duration)
                             fitness.extend(ic(result.result))
 
-            available_ids = ic(set((await server.get_available_clients()).keys()))
             if not available_ids:
                 await asyncio.sleep(10)
                 continue
@@ -104,11 +104,7 @@ async def main():
             # Send current batch to workers (batch = list of candidates → 2D array)
             for worker_id, batch in current_batch.items():
                 task = TaskContent(np.array(batch))
-                success = await server.send_task(worker_id, task)
-                if not success:
-                    print(f"Failed to send task to client {worker_id}")
-                    for candidate in batch:
-                        candidates.append(candidate)
+                await server.send_task(worker_id, task)
 
         # Update CMA-ES
         cma.tell(fitness)
