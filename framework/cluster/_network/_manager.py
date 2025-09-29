@@ -49,7 +49,7 @@ class ConnectionManager:
                 del self.last_receive_heartbeat[id_]
         return dead_ids
 
-    async def manage(self, connection: Head | Worker) -> set[uuid.UUID]:
+    async def manage(self, connection: Head | Worker):
         if isinstance(connection, Head):
             await self._manage_head(connection)
         elif isinstance(connection, Worker):
@@ -57,7 +57,7 @@ class ConnectionManager:
         else:
             raise ValueError("Invalid connection type")
 
-        return set(self._manage_dead())
+        self._manage_dead()
 
     def _receive_from_head(self, connection: Head) -> dict[uuid.UUID, list[ClusterPacket]]:
         current = datetime.datetime.now(tz=datetime.UTC)
