@@ -103,7 +103,11 @@ async def main():
             # Send current batch to workers (batch = list of candidates → 2D array)
             for worker_id, batch in current_batch.items():
                 task = TaskContent(np.array(batch))
-                await server.send_task(worker_id, task)
+                success = await server.send_task(worker_id, task)
+                if not success:
+                    print(f"Failed to send task to client {worker_id}")
+                    for candidate in batch:
+                        candidates.append(candidate)
 
         # Update CMA-ES
         cma.tell(fitness)
