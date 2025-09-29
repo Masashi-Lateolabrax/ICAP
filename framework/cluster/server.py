@@ -96,6 +96,18 @@ class Server:
         packets: dict[uuid.UUID, list[ClusterPacket]] = self._update_client_states(packets)
         return packets
 
+    def is_ready(self, client_id: uuid.UUID) -> bool:
+        if client_id not in self._head.get_ids():
+            return False
+        elif client_id not in self._client_states:
+            return False
+        elif self._client_states[client_id].working:
+            return False
+        elif self._client_states[client_id].task is not None:
+            return False
+        return True
+
+
     async def send_task(self, client_id: uuid.UUID, task_content: TaskContent) -> bool:
         """Send a task to a specific client"""
         if client_id not in self._head.get_ids():
