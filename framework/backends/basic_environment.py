@@ -198,7 +198,7 @@ class BasicEnvironment(BasicMuJoCoSimulator, ABC):
             # pheromone: np.ndarray = self._pheromone_field.get_liquid_all()
             # color_max = 1e-3
             pheromone: np.ndarray = self._pheromone_field.get_gas_all()
-            color_max = 3
+            color_max = 0.1
 
             pheromone = np.clip(pheromone / color_max, 0, 1)
             for cell in self._pheromone_cells:
