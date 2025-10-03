@@ -208,18 +208,18 @@ class BasicEnvironment(BasicMuJoCoSimulator, ABC):
 
         super().render(img_buf, pos, lookat)
 
-        while len(self._shadow) > 150:
-            self._shadow.pop(0)
-
-        robot_mask = (img_buf[:, :, 0] > 126) * (img_buf[:, :, 1] > 126) * (img_buf[:, :, 2] < 126)
-        self._shadow.append(img_buf[:, :, :] * robot_mask[:, :, None])
-
-        shadow = np.zeros_like(img_buf)
-        for s in self._shadow:
-            shadow = np.maximum(shadow * 0.99, s)
-
-        img_buf *= np.logical_not(np.sum(shadow, axis=2) > 0)[:, :, None]
-        img_buf += shadow.astype(np.uint8)
+        # while len(self._shadow) > 150:
+        #     self._shadow.pop(0)
+        #
+        # robot_mask = (img_buf[:, :, 0] > 126) * (img_buf[:, :, 1] > 126) * (img_buf[:, :, 2] < 126)
+        # self._shadow.append(img_buf[:, :, :] * robot_mask[:, :, None])
+        #
+        # shadow = np.zeros_like(img_buf)
+        # for s in self._shadow:
+        #     shadow = np.maximum(shadow * 0.99, s)
+        #
+        # img_buf *= np.logical_not(np.sum(shadow, axis=2) > 0)[:, :, None]
+        # img_buf += shadow.astype(np.uint8)
 
     def reset(self):
         if self._pheromone_field:
