@@ -142,7 +142,7 @@ MySettings.Simulation.WALL_HEIGHT = 1
 ###################################################################################
 # Pheromone settings
 ###################################################################################
-MySettings.Pheromone.ACTIVE = True
+MySettings.Pheromone.ACTIVE = False
 
 MySettings.Pheromone.CELL_SIZE = 0.1
 MySettings.Pheromone.WIDTH_NUM = int(MySettings.Simulation.WORLD_WIDTH / MySettings.Pheromone.CELL_SIZE)
