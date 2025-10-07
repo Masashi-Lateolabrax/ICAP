@@ -112,6 +112,10 @@ class Handler:
 
         ic(self._current_time, cmaes.generation, len(individuals))
 
+        # Skip if individuals are not evaluated yet
+        if not individuals or not all(ind.is_finished for ind in individuals):
+            return
+
         if self._last_call_time is None:
             self._last_call_time = self._current_time
             return
