@@ -135,7 +135,7 @@ class CMAES:
     def should_stop(self) -> bool:
         should_stop = self._optimizer.should_stop()
 
-        if self.generation > self.max_generation:
+        if self.generation >= self.max_generation:
             logging.warning(f"Reached maximum generation limit: {self.max_generation}")
             should_stop = True
 

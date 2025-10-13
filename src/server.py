@@ -117,9 +117,6 @@ class Handler:
         generation = individuals[0].generation
         ic(self._current_time, generation, len(individuals))
 
-        if self._last_call_time is None:
-            self._last_call_time = self._current_time
-            return
         if self._generation is not None and self._generation == generation:
             return
 
