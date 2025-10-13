@@ -109,6 +109,8 @@ class Handler:
 
     def run(self, cmaes: CMAES, individuals: list[Individual]):
         self._current_time = datetime.datetime.now()
+        if self._last_call_time is None:
+            self._last_call_time = self._current_time
 
         # Skip if individuals are not evaluated yet
         if not individuals or not all(ind.is_finished for ind in individuals):
@@ -117,9 +119,6 @@ class Handler:
         generation = individuals[0].generation
         ic(self._current_time, generation, len(individuals))
 
-        if self._last_call_time is None:
-            self._last_call_time = self._current_time
-            return
         if self._generation is not None and self._generation == generation:
             return
 
