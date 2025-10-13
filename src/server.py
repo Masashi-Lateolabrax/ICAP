@@ -110,25 +110,26 @@ class Handler:
     def run(self, cmaes: CMAES, individuals: list[Individual]):
         self._current_time = datetime.datetime.now()
 
-        ic(self._current_time, cmaes.generation, len(individuals))
-
         # Skip if individuals are not evaluated yet
         if not individuals or not all(ind.is_finished for ind in individuals):
             return
 
+        generation = individuals[0].generation
+        ic(self._current_time, generation, len(individuals))
+
         if self._last_call_time is None:
             self._last_call_time = self._current_time
             return
-        if self._generation is not None and cmaes.generation == self._generation:
+        if self._generation is not None and self._generation == generation:
             return
 
-        self._generation = cmaes.generation
+        self._generation = generation
 
         ave_fitness, sd, speed, eta = self._calc_statistic(cmaes, individuals)
-        self._print_info(cmaes.generation, ave_fitness, sd, speed, eta)
+        self._print_info(self._generation, ave_fitness, sd, speed, eta)
 
         if cmaes.should_stop() or self._generation % self.settings.Storage.SAVE_INTERVAL == 0:
-            self._save(cmaes.generation, individuals)
+            self._save(self._generation, individuals)
 
         self._last_call_time = self._current_time
 
@@ -179,10 +180,10 @@ def main(settings: Settings):
     )
 
     # Remove generation pkl files (generation_{number}.pkl)
-    generation_pattern = re.compile(r"^generation_\d+\.pkl$")
-    for filename in os.listdir(handler.save_directory):
-        if generation_pattern.match(filename):
-            os.remove(os.path.join(handler.save_directory, filename))
+    # generation_pattern = re.compile(r"^generation_\d+\.pkl$")
+    # for filename in os.listdir(handler.save_directory):
+    #     if generation_pattern.match(filename):
+    #         os.remove(os.path.join(handler.save_directory, filename))
 
 
 if __name__ == "__main__":
