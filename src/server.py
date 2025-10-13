@@ -179,10 +179,10 @@ def main(settings: Settings):
     )
 
     # Remove generation pkl files (generation_{number}.pkl)
-    generation_pattern = re.compile(r"^generation_\d+\.pkl$")
-    for filename in os.listdir(handler.save_directory):
-        if generation_pattern.match(filename):
-            os.remove(os.path.join(handler.save_directory, filename))
+    # generation_pattern = re.compile(r"^generation_\d+\.pkl$")
+    # for filename in os.listdir(handler.save_directory):
+    #     if generation_pattern.match(filename):
+    #         os.remove(os.path.join(handler.save_directory, filename))
 
 
 if __name__ == "__main__":
