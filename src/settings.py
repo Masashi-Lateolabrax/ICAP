@@ -148,7 +148,7 @@ MySettings.Pheromone.CELL_SIZE = 0.1
 MySettings.Pheromone.WIDTH_NUM = int(MySettings.Simulation.WORLD_WIDTH / MySettings.Pheromone.CELL_SIZE)
 MySettings.Pheromone.HEIGHT_NUM = int(MySettings.Simulation.WORLD_HEIGHT / MySettings.Pheromone.CELL_SIZE)
 
-MySettings.Pheromone.ITERATIONS_PER_STEP = 4
+MySettings.Pheromone.ITERATIONS_PER_STEP = 1
 
 MySettings.Pheromone.TEMPERATURE = 300
 MySettings.Pheromone.MATERIAL = ETHANOL
