@@ -38,9 +38,9 @@ MySettings.Render.CAMERA_LOOKAT = (0.0, 0.0, 0.0)
 # Optimization settings
 ###################################################################################
 MySettings.Optimization.DIMENSION = None  # Will be set later based on the neural network dimension
-MySettings.Optimization.POPULATION = 100
-MySettings.Optimization.GENERATION = 250
-MySettings.Optimization.SIGMA = 0.1
+MySettings.Optimization.POPULATION = 50
+MySettings.Optimization.GENERATION = 500
+MySettings.Optimization.SIGMA = 10
 
 MySettings.Optimization.CLIP = ClippingFunctions.none
 ###################################################################################
@@ -148,7 +148,7 @@ MySettings.Pheromone.CELL_SIZE = 0.1
 MySettings.Pheromone.WIDTH_NUM = int(MySettings.Simulation.WORLD_WIDTH / MySettings.Pheromone.CELL_SIZE)
 MySettings.Pheromone.HEIGHT_NUM = int(MySettings.Simulation.WORLD_HEIGHT / MySettings.Pheromone.CELL_SIZE)
 
-MySettings.Pheromone.ITERATIONS_PER_STEP = 4
+MySettings.Pheromone.ITERATIONS_PER_STEP = 1
 
 MySettings.Pheromone.TEMPERATURE = 300
 MySettings.Pheromone.MATERIAL = ETHANOL
