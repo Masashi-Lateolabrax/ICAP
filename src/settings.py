@@ -39,7 +39,7 @@ MySettings.Render.CAMERA_LOOKAT = (0.0, 0.0, 0.0)
 ###################################################################################
 MySettings.Optimization.DIMENSION = None  # Will be set later based on the neural network dimension
 MySettings.Optimization.POPULATION = 50
-MySettings.Optimization.GENERATION = 500
+MySettings.Optimization.GENERATION = 100
 MySettings.Optimization.SIGMA = 5
 
 MySettings.Optimization.CLIP = ClippingFunctions.none
@@ -53,7 +53,7 @@ MySettings.Robot.HEIGHT = 0.1
 MySettings.Robot.RADIUS = 0.175
 MySettings.Robot.DISTANCE_BETWEEN_WHEELS = 0.175 * 2 * 0.8
 MySettings.Robot.MAX_SPEED = 0.8
-MySettings.Robot.MAX_PHEROMONE_SECRETION = 2e-2
+MySettings.Robot.MAX_PHEROMONE_SECRETION = 1e-3
 MySettings.Robot.MASS = 10
 
 MySettings.Robot.COLOR = (1, 1, 0, 1)
