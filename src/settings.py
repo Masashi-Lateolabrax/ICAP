@@ -53,7 +53,7 @@ MySettings.Robot.HEIGHT = 0.1
 MySettings.Robot.RADIUS = 0.175
 MySettings.Robot.DISTANCE_BETWEEN_WHEELS = 0.175 * 2 * 0.8
 MySettings.Robot.MAX_SPEED = 0.8
-MySettings.Robot.MAX_PHEROMONE_SECRETION = 1e-3
+MySettings.Robot.MAX_PHEROMONE_SECRETION = 0.005
 MySettings.Robot.MASS = 10
 
 MySettings.Robot.COLOR = (1, 1, 0, 1)
