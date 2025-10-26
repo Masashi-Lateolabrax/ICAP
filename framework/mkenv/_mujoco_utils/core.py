@@ -95,13 +95,15 @@ def add_geom(
         material: str = None,
         rgba: tuple[float, float, float, float] = None,
         condim: int = None,
+        contype: int = None,
+        conaffinity: int = None,
         density: float = None,
         mass: float = None,
         quat: np.ndarray = None,
         mesh: mujoco.MjsMesh = None,
 ) -> mujoco.MjsGeom:
     """Add a geometry to a MuJoCo body.
-    
+
     Args:
         body: Parent body to attach the geometry to
         geom_type: Type of geometry (box, cylinder, sphere, etc.)
@@ -110,17 +112,20 @@ def add_geom(
         name: Optional name identifier for the geometry
         material: Optional material name to apply
         rgba: Optional color and transparency (r, g, b, a)
-        condim: Optional contact dimensionality for collision detection
+        condim: Optional contact dimensionality for collision detection (1, 3, 4, or 6)
+        contype: Optional contact type bitmask (0 disables collision detection)
+        conaffinity: Optional contact affinity bitmask (0 disables collision detection)
         density: Optional density for mass calculation
         mass: Optional explicit mass (overrides density)
         quat: Optional quaternion orientation (w, x, y, z)
         mesh: Optional mesh object for complex geometries
-        
+
     Returns:
         Created MuJoCo geometry specification object
-        
+
     Note:
         If both mass and density are provided, mass takes precedence.
+        To make a visual-only geometry without collision, set contype=0 and conaffinity=0.
     """
     geom: mujoco.MjsGeom = body.add_geom()
     geom.type = geom_type
@@ -138,6 +143,10 @@ def add_geom(
         geom.rgba = rgba
     if condim is not None:
         geom.condim = condim
+    if contype is not None:
+        geom.contype = contype
+    if conaffinity is not None:
+        geom.conaffinity = conaffinity
     if mass is not None:
         geom.mass = mass
     elif density is not None:

@@ -78,7 +78,8 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
             pos=(0, 0, 0.01),
             material="pheromone_mat",
             rgba=(1, 1, 1, 0.7),
-            condim=0  # Disable collision
+            contype=0,  # Disable collision detection
+            conaffinity=0  # Disable collision detection
         )
 
     @classmethod
