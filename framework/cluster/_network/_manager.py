@@ -57,7 +57,7 @@ class ConnectionManager:
         else:
             raise ValueError("Invalid connection type")
 
-        self._manage_dead()
+        ic(self._manage_dead())
 
     def _receive_from_head(self, connection: Head) -> dict[uuid.UUID, list[ClusterPacket]]:
         current = datetime.datetime.now(tz=datetime.UTC)
