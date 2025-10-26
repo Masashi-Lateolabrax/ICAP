@@ -6,36 +6,61 @@ def add_texture(
         spec: mujoco.MjSpec,
         name: str,
         type_: mujoco.mjtTexture,
-        builtin: mujoco.mjtBuiltin,
         width: int,
         height: int,
-        rgb1: tuple[float, float, float],
-        rgb2: tuple[float, float, float]
+        builtin: mujoco.mjtBuiltin = None,
+        rgb1: tuple[float, float, float] = None,
+        rgb2: tuple[float, float, float] = None,
+        data: np.ndarray = None
 ) -> mujoco.MjsTexture:
     """Add a texture to the MuJoCo simulation specification.
-    
+
+    Supports both builtin procedural textures and custom data textures.
+
     Args:
         spec: MuJoCo simulation specification
         name: Name identifier for the texture
         type_: Type of texture (e.g., 2D texture)
-        builtin: Built-in texture pattern type
         width: Texture width in pixels
         height: Texture height in pixels
-        rgb1: Primary RGB color values (0.0-1.0)
-        rgb2: Secondary RGB color values (0.0-1.0)
-        
+        builtin: Built-in texture pattern type (for procedural textures)
+        rgb1: Primary RGB color values (0.0-1.0, for procedural textures)
+        rgb2: Secondary RGB color values (0.0-1.0, for procedural textures)
+        data: Custom texture data as numpy array (for data textures)
+
     Returns:
         Created MuJoCo texture specification object
+
+    Raises:
+        ValueError: If neither builtin nor data is provided, or both are provided
     """
-    texture = spec.add_texture(
-        name=name,
-        type=type_,
-        builtin=builtin,
-        width=width,
-        height=height,
-        rgb1=rgb1,
-        rgb2=rgb2,
-    )
+    has_builtin = builtin is not None
+    has_data = data is not None
+
+    if not has_builtin and not has_data:
+        raise ValueError("Must provide either 'builtin' (for procedural texture) or 'data' (for custom texture)")
+    if has_builtin and has_data:
+        raise ValueError("Cannot provide both 'builtin' and 'data' - choose one texture type")
+    if has_builtin and (rgb1 is None or rgb2 is None):
+        raise ValueError("Builtin textures require 'rgb1' and 'rgb2' parameters")
+
+    texture: mujoco.MjsTexture = spec.add_texture()
+    texture.name = name
+    texture.type = type_
+    texture.width = width
+    texture.height = height
+
+    if has_builtin:
+        texture.builtin = builtin
+        texture.rgb1 = rgb1
+        texture.rgb2 = rgb2
+
+    elif has_data:
+        texture.data = data.tobytes()
+
+    else:
+        raise RuntimeError("Unreachable code reached in add_texture")
+
     return texture
 
 
