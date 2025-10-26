@@ -54,9 +54,12 @@ def add_texture(
         texture.builtin = builtin
         texture.rgb1 = rgb1
         texture.rgb2 = rgb2
-    else:
-        # Custom data texture
+
+    elif has_data:
         texture.data = data.tobytes()
+
+    else:
+        raise RuntimeError("Unreachable code reached in add_texture")
 
     return texture
 
