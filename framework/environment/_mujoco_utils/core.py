@@ -56,7 +56,7 @@ def add_texture(
         texture.rgb2 = rgb2
     else:
         # Custom data texture
-        texture.rgb = data.flatten()
+        texture.data = data.tobytes()
 
     return texture
 
