@@ -208,8 +208,8 @@ class BasicEnvironment(BasicMuJoCoSimulator, ABC):
             return
 
         pheromone = self._pheromone_field.get_gas_all()
-        max_pheromone = np.max(pheromone)
-        normalized_pheromone = pheromone / (max_pheromone + 1e-6)
+        max_pheromone = 0.1
+        normalized_pheromone = np.clip(pheromone / (max_pheromone + 1e-6), a_min=0, a_max=1)
 
         # Create RGB texture data (Red-Blue gradient)
         texture_data = np.stack([
@@ -219,8 +219,9 @@ class BasicEnvironment(BasicMuJoCoSimulator, ABC):
         ], axis=-1)
 
         # Update MuJoCo texture
-        tex_start = self.model.tex_adr[self._pheromone_texture_id]
-        tex_size = self.model.tex_height[self._pheromone_texture_id] * self.model.tex_width[self._pheromone_texture_id] * 3
+        tex_id = self._pheromone_texture_id
+        tex_start = self.model.tex_adr[tex_id]
+        tex_size = self.model.tex_height[tex_id] * self.model.tex_width[tex_id] * 3
         self.model.tex_data[tex_start:tex_start + tex_size] = texture_data.flatten()
 
     def render(self, img_buf: np.ndarray, pos: tuple[float, float, float], lookat: tuple[float, float, float]):
