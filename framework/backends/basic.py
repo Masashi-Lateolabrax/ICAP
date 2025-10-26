@@ -11,6 +11,7 @@ from flax.struct import field, dataclass as jax_dataclass
 
 from ..prelude import Settings, SimRenderTrait, SimPheromoneTrait
 from ..pheromone import PheromoneField, PheromoneFieldCellSpec, add_pheromone_cells_to_mjspec
+from ..mkenv import add_texture, add_material, add_geom
 
 
 @jax_dataclass
@@ -51,6 +52,34 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
         kwargs["_data"] = data
         kwargs["_pheromone"] = pheromone
         return self._update(**kwargs)
+
+    @staticmethod
+    def _add_pheromone_visualization(spec: mujoco.MjSpec, settings: Settings) -> None:
+        """Add runtime-updatable texture for pheromone visualization."""
+        # Use wrapper for custom data texture
+        add_texture(
+            spec,
+            name="pheromone_viz",
+            type_=mujoco.mjtTexture.mjTEXTURE_2D,
+            width=settings.Pheromone.WIDTH_NUM,
+            height=settings.Pheromone.HEIGHT_NUM,
+            data=np.zeros((settings.Pheromone.HEIGHT_NUM, settings.Pheromone.WIDTH_NUM, 3), dtype=np.uint8)
+        )
+
+        # Use wrapper for material
+        add_material(spec, name="pheromone_mat", texture="pheromone_viz", texrepeat=(1, 1))
+
+        # Use thin box geometry (not plane) positioned above ground
+        add_geom(
+            spec.worldbody,
+            geom_type=mujoco.mjtGeom.mjGEOM_BOX,
+            name="pheromone_overlay",
+            size=(settings.Simulation.WORLD_WIDTH * 0.5, settings.Simulation.WORLD_HEIGHT * 0.5, 0.01),
+            pos=(0, 0, 0.01),
+            material="pheromone_mat",
+            rgba=(1, 1, 1, 0.7),
+            condim=0  # Disable collision
+        )
 
     @classmethod
     def new(cls, spec: mujoco.MjSpec, settings: Settings) -> tuple[mujoco.MjModel, Self]:
