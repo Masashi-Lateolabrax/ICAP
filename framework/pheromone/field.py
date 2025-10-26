@@ -3,7 +3,6 @@ import numpy as np
 import jax.numpy as jnp
 
 from ..prelude import *
-from .cell import PheromoneFieldCell
 
 
 def dDiffusion_dt(
@@ -161,7 +160,7 @@ class PheromoneField:
             self,
             nx: int,
             ny: int,
-            dx: float,  # [m]
+            dx: float,  # [mm] - grid spacing
             material: Material,
             temperature: float,  # [K]
             dt: float,  # [s] - time step
@@ -179,12 +178,12 @@ class PheromoneField:
 
         self.shape = jnp.array((ny, nx), dtype=jnp.int32)
         self.nz = 5  # Z-dimension size
-        self.dx = dx
+        self.dx = dx  # [mm]
 
         saturation_pressure = material.saturation_pressure(temperature)  # [Pa]
         self.saturation_concentration = saturation_pressure / (Material.GAS_CONSTANT * temperature)  # [mol/m^3]
         self.dt = dt  # Store dt as instance variable
-        self.diffusion_coefficient = material.diffusion_coefficient(temperature)  # [m^2/s]
+        self.diffusion_coefficient = material.diffusion_coefficient(temperature)  # [mm^2/s]
         self.temperature = temperature
         self.padding_value = 0.0
 
@@ -192,7 +191,7 @@ class PheromoneField:
 
         self._values_liquid = jnp.zeros(self.shape, dtype=jnp.float32)  # [mol]
         self._values_gas = jnp.zeros((ny + 2, nx + 2, self.nz + 2), dtype=jnp.float32)  # [mol/m^3]
-        self._grad = jnp.zeros((ny, nx, 2), dtype=jnp.float32)
+        self._grad = jnp.zeros((ny, nx, 2), dtype=jnp.float32)  # gradient in mm^-1
         self.mask = jnp.ones(self.shape + 2, dtype=jnp.bool_)
 
     def reset(self):
@@ -240,21 +239,6 @@ class PheromoneField:
         ys = jnp.clip(ys, 0, self.shape[0] - 1)
         self._values_liquid = self._values_liquid.at[ys, xs].add(values * self.dt)
 
-    def add_liquid_by_cell(self, cell: list[PheromoneFieldCell]):
-        xs = jnp.array([c.index_x for c in cell if c.add_value > 0])
-        ys = jnp.array([c.index_y for c in cell if c.add_value > 0])
-        vs = jnp.array([c.add_value for c in cell if c.add_value > 0])
-
-        if xs.size == 0 or ys.size == 0 or vs.size == 0:
-            return
-
-        xs = jnp.clip(xs, 0, self.shape[1] - 1)
-        ys = jnp.clip(ys, 0, self.shape[0] - 1)
-
-        self._values_liquid = self._values_liquid.at[ys, xs].add(vs * self.dt)
-
-        for c in cell:
-            c.add_value = 0.0
 
     def get_max_value(self) -> float:
         return float(jnp.max(self._values_gas))
