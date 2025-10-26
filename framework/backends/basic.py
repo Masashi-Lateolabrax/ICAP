@@ -175,13 +175,13 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
             pheromone=self._pheromone.reset()
         )
 
-    def _update_pheromone_texture(self, mj_model: mujoco.MjModel, pheromone: np.ndarray, max_value: float) -> None:
+    def _update_pheromone_texture(self, mj_model: mujoco.MjModel, pheromone: np.ndarray) -> None:
         """Update pheromone texture with current values."""
-        normalized = pheromone / (max_value + 1e-6)
+
         texture_data = np.stack([
-            (normalized * 255).astype(np.uint8),
-            np.zeros_like(normalized, dtype=np.uint8),
-            ((1 - normalized) * 255).astype(np.uint8),
+            (pheromone * 255).astype(np.uint8),
+            np.zeros_like(pheromone, dtype=np.uint8),
+            ((1 - pheromone) * 255).astype(np.uint8),
         ], axis=-1)
 
         tex_start = mj_model.tex_adr[self._pheromone_texture_id]
@@ -195,8 +195,9 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
         pheromone = np.array(self._pheromone.values_gas)
         max_pheromone = np.max(pheromone)
         total_pheromone = np.sum(pheromone)
+        normalized_pheromone = pheromone / (max_pheromone + 1e-6)
 
-        self._update_pheromone_texture(mj_model, pheromone, max_pheromone)
+        self._update_pheromone_texture(mj_model, normalized_pheromone)
 
         renderer.update_scene(mj_data, camera)
         renderer.render(out=img_buf)
