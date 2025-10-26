@@ -30,7 +30,7 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
     _pheromone: PheromoneField
 
     _pheromone_cell_pos: jax.Array
-    _pheromone_cell_site_ids: jax.Array
+    _pheromone_texture_id: int = field(pytree_node=False)  # MuJoCo texture ID for runtime updates
 
     @property
     def data(self) -> mjx.Data:
@@ -123,7 +123,7 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
             _pheromone=pheromone,
 
             _pheromone_cell_pos=jnp.array(pheromone_cell_pos),
-            _pheromone_cell_site_ids=jnp.array(pheromone_cell_site_ids)
+            _pheromone_texture_id=pheromone_texture_id
         )
 
     @partial(jax.jit, inline=True)
