@@ -10,7 +10,7 @@ import jax.numpy as jnp
 from flax.struct import field, dataclass as jax_dataclass
 
 from ..prelude import Settings, SimRenderTrait, SimPheromoneTrait
-from ..pheromone import PheromoneField, PheromoneFieldCellSpec, add_pheromone_cells_to_mjspec
+from ..pheromone import PheromoneField
 from ..mkenv import add_texture, add_material, add_geom
 
 
@@ -83,13 +83,13 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
 
     @classmethod
     def new(cls, spec: mujoco.MjSpec, settings: Settings) -> tuple[mujoco.MjModel, Self]:
-        p_cell_specs: list[PheromoneFieldCellSpec] = add_pheromone_cells_to_mjspec(
-            spec, settings.Pheromone.WIDTH_NUM, settings.Pheromone.HEIGHT_NUM, settings.Pheromone.CELL_SIZE
-        )
+        cls._add_pheromone_visualization(spec, settings)
 
         mj_model: mujoco.MjModel = spec.compile()
         mj_data: mujoco.MjData = mujoco.MjData(mj_model)
         data = mjx.put_data(mj_model, mj_data)
+
+        pheromone_texture_id = mj_model.texture("pheromone_viz").id
 
         pheromone = PheromoneField.new(
             dt=settings.Simulation.TIME_STEP,
@@ -101,16 +101,15 @@ class BasicSimulator(SimRenderTrait, SimPheromoneTrait):
             iter_=settings.Pheromone.ITERATIONS_PER_STEP
         )
 
-        pheromone_cells = [s.get_cell(mj_model) for s in p_cell_specs]
+        # Calculate pheromone cell world positions (for reference)
         pheromone_cell_pos = np.zeros(
-            (settings.Pheromone.HEIGHT_NUM, settings.Pheromone.WIDTH_NUM, 2), dtype=jnp.float32
+            (settings.Pheromone.HEIGHT_NUM, settings.Pheromone.WIDTH_NUM, 2), dtype=np.float32
         )
-        pheromone_cell_site_ids = np.zeros(
-            (settings.Pheromone.HEIGHT_NUM, settings.Pheromone.WIDTH_NUM), dtype=jnp.int32
-        )
-        for c in pheromone_cells:
-            pheromone_cell_pos[c.index_y, c.index_x, :2] = c.pos[:2]
-            pheromone_cell_site_ids[c.index_y, c.index_x] = c.id
+        for x in range(settings.Pheromone.WIDTH_NUM):
+            for y in range(settings.Pheromone.HEIGHT_NUM):
+                pos_x = settings.Pheromone.CELL_SIZE * (x - (settings.Pheromone.WIDTH_NUM - 1) * 0.5)
+                pos_y = settings.Pheromone.CELL_SIZE * (-y + (settings.Pheromone.HEIGHT_NUM - 1) * 0.5)
+                pheromone_cell_pos[y, x, :] = [pos_x, pos_y]
 
         return mj_model, cls(
             consts=Consts(
