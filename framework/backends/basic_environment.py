@@ -8,40 +8,45 @@ import numpy as np
 
 from ..prelude import *
 from ..environment import (
-    add_geom,
+    add_geom, add_texture, add_material,
     setup_option, setup_visual, setup_textures, add_nest, add_wall,
     rand_robot_pos, rand_food_pos, add_mesh_in_asset, MeshContentType,
     add_food_object_with_mesh, add_robot_with_mesh
 )
-from ..pheromone import PheromoneFieldCellSpec, PheromoneField, PheromoneFieldCell
+from ..pheromone import PheromoneField
 from .basic import BasicMuJoCoSimulator
 
 
-def add_pheromone_cells_in_mjspec(
-        spec: mujoco.MjSpec,
-        settings: Settings
-) -> list[PheromoneFieldCellSpec]:
-    from ..pheromone import add_pheromone_cell
+def add_pheromone_visualization(spec: mujoco.MjSpec, settings: Settings) -> None:
+    """Add runtime-updatable texture for pheromone visualization."""
+    if not settings.Pheromone.ACTIVE:
+        return
 
-    if settings.Pheromone.ACTIVE is False:
-        return []
+    # Create custom data texture for pheromone field
+    add_texture(
+        spec,
+        name="pheromone_viz",
+        type_=mujoco.mjtTexture.mjTEXTURE_2D,
+        width=settings.Pheromone.WIDTH_NUM,
+        height=settings.Pheromone.HEIGHT_NUM,
+        data=np.zeros((settings.Pheromone.HEIGHT_NUM, settings.Pheromone.WIDTH_NUM, 3), dtype=np.uint8)
+    )
 
-    sites = []
-    for x in range(settings.Pheromone.WIDTH_NUM):
-        for y in range(settings.Pheromone.HEIGHT_NUM):
-            pos_x = settings.Pheromone.CELL_SIZE * (x - (settings.Pheromone.WIDTH_NUM - 1) * 0.5)
-            pos_y = settings.Pheromone.CELL_SIZE * (-y + (settings.Pheromone.HEIGHT_NUM - 1) * 0.5)
+    # Create material using the pheromone texture
+    add_material(spec, name="pheromone_mat", texture="pheromone_viz", texrepeat=(1, 1))
 
-            sites.append(
-                add_pheromone_cell(
-                    spec,
-                    index_x=x,
-                    index_y=y,
-                    size=settings.Pheromone.CELL_SIZE * 0.5,
-                    pos=(pos_x, pos_y, 0),
-                )
-            )
-    return sites
+    # Add thin box geometry for pheromone overlay (positioned above ground)
+    add_geom(
+        spec.worldbody,
+        geom_type=mujoco.mjtGeom.mjGEOM_BOX,
+        name="pheromone_overlay",
+        size=(settings.Simulation.WORLD_WIDTH * 0.5, settings.Simulation.WORLD_HEIGHT * 0.5, 0.01),
+        pos=(0, 0, 0.01),
+        material="pheromone_mat",
+        rgba=(1, 1, 1, 0.7),
+        contype=0,  # Disable collision detection
+        conaffinity=0  # Disable collision affinity
+    )
 
 
 def generate_mjspec(
@@ -50,8 +55,7 @@ def generate_mjspec(
     mujoco.MjSpec,
     mujoco._specs.MjsSite,
     list[RobotSpec],
-    list[FoodSpec],
-    list[PheromoneFieldCellSpec]
+    list[FoodSpec]
 ]:
     spec = mujoco.MjSpec()
 
@@ -60,7 +64,7 @@ def generate_mjspec(
     setup_textures(spec, settings)
 
     add_wall(spec, settings)
-    pheromone_cell_specs = add_pheromone_cells_in_mjspec(spec, settings)
+    add_pheromone_visualization(spec, settings)
 
     add_geom(
         spec.worldbody,
@@ -126,12 +130,12 @@ def generate_mjspec(
                 add_robot_with_mesh(spec, settings, robot_mesh, i, position)
             )
 
-    return spec, nest_spec, robot_specs, food_specs, pheromone_cell_specs
+    return spec, nest_spec, robot_specs, food_specs
 
 
 class BasicEnvironment(BasicMuJoCoSimulator, ABC):
     def __init__(self, settings, render: bool = False):
-        mj_spec, nest_spec, robot_specs, food_specs, pheromone_cell_specs = generate_mjspec(settings)
+        mj_spec, nest_spec, robot_specs, food_specs = generate_mjspec(settings)
         super().__init__(settings, mj_spec, render)
 
         self.nest_site = self.data.site(nest_spec.name)
@@ -142,8 +146,8 @@ class BasicEnvironment(BasicMuJoCoSimulator, ABC):
         self._shadow = []
 
         self._pheromone_field: Optional[PheromoneField] = None
-        self._pheromone_cells: list[PheromoneFieldCell] = []
-        self._pheromone_cell_pos: Optional[np.ndarray] = None
+        self._pheromone_texture_id: Optional[int] = None
+
         if settings.Pheromone.ACTIVE:
             self._pheromone_field = PheromoneField(
                 nx=settings.Pheromone.WIDTH_NUM,
@@ -154,57 +158,77 @@ class BasicEnvironment(BasicMuJoCoSimulator, ABC):
                 dt=settings.Simulation.TIME_STEP,
                 iter_=settings.Pheromone.ITERATIONS_PER_STEP,
             )
-            self._pheromone_cells = [s.get_cell(self.model) for s in pheromone_cell_specs]
-            self._pheromone_cell_pos = np.array(
-                [cell.pos[:2] for cell in self._pheromone_cells], dtype=np.float32
-            )
+            self._pheromone_texture_id = self.model.texture("pheromone_viz").id
 
-    def _get_pheromone_cells(self, positions: np.ndarray) -> list[PheromoneFieldCell]:
-        if positions.ndim != 2 or positions.shape[1] < 2:
-            logging.warning(f"Invalid position shape: expected (N, >=2), got {positions.shape}")
-        if self._pheromone_cell_pos is None:
-            logging.warning("Pheromone cell positions are not initialized.")
-            return []
+    def _calc_pheromone_indices(self, positions: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        """Calculate pheromone grid indices from world positions."""
+        if self._pheromone_field is None:
+            return np.array([]), np.array([])
 
-        distance = np.linalg.norm(
-            positions[:, None, :2] - self._pheromone_cell_pos[None, :, :2],
-            axis=2
-        )
-        closest_indices = np.argmin(distance, axis=1)
-        return [self._pheromone_cells[i] for i in closest_indices]
+        cell_size = self._pheromone_field.dx
+        width = self._pheromone_field.shape[1]
+        height = self._pheromone_field.shape[0]
+
+        # Convert world coordinates to grid indices
+        x_idx = np.round(positions[:, 0] / cell_size + (width - 1) * 0.5).astype(np.int32)
+        y_idx = np.round((height - 1) * 0.5 - positions[:, 1] / cell_size).astype(np.int32)
+
+        # Clip to valid range
+        x_idx = np.clip(x_idx, 0, width - 1)
+        y_idx = np.clip(y_idx, 0, height - 1)
+
+        return x_idx, y_idx
 
     def add_pheromone(self, positions: np.ndarray, values: np.ndarray):
-        for cell, v in zip(self._get_pheromone_cells(positions), values):
-            cell.add_value += v
+        if self._pheromone_field is None:
+            return
+        x_idx, y_idx = self._calc_pheromone_indices(positions)
+        self._pheromone_field.add_liquid(x_idx, y_idx, values)
 
     def get_pheromone(self, positions: np.ndarray) -> np.ndarray:
-        indexes = np.array([(cell.index_x, cell.index_y) for cell in self._get_pheromone_cells(positions)])
-        return self._pheromone_field.get_gas(indexes[:, 0], indexes[:, 1])
+        if self._pheromone_field is None:
+            return np.zeros(len(positions))
+        x_idx, y_idx = self._calc_pheromone_indices(positions)
+        return self._pheromone_field.get_gas(x_idx, y_idx)
 
     def get_pheromone_grad(self, positions: np.ndarray) -> np.ndarray:
-        indexes = np.array([(cell.index_x, cell.index_y) for cell in self._get_pheromone_cells(positions)])
-        return self._pheromone_field.get_grad(indexes[:, 0], indexes[:, 1])
+        if self._pheromone_field is None:
+            return np.zeros((len(positions), 2))
+        x_idx, y_idx = self._calc_pheromone_indices(positions)
+        return self._pheromone_field.get_grad(x_idx, y_idx)
 
     def get_total_liquid_pheromone(self) -> float:
         if self._pheromone_field is None:
             return 0.0
         return float(np.sum(self._pheromone_field.get_liquid_all()))
 
+    def _update_pheromone_texture(self):
+        """Update pheromone texture with current field values."""
+        if self._pheromone_field is None or self._pheromone_texture_id is None:
+            return
+
+        pheromone = self._pheromone_field.get_gas_all()
+        max_pheromone = np.max(pheromone)
+        normalized_pheromone = pheromone / (max_pheromone + 1e-6)
+
+        # Create RGB texture data (Red-Blue gradient)
+        texture_data = np.stack([
+            (normalized_pheromone * 255).astype(np.uint8),
+            np.zeros_like(normalized_pheromone, dtype=np.uint8),
+            ((1 - normalized_pheromone) * 255).astype(np.uint8),
+        ], axis=-1)
+
+        # Update MuJoCo texture
+        tex_start = self.model.tex_adr[self._pheromone_texture_id]
+        tex_size = self.model.tex_height[self._pheromone_texture_id] * self.model.tex_width[self._pheromone_texture_id] * 3
+        self.model.tex_data[tex_start:tex_start + tex_size] = texture_data.flatten()
+
     def render(self, img_buf: np.ndarray, pos: tuple[float, float, float], lookat: tuple[float, float, float]):
         if not self._do_render:
             return
 
         if self._pheromone_field:
-            # pheromone: np.ndarray = self._pheromone_field.get_liquid_all()
-            # color_max = 1e-3
-            pheromone: np.ndarray = self._pheromone_field.get_gas_all()
-            color_max = 0.1
-
-            pheromone = np.clip(pheromone / color_max, 0, 1)
-            for cell in self._pheromone_cells:
-                pheromone_value = float(pheromone[cell.index_y, cell.index_x])
-                rgba: tuple[float, float, float] = (pheromone_value, 0.0, 1 - pheromone_value)
-                cell.set_color(*rgba, 0.5)
+            self._update_pheromone_texture()
 
         super().render(img_buf, pos, lookat)
 
@@ -224,7 +248,5 @@ class BasicEnvironment(BasicMuJoCoSimulator, ABC):
     def reset(self):
         if self._pheromone_field:
             self._pheromone_field.reset()
-            for cell in self._pheromone_cells:
-                cell.add_value = 0.0
 
         super().reset()
