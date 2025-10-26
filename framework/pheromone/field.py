@@ -6,7 +6,6 @@ import jax.numpy as jnp
 from flax.struct import field, dataclass as jax_dataclass
 
 from ..prelude import *
-from .cell import PheromoneFieldCell
 
 
 @partial(jax.jit, inline=True)
@@ -318,27 +317,6 @@ class PheromoneField:
     def add_liquid(self, xs, ys, additions) -> Self:
         new_liquid = self._add(self.values_liquid, xs, ys, additions)
         return self.replace(values_liquid=new_liquid)
-
-    def add_liquid_by_cell(self, cell: list[PheromoneFieldCell]) -> Self:
-        indexes = []
-        values = []
-        for c in cell:
-            if c.add_value > 0:
-                indexes.append((c.index_x, c.index_y))
-                values.append(c.add_value)
-                c.add_value = 0
-
-        if not indexes:
-            return self
-
-        indexes = jnp.array(indexes, dtype=jnp.int32)
-        xs = indexes[:, 0]
-        ys = indexes[:, 1]
-        vs = jnp.array(values, dtype=jnp.float32)
-
-        new_field = self.add_liquid(xs, ys, vs)
-
-        return new_field
 
     @partial(jax.jit, inline=True)
     def reset(self) -> Self:
