@@ -9,7 +9,7 @@ from ..prelude import *
 def setup_option(spec: mujoco.MjSpec, settings: Settings) -> None:
     """Configure simulation options from settings.
 
-    Sets up timestep, integrator, and contact cone configuration.
+    Sets up timestep, integrator, contact cone configuration, and gravity.
 
     Args:
         spec: MuJoCo simulation specification
@@ -18,6 +18,7 @@ def setup_option(spec: mujoco.MjSpec, settings: Settings) -> None:
     spec.option.timestep = settings.Simulation.TIME_STEP
     spec.option.integrator = mujoco.mjtIntegrator.mjINT_RK4  # Runge-Kutta 4th order integrator
     spec.option.cone = mujoco.mjtCone.mjCONE_ELLIPTIC
+    spec.option.gravity = settings.Simulation.GRAVITY  # Set gravity based on unit system
 
 
 def setup_textures(spec: mujoco.MjSpec, settings: Settings) -> None:
