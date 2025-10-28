@@ -118,6 +118,8 @@ class Simulation:
     WALL_THICKNESS: float = 1
     WALL_HEIGHT: float = 1
 
+    GRAVITY: tuple[float, float, float] = (0.0, 0.0, -9.81)  # m/s²
+
 
 class Storage:
     SAVE_INDIVIDUALS = True
