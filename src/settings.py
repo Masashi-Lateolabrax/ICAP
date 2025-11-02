@@ -40,7 +40,7 @@ MySettings.Render.CAMERA_LOOKAT = (0.0, 0.0, 0.0)
 MySettings.Optimization.DIMENSION = None  # Will be set later based on the neural network dimension
 MySettings.Optimization.POPULATION = 50
 MySettings.Optimization.GENERATION = 500
-MySettings.Optimization.SIGMA = 5
+MySettings.Optimization.SIGMA = 1
 
 MySettings.Optimization.CLIP = ClippingFunctions.none
 ###################################################################################
@@ -129,7 +129,7 @@ MySettings.Loss.REGULARIZATION_COEFFICIENT = 0
 # Simulation settings
 ###################################################################################
 MySettings.Simulation.TIME_STEP = 0.01
-MySettings.Simulation.TIME_LENGTH = 60
+MySettings.Simulation.TIME_LENGTH = 90
 
 MySettings.Simulation.WORLD_WIDTH = 10.0
 MySettings.Simulation.WORLD_HEIGHT = 10.0
