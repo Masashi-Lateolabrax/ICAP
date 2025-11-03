@@ -162,7 +162,7 @@ def main(settings: Settings):
     )
     # save_dir = "./results/20250829-153444_bf9923e9"
 
-    settings.Simulation.TIME_LENGTH = 120
+    settings.Simulation.TIME_LENGTH = 180
 
     saved_individuals = IndividualRecorder.load(
         os.path.join(save_dir, "optimization_log.pkl")
