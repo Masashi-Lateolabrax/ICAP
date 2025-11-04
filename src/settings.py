@@ -58,7 +58,7 @@ MySettings.Robot.MASS = 10
 
 MySettings.Robot.COLOR = (1, 1, 0, 1)
 
-MySettings.Robot.THINK_INTERVAL = 0.01
+MySettings.Robot.THINK_INTERVAL = 0.1  # 0.1s = 10 timesteps for discrete action updates
 
 MySettings.Robot.ACTUATOR_MOVE_KV = 100
 MySettings.Robot.ACTUATOR_ROT_KV = 10
@@ -144,7 +144,7 @@ MySettings.Simulation.WALL_HEIGHT = 1
 ###################################################################################
 MySettings.Pheromone.ACTIVE = True
 
-MySettings.Pheromone.CELL_SIZE = 0.01
+MySettings.Pheromone.CELL_SIZE = 0.1
 MySettings.Pheromone.WIDTH_NUM = int(MySettings.Simulation.WORLD_WIDTH / MySettings.Pheromone.CELL_SIZE)
 MySettings.Pheromone.HEIGHT_NUM = int(MySettings.Simulation.WORLD_HEIGHT / MySettings.Pheromone.CELL_SIZE)
 
@@ -154,6 +154,12 @@ MySettings.Pheromone.TEMPERATURE = 300
 MySettings.Pheromone.MATERIAL = ETHANOL
 ###################################################################################
 
+###################################################################################
+# Action settings
+###################################################################################
+MySettings.Action.HIGH = 1.0
+MySettings.Action.MEDIUM = 0.7
+MySettings.Action.LOW = 0.4
 
 ###################################################################################
 # Storage settings
