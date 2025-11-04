@@ -11,7 +11,6 @@ import datetime
 import subprocess
 from typing import Optional
 import math
-import re
 
 from icecream import ic
 from framework.prelude import *
@@ -134,7 +133,7 @@ class Handler:
 
 
 def main(settings: Settings):
-    dim = Controller().dim
+    dim = Controller(settings).dim
 
     settings.Server.HOST = "0.0.0.0"
     settings.Optimization.DIMENSION = dim
