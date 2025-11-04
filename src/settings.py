@@ -58,7 +58,7 @@ MySettings.Robot.MASS = 10
 
 MySettings.Robot.COLOR = (1, 1, 0, 1)
 
-MySettings.Robot.THINK_INTERVAL = 0.01
+MySettings.Robot.THINK_INTERVAL = 0.1  # 0.1s = 10 timesteps for discrete action updates
 
 MySettings.Robot.ACTUATOR_MOVE_KV = 100
 MySettings.Robot.ACTUATOR_ROT_KV = 10
