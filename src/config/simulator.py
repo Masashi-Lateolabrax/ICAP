@@ -46,7 +46,7 @@ class Simulator(BasicSimulator):
 
         self.settings = settings
 
-        self.controller = Controller(individual)
+        self.controller = Controller(settings, individual)
 
         self.timer = Timer(settings.Robot.THINK_INTERVAL / settings.Simulation.TIME_STEP)
         self.rng = np.random.default_rng(individual.generation)
