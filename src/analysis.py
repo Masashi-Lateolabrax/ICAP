@@ -170,7 +170,11 @@ def main(settings: Settings):
     fittness_graph_path = os.path.join(save_dir, "loss_history.png")
     pheromone_graph_path = os.path.join(save_dir, "pheromone_history.png")
 
-    analysis_mod.collect_loss(save_dir, settings, saved_individuals, SimulatorForDebugging, seeds=(0,), num_threads=10)
+    analysis_mod.collect_loss(
+        save_dir, settings, saved_individuals, SimulatorForDebugging,
+        # seeds=(0,), num_threads=10,
+        seeds=[],
+    )
     analysis_mod.plot_fitness(save_dir, fittness_graph_path)
     analysis_mod.plot_pheromone_history(pheromone_graph_path, saved_individuals)
 
