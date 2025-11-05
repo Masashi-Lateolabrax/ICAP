@@ -4,15 +4,19 @@ from framework.prelude import *
 
 
 class Controller(torch.nn.Module):
-    def __init__(self, parameters: Individual = None):
+    def __init__(self, settings: Settings, parameters: Individual = None):
         super(Controller, self).__init__()
 
+        self.action_patterns = torch.from_numpy(settings.Action.PATTERNS).float()
+
+        num_actions = self.action_patterns.shape[0]
         self.sequential = torch.nn.Sequential(
             torch.nn.Linear(9, 18),
             torch.nn.Mish(),
             torch.nn.Linear(18, 9),
             torch.nn.Mish(),
-            torch.nn.Linear(9, 3),
+            torch.nn.Linear(9, num_actions),  # Output action logits
+            torch.nn.Softmax(dim=-1),  # Convert to probability distribution
         )
 
         if parameters is not None:
@@ -27,5 +31,7 @@ class Controller(torch.nn.Module):
         return sum(p.numel() for p in self.parameters())
 
     def forward(self, input_):
-        x = self.sequential(input_)
-        return torch.sigmoid(x)
+        action_probs = self.sequential(input_)  # Shape: (num_robots, num_actions)
+        action_indices = torch.multinomial(action_probs, num_samples=1).squeeze(-1)
+        selected_actions = self.action_patterns[action_indices]  # Shape: (num_robots, 3)
+        return selected_actions
