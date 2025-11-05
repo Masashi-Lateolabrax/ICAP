@@ -32,6 +32,7 @@ class Controller(torch.nn.Module):
 
     def forward(self, input_):
         action_probs = self.sequential(input_)  # Shape: (num_robots, num_actions)
-        action_indices = torch.multinomial(action_probs, num_samples=1).squeeze(-1)
+        # action_indices = torch.multinomial(action_probs, num_samples=1).squeeze(-1)
+        action_indices = torch.argmax(action_probs, dim=1)
         selected_actions = self.action_patterns[action_indices]  # Shape: (num_robots, 3)
         return selected_actions
