@@ -158,7 +158,7 @@ MySettings.Pheromone.MATERIAL = ETHANOL
 # Action settings
 ###################################################################################
 MySettings.Action.HIGH = 1.0
-MySettings.Action.MEDIUM = 0.7
+MySettings.Action.MEDIUM = 0.5
 MySettings.Action.LOW = 0.2
 
 ###################################################################################
