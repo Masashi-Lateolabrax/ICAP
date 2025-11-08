@@ -11,11 +11,13 @@ class Controller(torch.nn.Module):
 
         num_actions = self.action_patterns.shape[0]
         self.sequential = torch.nn.Sequential(
-            torch.nn.Linear(9, 18),
+            torch.nn.Linear(9, 5),
             torch.nn.Mish(),
-            torch.nn.Linear(18, 9),
+            torch.nn.Linear(5, 5),
             torch.nn.Mish(),
-            torch.nn.Linear(9, num_actions),  # Output action logits
+            torch.nn.Linear(5, 5),
+            torch.nn.Mish(),
+            torch.nn.Linear(5, num_actions),  # Output action logits
             torch.nn.Softmax(dim=-1),  # Convert to probability distribution
         )
 
