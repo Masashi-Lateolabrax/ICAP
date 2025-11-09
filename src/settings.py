@@ -53,7 +53,7 @@ MySettings.Robot.HEIGHT = 0.1
 MySettings.Robot.RADIUS = 0.175
 MySettings.Robot.DISTANCE_BETWEEN_WHEELS = 0.175 * 2 * 0.8
 MySettings.Robot.MAX_SPEED = 0.8
-MySettings.Robot.MAX_PHEROMONE_SECRETION = 0.005
+MySettings.Robot.MAX_PHEROMONE_SECRETION = 0.05
 MySettings.Robot.MASS = 10
 
 MySettings.Robot.COLOR = (1, 1, 0, 1)
@@ -145,6 +145,7 @@ MySettings.Simulation.WALL_HEIGHT = 1
 MySettings.Pheromone.ACTIVE = True
 
 MySettings.Pheromone.CELL_SIZE = 0.1
+MySettings.Pheromone.CELL_SIZE_Z = 0.1
 MySettings.Pheromone.WIDTH_NUM = int(MySettings.Simulation.WORLD_WIDTH / MySettings.Pheromone.CELL_SIZE)
 MySettings.Pheromone.HEIGHT_NUM = int(MySettings.Simulation.WORLD_HEIGHT / MySettings.Pheromone.CELL_SIZE)
 

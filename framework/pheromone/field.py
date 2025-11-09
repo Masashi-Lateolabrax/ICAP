@@ -10,6 +10,7 @@ def dDiffusion_dt(
         mask: jnp.ndarray,
         diffusion_coefficient: float,
         h: float,
+        hz: float,
         padding_value: float,
 ) -> tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
     """
@@ -65,8 +66,8 @@ def dDiffusion_dt(
     z_weights = [2 ** i for i in range(gas_values.shape[2] - 2)]
     z_weights = jnp.array(z_weights, dtype=jnp.float32)
 
-    # Apply asymmetric difference formula: (d_upper + 2*d_lower) / (3*h²)
-    vertical = (d_upper + 2 * d_lower) / (3 * (z_weights[None, None, :] * h) ** 2)
+    # Apply asymmetric difference formula: (d_upper + 2*d_lower) / (3*hz²)
+    vertical = (d_upper + 2 * d_lower) / (3 * (z_weights[None, None, :] * hz) ** 2)
 
     # Total diffusion: D * (∇²c_horizontal + ∇²c_vertical)
     return diffusion_coefficient * (horizontal + vertical), d_dx, d_dy
@@ -76,6 +77,7 @@ def d_dt(
         gas_values: jnp.ndarray,
         mask: jnp.ndarray,
         h: float,
+        hz: float,
         diffusion_coefficient: float,
         padding_value: float,
 ) -> tuple[jnp.ndarray, jnp.ndarray]:
@@ -84,6 +86,7 @@ def d_dt(
         mask=mask,
         diffusion_coefficient=diffusion_coefficient,
         h=h,
+        hz=hz,
         padding_value=padding_value
     )
 
@@ -98,6 +101,7 @@ def update_with_rk4(
         gas_values: jnp.ndarray,
         mask: jnp.ndarray,
         h: float,
+        hz: float,
         saturation_concentration: float,
         diffusion_coefficient: float,
         dt: float,
@@ -107,6 +111,7 @@ def update_with_rk4(
         gas_values=gas_values,
         mask=mask,
         h=h,
+        hz=hz,
         diffusion_coefficient=diffusion_coefficient,
         padding_value=padding_value,
     )
@@ -115,6 +120,7 @@ def update_with_rk4(
         gas_values=gas_values.at[1:-1, 1:-1, 1:-1].add(0.5 * dt * k1_gas),
         mask=mask,
         h=h,
+        hz=hz,
         diffusion_coefficient=diffusion_coefficient,
         padding_value=padding_value
     )
@@ -123,6 +129,7 @@ def update_with_rk4(
         gas_values=gas_values.at[1:-1, 1:-1, 1:-1].add(0.5 * dt * k2_gas),
         mask=mask,
         h=h,
+        hz=hz,
         diffusion_coefficient=diffusion_coefficient,
         padding_value=padding_value
     )
@@ -131,6 +138,7 @@ def update_with_rk4(
         gas_values=gas_values.at[1:-1, 1:-1, 1:-1].add(dt * k3_gas),
         mask=mask,
         h=h,
+        hz=hz,
         diffusion_coefficient=diffusion_coefficient,
         padding_value=padding_value
     )
@@ -160,7 +168,8 @@ class PheromoneField:
             self,
             nx: int,
             ny: int,
-            dx: float,  # [m]
+            dx: float,  # [m] - horizontal grid spacing
+            dz: float,  # [m] - vertical grid spacing
             material: Material,
             temperature: float,  # [K]
             dt: float,  # [s] - time step
@@ -171,6 +180,8 @@ class PheromoneField:
             raise ValueError("Grid dimensions must be positive")
         if dx <= 0:
             raise ValueError("Grid spacing dx must be positive")
+        if dz <= 0:
+            raise ValueError("Grid spacing dz must be positive")
         if temperature <= 0:
             raise ValueError("Temperature must be positive")
         if iter_ <= 0:
@@ -179,6 +190,7 @@ class PheromoneField:
         self.shape = jnp.array((ny, nx), dtype=jnp.int32)
         self.nz = 5  # Z-dimension size
         self.dx = dx
+        self.dz = dz
 
         saturation_pressure = material.saturation_pressure(temperature)  # [Pa]
         self.saturation_concentration = saturation_pressure / (Material.GAS_CONSTANT * temperature)  # [mol/m^3]
@@ -250,6 +262,7 @@ class PheromoneField:
                 gas_values=self._values_gas,
                 mask=self.mask,
                 h=self.dx,
+                hz=self.dz,
                 saturation_concentration=self.saturation_concentration,
                 diffusion_coefficient=self.diffusion_coefficient,
                 dt=dt,
