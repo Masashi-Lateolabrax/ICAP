@@ -153,6 +153,7 @@ class BasicEnvironment(BasicMuJoCoSimulator, ABC):
                 nx=settings.Pheromone.WIDTH_NUM,
                 ny=settings.Pheromone.HEIGHT_NUM,
                 dx=settings.Pheromone.CELL_SIZE,
+                dz=settings.Pheromone.CELL_SIZE_Z,
                 material=settings.Pheromone.MATERIAL,
                 temperature=settings.Pheromone.TEMPERATURE,
                 dt=settings.Simulation.TIME_STEP,
