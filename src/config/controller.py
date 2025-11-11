@@ -9,7 +9,7 @@ class Controller(torch.nn.Module):
 
         self.action_patterns = torch.from_numpy(settings.Action.PATTERNS).float()
 
-        num_actions = self.action_patterns.shape[0]
+        # num_actions = self.action_patterns.shape[0]
         self.sequential = torch.nn.Sequential(
             torch.nn.Linear(9, 5),
             torch.nn.Mish(),
@@ -17,8 +17,8 @@ class Controller(torch.nn.Module):
             torch.nn.Mish(),
             torch.nn.Linear(5, 5),
             torch.nn.Mish(),
-            torch.nn.Linear(5, num_actions),  # Output action logits
-            torch.nn.Softmax(dim=-1),  # Convert to probability distribution
+            torch.nn.Linear(5, 3),  # Output action logits
+            # torch.nn.Softmax(dim=-1),  # Convert to probability distribution
         )
 
         if parameters is not None:
@@ -33,7 +33,10 @@ class Controller(torch.nn.Module):
         return sum(p.numel() for p in self.parameters())
 
     def forward(self, input_):
-        action_probs = self.sequential(input_)  # Shape: (num_robots, num_actions)
-        action_indices = torch.multinomial(action_probs, num_samples=1).squeeze(-1)
-        selected_actions = self.action_patterns[action_indices]  # Shape: (num_robots, 3)
-        return selected_actions
+        # action_probs = self.sequential(input_)  # Shape: (num_robots, num_actions)
+        # action_indices = torch.multinomial(action_probs, num_samples=1).squeeze(-1)
+        # selected_actions = self.action_patterns[action_indices]  # Shape: (num_robots, 3)
+        # return selected_actions
+
+        x = self.sequential(input_)
+        return torch.sigmoid(x)
