@@ -77,7 +77,7 @@ def analyze_specific_individual(save_dir: str, settings: Settings, individual: I
         os.makedirs(parameter_vis_dir, exist_ok=True)
         controller = Controller(settings, individual)
         visualizer = analysis_mod.ControllerVisualizer(controller)
-        visualizer.save_all_visualizations(save_dir, )
+        visualizer.save_all_visualizations(parameter_vis_dir)
 
     # Record the video if not already recorded
     if not os.path.exists(video_file_path):
