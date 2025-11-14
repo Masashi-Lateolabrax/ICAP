@@ -39,8 +39,8 @@ MySettings.Render.CAMERA_LOOKAT = (0.0, 0.0, 0.0)
 ###################################################################################
 MySettings.Optimization.DIMENSION = None  # Will be set later based on the neural network dimension
 MySettings.Optimization.POPULATION = 100
-MySettings.Optimization.GENERATION = 500
-MySettings.Optimization.SIGMA = 0.3
+MySettings.Optimization.GENERATION = 1000
+MySettings.Optimization.SIGMA = 1
 
 MySettings.Optimization.CLIP = ClippingFunctions.none
 ###################################################################################
@@ -58,7 +58,7 @@ MySettings.Robot.MASS = 10
 
 MySettings.Robot.COLOR = (1, 1, 0, 1)
 
-MySettings.Robot.THINK_INTERVAL = 0.5  # 0.5s = 50 timesteps
+MySettings.Robot.THINK_INTERVAL = 0.01
 
 MySettings.Robot.ACTUATOR_MOVE_KV = 100
 MySettings.Robot.ACTUATOR_ROT_KV = 10
