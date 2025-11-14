@@ -8,7 +8,9 @@ from framework.prelude import *
 
 from client import Simulator
 import analysis_mod
+
 from src.analysis_mod import DebugData
+from src.config import Controller
 
 
 class SimulatorForDebugging(analysis_mod.SimulatorForDebugInterface):
@@ -53,6 +55,8 @@ def analyze_specific_individual(save_dir: str, settings: Settings, individual: I
     save_dir = os.path.join(save_dir, f"analysis_{generation}_{individual_hash}_{seed}")
     os.makedirs(save_dir, exist_ok=True)
 
+    parameter_vis_dir = os.path.join(save_dir, "parameter")
+
     debug_data_path = os.path.join(save_dir, "debug_data.pkl")
     video_file_path = os.path.join(save_dir, "video.mp4")
     input_anime_file_path = os.path.join(save_dir, "input_anime.mp4")
@@ -67,6 +71,13 @@ def analyze_specific_individual(save_dir: str, settings: Settings, individual: I
 
     total_gas_pheromone_graph_path = os.path.join(save_dir, "total_gas_pheromone.png")
     total_liquid_pheromone_graph_path = os.path.join(save_dir, "total_liquid_pheromone.png")
+
+    # Visualize the parameter
+    if not os.path.exists(parameter_vis_dir):
+        os.makedirs(parameter_vis_dir, exist_ok=True)
+        controller = Controller(settings, individual)
+        visualizer = analysis_mod.ControllerVisualizer(controller)
+        visualizer.save_all_visualizations(save_dir, )
 
     # Record the video if not already recorded
     if not os.path.exists(video_file_path):
