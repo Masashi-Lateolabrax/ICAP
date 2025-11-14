@@ -1,5 +1,7 @@
 from . import utils
 
+from .controller_visualizer import ControllerVisualizer
+
 from .structure.debug_data import DebugData
 from .structure.sim_interface import SimulatorForDebugInterface
 
