@@ -35,13 +35,6 @@ class Render:
     RENDER_WIDTH: int = 500
     RENDER_HEIGHT: int = 500
 
-    LIGHT_AMBIENT: float = 1.0
-    LIGHT_DIFFUSE: float = 1.0
-    LIGHT_SPECULAR: float = 1.0
-
-    CAMERA_POS: tuple[float, float, float] = (0.0, -1e-3, 13.0)
-    CAMERA_LOOKAT: tuple[float, float, float] = (0.0, 0.0, 0.0)
-
     MAX_GEOM = 11000
     MAX_PHEROMONE: float = 1.0
 
@@ -222,8 +215,6 @@ class Simulation:
 
     WALL_THICKNESS: float = 1
     WALL_HEIGHT: float = 1
-
-    TEMPERATURE: float = 300.0  # Kelvin
 
     GRAVITY: tuple[float, float, float] = (0.0, 0.0, -9.81)  # m/s²
 
