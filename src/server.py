@@ -170,7 +170,9 @@ def main(settings: Settings):
     handler = Handler(settings)
     server = OptimizationServer(
         settings,
-        handler=handler.run
+        handler=handler.run,
+        host=host,
+        port=port
     )
 
     try:

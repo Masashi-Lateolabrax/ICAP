@@ -56,13 +56,13 @@ class Evaluator:
 
 def main(settings: Settings):
     parser = argparse.ArgumentParser(description="ICAP Optimization Client")
-    parser.add_argument("--host", type=str, help="Server host address")
-    parser.add_argument("--port", type=int, help="Server port number")
+    parser.add_argument("--host", type=str, default="127.0.0.1", help="Server host address (default: 127.0.0.1)")
+    parser.add_argument("--port", type=int, default=50000, help="Server port number (default: 50000)")
     parser.add_argument("--num-processes", type=int, default=1, help="Number of evaluation processes")
     args = parser.parse_args()
 
-    host = args.host if args.host is not None else settings.Server.HOST
-    port = args.port if args.port is not None else settings.Server.PORT
+    host = args.host
+    port = args.port
 
     print("=" * 50)
     print("OPTIMIZATION CLIENT")
