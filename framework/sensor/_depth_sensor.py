@@ -47,10 +47,11 @@ class DepthSensor(SensorInterface):
         self.ray_angles = np.linspace(0, 2 * np.pi, num_rays, endpoint=False)
 
         # Pre-allocate arrays for performance
-        self.distances = np.ones(num_rays, dtype=np.float32) * max_range
+        # Python bindings require column vectors [n, 1] for geomid and dist
+        self.distances = np.ones((num_rays, 1), dtype=np.float64) * max_range
         self.ray_origins = np.zeros((num_rays, 3), dtype=np.float64)
         self.ray_directions = np.zeros((num_rays, 3), dtype=np.float64)
-        self.geomids = np.full(num_rays, -1, dtype=np.int32)
+        self.geomids = np.full((num_rays, 1), -1, dtype=np.int32)
 
     def get(self) -> np.ndarray:
         """
@@ -69,7 +70,8 @@ class DepthSensor(SensorInterface):
         robot_yaw = np.arctan2(robot_direction[1], robot_direction[0])
 
         # Single ray origin (all rays emanate from robot center)
-        ray_origin = np.array([robot_pos[0], robot_pos[1], 0.05], dtype=np.float64)
+        # Python bindings expect column vector [3, 1]
+        ray_origin = np.array([[robot_pos[0]], [robot_pos[1]], [0.05]], dtype=np.float64)
 
         # Calculate all ray directions at once
         absolute_angles = robot_yaw + self.ray_angles
@@ -77,13 +79,16 @@ class DepthSensor(SensorInterface):
         self.ray_directions[:, 1] = np.sin(absolute_angles)
         self.ray_directions[:, 2] = 0.0
 
+        # Python bindings expect vec as column vector [nray*3, 1]
+        vec = self.ray_directions.flatten().reshape(-1, 1)
+
         # Cast all rays at once using mj_multiRay
         # cutoff includes offset to detect objects within max_range from robot surface
         mujoco.mj_multiRay(
             self.model,
             self.data,
-            ray_origin,                      # Single origin point (3,)
-            self.ray_directions,              # Ray directions (num_rays, 3)
+            ray_origin,                      # Single origin point [3, 1]
+            vec,                              # Ray directions [num_rays*3, 1]
             geomgroup=None,
             flg_static=1,
             bodyexclude=self.robot_body_id,
@@ -103,6 +108,7 @@ class DepthSensor(SensorInterface):
         np.clip(self.distances, 0.0, self.max_range, out=self.distances)
 
         # Normalize distances to [0, 1] range (1=close, 0=far)
-        normalized_distances = 1.0 - (self.distances / self.max_range)
+        # Flatten from (num_rays, 1) to (num_rays,) for output
+        normalized_distances = 1.0 - (self.distances.flatten() / self.max_range)
 
         return normalized_distances
