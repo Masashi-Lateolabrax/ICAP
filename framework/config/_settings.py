@@ -4,6 +4,7 @@ from typing import Callable
 import numpy as np
 
 from ..types import RobotLocation, Position, ETHANOL
+from . import actions
 
 
 class ClippingFunctions:
@@ -132,11 +133,104 @@ class Storage:
 class Pheromone:
     ACTIVE: bool = False
     CELL_SIZE = 0.1
+    CELL_SIZE_Z = 0.1
     WIDTH_NUM = int(Simulation.WORLD_WIDTH / CELL_SIZE)
     HEIGHT_NUM = int(Simulation.WORLD_HEIGHT / CELL_SIZE)
     ITERATIONS_PER_STEP = 8
     TEMPERATURE = 300
     MATERIAL = ETHANOL
+
+
+class Action:
+    """
+    Discrete action patterns for robot control.
+    Each action is defined as [right_wheel, left_wheel, pheromone].
+    Wheel values in range [-1, 1], pheromone in range [0, 1].
+    """
+    # Speed gain coefficients
+    HIGH = 1.0
+    MEDIUM = 0.7
+    LOW = 0.4
+
+    @property
+    def HIGH_SPEED_FORWARD(self):
+        return self.HIGH * actions.FORWARD_PATTERN
+
+    @property
+    def MEDIUM_SPEED_FORWARD(self):
+        return self.MEDIUM * actions.FORWARD_PATTERN
+
+    @property
+    def LOW_SPEED_FORWARD(self):
+        return self.LOW * actions.FORWARD_PATTERN
+
+    @property
+    def HIGH_SPEED_BACKWARD(self):
+        return self.HIGH * actions.BACKWARD_PATTERN
+
+    @property
+    def MEDIUM_SPEED_BACKWARD(self):
+        return self.MEDIUM * actions.BACKWARD_PATTERN
+
+    @property
+    def LOW_SPEED_BACKWARD(self):
+        return self.LOW * actions.BACKWARD_PATTERN
+
+    @property
+    def HIGH_SPEED_TURN_LEFT(self):
+        return self.HIGH * actions.TURN_LEFT
+
+    @property
+    def MEDIUM_SPEED_TURN_LEFT(self):
+        return self.MEDIUM * actions.TURN_LEFT
+
+    @property
+    def LOW_SPEED_TURN_LEFT(self):
+        return self.LOW * actions.TURN_LEFT
+
+    @property
+    def HIGH_SPEED_TURN_RIGHT(self):
+        return self.HIGH * actions.TURN_RIGHT
+
+    @property
+    def MEDIUM_SPEED_TURN_RIGHT(self):
+        return self.MEDIUM * actions.TURN_RIGHT
+
+    @property
+    def LOW_SPEED_TURN_RIGHT(self):
+        return self.LOW * actions.TURN_RIGHT
+
+    @property
+    def SECRETE_LARGE_PHEROMONE(self):
+        return self.HIGH * actions.SECRETE_PHEROMONE
+
+    @property
+    def SECRETE_MEDIUM_PHEROMONE(self):
+        return self.MEDIUM * actions.SECRETE_PHEROMONE
+
+    @property
+    def SECRETE_LITTLE_PHEROMONE(self):
+        return self.LOW * actions.SECRETE_PHEROMONE
+
+    @property
+    def PATTERNS(self):
+        return np.stack([
+            self.HIGH_SPEED_FORWARD,
+            self.MEDIUM_SPEED_FORWARD,
+            self.LOW_SPEED_FORWARD,
+            self.HIGH_SPEED_TURN_LEFT,
+            self.MEDIUM_SPEED_TURN_LEFT,
+            self.LOW_SPEED_TURN_LEFT,
+            self.HIGH_SPEED_TURN_RIGHT,
+            self.MEDIUM_SPEED_TURN_RIGHT,
+            self.LOW_SPEED_TURN_RIGHT,
+            self.HIGH_SPEED_BACKWARD,
+            self.MEDIUM_SPEED_BACKWARD,
+            self.LOW_SPEED_BACKWARD,
+            self.SECRETE_LITTLE_PHEROMONE,
+            self.SECRETE_MEDIUM_PHEROMONE,
+            self.SECRETE_LARGE_PHEROMONE,
+        ])
 
 
 class Settings:
@@ -154,6 +248,7 @@ class Settings:
     Nest = Nest
     Storage = Storage
     Pheromone = Pheromone
+    Action = Action()
 
     def as_dict(self):
         def as_dict(obj):
