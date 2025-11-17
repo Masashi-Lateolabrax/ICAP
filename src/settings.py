@@ -51,7 +51,7 @@ MySettings.Robot.ACTUATOR_MOVE_KV = 100
 MySettings.Robot.ACTUATOR_ROT_KV = 10
 
 MySettings.Robot.DEPTH_SENSOR_NUM_RAYS = 16
-MySettings.Robot.DEPTH_SENSOR_MAX_RANGE = 1.0
+MySettings.Robot.DEPTH_SENSOR_MAX_RANGE = 5.0
 
 MySettings.Robot.NUM = 9
 MySettings.Robot.INITIAL_POSITION = [
