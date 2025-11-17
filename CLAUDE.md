@@ -202,6 +202,12 @@ The system uses CMA-ES (Covariance Matrix Adaptation Evolution Strategy) for neu
 | `develop`  | Shared development  | `main`    | `main`, `scheme/*` |
 | `scheme/*` | Experiment-specific | `develop` | `main`            |
 
+### Token Efficiency Rules
+- **Never re-read files**: Use conversation context, don't re-read files already seen
+- **Minimal operations**: Use Write for major changes, not multiple Edits
+- **English in memory**: All memory files must be in English to minimize tokens
+- **Understand intent**: Think before acting - what does the user really want?
+
 ## Common Issues & Solutions
 
 ### Socket Connection Management
