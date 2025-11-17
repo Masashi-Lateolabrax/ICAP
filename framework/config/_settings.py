@@ -75,6 +75,10 @@ class Robot:
     ROBOT_SENSOR_GAIN = 1.0
     FOOD_SENSOR_GAIN = 1.0
 
+    # Depth sensor configuration
+    DEPTH_SENSOR_NUM_RAYS = 8
+    DEPTH_SENSOR_MAX_RANGE = 5.0
+
     NUM = 1
     INITIAL_POSITION: list[RobotLocation] = []
 
