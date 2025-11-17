@@ -16,15 +16,8 @@ class MySettings(Settings):
 MySettings.Render.RENDER_WIDTH = 500
 MySettings.Render.RENDER_HEIGHT = 500
 
-MySettings.Render.LIGHT_AMBIENT = 1.0
-MySettings.Render.LIGHT_DIFFUSE = 1.0
-MySettings.Render.LIGHT_SPECULAR = 1.0
-
-MySettings.Render.CAMERA_POS = (0.0, -1e-3, 13.0)
-MySettings.Render.CAMERA_LOOKAT = (0.0, 0.0, 0.0)
-
 MySettings.Render.MAX_GEOM = 11000
-MySettings.Render.MAX_PHEROMONE = 1.0
+MySettings.Render.MAX_PHEROMONE = 0.1
 ###################################################################################
 
 
@@ -56,9 +49,6 @@ MySettings.Robot.THINK_INTERVAL = 0.01
 
 MySettings.Robot.ACTUATOR_MOVE_KV = 100
 MySettings.Robot.ACTUATOR_ROT_KV = 10
-
-MySettings.Robot.ROBOT_SENSOR_GAIN = 1.0
-MySettings.Robot.FOOD_SENSOR_GAIN = 1.0
 
 MySettings.Robot.DEPTH_SENSOR_NUM_RAYS = 16
 MySettings.Robot.DEPTH_SENSOR_MAX_RANGE = 1.0
@@ -134,7 +124,6 @@ MySettings.Simulation.WORLD_HEIGHT = 10.0
 MySettings.Simulation.WALL_THICKNESS = 1
 MySettings.Simulation.WALL_HEIGHT = 1
 
-MySettings.Simulation.TEMPERATURE = 300.0
 MySettings.Simulation.GRAVITY = (0.0, 0.0, -9.81)
 ###################################################################################
 
