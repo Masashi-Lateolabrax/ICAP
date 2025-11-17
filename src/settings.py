@@ -31,6 +31,9 @@ MySettings.Render.LIGHT_SPECULAR = 1.0
 
 MySettings.Render.CAMERA_POS = (0.0, -1e-3, 13.0)
 MySettings.Render.CAMERA_LOOKAT = (0.0, 0.0, 0.0)
+
+MySettings.Render.MAX_GEOM = 11000
+MySettings.Render.MAX_PHEROMONE = 1.0
 ###################################################################################
 
 
@@ -65,6 +68,9 @@ MySettings.Robot.ACTUATOR_ROT_KV = 10
 
 MySettings.Robot.ROBOT_SENSOR_GAIN = 1.0
 MySettings.Robot.FOOD_SENSOR_GAIN = 1.0
+
+MySettings.Robot.DEPTH_SENSOR_NUM_RAYS = 16
+MySettings.Robot.DEPTH_SENSOR_MAX_RANGE = 1.0
 
 MySettings.Robot.NUM = 9
 MySettings.Robot.INITIAL_POSITION = [
@@ -113,13 +119,13 @@ MySettings.Nest.COLOR = (0, 1, 0, 1)
 ###################################################################################
 # Loss settings
 ###################################################################################
-MySettings.Loss.OFFSET_NEST_AND_FOOD = 0
-MySettings.Loss.SIGMA_NEST_AND_FOOD = calc_loss_sigma(4, 0.01)
-MySettings.Loss.GAIN_NEST_AND_FOOD = 1
+MySettings.Loss.OFFSET_FOOD_AND_NEST = 0
+MySettings.Loss.SIGMA_FOOD_AND_NEST = calc_loss_sigma(4, 0.01)
+MySettings.Loss.GAIN_FOOD_AND_NEST = 1
 
-MySettings.Loss.OFFSET_ROBOT_AND_FOOD = Settings.Robot.RADIUS + Settings.Food.RADIUS
-MySettings.Loss.SIGMA_ROBOT_AND_FOOD = calc_loss_sigma(1, 0.3)
-MySettings.Loss.GAIN_ROBOT_AND_FOOD = 0.01
+MySettings.Loss.OFFSET_FOOD_AND_ROBOT = Settings.Robot.RADIUS + Settings.Food.RADIUS
+MySettings.Loss.SIGMA_FOOD_AND_ROBOT = calc_loss_sigma(1, 0.3)
+MySettings.Loss.GAIN_FOOD_AND_ROBOT = 0.01
 
 MySettings.Loss.REGULARIZATION_COEFFICIENT = 0
 ###################################################################################
@@ -136,6 +142,9 @@ MySettings.Simulation.WORLD_HEIGHT = 10.0
 
 MySettings.Simulation.WALL_THICKNESS = 1
 MySettings.Simulation.WALL_HEIGHT = 1
+
+MySettings.Simulation.TEMPERATURE = 300.0
+MySettings.Simulation.GRAVITY = (0.0, 0.0, -9.81)
 ###################################################################################
 
 
@@ -165,6 +174,7 @@ MySettings.Action.LOW = 0.2
 ###################################################################################
 # Storage settings
 ###################################################################################
+MySettings.Storage.ASSET_DIRECTORY = "./assets"
 MySettings.Storage.SAVE_INDIVIDUALS = True
 MySettings.Storage.SAVE_DIRECTORY = "results"
 MySettings.Storage.SAVE_INTERVAL = 1
