@@ -98,10 +98,13 @@ Note: The extras are mutually exclusive due to UV conflict resolution.
 
 ### Server
 ```bash
-# For CUDA 12.8 support
+# For CUDA 12.8 support with default settings (host=0.0.0.0, port=50000)
 PYTHONPATH=. uv run src/server.py --extra cu128
 
-# For CUDA 12.4 support  
+# With custom host and port
+PYTHONPATH=. uv run src/server.py --extra cu128 --host 127.0.0.1 --port 9000
+
+# For CUDA 12.4 support
 PYTHONPATH=. uv run src/server.py --extra cu124
 
 # For CPU-only execution
@@ -110,8 +113,14 @@ PYTHONPATH=. uv run src/server.py --extra cpu
 
 ### Client
 ```bash
-# Primary client for robot behavior evaluation
+# Primary client for robot behavior evaluation (default: connect to 127.0.0.1:50000)
 PYTHONPATH=. uv run src/main.py --extra cu128
+
+# Connect to specific server
+PYTHONPATH=. uv run src/main.py --extra cu128 --host 0.0.0.0 --port 9000
+
+# With multiple evaluation processes
+PYTHONPATH=. uv run src/main.py --extra cu128 --num-processes 4
 
 # Example client for testing (uses simple Rosenbrock function)
 PYTHONPATH=. uv run examples/optimization/client.py --extra cu128
