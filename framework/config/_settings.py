@@ -161,7 +161,8 @@ class Robot:
     ACTUATOR_MOVE_KV: int = 100
     ACTUATOR_ROT_KV: int = 10
 
-    NUM_RAYS: int = 16
+    DEPTH_SENSOR_NUM_RAYS: int = 16
+    DEPTH_SENSOR_MAX_RANGE: float = 1.0
 
     NUM: int = 9
     INITIAL_POSITION = [
