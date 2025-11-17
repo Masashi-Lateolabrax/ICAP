@@ -15,22 +15,22 @@ class Loss:
     def _calc_r_loss(self, robot_pos: np.ndarray, food_pos: np.ndarray) -> float:
         subs = (robot_pos[:, None, :] - food_pos[None, :, :]).reshape(-1, 2)
         distance = np.clip(
-            np.linalg.norm(subs, axis=1) - self.settings.Loss.OFFSET_ROBOT_AND_FOOD,
+            np.linalg.norm(subs, axis=1) - self.settings.Loss.OFFSET_FOOD_AND_ROBOT,
             a_min=0,
             a_max=None
         )
-        loss = -np.sum(np.exp(-(distance ** 2) / self.settings.Loss.SIGMA_ROBOT_AND_FOOD))
-        return self.settings.Loss.GAIN_ROBOT_AND_FOOD * loss
+        loss = -np.sum(np.exp(-(distance ** 2) / self.settings.Loss.SIGMA_FOOD_AND_ROBOT))
+        return self.settings.Loss.GAIN_FOOD_AND_ROBOT * loss
 
     def _calc_n_loss(self, nest_pos: np.ndarray, food_pos: np.ndarray) -> float:
         subs = food_pos - nest_pos[None, :]
         distance = np.clip(
-            np.linalg.norm(subs, axis=1) - self.settings.Loss.OFFSET_NEST_AND_FOOD,
+            np.linalg.norm(subs, axis=1) - self.settings.Loss.OFFSET_FOOD_AND_NEST,
             a_min=0,
             a_max=None
         )
-        loss = -np.sum(np.exp(-(distance ** 2) / self.settings.Loss.SIGMA_NEST_AND_FOOD))
-        return self.settings.Loss.GAIN_NEST_AND_FOOD * loss
+        loss = -np.sum(np.exp(-(distance ** 2) / self.settings.Loss.SIGMA_FOOD_AND_NEST))
+        return self.settings.Loss.GAIN_FOOD_AND_NEST * loss
 
     def as_float(self) -> float:
         return self.r_loss + self.n_loss

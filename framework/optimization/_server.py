@@ -280,11 +280,19 @@ def _server_entrance(host: str, port: int, socket_queue: Queue, stop_event: thre
 
 
 class OptimizationServer:
-    def __init__(self, settings: Settings, handler: Optional[Callable[[CMAES, list[Individual]], None]] = None):
+    def __init__(
+            self,
+            settings: Settings,
+            handler: Optional[Callable[[CMAES, list[Individual]], None]] = None,
+            host: str = "127.0.0.1",
+            port: int = 50000
+    ):
         self.settings = settings
         self.handler = handler
+        self.host = host
+        self.port = port
 
     def start_server(self) -> None:
         server_thread, queue, stop_event = _spawn_thread(self.settings, self.handler)
-        _server_entrance(self.settings.Server.HOST, self.settings.Server.PORT, queue, stop_event)
+        _server_entrance(self.host, self.port, queue, stop_event)
         server_thread.join()
