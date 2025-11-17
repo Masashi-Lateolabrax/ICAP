@@ -9,6 +9,7 @@ import os
 import threading
 import datetime
 import subprocess
+import argparse
 from typing import Optional
 import math
 
@@ -133,17 +134,25 @@ class Handler:
 
 
 def main(settings: Settings):
+    parser = argparse.ArgumentParser(description="Optimization Server")
+    parser.add_argument("--host", type=str, default="0.0.0.0", help="Server host address (default: 0.0.0.0)")
+    parser.add_argument("--port", type=int, default=50000, help="Server port (default: 50000)")
+    parser.add_argument("--socket-backlog", type=int, default=5, help="Socket backlog size (default: 5)")
+    args = parser.parse_args()
+
     dim = Controller(settings).dim
 
-    settings.Server.HOST = "0.0.0.0"
     settings.Optimization.DIMENSION = dim
+    host = args.host
+    port = args.port
+    socket_backlog = args.socket_backlog
 
     print("=" * 50)
     print("OPTIMIZATION SERVER")
     print("=" * 50)
-    print(f"Host: {settings.Server.HOST}")
-    print(f"Port: {settings.Server.PORT}")
-    print(f"Socket Backlog: {settings.Server.SOCKET_BACKLOG}")
+    print(f"Host: {host}")
+    print(f"Port: {port}")
+    print(f"Socket Backlog: {socket_backlog}")
     print("-" * 30)
     print(f"Problem dimension: {settings.Optimization.DIMENSION}")
     print(f"Initial sigma: {settings.Optimization.SIGMA}")
@@ -161,7 +170,9 @@ def main(settings: Settings):
     handler = Handler(settings)
     server = OptimizationServer(
         settings,
-        handler=handler.run
+        handler=handler.run,
+        host=host,
+        port=port
     )
 
     try:

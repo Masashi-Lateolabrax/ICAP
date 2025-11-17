@@ -98,10 +98,13 @@ Note: The extras are mutually exclusive due to UV conflict resolution.
 
 ### Server
 ```bash
-# For CUDA 12.8 support
+# For CUDA 12.8 support with default settings (host=0.0.0.0, port=50000)
 PYTHONPATH=. uv run src/server.py --extra cu128
 
-# For CUDA 12.4 support  
+# With custom host and port
+PYTHONPATH=. uv run src/server.py --extra cu128 --host 127.0.0.1 --port 9000
+
+# For CUDA 12.4 support
 PYTHONPATH=. uv run src/server.py --extra cu124
 
 # For CPU-only execution
@@ -110,8 +113,14 @@ PYTHONPATH=. uv run src/server.py --extra cpu
 
 ### Client
 ```bash
-# Primary client for robot behavior evaluation
+# Primary client for robot behavior evaluation (default: connect to 127.0.0.1:50000)
 PYTHONPATH=. uv run src/main.py --extra cu128
+
+# Connect to specific server
+PYTHONPATH=. uv run src/main.py --extra cu128 --host 0.0.0.0 --port 9000
+
+# With multiple evaluation processes
+PYTHONPATH=. uv run src/main.py --extra cu128 --num-processes 4
 
 # Example client for testing (uses simple Rosenbrock function)
 PYTHONPATH=. uv run examples/optimization/client.py --extra cu128
@@ -192,6 +201,12 @@ The system uses CMA-ES (Covariance Matrix Adaptation Evolution Strategy) for neu
 | `main`     | Production code     | -         | -                 |
 | `develop`  | Shared development  | `main`    | `main`, `scheme/*` |
 | `scheme/*` | Experiment-specific | `develop` | `main`            |
+
+### Token Efficiency Rules
+- **Never re-read files**: Use conversation context, don't re-read files already seen
+- **Minimal operations**: Use Write for major changes, not multiple Edits
+- **English in memory**: All memory files must be in English to minimize tokens
+- **Understand intent**: Think before acting - what does the user really want?
 
 ## Common Issues & Solutions
 
