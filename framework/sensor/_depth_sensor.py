@@ -83,7 +83,7 @@ class DepthSensor(SensorInterface):
             self.model,
             self.data,
             ray_origin,                      # Single origin point (3,)
-            self.ray_directions.flatten(),   # Ray directions (num_rays*3,)
+            self.ray_directions,              # Ray directions (num_rays, 3)
             geomgroup=None,
             flg_static=1,
             bodyexclude=self.robot_body_id,
