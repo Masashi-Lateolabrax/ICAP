@@ -34,7 +34,8 @@ class Simulator(BasicSimulator):
                 model=model,
                 data=data,
                 num_rays=settings.Robot.DEPTH_SENSOR_NUM_RAYS,
-                max_range=settings.Robot.DEPTH_SENSOR_MAX_RANGE
+                max_range=settings.Robot.DEPTH_SENSOR_MAX_RANGE,
+                offset=settings.Robot.RADIUS
             )
         ]
 
