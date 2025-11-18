@@ -17,8 +17,6 @@ class Simulator(BasicSimulator):
     def _create_sensors(
             settings: Settings,
             robot_values: RobotValues,
-            all_robot_values: list[RobotValues],
-            all_food_values: list[FoodValues],
             nest_site: mujoco._specs.MjsSite,
             model: mujoco.MjModel,
             data: mujoco.MjData
@@ -54,7 +52,7 @@ class Simulator(BasicSimulator):
         self._max_pheromone: float = 0.0
 
         self.sensors: list[list[SensorInterface]] = [
-            self._create_sensors(settings, r, self.robot_values, self.food_values, self.nest_site, self.model, self.data)
+            self._create_sensors(settings, r, self.nest_site, self.model, self.data)
             for r in self.robot_values
         ]
 
