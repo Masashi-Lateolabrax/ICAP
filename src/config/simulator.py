@@ -6,7 +6,7 @@ from framework.prelude import *
 from framework.environment import rand_food_pos
 from framework.backends import BasicSimulator
 from framework.utils import Timer
-from framework.sensor import PreprocessedOmniSensor, DirectionSensor, DepthSensor
+from framework.sensor import DirectionSensor, DepthSensor, VelocitySensor
 
 from .controller import Controller
 from .loss import Loss
@@ -26,6 +26,9 @@ class Simulator(BasicSimulator):
                 robot=robot_values,
                 target_site=nest_site,
                 target_radius=settings.Nest.RADIUS
+            ),
+            VelocitySensor(
+                robot=robot_values
             ),
             DepthSensor(
                 robot=robot_values,
@@ -58,9 +61,9 @@ class Simulator(BasicSimulator):
 
         self.dummy_foods: list[DummyFoodValues] = []
 
-        # Input dimensions: direction(2) + depth(N) + pheromone(3)
+        # Input dimensions: direction(2) + velocity(3) + depth(N) + pheromone(3)
         # where N = DEPTH_SENSOR_NUM_RAYS
-        input_dim = 2 + settings.Robot.DEPTH_SENSOR_NUM_RAYS + 3
+        input_dim = 2 + 3 + settings.Robot.DEPTH_SENSOR_NUM_RAYS + 3
         self.input_ndarray = np.zeros((settings.Robot.NUM, input_dim), dtype=np.float32)
         self.output_ndarray = np.zeros((settings.Robot.NUM, 3), dtype=np.float32)
         self.input_tensor = torch.from_numpy(self.input_ndarray)
@@ -106,7 +109,17 @@ class Simulator(BasicSimulator):
         num_rays = self.settings.Robot.DEPTH_SENSOR_NUM_RAYS
         for i, sensors in enumerate(self.sensors):
             self.input_ndarray[i, 0:2] = sensors[0].get()  # direction
-            self.input_ndarray[i, 2:2+num_rays] = sensors[1].get()  # depth sensor
+            self.input_ndarray[i, 2:5] = sensors[1].get()  # velocity
+            self.input_ndarray[i, 5:5 + num_rays] = sensors[2].get()  # depth sensor
+
+        # Pheromone data (if available)
+        if self._pheromone_field is not None:
+            pheromone_idx = 5 + num_rays
+            self.input_ndarray[:, pheromone_idx] = self.get_pheromone(self._robot_positions) / 3.5
+
+            pheromone_grad = self.get_pheromone_grad(self._robot_positions)
+            self.input_ndarray[:, pheromone_idx + 1] = np.sum(pheromone_grad * self._robot_v_direction, axis=1)
+            self.input_ndarray[:, pheromone_idx + 2] = np.sum(pheromone_grad * self._robot_h_direction, axis=1)
 
         return self.input_tensor
 
@@ -121,15 +134,6 @@ class Simulator(BasicSimulator):
         if self.timer.tick():
             with torch.no_grad():
                 input_ = self.create_input_for_controller()
-                if self._pheromone_field is not None:
-                    # Pheromone data comes after direction(2) + depth(N)
-                    pheromone_idx = 2 + self.settings.Robot.DEPTH_SENSOR_NUM_RAYS
-                    self.input_ndarray[:, pheromone_idx] = self.get_pheromone(self._robot_positions) / 3.5
-
-                    pheromone_grad = self.get_pheromone_grad(self._robot_positions)
-                    self.input_ndarray[:, pheromone_idx+1] = np.sum(pheromone_grad * self._robot_v_direction, axis=1)
-                    self.input_ndarray[:, pheromone_idx+2] = np.sum(pheromone_grad * self._robot_h_direction, axis=1)
-
                 output = self.controller.forward(input_)
                 self.output_ndarray = output.numpy()
 
