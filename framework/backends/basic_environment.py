@@ -145,6 +145,7 @@ class BasicEnvironment(BasicMuJoCoSimulator, ABC):
 
         self._shadow = []
 
+        self._render_max_pheromone = settings.Render.MAX_PHEROMONE
         self._pheromone_field: Optional[PheromoneField] = None
         self._pheromone_texture_id: Optional[int] = None
 
@@ -209,7 +210,7 @@ class BasicEnvironment(BasicMuJoCoSimulator, ABC):
             return
 
         pheromone = self._pheromone_field.get_gas_all()
-        max_pheromone = 0.1
+        max_pheromone = self._render_max_pheromone
         normalized_pheromone = np.clip(pheromone / (max_pheromone + 1e-6), a_min=0, a_max=1)
 
         # Create RGB texture data (Red-Blue gradient)
