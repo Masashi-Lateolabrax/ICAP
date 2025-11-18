@@ -16,6 +16,9 @@ class MySettings(Settings):
 MySettings.Render.RENDER_WIDTH = 500
 MySettings.Render.RENDER_HEIGHT = 500
 
+MySettings.Render.CAMERA_POS = (0.0, -1e-3, 13.0)
+MySettings.Render.CAMERA_LOOKAT = (0.0, 0.0, 0.0)
+
 MySettings.Render.MAX_GEOM = 11000
 MySettings.Render.MAX_PHEROMONE = 0.1
 ###################################################################################
@@ -50,7 +53,7 @@ MySettings.Robot.THINK_INTERVAL = 0.01
 MySettings.Robot.ACTUATOR_MOVE_KV = 100
 MySettings.Robot.ACTUATOR_ROT_KV = 10
 
-MySettings.Robot.DEPTH_SENSOR_NUM_RAYS = 16
+MySettings.Robot.DEPTH_SENSOR_NUM_RAYS = 48
 MySettings.Robot.DEPTH_SENSOR_MAX_RANGE = 5.0
 
 MySettings.Robot.NUM = 9

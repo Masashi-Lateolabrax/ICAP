@@ -35,6 +35,9 @@ class Render:
     RENDER_WIDTH: int = 500
     RENDER_HEIGHT: int = 500
 
+    CAMERA_POS: tuple[float, float, float] = (0.0, -1e-3, 13.0)
+    CAMERA_LOOKAT: tuple[float, float, float] = (0.0, 0.0, 0.0)
+
     MAX_GEOM = 11000
     MAX_PHEROMONE: float = 1.0
 
