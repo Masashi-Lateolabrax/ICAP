@@ -26,6 +26,23 @@ def draw_arrowed_line(
     cv2.arrowedLine(img_, pos_, end, color, thickness, tipLength=tip_length)
 
 
+def interpolate_color(normalized_distance: float) -> tuple[int, int, int]:
+    """
+    Convert normalized distance [0,1] to RGB color.
+    0.0 (far) -> green (0, 255, 0)
+    1.0 (close) -> red (255, 0, 0)
+    """
+    # Clamp to [0, 1]
+    t = np.clip(normalized_distance, 0.0, 1.0)
+
+    # Linear interpolation from green to red
+    r = int(255 * t)
+    g = int(255 * (1.0 - t))
+    b = 0
+
+    return (r, g, b)
+
+
 def input_animation(settings: Settings, debug_data: list[DebugData], file_path: str):
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     writer = cv2.VideoWriter(
@@ -55,6 +72,11 @@ def input_animation(settings: Settings, debug_data: list[DebugData], file_path: 
         dtype=np.uint8
     )
 
+    # Get sensor configuration
+    num_rays = settings.Robot.DEPTH_SENSOR_NUM_RAYS
+    max_range = settings.Robot.DEPTH_SENSOR_MAX_RANGE
+    offset = settings.Robot.RADIUS
+
     timer = time.time()
     for i, di in enumerate(debug_data):
         buffer.fill(255)
@@ -66,17 +88,40 @@ def input_animation(settings: Settings, debug_data: list[DebugData], file_path: 
             # Draw the robot direction
             draw_arrowed_line(buffer, pos, robot_dir, 20, (200, 0, 0), thickness=2, tip_length=0.3)
 
-            # Draw the nest direction by robot sight.
-            nest_direction = rotate_vector_2d(robot_dir, inputs[5] * np.pi)
+            # Draw the nest direction by robot sight (DirectionSensor output)
+            nest_direction = rotate_vector_2d(robot_dir, inputs[1] * np.pi)
             draw_arrowed_line(buffer, pos, nest_direction, 20, (255, 100, 0), thickness=2, tip_length=0.3)
 
-            # Draw the food direction
-            food_direction = rotate_vector_2d(robot_dir, inputs[3] * np.pi)
-            draw_arrowed_line(buffer, pos, food_direction, 20, (255, 0, 100), thickness=2, tip_length=0.3)
+            # Draw DepthSensor rays
+            robot_yaw = np.arctan2(robot_dir[1], robot_dir[0])
+            for ray_idx in range(num_rays):
+                # Get normalized distance [0,1]: 1=close, 0=far
+                normalized_distance = inputs[2 + ray_idx]
 
-            # Draw the other robot direction
-            food_direction = rotate_vector_2d(robot_dir, inputs[1] * np.pi)
-            draw_arrowed_line(buffer, pos, food_direction, 20, (255, 100, 100), thickness=2, tip_length=0.3)
+                # Convert to actual distance from robot surface
+                surface_distance = (1.0 - normalized_distance) * max_range
+
+                # Add offset to get total distance from robot center
+                total_distance = surface_distance + offset
+
+                # Calculate ray angle (evenly distributed 360 degrees)
+                ray_angle = 2 * np.pi * ray_idx / num_rays
+
+                # Calculate absolute direction in world coordinates
+                absolute_angle = robot_yaw + ray_angle
+                ray_direction = np.array([np.cos(absolute_angle), np.sin(absolute_angle)])
+
+                # Calculate ray endpoint in world coordinates
+                ray_end_world = robot_pos + total_distance * ray_direction
+
+                # Convert to pixel coordinates
+                ray_end_pixel = world_to_pixel(ray_end_world)
+
+                # Get color based on normalized distance
+                color = interpolate_color(normalized_distance)
+
+                # Draw ray line from robot center to intersection point
+                cv2.line(buffer, pos, ray_end_pixel, color, 1)
 
         for food_pos, food_dir in zip(di.food_positions, di.food_directions):
             pos = world_to_pixel(food_pos)
