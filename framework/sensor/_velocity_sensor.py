@@ -36,10 +36,10 @@ class VelocitySensor(SensorInterface):
         """
 
         velocimeter_data = self.robot.velocity
-        gyro_data = self.robot.angular_velocity
+        angular_velocity = self.robot.angular_velocity
 
         return np.array([
             velocimeter_data[0],
             velocimeter_data[1],
-            gyro_data[2]
+            angular_velocity
         ], dtype=np.float32)
