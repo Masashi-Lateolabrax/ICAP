@@ -27,7 +27,9 @@ class RobotSpec:
             x_act: mujoco._specs.MjsActuator,
             y_act: mujoco._specs.MjsActuator,
             z_act: mujoco._specs.MjsActuator,
-            r_act: mujoco._specs.MjsActuator
+            r_act: mujoco._specs.MjsActuator,
+            velocimeter: mujoco._specs.MjsSensor,
+            gyro: mujoco._specs.MjsSensor
     ):
         self.center_site = center_site
         self.front_site = front_site
@@ -36,6 +38,8 @@ class RobotSpec:
         self.y_act = y_act
         self.z_act = z_act
         self.r_act = r_act
+        self.velocimeter = velocimeter
+        self.gyro = gyro
 
 
 class RobotValues:
@@ -47,6 +51,8 @@ class RobotValues:
         self._y_act: mujoco._structs._MjDataActuatorViews = data.actuator(spec.y_act.name)
         self._z_act: mujoco._structs._MjDataActuatorViews = data.actuator(spec.z_act.name)
         self._r_act: mujoco._structs._MjDataActuatorViews = data.actuator(spec.r_act.name)
+        self._velocimeter: mujoco._structs._MjDataSensorViews = data.sensor(spec.velocimeter.name)
+        self._gyro: mujoco._structs._MjDataSensorViews = data.sensor(spec.gyro.name)
 
         self._d = d
         self._v = velocity
@@ -83,6 +89,14 @@ class RobotValues:
         self._direction_buf[2] = 0
         self._direction_buf /= np.linalg.norm(self._direction_buf)
         return self._direction_buf[0:2]
+
+    @property
+    def velocity(self):
+        return self._velocimeter.data[0:2]
+
+    @property
+    def angular_velocity(self):
+        return self._gyro.data[2]
 
     def act(self, right_wheel, left_wheel):
         power_and_torque = np.dot(self._matrix, [right_wheel, left_wheel])
