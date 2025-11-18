@@ -16,6 +16,9 @@ class MySettings(Settings):
 MySettings.Render.RENDER_WIDTH = 500
 MySettings.Render.RENDER_HEIGHT = 500
 
+MySettings.Render.CAMERA_POS = (0.0, -1e-3, 13.0)
+MySettings.Render.CAMERA_LOOKAT = (0.0, 0.0, 0.0)
+
 MySettings.Render.MAX_GEOM = 11000
 MySettings.Render.MAX_PHEROMONE = 0.1
 ###################################################################################
