@@ -1,8 +1,9 @@
 /.idea/
 /RESULTS/
-/.run
+/.run/
 /data/
-/.serena
+/.serena/
+**/__pycache__
 
 /report.md
 /poetry.toml
@@ -19,3 +20,6 @@
 *.tmp.*
 *.log.*
 *.pkl
+gpu_performance_summary.md
+note.typ
+src/count_food_respawns.py
