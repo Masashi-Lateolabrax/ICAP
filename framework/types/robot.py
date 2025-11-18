@@ -27,7 +27,9 @@ class RobotSpec:
             x_act: mujoco._specs.MjsActuator,
             y_act: mujoco._specs.MjsActuator,
             z_act: mujoco._specs.MjsActuator,
-            r_act: mujoco._specs.MjsActuator
+            r_act: mujoco._specs.MjsActuator,
+            velocimeter: mujoco._specs.MjsSensor,
+            gyro: mujoco._specs.MjsSensor
     ):
         self.center_site = center_site
         self.front_site = front_site
@@ -36,6 +38,8 @@ class RobotSpec:
         self.y_act = y_act
         self.z_act = z_act
         self.r_act = r_act
+        self.velocimeter = velocimeter
+        self.gyro = gyro
 
 
 class RobotValues:
