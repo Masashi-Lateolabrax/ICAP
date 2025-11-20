@@ -61,8 +61,7 @@ def analyze_specific_individual(save_dir: str, settings: Settings, individual: I
     video_file_path = os.path.join(save_dir, "video.mp4")
     input_anime_file_path = os.path.join(save_dir, "input_anime.mp4")
 
-    robot_sensor_power_file_path = os.path.join(save_dir, "robot_sensor_power.png")
-    food_sensor_power_file_path = os.path.join(save_dir, "food_sensor_power.png")
+    velocity_sensor_file_path = os.path.join(save_dir, "velocity_sensor.png")
     pheromone_sensor_power_file_path = os.path.join(save_dir, "pheromone_sensor_power.png")
 
     left_wheel_act_file_path = os.path.join(save_dir, "left_wheel_act.png")
@@ -110,19 +109,12 @@ def analyze_specific_individual(save_dir: str, settings: Settings, individual: I
 
         analysis_mod.input_animation(settings, debug_data, input_anime_file_path)
 
-    # Plot the robot sensor power
-    if not os.path.exists(robot_sensor_power_file_path):
+    # Plot the velocity sensor
+    if not os.path.exists(velocity_sensor_file_path):
         with open(debug_data_path, 'rb') as f:
             debug_data: list[DebugData] = pickle.load(f)
 
-        analysis_mod.plot_robot_sensor(settings, debug_data, robot_sensor_power_file_path)
-
-    # Plot the food sensor power
-    if not os.path.exists(food_sensor_power_file_path):
-        with open(debug_data_path, 'rb') as f:
-            debug_data: list[DebugData] = pickle.load(f)
-
-        analysis_mod.plot_food_sensor(settings, debug_data, food_sensor_power_file_path)
+        analysis_mod.plot_velocity_sensor(settings, debug_data, velocity_sensor_file_path)
 
     # Plot the pheromone sensor power
     if not os.path.exists(pheromone_sensor_power_file_path):

@@ -96,7 +96,7 @@ def input_animation(settings: Settings, debug_data: list[DebugData], file_path: 
             robot_yaw = np.arctan2(robot_dir[1], robot_dir[0])
             for ray_idx in range(num_rays):
                 # Get normalized distance [0,1]: 1=close, 0=far
-                normalized_distance = inputs[2 + ray_idx]
+                normalized_distance = inputs[5 + ray_idx]
 
                 # Convert to actual distance from robot surface
                 surface_distance = (1.0 - normalized_distance) * max_range
