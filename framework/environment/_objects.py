@@ -3,7 +3,7 @@ import mujoco
 from ..prelude import *
 from ._mujoco_utils import (
     axisangle_to_quat,
-    add_body, add_geom, add_joint, add_site, add_velocity_actuator, add_velocimeter, add_position_actuator
+    add_body, add_geom, add_joint, add_site, add_velocity_actuator, add_velocimeter, add_gyro, add_position_actuator
 )
 
 
@@ -274,6 +274,18 @@ def add_robot(
         gear=(0, 0, 0, 0, 0, 1)
     )
 
+    velocimeter = add_velocimeter(
+        spec,
+        name=f"robot{id_}_vel",
+        site=center_site
+    )
+
+    gyro = add_gyro(
+        spec,
+        name=f"robot{id_}_gyro",
+        site=center_site
+    )
+
     return RobotSpec(
         center_site=center_site,
         front_site=front_site,
@@ -281,7 +293,9 @@ def add_robot(
         x_act=x_act,
         y_act=y_act,
         z_act=z_act,
-        r_act=r_act
+        r_act=r_act,
+        velocimeter=velocimeter,
+        gyro=gyro
     )
 
 
@@ -374,6 +388,18 @@ def add_robot_with_mesh(
         gear=(0.0, 0.0, 0.0, 0.0, 0.0, 1.0)
     )
 
+    velocimeter = add_velocimeter(
+        spec,
+        name=f"robot{id_}_vel",
+        site=center_site
+    )
+
+    gyro = add_gyro(
+        spec,
+        name=f"robot{id_}_gyro",
+        site=center_site
+    )
+
     return RobotSpec(
         center_site=center_site,
         front_site=front_site,
@@ -381,5 +407,7 @@ def add_robot_with_mesh(
         x_act=x_act,
         y_act=y_act,
         z_act=z_act,
-        r_act=r_act
+        r_act=r_act,
+        velocimeter=velocimeter,
+        gyro=gyro
     )

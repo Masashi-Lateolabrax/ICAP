@@ -455,3 +455,30 @@ def add_velocimeter(
         objtype=mujoco.mjtObj.mjOBJ_SITE,
         objname=site.name,
     )
+
+
+def add_gyro(
+        spec: mujoco.MjSpec,
+        name: str,
+        site: mujoco._specs.MjsSite,
+        noise: float = None,
+        cutoff: float = None,
+) -> mujoco._specs.MjsSensor:
+    """Add a gyro sensor to measure angular velocity at a site.
+    
+    Args:
+        spec: MuJoCo simulation specification
+        name: Name identifier for the gyro
+        site: Site where angular velocity is measured
+        noise: Optional noise level for angular velocity readings
+        cutoff: Optional cutoff frequency for angular velocity filtering
+    """
+    return add_sensor(
+        spec,
+        name=name,
+        noise=noise,
+        cutoff=cutoff,
+        sensor_type=mujoco.mjtSensor.mjSENS_GYRO,
+        objtype=mujoco.mjtObj.mjOBJ_SITE,
+        objname=site.name,
+    )

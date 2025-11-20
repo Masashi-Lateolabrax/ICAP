@@ -11,12 +11,11 @@ class Controller(torch.nn.Module):
 
         nray = settings.Robot.DEPTH_SENSOR_NUM_RAYS
         # num_actions = self.action_patterns.shape[0]
+        # Input: direction(2) + velocity(3) + depth(nray) + pheromone(3)
         self.sequential = torch.nn.Sequential(
-            torch.nn.Linear(2 + 3 + nray, 5),
+            torch.nn.Linear(2 + 3 + nray + 3, 20),
             torch.nn.Mish(),
-            torch.nn.Linear(5, 5),
-            torch.nn.Mish(),
-            torch.nn.Linear(5, 5),
+            torch.nn.Linear(20, 5),
             torch.nn.Mish(),
             torch.nn.Linear(5, 3),  # Output action logits
             # torch.nn.Softmax(dim=-1),  # Convert to probability distribution
