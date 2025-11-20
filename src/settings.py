@@ -29,8 +29,8 @@ MySettings.Render.MAX_PHEROMONE = 0.1
 ###################################################################################
 MySettings.Optimization.DIMENSION = None  # Will be set later based on the neural network dimension
 MySettings.Optimization.POPULATION = 100
-MySettings.Optimization.GENERATION = 300
-MySettings.Optimization.SIGMA = 1
+MySettings.Optimization.GENERATION = 1000
+MySettings.Optimization.SIGMA = 5
 
 MySettings.Optimization.CLIP = ClippingFunctions.none
 ###################################################################################
@@ -43,7 +43,7 @@ MySettings.Robot.HEIGHT = 0.1
 MySettings.Robot.RADIUS = 0.175
 MySettings.Robot.DISTANCE_BETWEEN_WHEELS = 0.175 * 2 * 0.8
 MySettings.Robot.MAX_SPEED = 0.8
-MySettings.Robot.MAX_PHEROMONE_SECRETION = 0.001
+MySettings.Robot.MAX_PHEROMONE_SECRETION = 0.005
 MySettings.Robot.MASS = 10
 
 MySettings.Robot.COLOR = (1, 1, 0, 1)
@@ -54,21 +54,29 @@ MySettings.Robot.ACTUATOR_MOVE_KV = 100
 MySettings.Robot.ACTUATOR_ROT_KV = 10
 
 MySettings.Robot.DEPTH_SENSOR_NUM_RAYS = 32
-MySettings.Robot.DEPTH_SENSOR_MAX_RANGE = 2.0
+MySettings.Robot.DEPTH_SENSOR_MAX_RANGE = 1.0
 
-MySettings.Robot.NUM = 9
+MySettings.Robot.NUM = 16
 MySettings.Robot.INITIAL_POSITION = [
-    RobotLocation(-0.175 * 2 - 0.1, 0.5, np.pi),
-    RobotLocation(0, 0.5, np.pi),
-    RobotLocation(0.175 * 2 + 0.1, 0.5, np.pi),
+    RobotLocation((-0.175 - 0.1) - (0.175 * 2 + 0.1), (0.175 + 0.1) + (0.175 * 2 + 0.1), np.pi),
+    RobotLocation((-0.175 - 0.1), (0.175 + 0.1) + (0.175 * 2 + 0.1), np.pi),
+    RobotLocation((0.175 + 0.1), (0.175 + 0.1) + (0.175 * 2 + 0.1), np.pi),
+    RobotLocation((0.175 + 0.1) + (0.175 * 2 + 0.1), (0.175 + 0.1) + (0.175 * 2 + 0.1), np.pi),
 
-    RobotLocation(-0.175 * 2 - 0.1, 0, np.pi),
-    RobotLocation(0, 0, np.pi),
-    RobotLocation(0.175 * 2 + 0.1, 0, np.pi),
+    RobotLocation((-0.175 - 0.1) - (0.175 * 2 + 0.1), (0.175 + 0.1), np.pi),
+    RobotLocation((-0.175 - 0.1), (0.175 + 0.1), np.pi),
+    RobotLocation((0.175 + 0.1), (0.175 + 0.1), np.pi),
+    RobotLocation((0.175 + 0.1) + (0.175 * 2 + 0.1), (0.175 + 0.1), np.pi),
 
-    RobotLocation(-0.175 * 2 - 0.1, -0.5, np.pi),
-    RobotLocation(0, -0.5, np.pi),
-    RobotLocation(0.175 * 2 + 0.1, -0.5, np.pi),
+    RobotLocation((-0.175 - 0.1) - (0.175 * 2 + 0.1), -0.175 - 0.1, np.pi),
+    RobotLocation((-0.175 - 0.1), -0.175 - 0.1, np.pi),
+    RobotLocation((0.175 + 0.1), -0.175 - 0.1, np.pi),
+    RobotLocation((0.175 + 0.1) + (0.175 * 2 + 0.1), -0.175 - 0.1, np.pi),
+
+    RobotLocation((-0.175 - 0.1) - (0.175 * 2 + 0.1), (-0.175 - 0.1) - (0.175 * 2 + 0.1), np.pi),
+    RobotLocation((-0.175 - 0.1), (-0.175 - 0.1) - (0.175 * 2 + 0.1), np.pi),
+    RobotLocation((0.175 + 0.1), (-0.175 - 0.1) - (0.175 * 2 + 0.1), np.pi),
+    RobotLocation((0.175 + 0.1) + (0.175 * 2 + 0.1), (-0.175 - 0.1) - (0.175 * 2 + 0.1), np.pi),
 ]
 ###################################################################################
 
