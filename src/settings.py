@@ -56,19 +56,27 @@ MySettings.Robot.ACTUATOR_ROT_KV = 10
 MySettings.Robot.DEPTH_SENSOR_NUM_RAYS = 32
 MySettings.Robot.DEPTH_SENSOR_MAX_RANGE = 1.0
 
-MySettings.Robot.NUM = 9
+MySettings.Robot.NUM = 16
 MySettings.Robot.INITIAL_POSITION = [
-    RobotLocation(-0.175 * 2 - 0.1, 0.5, np.pi),
-    RobotLocation(0, 0.5, np.pi),
-    RobotLocation(0.175 * 2 + 0.1, 0.5, np.pi),
+    RobotLocation((-0.175 - 0.1) - (0.175 * 2 + 0.1), (0.175 + 0.1) + (0.175 * 2 + 0.1), np.pi),
+    RobotLocation((-0.175 - 0.1), (0.175 + 0.1) + (0.175 * 2 + 0.1), np.pi),
+    RobotLocation((0.175 + 0.1), (0.175 + 0.1) + (0.175 * 2 + 0.1), np.pi),
+    RobotLocation((0.175 + 0.1) + (0.175 * 2 + 0.1), (0.175 + 0.1) + (0.175 * 2 + 0.1), np.pi),
 
-    RobotLocation(-0.175 * 2 - 0.1, 0, np.pi),
-    RobotLocation(0, 0, np.pi),
-    RobotLocation(0.175 * 2 + 0.1, 0, np.pi),
+    RobotLocation((-0.175 - 0.1) - (0.175 * 2 + 0.1), (0.175 + 0.1), np.pi),
+    RobotLocation((-0.175 - 0.1), (0.175 + 0.1), np.pi),
+    RobotLocation((0.175 + 0.1), (0.175 + 0.1), np.pi),
+    RobotLocation((0.175 + 0.1) + (0.175 * 2 + 0.1), (0.175 + 0.1), np.pi),
 
-    RobotLocation(-0.175 * 2 - 0.1, -0.5, np.pi),
-    RobotLocation(0, -0.5, np.pi),
-    RobotLocation(0.175 * 2 + 0.1, -0.5, np.pi),
+    RobotLocation((-0.175 - 0.1) - (0.175 * 2 + 0.1), -0.175 - 0.1, np.pi),
+    RobotLocation((-0.175 - 0.1), -0.175 - 0.1, np.pi),
+    RobotLocation((0.175 + 0.1), -0.175 - 0.1, np.pi),
+    RobotLocation((0.175 + 0.1) + (0.175 * 2 + 0.1), -0.175 - 0.1, np.pi),
+
+    RobotLocation((-0.175 - 0.1) - (0.175 * 2 + 0.1), (-0.175 - 0.1) - (0.175 * 2 + 0.1), np.pi),
+    RobotLocation((-0.175 - 0.1), (-0.175 - 0.1) - (0.175 * 2 + 0.1), np.pi),
+    RobotLocation((0.175 + 0.1), (-0.175 - 0.1) - (0.175 * 2 + 0.1), np.pi),
+    RobotLocation((0.175 + 0.1) + (0.175 * 2 + 0.1), (-0.175 - 0.1) - (0.175 * 2 + 0.1), np.pi),
 ]
 ###################################################################################
 
