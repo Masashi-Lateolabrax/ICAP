@@ -193,7 +193,10 @@ def update_with_rk4(
     evaporation_mol = jnp.minimum(evaporation_mol, liquid_values)
     evaporation_con = evaporation_mol / cell_volume
 
-    d_gas_values = ((k1_gas + 2 * k2_gas + 2 * k3_gas + k4_gas) / 6).at[:, :, 0].add(evaporation_con)
+    # RK4 update: gas += dt × (k1 + 2k2 + 2k3 + k4) / 6
+    # k_gas has units [mol/(m³·s)], so multiply by dt to get [mol/m³]
+    d_gas_from_diffusion = dt * (k1_gas + 2 * k2_gas + 2 * k3_gas + k4_gas) / 6
+    d_gas_values = d_gas_from_diffusion.at[:, :, 0].add(evaporation_con)
     gas_values = jnp.maximum(0.0, gas_values.at[1:-1, 1:-1, 1:-1].add(d_gas_values))
 
     liquid_values = jnp.maximum(0.0, liquid_values - evaporation_mol)
