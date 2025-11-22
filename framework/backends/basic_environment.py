@@ -158,6 +158,7 @@ class BasicEnvironment(BasicMuJoCoSimulator, ABC):
                 material=settings.Pheromone.MATERIAL,
                 temperature=settings.Pheromone.TEMPERATURE,
                 dt=settings.Simulation.TIME_STEP,
+                nz=settings.Pheromone.NZ,
                 iter_=settings.Pheromone.ITERATIONS_PER_STEP,
             )
             self._pheromone_texture_id = self.model.texture("pheromone_viz").id

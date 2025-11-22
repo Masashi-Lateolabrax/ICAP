@@ -226,6 +226,7 @@ class Pheromone:
     ACTIVE: bool = False
     CELL_SIZE: float = 0.1
     CELL_SIZE_Z = 0.1  # [m] Base z-spacing (grows exponentially: 0.1, 0.2, 0.4, ...). Total domain height ≈ (2^nz - 1) × CELL_SIZE_Z for open-air simulation
+    NZ: int = 5  # Number of vertical layers for pheromone field
     WIDTH_NUM: int = int(Simulation.WORLD_WIDTH / CELL_SIZE)
     HEIGHT_NUM: int = int(Simulation.WORLD_HEIGHT / CELL_SIZE)
     ITERATIONS_PER_STEP: int = 8
