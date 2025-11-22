@@ -250,6 +250,36 @@ def foo(
 
 **Key Lesson**: Code formatting is NOT Claude's responsibility. Write functional code and let project tools handle formatting.
 
+### Branch Context Awareness (CRITICAL)
+**PROBLEM IDENTIFIED (2025-11-22)**: Claude Code commits to wrong branch despite user explicitly mentioning target branch.
+
+**Incident**: 
+- User stated: "developブランチでpheromoneの計算に問題を見つけた"
+- Claude was on `exp` branch but did NOT verify or switch branches
+- Claude committed fixes to `exp` instead of `develop`
+- Required cherry-pick to `develop` and cleanup of `exp` branch
+
+**Root Cause**:
+- Failed to parse user's branch mention from Japanese text
+- Did not check current branch before making commits
+- Assumed current branch was correct without verification
+
+**Mandatory Practice**:
+1. ✅ **ALWAYS check `git branch --show-current` before any git operations**
+2. ✅ **PARSE user messages for branch mentions** (in any language)
+3. ✅ **SWITCH to mentioned branch** before making changes if different from current
+4. ✅ **CONFIRM branch context** with user if ambiguous
+5. ✅ **VERIFY branch** again before `git commit`
+
+**Prevention Checklist**:
+- [ ] Did user mention a specific branch name?
+- [ ] What is the current branch? (`git branch --show-current`)
+- [ ] Do these match?
+- [ ] If not, should I switch branches?
+- [ ] Am I about to commit to the correct branch?
+
+**Key Lesson**: Branch context is as critical as code correctness. Always verify branch before any git operation.
+
 ## Common Issues & Solutions
 
 ### Socket Connection Management
