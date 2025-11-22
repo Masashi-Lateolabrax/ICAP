@@ -146,6 +146,7 @@ MySettings.Pheromone.ACTIVE = True
 
 MySettings.Pheromone.CELL_SIZE = 0.1
 MySettings.Pheromone.CELL_SIZE_Z = 0.1
+MySettings.Pheromone.NZ = 7
 MySettings.Pheromone.WIDTH_NUM = int(MySettings.Simulation.WORLD_WIDTH / MySettings.Pheromone.CELL_SIZE)
 MySettings.Pheromone.HEIGHT_NUM = int(MySettings.Simulation.WORLD_HEIGHT / MySettings.Pheromone.CELL_SIZE)
 
