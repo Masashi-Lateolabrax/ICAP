@@ -5,15 +5,37 @@ This script loads a trained neural network from a completed experiment and runs
 long-term simulations to collect robot input data when pheromone is detected.
 The collected data is used for Shapley value analysis to quantify sensor contributions.
 
-Usage:
-    PYTHONPATH=. uv run src/shapley_collection.py --extra cu128 [options]
+Features:
+    - Collects robot input data when pheromone magnitude exceeds threshold
+    - Auto-resets simulation with new seed if food stalls (no movement for 5+ minutes)
+    - Supports long-term data collection with multiple automatic resets
 
-Example:
-    PYTHONPATH=. uv run src/shapley_collection.py --extra cu128 \
+Usage:
+    PYTHONPATH=. uv run --extra cpu src/shapley_collection.py [options]
+
+Example (basic):
+    PYTHONPATH=. uv run --extra cpu src/shapley_collection.py \
         --experiment-id 20251027-024639_7bb53c8b \
         --generation 499 \
         --duration 300 \
         --threshold 0.01
+
+Example (long-term with custom stall timeout):
+    PYTHONPATH=. uv run --extra cpu src/shapley_collection.py \
+        --experiment-id 20251027-024639_7bb53c8b \
+        --generation 499 \
+        --duration 3600 \
+        --threshold 0.01 \
+        --food-stall-timeout 300
+
+Parameters:
+    --experiment-id: Experiment directory name in results/
+    --generation: Generation number to load (default: 499)
+    --duration: Total simulation time in seconds (default: 300)
+    --threshold: Minimum pheromone value to record (default: 0.01)
+    --food-stall-timeout: Reset if food doesn't move for N seconds (default: 300)
+    --render: Enable visualization (slower)
+    --output-dir: Custom output directory (default: results/{experiment_id}/shapley_data/)
 """
 
 import argparse
