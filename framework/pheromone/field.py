@@ -1,17 +1,17 @@
 import jax
-import numpy as np
 import jax.numpy as jnp
+import numpy as np
 
 from ..prelude import *
 
 
 def dDiffusion_dt(
-        gas_values: jnp.ndarray,
-        mask: jnp.ndarray,
-        diffusion_coefficient: float,
-        h: float,
-        hz: float,
-        padding_value: float,
+    gas_values: jnp.ndarray,
+    mask: jnp.ndarray,
+    diffusion_coefficient: float,
+    h: float,
+    hz: float,
+    padding_value: float,
 ) -> tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
     """
     Calculate time derivative of gas concentration distribution using 3D diffusion equation.
@@ -19,9 +19,35 @@ def dDiffusion_dt(
     Uses finite difference method with:
     - Standard 5-point stencil for horizontal (x,y) directions
     - Non-uniform asymmetric 3-point stencil for vertical (z) direction
-    
-    The z-direction uses exponentially spaced layers with intervals:
-    z=0 to z=1: h, z=1 to z=2: 2*h, z=2 to z=3: 4*h, etc.
+
+    The z-direction uses exponentially spaced layers for physical realism:
+    - Base spacing (layer 0→1): hz
+    - Exponential growth: spacing[i] = 2^i × hz
+    - Physical purpose: Places top boundary at effective infinity
+    - Mass conservation: Prevents artificial pheromone loss at top boundary
+    - Example (nz=5, hz=0.1m):
+      Layer spacings: 0.1, 0.2, 0.4, 0.8, 1.6 m
+      Total height: 3.1 m (effective open air)
+
+    Boundary Conditions:
+    - Bottom (z=0): Neumann (reflective) - models ground surface
+    - Top (z=nz+1): Dirichlet (c=0) - represents open air at infinity
+    - Sides (x,y): Configurable via padding_value (default: Dirichlet c=0)
+
+    Note: Exponential z-spacing is essential for the Dirichlet top boundary
+          to physically represent "concentration → 0 at infinity" rather than
+          an artificial low ceiling.
+
+    Args:
+        gas_values: Gas concentration array [mol/m³], shape (ny+2, nx+2, nz+2)
+        mask: Boolean mask for boundary conditions, shape (ny+2, nx+2)
+        diffusion_coefficient: Diffusion coefficient [m²/s]
+        h: Horizontal grid spacing [m] (same for x and y)
+        hz: Base vertical spacing [m] (layer 0→1, grows exponentially)
+        padding_value: Boundary value for horizontal Dirichlet conditions [mol/m³]
+
+    Returns:
+        Tuple of (diffusion rate [mol/(m³·s)], ∂c/∂x, ∂c/∂y)
     """
     # Set boundary conditions: padding for x,y boundaries
     # IMPORTANT: Array indexing is [y, x, z] order (row, column, depth)
@@ -51,9 +77,17 @@ def dDiffusion_dt(
     # Vertical diffusion: non-uniform asymmetric 3-point stencil (∇²c in z)
     # For non-uniform grid with spacing h below and 2h above current point:
     # ∂²c/∂z² = (c(z+2h) - 3c(z) + 2c(z-h)) / (3h²)
-    # where h = z_weights[i] * h for each layer i
-    # 
-    # NOTE: The following implementation is mathematically correct.
+    # where h = z_weights[i] * hz for each layer i
+    #
+    # IMPORTANT: This implementation is CORRECT. Do not modify without deep understanding.
+    #
+    # Explanation of index mapping:
+    # - center[:, :, i] corresponds to gas_values[:, :, i+1] (layer i+1 in the grid)
+    # - For layer i+1, the spacing below is 2^i * hz, and above is 2^(i+1) * hz
+    # - The ratio is exactly 2:1, so the asymmetric formula applies with h = 2^i * hz
+    # - z_weights[i] = 2^i correctly provides this spacing for center[:, :, i]
+    #
+    # Mathematical verification:
     # Expanding: (d_upper + 2*d_lower) / (3h²) where:
     # d_upper = c(z+2h) - c(z)
     # d_lower = c(z-h) - c(z)  
@@ -63,10 +97,12 @@ def dDiffusion_dt(
     d_lower = gas_values[1:-1, 1:-1, 0:-2] - center  # c(z-h) - c(z)
 
     # Generate exponential spacing weights: [1, 2, 4, 8, 16, ...] for each z-layer
-    z_weights = [2 ** i for i in range(gas_values.shape[2] - 2)]
+    # z_weights[i] = 2^i represents the base spacing for layer i+1 (since center starts at layer 1)
+    z_weights = [2**i for i in range(gas_values.shape[2] - 2)]
     z_weights = jnp.array(z_weights, dtype=jnp.float32)
 
     # Apply asymmetric difference formula: (d_upper + 2*d_lower) / (3*hz²)
+    # This is CORRECT: z_weights[i] * hz gives the proper spacing for center[:, :, i]
     vertical = (d_upper + 2 * d_lower) / (3 * (z_weights[None, None, :] * hz) ** 2)
 
     # Total diffusion: D * (∇²c_horizontal + ∇²c_vertical)
@@ -74,12 +110,12 @@ def dDiffusion_dt(
 
 
 def d_dt(
-        gas_values: jnp.ndarray,
-        mask: jnp.ndarray,
-        h: float,
-        hz: float,
-        diffusion_coefficient: float,
-        padding_value: float,
+    gas_values: jnp.ndarray,
+    mask: jnp.ndarray,
+    h: float,
+    hz: float,
+    diffusion_coefficient: float,
+    padding_value: float,
 ) -> tuple[jnp.ndarray, jnp.ndarray]:
     d_diffusion, d_dx, d_dy = dDiffusion_dt(  # Unit: mol/(m^3·s)
         gas_values=gas_values,
@@ -87,7 +123,7 @@ def d_dt(
         diffusion_coefficient=diffusion_coefficient,
         h=h,
         hz=hz,
-        padding_value=padding_value
+        padding_value=padding_value,
     )
 
     d_gas = d_diffusion  # Unit: mol/(m^3·s)
@@ -97,15 +133,15 @@ def d_dt(
 
 @jax.jit
 def update_with_rk4(
-        liquid_values: jnp.ndarray,
-        gas_values: jnp.ndarray,
-        mask: jnp.ndarray,
-        h: float,
-        hz: float,
-        saturation_concentration: float,
-        diffusion_coefficient: float,
-        dt: float,
-        padding_value: float,
+    liquid_values: jnp.ndarray,
+    gas_values: jnp.ndarray,
+    mask: jnp.ndarray,
+    h: float,
+    hz: float,
+    saturation_concentration: float,
+    diffusion_coefficient: float,
+    dt: float,
+    padding_value: float,
 ) -> tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
     k1_gas, k1_grad = d_dt(
         gas_values=gas_values,
@@ -122,7 +158,7 @@ def update_with_rk4(
         h=h,
         hz=hz,
         diffusion_coefficient=diffusion_coefficient,
-        padding_value=padding_value
+        padding_value=padding_value,
     )
 
     k3_gas, k3_grad = d_dt(
@@ -131,7 +167,7 @@ def update_with_rk4(
         h=h,
         hz=hz,
         diffusion_coefficient=diffusion_coefficient,
-        padding_value=padding_value
+        padding_value=padding_value,
     )
 
     k4_gas, k4_grad = d_dt(
@@ -140,40 +176,43 @@ def update_with_rk4(
         h=h,
         hz=hz,
         diffusion_coefficient=diffusion_coefficient,
-        padding_value=padding_value
+        padding_value=padding_value,
     )
 
     grad = (k1_grad + 2 * k2_grad + 2 * k3_grad + k4_grad) / 6
 
-    evaporation_mol = (saturation_concentration - gas_values[1:-1, 1:-1, 1]) * (liquid_values > 0) * (h ** 3)
+    # Evaporation occurs at ground level (z=0 to z=1 boundary)
+    # Cell volume at ground = horizontal area × first layer height
+    # = (h × h) × hz, where h=dx (horizontal), hz=dz (vertical base spacing)
+    cell_volume = h * h * hz  # [m³]
+    evaporation_mol = (
+        (saturation_concentration - gas_values[1:-1, 1:-1, 1])
+        * (liquid_values > 0)
+        * cell_volume
+    )
     evaporation_mol = jnp.minimum(evaporation_mol, liquid_values)
-    evaporation_con = evaporation_mol / (h ** 3)
+    evaporation_con = evaporation_mol / cell_volume
 
     d_gas_values = ((k1_gas + 2 * k2_gas + 2 * k3_gas + k4_gas) / 6).at[:, :, 0].add(evaporation_con)
-    gas_values = jnp.maximum(
-        0.0,
-        gas_values.at[1:-1, 1:-1, 1:-1].add(d_gas_values)
     )
+    gas_values = jnp.maximum(0.0, gas_values.at[1:-1, 1:-1, 1:-1].add(d_gas_values))
 
-    liquid_values = jnp.maximum(
-        0.0,
-        liquid_values - evaporation_mol
-    )
+    liquid_values = jnp.maximum(0.0, liquid_values - evaporation_mol)
 
     return gas_values, liquid_values, grad
 
 
 class PheromoneField:
     def __init__(
-            self,
-            nx: int,
-            ny: int,
-            dx: float,  # [m] - horizontal grid spacing
-            dz: float,  # [m] - vertical grid spacing
-            material: Material,
-            temperature: float,  # [K]
-            dt: float,  # [s] - time step
-            iter_: int = 1,
+        self,
+        nx: int,
+        ny: int,
+        dx: float,  # [m] - horizontal grid spacing
+        dz: float,  # [m] - base vertical spacing (layer 0→1, grows exponentially: dz, 2*dz, 4*dz, ...)
+        material: Material,
+        temperature: float,  # [K]
+        dt: float,  # [s] - time step
+        iter_: int = 1,
     ):
         # Parameter validation
         if nx <= 0 or ny <= 0:
@@ -223,6 +262,24 @@ class PheromoneField:
         self.mask = self.mask.at[-1, :].set(1)
         self.mask = self.mask.at[:, 0].set(1)
         self.mask = self.mask.at[:, -1].set(1)
+
+    def get_actual_domain_height(self) -> float:
+        """
+        Calculate actual domain height with exponential z-spacing.
+
+        With exponential spacing, layer i has spacing 2^i × dz_base.
+        Total height = sum(2^i × dz for i in 0..nz-1)
+
+        Example: nz=5, dz=0.1m
+            Spacings: [0.1, 0.2, 0.4, 0.8, 1.6] m
+            Total: 3.1 m
+
+        Returns:
+            Total domain height [m]
+        """
+        z_weights = [2**i for i in range(self.nz)]
+        total_height = sum(w * self.dz for w in z_weights)
+        return total_height
 
     def get_grad(self, xs, ys) -> np.ndarray:
         xs = jnp.clip(xs, 0, self.shape[1] - 1)

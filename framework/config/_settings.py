@@ -1,11 +1,11 @@
-from typing import Callable
 import logging
 import math
+from typing import Callable
 
-import numpy as np
 import jax.numpy as jnp
+import numpy as np
 
-from ..types import RobotLocation, Position, Material, ETHANOL
+from ..types import ETHANOL, Material, Position, RobotLocation
 from . import actions
 
 
@@ -20,7 +20,7 @@ class ClippingFunctions:
     def sin_and_exp(x: jnp.ndarray) -> jnp.ndarray:
         gain = ClippingFunctions.SIN_AND_EXP_PARMS["gain"]
         sigma = ClippingFunctions.SIN_AND_EXP_PARMS["sigma"]
-        return jnp.sin(x) * jnp.exp(-(x ** 2) / (sigma ** 2)) * gain
+        return jnp.sin(x) * jnp.exp(-(x**2) / (sigma**2)) * gain
 
     @staticmethod
     def hard_clip(x: jnp.ndarray) -> jnp.ndarray:
@@ -28,7 +28,7 @@ class ClippingFunctions:
 
 
 def calc_loss_sigma(point: float, value: float) -> float:
-    return -(point ** 2) / math.log(value)
+    return -(point**2) / math.log(value)
 
 
 class Render:
@@ -225,7 +225,7 @@ class Simulation:
 class Pheromone:
     ACTIVE: bool = False
     CELL_SIZE: float = 0.1
-    CELL_SIZE_Z = 0.1
+    CELL_SIZE_Z = 0.1  # [m] Base z-spacing (grows exponentially: 0.1, 0.2, 0.4, ...). Total domain height ≈ (2^nz - 1) × CELL_SIZE_Z for open-air simulation
     WIDTH_NUM: int = int(Simulation.WORLD_WIDTH / CELL_SIZE)
     HEIGHT_NUM: int = int(Simulation.WORLD_HEIGHT / CELL_SIZE)
     ITERATIONS_PER_STEP: int = 8
@@ -254,13 +254,17 @@ class Settings:
     Action: Action = Action()
 
     @staticmethod
-    def as_dict(this: type['Settings']) -> dict:
+    def as_dict(this: type["Settings"]) -> dict:
         def as_dict(obj):
             ALLOWED_TYPES = (str, int, float, bool, Callable, Material, Position, RobotLocation)
             attributes = {}
 
             for attr_name in dir(obj):
-                if attr_name.startswith('_') or attr_name == 'as_dict' or attr_name == 'compare_settings':
+                if (
+                    attr_name.startswith("_")
+                    or attr_name == "as_dict"
+                    or attr_name == "compare_settings"
+                ):
                     continue
 
                 attr_value = getattr(obj, attr_name)
