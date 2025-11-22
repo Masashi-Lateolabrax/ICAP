@@ -30,7 +30,7 @@ class ShapleyInputSample:
     pheromone_grad_side: float     # Scalar - gradient in sideways direction
 
     # Network output for context
-    network_output: np.ndarray     # Shape: (3,) - [left_wheel, right_wheel, pheromone_secretion]
+    network_output: np.ndarray     # Shape: (3,) - [right_wheel, left_wheel, pheromone_secretion]
 
     # Additional context
     robot_position: np.ndarray     # Shape: (2,) - (x, y)
