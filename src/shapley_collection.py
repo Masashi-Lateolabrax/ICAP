@@ -36,7 +36,8 @@ def collect_shapley_data(
     generation: int,
     duration: float,
     pheromone_threshold: float,
-    render: bool = False
+    render: bool = False,
+    food_stall_timeout: float = 300.0
 ) -> ShapleyDataset:
     """
     Collect Shapley input data from a trained model.
@@ -47,6 +48,7 @@ def collect_shapley_data(
         duration: Simulation duration in seconds
         pheromone_threshold: Minimum pheromone value to record (normalized)
         render: Whether to render the simulation
+        food_stall_timeout: Reset simulation if food doesn't move for this many seconds (default: 300s = 5min)
 
     Returns:
         ShapleyDataset containing collected samples
@@ -94,24 +96,68 @@ def collect_shapley_data(
     total_steps = int(duration / settings.Simulation.TIME_STEP)
     detection_count = 0
 
+    # Food movement tracking for stall detection
+    food_positions = [food.xpos.copy() for food in simulator.food_values]
+    last_food_movement_time = 0.0
+    stall_timeout_steps = int(food_stall_timeout / settings.Simulation.TIME_STEP)
+    reset_count = 0
+    base_seed = individual.generation
+
     print(f"\nStarting simulation with pheromone threshold: {pheromone_threshold}")
+    print(f"Food stall timeout: {food_stall_timeout}s ({stall_timeout_steps} steps)")
     print("Progress: ", end="", flush=True)
 
     # Run simulation and collect data
-    for step in range(total_steps):
+    step = 0
+    actual_time = 0.0
+    while actual_time < duration:
+        # Check if we've exceeded total_steps (safety check)
+        if step >= total_steps * 100:  # Allow up to 100x resets
+            print(f"\nWARNING: Exceeded maximum step count. Stopping.")
+            break
         # Display progress every 10%
         if step % (total_steps // 10) == 0:
-            print(f"{100 * step // total_steps}%...", end="", flush=True)
+            progress_pct = int(100 * actual_time / duration)
+            print(f"{progress_pct}%...", end="", flush=True)
 
         # Get current state before stepping
-        # We need to check after timer.tick() is called in simulator.step()
-        time_seconds = step * settings.Simulation.TIME_STEP
+        time_seconds = actual_time
 
         # Step simulation
         simulator.step()
 
+        # Check for food movement to detect stalls
+        current_food_positions = [food.xpos.copy() for food in simulator.food_values]
+        food_moved = False
+        for i, (prev_pos, curr_pos) in enumerate(zip(food_positions, current_food_positions)):
+            displacement = np.linalg.norm(curr_pos - prev_pos)
+            if displacement > 0.01:  # Threshold: 1cm movement
+                food_moved = True
+                break
+
+        if food_moved:
+            last_food_movement_time = actual_time
+            food_positions = current_food_positions
+
+        # Check if food has been stalled for too long
+        time_since_movement = actual_time - last_food_movement_time
+        if time_since_movement >= food_stall_timeout:
+            reset_count += 1
+            new_seed = base_seed + reset_count
+
+            print(f"\n[Reset #{reset_count}] Food stalled for {food_stall_timeout}s at t={actual_time:.1f}s. Resetting with seed={new_seed}...")
+
+            # Reset simulator with new seed
+            simulator.reset()
+            simulator.rng = np.random.default_rng(new_seed)
+
+            # Reset food positions tracking
+            food_positions = [food.xpos.copy() for food in simulator.food_values]
+            last_food_movement_time = actual_time
+
+            print(f"Continuing from t={actual_time:.1f}s... ", end="", flush=True)
+
         # Get input/output data after step
-        # The simulator only updates controller on timer tick intervals
         input_data = simulator.input_ndarray.copy()
         output_data = simulator.output_ndarray.copy()
 
@@ -147,8 +193,15 @@ def collect_shapley_data(
 
             samples.append(sample)
 
+        # Increment counters
+        step += 1
+        actual_time += settings.Simulation.TIME_STEP
+
     print("100% Complete!")
     print(f"\nSimulation complete!")
+    print(f"  Actual duration: {actual_time:.1f}s")
+    print(f"  Total steps executed: {step}")
+    print(f"  Number of resets: {reset_count}")
     print(f"  Total detections: {detection_count}")
     print(f"  Samples collected: {len(samples)}")
 
@@ -221,6 +274,12 @@ def main():
         help="Minimum pheromone threshold for data collection (default: 0.01)"
     )
     parser.add_argument(
+        "--food-stall-timeout",
+        type=float,
+        default=300.0,
+        help="Reset simulation if food doesn't move for this many seconds (default: 300)"
+    )
+    parser.add_argument(
         "--render",
         action="store_true",
         help="Enable rendering (slower)"
@@ -247,6 +306,7 @@ def main():
     print(f"Generation: {args.generation}")
     print(f"Duration: {args.duration}s")
     print(f"Threshold: {args.threshold}")
+    print(f"Food Stall Timeout: {args.food_stall_timeout}s")
     print(f"Output: {output_dir}")
     print("=" * 60)
 
@@ -257,6 +317,7 @@ def main():
         duration=args.duration,
         pheromone_threshold=args.threshold,
         render=args.render,
+        food_stall_timeout=args.food_stall_timeout,
     )
 
     # Save dataset
