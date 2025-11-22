@@ -208,6 +208,78 @@ The system uses CMA-ES (Covariance Matrix Adaptation Evolution Strategy) for neu
 - **English in memory**: All memory files must be in English to minimize tokens
 - **Understand intent**: Think before acting - what does the user really want?
 
+### Code Formatting Standards (CRITICAL)
+**PROBLEM IDENTIFIED (2025-11-22)**: Claude Code does NOT follow project code formatting standards.
+
+**Root Cause**: 
+- Claude Code uses different indentation styles (8 spaces for function arguments)
+- Does not apply PEP 8 formatting (spacing around operators like `**`)
+- Produces inconsistent quote styles (single vs double quotes)
+- Creates inconsistent import ordering
+
+**Project Standards** (enforced by Ruff/Black):
+1. **Function argument indentation**: 4 spaces (NOT 8 spaces)
+2. **Operator spacing**: `x**2` (NOT `x ** 2`)
+3. **Quotes**: Double quotes for strings (NOT single quotes)
+4. **Imports**: Alphabetical order, standard library first
+5. **Trailing commas**: Always add for multi-line arguments
+6. **Line length**: Maximum 100 characters
+
+**Mandatory Practice**:
+- ❌ **NEVER** manually format code - it will be inconsistent with project standards
+- ✅ **ALWAYS** let the user run the formatter (Ruff/Black) after edits
+- ✅ **FOCUS** on logic and documentation, not formatting
+- ✅ **ACCEPT** that user will reformat your changes - this is correct workflow
+
+**Example of Incorrect (Claude) vs Correct (Project) Formatting**:
+```python
+# ❌ Claude Code's formatting (WRONG)
+def foo(
+        param1: int,
+        param2: str,
+):
+    return x ** 2
+
+# ✅ Project formatting (CORRECT - after Ruff)
+def foo(
+    param1: int,
+    param2: str,
+):
+    return x**2
+```
+
+**Key Lesson**: Code formatting is NOT Claude's responsibility. Write functional code and let project tools handle formatting.
+
+### Branch Context Awareness (CRITICAL)
+**PROBLEM IDENTIFIED (2025-11-22)**: Claude Code commits to wrong branch despite user explicitly mentioning target branch.
+
+**Incident**: 
+- User stated: "developブランチでpheromoneの計算に問題を見つけた"
+- Claude was on `exp` branch but did NOT verify or switch branches
+- Claude committed fixes to `exp` instead of `develop`
+- Required cherry-pick to `develop` and cleanup of `exp` branch
+
+**Root Cause**:
+- Failed to parse user's branch mention from Japanese text
+- Did not check current branch before making commits
+- Assumed current branch was correct without verification
+
+**Mandatory Practice**:
+1. ✅ **ALWAYS check `git branch --show-current` before any git operations**
+2. ✅ **PARSE user messages for branch mentions** (in any language)
+3. ✅ **SWITCH to mentioned branch** before making changes if different from current
+4. ✅ **CONFIRM branch context** with user if ambiguous
+5. ✅ **VERIFY branch** again before `git commit`
+
+**Prevention Checklist**:
+- [ ] Did user mention a specific branch name?
+- [ ] What is the current branch? (`git branch --show-current`)
+- [ ] Do these match?
+- [ ] If not, should I switch branches?
+- [ ] Am I about to commit to the correct branch?
+
+**Key Lesson**: Branch context is as critical as code correctness. Always verify branch before any git operation.
+
 ## Common Issues & Solutions
 
 ### Socket Connection Management

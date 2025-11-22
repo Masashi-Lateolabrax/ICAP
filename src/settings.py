@@ -29,8 +29,8 @@ MySettings.Render.MAX_PHEROMONE = 0.1
 ###################################################################################
 MySettings.Optimization.DIMENSION = None  # Will be set later based on the neural network dimension
 MySettings.Optimization.POPULATION = 100
-MySettings.Optimization.GENERATION = 1000
-MySettings.Optimization.SIGMA = 5
+MySettings.Optimization.GENERATION = 500
+MySettings.Optimization.SIGMA = 3
 
 MySettings.Optimization.CLIP = ClippingFunctions.none
 ###################################################################################
@@ -127,7 +127,7 @@ MySettings.Loss.REGULARIZATION_COEFFICIENT = 0
 # Simulation settings
 ###################################################################################
 MySettings.Simulation.TIME_STEP = 0.01
-MySettings.Simulation.TIME_LENGTH = 60
+MySettings.Simulation.TIME_LENGTH = 90
 
 MySettings.Simulation.WORLD_WIDTH = 10.0
 MySettings.Simulation.WORLD_HEIGHT = 10.0
@@ -145,7 +145,8 @@ MySettings.Simulation.GRAVITY = (0.0, 0.0, -9.81)
 MySettings.Pheromone.ACTIVE = True
 
 MySettings.Pheromone.CELL_SIZE = 0.1
-MySettings.Pheromone.CELL_SIZE_Z = 0.1
+MySettings.Pheromone.CELL_SIZE_Z = 0.001
+MySettings.Pheromone.NZ = 7
 MySettings.Pheromone.WIDTH_NUM = int(MySettings.Simulation.WORLD_WIDTH / MySettings.Pheromone.CELL_SIZE)
 MySettings.Pheromone.HEIGHT_NUM = int(MySettings.Simulation.WORLD_HEIGHT / MySettings.Pheromone.CELL_SIZE)
 
