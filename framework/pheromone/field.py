@@ -194,7 +194,6 @@ def update_with_rk4(
     evaporation_con = evaporation_mol / cell_volume
 
     d_gas_values = ((k1_gas + 2 * k2_gas + 2 * k3_gas + k4_gas) / 6).at[:, :, 0].add(evaporation_con)
-    )
     gas_values = jnp.maximum(0.0, gas_values.at[1:-1, 1:-1, 1:-1].add(d_gas_values))
 
     liquid_values = jnp.maximum(0.0, liquid_values - evaporation_mol)
@@ -212,6 +211,7 @@ class PheromoneField:
         material: Material,
         temperature: float,  # [K]
         dt: float,  # [s] - time step
+        nz: int = 5,  # Number of vertical layers
         iter_: int = 1,
     ):
         # Parameter validation
@@ -221,13 +221,15 @@ class PheromoneField:
             raise ValueError("Grid spacing dx must be positive")
         if dz <= 0:
             raise ValueError("Grid spacing dz must be positive")
+        if nz <= 0:
+            raise ValueError("Number of vertical layers nz must be positive")
         if temperature <= 0:
             raise ValueError("Temperature must be positive")
         if iter_ <= 0:
             raise ValueError("Iteration count must be positive")
 
         self.shape = jnp.array((ny, nx), dtype=jnp.int32)
-        self.nz = 5  # Z-dimension size
+        self.nz = nz  # Z-dimension size (configurable from settings)
         self.dx = dx
         self.dz = dz
 
