@@ -30,7 +30,7 @@ MySettings.Render.MAX_PHEROMONE = 0.1
 MySettings.Optimization.DIMENSION = None  # Will be set later based on the neural network dimension
 MySettings.Optimization.POPULATION = 100
 MySettings.Optimization.GENERATION = 500
-MySettings.Optimization.SIGMA = 5
+MySettings.Optimization.SIGMA = 3
 
 MySettings.Optimization.CLIP = ClippingFunctions.none
 ###################################################################################
