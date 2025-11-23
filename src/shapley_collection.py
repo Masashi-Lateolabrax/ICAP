@@ -113,6 +113,10 @@ def collect_shapley_data(
 
     simulator = Simulator(settings, individual, render=render)
 
+    # Override simulator's RNG to start from seed 0 for reproducibility
+    current_seed = 0
+    simulator.rng = np.random.default_rng(current_seed)
+
     # Prepare data collection
     samples = []
     total_steps = int(duration / settings.Simulation.TIME_STEP)
@@ -122,8 +126,6 @@ def collect_shapley_data(
     food_positions = [food.xpos.copy() for food in simulator.food_values]
     last_food_movement_time = 0.0
     stall_timeout_steps = int(food_stall_timeout / settings.Simulation.TIME_STEP)
-    reset_count = 0
-    base_seed = individual.generation
 
     print(f"\nStarting simulation with pheromone threshold: {pheromone_threshold}")
     print(f"Food stall timeout: {food_stall_timeout}s ({stall_timeout_steps} steps)")
@@ -164,14 +166,13 @@ def collect_shapley_data(
         # Check if food has been stalled for too long
         time_since_movement = actual_time - last_food_movement_time
         if time_since_movement >= food_stall_timeout:
-            reset_count += 1
-            new_seed = base_seed + reset_count
+            current_seed += 1  # Increment seed for next reset
 
-            print(f"\n[Reset #{reset_count}] Food stalled for {food_stall_timeout}s at t={actual_time:.1f}s. Resetting with seed={new_seed}...")
+            print(f"\n[Reset #{current_seed}] Food stalled for {food_stall_timeout}s at t={actual_time:.1f}s. Resetting with seed={current_seed}...")
 
             # Reset simulator with new seed
             simulator.reset()
-            simulator.rng = np.random.default_rng(new_seed)
+            simulator.rng = np.random.default_rng(current_seed)
 
             # Reset food positions tracking
             food_positions = [food.xpos.copy() for food in simulator.food_values]
@@ -223,7 +224,8 @@ def collect_shapley_data(
     print(f"\nSimulation complete!")
     print(f"  Actual duration: {actual_time:.1f}s")
     print(f"  Total steps executed: {step}")
-    print(f"  Number of resets: {reset_count}")
+    print(f"  Number of resets: {current_seed}")
+    print(f"  Final seed: {current_seed}")
     print(f"  Total detections: {detection_count}")
     print(f"  Samples collected: {len(samples)}")
 
