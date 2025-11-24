@@ -15,9 +15,9 @@ class Controller(torch.nn.Module):
 
         # Input: direction(2) + velocity(3) + depth(nray) + pheromone(3) + pheromone_1e5(1)
         self.sequential = torch.nn.Sequential(
-            torch.nn.Linear(2 + 3 + nray + 4, 20),
+            torch.nn.Linear(2 + 3 + nray + 4, 10),
             torch.nn.Mish(),
-            torch.nn.Linear(20, 5),
+            torch.nn.Linear(10, 5),
             torch.nn.Mish(),
             torch.nn.Linear(5, 3),  # Output action logits
             # torch.nn.Softmax(dim=-1),  # Convert to probability distribution
