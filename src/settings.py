@@ -20,7 +20,7 @@ MySettings.Render.CAMERA_POS = (0.0, -1e-3, 13.0)
 MySettings.Render.CAMERA_LOOKAT = (0.0, 0.0, 0.0)
 
 MySettings.Render.MAX_GEOM = 11000
-MySettings.Render.MAX_PHEROMONE = 0.1
+MySettings.Render.MAX_PHEROMONE = 1e-5
 ###################################################################################
 
 
