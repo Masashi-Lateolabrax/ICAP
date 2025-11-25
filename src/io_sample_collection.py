@@ -49,7 +49,7 @@ import torch
 from framework.prelude import Settings
 from framework.types import IndividualRecorder
 from config.simulator import Simulator
-from shapley_data import ShapleyInputSample, ShapleyDataset
+from io_sample_definition import ShapleyInputSample, ShapleyDataset
 from settings import MySettings
 
 
