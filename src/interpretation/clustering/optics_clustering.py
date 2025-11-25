@@ -90,7 +90,7 @@ def cluster_sensor_states(
     dataset: ShapleyDataset,
     min_samples: int = 5,
     xi: float = 0.05,
-    min_cluster_size: float = 0.05
+    min_cluster_size: float | None = None
 ) -> ClusteringResult:
     """
     Cluster sensor states using OPTICS.
@@ -99,7 +99,8 @@ def cluster_sensor_states(
         dataset: ShapleyDataset containing samples
         min_samples: Minimum number of samples in a neighborhood (core point threshold)
         xi: Minimum steepness for cluster extraction (0.0-1.0, default: 0.05)
-        min_cluster_size: Minimum fraction of samples for a cluster (0.0-1.0, default: 0.05)
+        min_cluster_size: Minimum fraction of samples for a cluster (0.0-1.0, default: None)
+                         If None, uses min_samples value
 
     Returns:
         ClusteringResult with cluster labels, reachability, and ordering metadata

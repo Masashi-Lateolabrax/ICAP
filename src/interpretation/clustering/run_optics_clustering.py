@@ -70,8 +70,8 @@ def main():
     parser.add_argument(
         "--min-cluster-size",
         type=float,
-        default=0.05,
-        help="Minimum cluster size as fraction (default: 0.05)"
+        default=None,
+        help="Minimum cluster size as fraction (default: None, uses min_samples)"
     )
     parser.add_argument(
         "--output-dir",
@@ -102,7 +102,7 @@ def main():
     print("=" * 60)
     print(f"Minimum samples: {args.min_samples}")
     print(f"Xi (steepness): {args.xi}")
-    print(f"Minimum cluster size: {args.min_cluster_size}")
+    print(f"Minimum cluster size: {args.min_cluster_size if args.min_cluster_size is not None else 'None (uses min_samples)'}")
     print(f"Features: 6D sensor states (robot, food, direction)")
     print(f"Output directory: {output_dir}")
     print("=" * 60)
