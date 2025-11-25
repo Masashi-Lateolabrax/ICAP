@@ -116,9 +116,19 @@ def train_som(features: np.ndarray, grid_size: int, sigma: float = 1.0,
     som.random_weights_init(features_scaled)
 
     # Train
-    som.train_random(features_scaled, num_iterations, verbose=True)
+    import sys
+    print("About to start training...", file=sys.stderr, flush=True)
+    try:
+        som.train_random(features_scaled, num_iterations, verbose=True)
+        print("train_random() returned successfully", file=sys.stderr, flush=True)
+    except Exception as e:
+        print(f"EXCEPTION in train_random(): {type(e).__name__}: {e}", file=sys.stderr, flush=True)
+        raise
+    except:
+        print("UNKNOWN ERROR in train_random()", file=sys.stderr, flush=True)
+        raise
 
-    print("SOM training complete")
+    print("SOM training complete", file=sys.stderr, flush=True)
 
     return som, scaler
 
