@@ -40,17 +40,14 @@ Parameters:
 
 import argparse
 import pickle
-import os
 from datetime import datetime
 from pathlib import Path
 import numpy as np
-import torch
 
-from framework.prelude import Settings
 from framework.types import IndividualRecorder
-from config.simulator import Simulator
+from src.config.simulator import Simulator
 from src.interpretation.data_collection.io_sample_definition import ShapleyInputSample, ShapleyDataset
-from settings import MySettings
+from src.settings import MySettings
 
 
 def collect_shapley_data(
