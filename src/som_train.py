@@ -9,7 +9,7 @@ Features used for SOM (excluding pheromone):
 
 Usage:
     PYTHONPATH=. uv run --extra cpu src/som_train.py \
-        --data-dir results/20251027-024639_7bb53c8b/shapley_data_subset_10000 \
+        --data-file results/20251027-024639_7bb53c8b/shapley_data_subset_10000/samples_dict.pkl \
         --grid-size 10
 """
 
@@ -30,22 +30,38 @@ except ImportError:
     print("WARNING: minisom not installed. Install with: uv pip install minisom")
 
 
-def load_dataset(data_dir: Path) -> ShapleyDataset:
-    """Load Shapley dataset from directory."""
-    dict_path = data_dir / "samples_dict.pkl"
-    samples_path = data_dir / "samples.pkl"
+def load_dataset(data_path: Path) -> ShapleyDataset:
+    """Load Shapley dataset from file.
 
-    if dict_path.exists():
-        print(f"Loading dataset from: {dict_path}")
-        with open(dict_path, 'rb') as f:
-            data_dict = pickle.load(f)
-        dataset = ShapleyDataset.from_dict(data_dict)
-    elif samples_path.exists():
-        print(f"Loading dataset from: {samples_path}")
-        with open(samples_path, 'rb') as f:
-            dataset = pickle.load(f)
-    else:
-        raise FileNotFoundError(f"No data files found in: {data_dir}")
+    Args:
+        data_path: Path to .pkl file (either samples_dict.pkl or samples.pkl)
+
+    Returns:
+        ShapleyDataset object
+
+    Raises:
+        FileNotFoundError: If file doesn't exist
+        ValueError: If file format is invalid
+    """
+    if not data_path.exists():
+        raise FileNotFoundError(f"File not found: {data_path}")
+
+    print(f"Loading dataset from: {data_path}")
+
+    try:
+        with open(data_path, 'rb') as f:
+            data = pickle.load(f)
+
+        # Handle both dict format and direct ShapleyDataset format
+        if isinstance(data, dict):
+            dataset = ShapleyDataset.from_dict(data)
+        elif isinstance(data, ShapleyDataset):
+            dataset = data
+        else:
+            raise ValueError(f"Invalid data format: expected dict or ShapleyDataset, got {type(data)}")
+
+    except Exception as e:
+        raise ValueError(f"Failed to load dataset from {data_path}: {e}")
 
     print(f"Loaded {len(dataset)} samples")
     return dataset
@@ -113,12 +129,12 @@ def train_som(features: np.ndarray, grid_size: int, sigma: float = 1.0,
 
 def main():
     parser = argparse.ArgumentParser(description="SOM analysis for Shapley data")
-    parser.add_argument('--data-dir', type=str, required=True,
-                        help='Directory containing Shapley data')
+    parser.add_argument('--data-file', type=str, required=True,
+                        help='Path to .pkl file containing Shapley data')
     parser.add_argument('--grid-size', type=int, default=10,
                         help='SOM grid size (grid-size x grid-size, default: 10)')
     parser.add_argument('--output-dir', type=str, default=None,
-                        help='Output directory (default: same as data-dir)')
+                        help='Output directory (default: same as data file directory)')
 
     args = parser.parse_args()
 
@@ -132,12 +148,12 @@ def main():
         return
 
     # Setup paths
-    data_dir = Path(args.data_dir)
-    output_dir = Path(args.output_dir) if args.output_dir else data_dir
+    data_path = Path(args.data_file)
+    output_dir = Path(args.output_dir) if args.output_dir else data_path.parent
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Load dataset
-    dataset = load_dataset(data_dir)
+    dataset = load_dataset(data_path)
 
     # Extract features
     som_features = extract_features(dataset)
