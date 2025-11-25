@@ -119,7 +119,8 @@ def train_som(features: np.ndarray, grid_size: int, sigma: float = 1.0,
     import sys
     print("About to start training...", file=sys.stderr, flush=True)
     try:
-        som.train_random(features_scaled, num_iterations, verbose=True)
+        # Use verbose=False to avoid potential issues with progress bar
+        som.train_random(features_scaled, num_iterations, verbose=False)
         print("train_random() returned successfully", file=sys.stderr, flush=True)
     except Exception as e:
         print(f"EXCEPTION in train_random(): {type(e).__name__}: {e}", file=sys.stderr, flush=True)
