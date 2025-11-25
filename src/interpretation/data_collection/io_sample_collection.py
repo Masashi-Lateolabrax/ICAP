@@ -11,10 +11,10 @@ Features:
     - Supports long-term data collection with multiple automatic resets
 
 Usage:
-    PYTHONPATH=. uv run --extra cpu src/shapley_collection.py [options]
+    PYTHONPATH=. uv run --extra cpu src/interpretation/data_collection/io_sample_collection.py [options]
 
 Example (basic):
-    PYTHONPATH=. uv run --extra cpu src/shapley_collection.py \
+    PYTHONPATH=. uv run --extra cpu src/interpretation/data_collection/io_sample_collection.py \
         --experiment-id 20251027-024639_7bb53c8b \
         --generation 499 \
         --duration 300 \
