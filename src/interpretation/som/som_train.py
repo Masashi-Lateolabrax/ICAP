@@ -19,7 +19,7 @@ from pathlib import Path
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 
-from io_sample_definition import ShapleyDataset
+from src.interpretation.data_collection.io_sample_definition import ShapleyDataset
 
 try:
     from minisom import MiniSom
