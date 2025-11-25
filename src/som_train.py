@@ -48,20 +48,16 @@ def load_dataset(data_path: Path) -> ShapleyDataset:
 
     print(f"Loading dataset from: {data_path}")
 
-    try:
-        with open(data_path, 'rb') as f:
-            data = pickle.load(f)
+    with open(data_path, 'rb') as f:
+        data = pickle.load(f)
 
-        # Handle both dict format and direct ShapleyDataset format
-        if isinstance(data, dict):
-            dataset = ShapleyDataset.from_dict(data)
-        elif isinstance(data, ShapleyDataset):
-            dataset = data
-        else:
-            raise ValueError(f"Invalid data format: expected dict or ShapleyDataset, got {type(data)}")
-
-    except Exception as e:
-        raise ValueError(f"Failed to load dataset from {data_path}: {e}")
+    # Handle both dict format and direct ShapleyDataset format
+    if isinstance(data, dict):
+        dataset = ShapleyDataset.from_dict(data)
+    elif isinstance(data, ShapleyDataset):
+        dataset = data
+    else:
+        raise ValueError(f"Invalid data format: expected dict or ShapleyDataset, got {type(data)}")
 
     print(f"Loaded {len(dataset)} samples")
     return dataset
@@ -86,7 +82,7 @@ def extract_features(dataset: ShapleyDataset) -> np.ndarray:
 
 
 def train_som(features: np.ndarray, grid_size: int, sigma: float = 1.0,
-              learning_rate: float = 0.5, num_iterations: int = 10000) -> MiniSom:
+              learning_rate: float = 0.5, num_iterations: int = 10000) -> tuple[MiniSom, StandardScaler]:
     """Train Self-Organizing Map.
 
     Args:
@@ -97,7 +93,7 @@ def train_som(features: np.ndarray, grid_size: int, sigma: float = 1.0,
         num_iterations: Number of training iterations
 
     Returns:
-        Trained MiniSom object
+        Tuple of (trained MiniSom object, fitted StandardScaler)
     """
     if not MINISOM_AVAILABLE:
         raise ImportError("minisom is required. Install with: uv install minisom")
