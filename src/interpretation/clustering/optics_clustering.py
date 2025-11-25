@@ -1,14 +1,17 @@
 """
-DBSCAN Clustering Analysis for Shapley Input Samples
+OPTICS Clustering Analysis for Shapley Input Samples
 
-DBSCAN-based clustering of robot sensor states (excluding pheromone features)
+OPTICS-based clustering of robot sensor states (excluding pheromone features)
 for situation-dependent Shapley value analysis.
 
+OPTICS (Ordering Points To Identify the Clustering Structure) automatically
+detects clusters of varying densities without requiring eps parameter tuning.
+
 Usage:
-    from src.interpretation.clustering.dbscan_clustering import cluster_sensor_states
+    from src.interpretation.clustering.optics_clustering import cluster_sensor_states
 
     dataset = load_dataset("path/to/samples.pkl")
-    result = cluster_sensor_states(dataset, eps=0.5, min_samples=5)
+    result = cluster_sensor_states(dataset, min_samples=5, xi=0.05, min_cluster_size=0.05)
 """
 
 import numpy as np
@@ -17,7 +20,7 @@ from pathlib import Path
 from typing import Optional
 import pickle
 
-from sklearn.cluster import DBSCAN
+from sklearn.cluster import OPTICS
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
@@ -27,12 +30,14 @@ from src.interpretation.data_collection.io_sample_definition import ShapleyDatas
 
 @dataclass
 class ClusteringResult:
-    """Results from DBSCAN clustering."""
+    """Results from OPTICS clustering."""
 
     n_clusters: int              # Number of clusters found (excluding noise)
     labels: np.ndarray           # Cluster labels for each sample (-1 = noise)
     features: np.ndarray         # Normalized feature matrix (n_samples, 6)
     feature_names: list[str]     # Feature names
+    reachability: np.ndarray     # Reachability distances for each point
+    ordering: np.ndarray         # Cluster ordering indices
 
     def get_cluster_sizes(self) -> dict[int, int]:
         """Get number of samples in each cluster."""
@@ -83,26 +88,32 @@ def extract_sensor_features(dataset: ShapleyDataset, normalize: bool = True) -> 
 
 def cluster_sensor_states(
     dataset: ShapleyDataset,
-    eps: float = 0.5,
-    min_samples: int = 5
+    min_samples: int = 5,
+    xi: float = 0.05,
+    min_cluster_size: float = 0.05
 ) -> ClusteringResult:
     """
-    Cluster sensor states using DBSCAN.
+    Cluster sensor states using OPTICS.
 
     Args:
         dataset: ShapleyDataset containing samples
-        eps: Maximum distance between two samples for neighborhood
-        min_samples: Minimum number of samples in a neighborhood
+        min_samples: Minimum number of samples in a neighborhood (core point threshold)
+        xi: Minimum steepness for cluster extraction (0.0-1.0, default: 0.05)
+        min_cluster_size: Minimum fraction of samples for a cluster (0.0-1.0, default: 0.05)
 
     Returns:
-        ClusteringResult with cluster labels and metadata
+        ClusteringResult with cluster labels, reachability, and ordering metadata
     """
     # Extract features
     features, feature_names = extract_sensor_features(dataset, normalize=True)
 
-    # Run DBSCAN
-    dbscan = DBSCAN(eps=eps, min_samples=min_samples)
-    labels = dbscan.fit_predict(features)
+    # Run OPTICS
+    optics = OPTICS(
+        min_samples=min_samples,
+        xi=xi,
+        min_cluster_size=min_cluster_size
+    )
+    labels = optics.fit_predict(features)
 
     # Count clusters (excluding noise label -1)
     n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
@@ -112,6 +123,8 @@ def cluster_sensor_states(
         labels=labels,
         features=features,
         feature_names=feature_names,
+        reachability=optics.reachability_,
+        ordering=optics.ordering_,
     )
 
 
@@ -162,13 +175,61 @@ def visualize_clusters(
 
     plt.xlabel(f'PC1 ({pca.explained_variance_ratio_[0]:.1%} variance)')
     plt.ylabel(f'PC2 ({pca.explained_variance_ratio_[1]:.1%} variance)')
-    plt.title(f'DBSCAN Clustering Results (n={result.n_clusters} clusters)')
+    plt.title(f'OPTICS Clustering Results (n={result.n_clusters} clusters)')
     plt.legend()
     plt.grid(alpha=0.3)
 
     if save_path:
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
         print(f"Saved visualization to: {save_path}")
+    else:
+        plt.show()
+
+    plt.close()
+
+
+def visualize_reachability_plot(
+    result: ClusteringResult,
+    save_path: Optional[Path] = None,
+    figsize: tuple[int, int] = (12, 6),
+):
+    """
+    Visualize OPTICS reachability plot.
+
+    The reachability plot shows the cluster structure by ordering points
+    and plotting their reachability distances. Valleys indicate clusters.
+
+    Args:
+        result: ClusteringResult from cluster_sensor_states()
+        save_path: Path to save figure (None to display)
+        figsize: Figure size
+    """
+    plt.figure(figsize=figsize)
+
+    # Get colors for each cluster
+    unique_labels = np.unique(result.labels)
+    colors = plt.cm.tab10(np.linspace(0, 1, len(unique_labels)))
+    label_to_color = {label: color for label, color in zip(unique_labels, colors)}
+
+    # Reorder labels according to OPTICS ordering
+    ordered_labels = result.labels[result.ordering]
+
+    # Plot reachability distances with cluster colors
+    for i, (reach, label) in enumerate(zip(result.reachability[result.ordering], ordered_labels)):
+        if label == -1:
+            color = 'lightgray'
+        else:
+            color = label_to_color[label]
+        plt.bar(i, reach, width=1.0, color=color, edgecolor='none')
+
+    plt.xlabel('Sample (OPTICS ordering)')
+    plt.ylabel('Reachability Distance')
+    plt.title(f'OPTICS Reachability Plot (n={result.n_clusters} clusters)')
+    plt.grid(axis='y', alpha=0.3)
+
+    if save_path:
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        print(f"Saved reachability plot to: {save_path}")
     else:
         plt.show()
 

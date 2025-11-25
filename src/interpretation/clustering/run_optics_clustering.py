@@ -1,18 +1,21 @@
 """
-Run DBSCAN Clustering on Sensor States
+Run OPTICS Clustering on Sensor States
 
 Clusters robot sensor states (excluding pheromone) for Shapley value analysis.
+OPTICS automatically detects clusters of varying densities without eps tuning.
 
 Usage:
-    PYTHONPATH=. uv run --extra cpu src/interpretation/clustering/run_dbscan_clustering.py \
+    PYTHONPATH=. uv run --extra cpu src/interpretation/clustering/run_optics_clustering.py \
         --data-path results/20251027-024639_7bb53c8b/shapley_data/samples.pkl \
-        --eps 0.5 \
-        --min-samples 5
+        --min-samples 5 \
+        --xi 0.05 \
+        --min-cluster-size 0.05
 
 Parameters:
     --data-path: Path to Shapley dataset pickle file (required)
-    --eps: DBSCAN epsilon (maximum distance for neighborhood, default: 0.5)
-    --min-samples: DBSCAN minimum samples (minimum neighbors, default: 5)
+    --min-samples: Minimum samples in neighborhood (default: 5)
+    --xi: Cluster extraction steepness threshold (default: 0.05)
+    --min-cluster-size: Minimum cluster size as fraction (default: 0.05)
     --output-dir: Output directory (default: same directory as data-path)
 """
 
@@ -21,9 +24,10 @@ import pickle
 from pathlib import Path
 
 from src.interpretation.data_collection.io_sample_definition import ShapleyDataset
-from src.interpretation.clustering.dbscan_clustering import (
+from src.interpretation.clustering.optics_clustering import (
     cluster_sensor_states,
     visualize_clusters,
+    visualize_reachability_plot,
     get_cluster_statistics,
     save_clustering_result,
 )
@@ -42,7 +46,7 @@ def load_dataset(data_path: Path) -> ShapleyDataset:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Run DBSCAN clustering on sensor states"
+        description="Run OPTICS clustering on sensor states"
     )
 
     parser.add_argument(
@@ -52,16 +56,22 @@ def main():
         help="Path to Shapley dataset pickle file (samples.pkl)"
     )
     parser.add_argument(
-        "--eps",
-        type=float,
-        default=0.5,
-        help="DBSCAN epsilon parameter (default: 0.5)"
-    )
-    parser.add_argument(
         "--min-samples",
         type=int,
         default=5,
-        help="DBSCAN minimum samples parameter (default: 5)"
+        help="Minimum samples in neighborhood (default: 5)"
+    )
+    parser.add_argument(
+        "--xi",
+        type=float,
+        default=0.05,
+        help="Cluster extraction steepness threshold (default: 0.05)"
+    )
+    parser.add_argument(
+        "--min-cluster-size",
+        type=float,
+        default=0.05,
+        help="Minimum cluster size as fraction (default: 0.05)"
     )
     parser.add_argument(
         "--output-dir",
@@ -88,20 +98,22 @@ def main():
     output_dir.mkdir(parents=True, exist_ok=True)
 
     print("\n" + "=" * 60)
-    print("DBSCAN Clustering Configuration")
+    print("OPTICS Clustering Configuration")
     print("=" * 60)
-    print(f"Epsilon (eps): {args.eps}")
     print(f"Minimum samples: {args.min_samples}")
+    print(f"Xi (steepness): {args.xi}")
+    print(f"Minimum cluster size: {args.min_cluster_size}")
     print(f"Features: 6D sensor states (robot, food, direction)")
     print(f"Output directory: {output_dir}")
     print("=" * 60)
 
     # Perform clustering
-    print("\nRunning DBSCAN clustering...")
+    print("\nRunning OPTICS clustering...")
     result = cluster_sensor_states(
         dataset,
-        eps=args.eps,
-        min_samples=args.min_samples
+        min_samples=args.min_samples,
+        xi=args.xi,
+        min_cluster_size=args.min_cluster_size
     )
 
     print(f"\nClustering complete!")
@@ -123,10 +135,11 @@ def main():
     # Save statistics
     stats_path = output_dir / "cluster_stats.txt"
     with open(stats_path, 'w') as f:
-        f.write(f"DBSCAN Clustering Results\n")
+        f.write(f"OPTICS Clustering Results\n")
         f.write(f"========================\n")
-        f.write(f"Epsilon: {args.eps}\n")
         f.write(f"Minimum samples: {args.min_samples}\n")
+        f.write(f"Xi (steepness): {args.xi}\n")
+        f.write(f"Minimum cluster size: {args.min_cluster_size}\n")
         f.write(f"Number of clusters: {result.n_clusters}\n\n")
 
         for cluster_id, cluster_stats in stats.items():
@@ -139,9 +152,12 @@ def main():
     print(f"Saved statistics to: {stats_path}")
 
     # Visualize clusters
-    print("\nGenerating visualization...")
+    print("\nGenerating visualizations...")
     viz_path = output_dir / "clusters_2d.png"
     visualize_clusters(result, save_path=viz_path)
+
+    reachability_path = output_dir / "reachability_plot.png"
+    visualize_reachability_plot(result, save_path=reachability_path)
 
     # Save clustering results
     results_path = output_dir / "clustering_result.pkl"
@@ -152,7 +168,8 @@ def main():
     print("=" * 60)
     print(f"\nResults saved to: {output_dir}")
     print(f"  Statistics: {stats_path.name}")
-    print(f"  Visualization: {viz_path.name}")
+    print(f"  2D Visualization: {viz_path.name}")
+    print(f"  Reachability Plot: {reachability_path.name}")
     print(f"  Clustering result: {results_path.name}")
 
 
