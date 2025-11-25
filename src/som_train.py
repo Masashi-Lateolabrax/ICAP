@@ -124,6 +124,9 @@ def train_som(features: np.ndarray, grid_size: int, sigma: float = 1.0,
 
 
 def main():
+    import sys
+    print("START: som_train.py", file=sys.stderr, flush=True)
+
     parser = argparse.ArgumentParser(description="SOM analysis for Shapley data")
     parser.add_argument('--data-file', type=str, required=True,
                         help='Path to .pkl file containing Shapley data')
@@ -133,33 +136,42 @@ def main():
                         help='Output directory (default: same as data file directory)')
 
     args = parser.parse_args()
+    print(f"ARGS: {args}", file=sys.stderr, flush=True)
 
     sigma: float = args.grid_size * 0.5 * 0.3
     learning_rate: float = 0.9
     num_iter = 100000
 
+    print(f"MINISOM_AVAILABLE: {MINISOM_AVAILABLE}", file=sys.stderr, flush=True)
+
     if not MINISOM_AVAILABLE:
-        print("ERROR: minisom is not installed.")
-        print("Please install with: uv pip install minisom")
+        print("ERROR: minisom is not installed.", file=sys.stderr, flush=True)
+        print("Please install with: uv pip install minisom", file=sys.stderr, flush=True)
         return
 
     # Setup paths
     data_path = Path(args.data_file)
     output_dir = Path(args.output_dir) if args.output_dir else data_path.parent
     output_dir.mkdir(parents=True, exist_ok=True)
+    print(f"OUTPUT_DIR: {output_dir}", file=sys.stderr, flush=True)
 
     # Load dataset
+    print("Loading dataset...", file=sys.stderr, flush=True)
     dataset = load_dataset(data_path)
 
     # Extract features
+    print("Extracting features...", file=sys.stderr, flush=True)
     som_features = extract_features(dataset)
+    print(f"Features shape: {som_features.shape}", file=sys.stderr, flush=True)
 
     # Train SOM
+    print("Training SOM...", file=sys.stderr, flush=True)
     som, scaler = train_som(
         som_features, args.grid_size, sigma=sigma, learning_rate=learning_rate, num_iterations=num_iter
     )
 
     # Save SOM model for later use
+    print("Saving model...", file=sys.stderr, flush=True)
     som_model_path = output_dir / "som_model.pkl"
     with open(som_model_path, 'wb') as f:
         pickle.dump({'som': som, 'scaler': scaler}, f)
