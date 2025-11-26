@@ -20,7 +20,7 @@ MySettings.Render.CAMERA_POS = (0.0, -1e-3, 13.0)
 MySettings.Render.CAMERA_LOOKAT = (0.0, 0.0, 0.0)
 
 MySettings.Render.MAX_GEOM = 11000
-MySettings.Render.MAX_PHEROMONE = 0.1
+MySettings.Render.MAX_PHEROMONE = 1e-5
 ###################################################################################
 
 
@@ -30,7 +30,7 @@ MySettings.Render.MAX_PHEROMONE = 0.1
 MySettings.Optimization.DIMENSION = None  # Will be set later based on the neural network dimension
 MySettings.Optimization.POPULATION = 100
 MySettings.Optimization.GENERATION = 500
-MySettings.Optimization.SIGMA = 3
+MySettings.Optimization.SIGMA = 1
 
 MySettings.Optimization.CLIP = ClippingFunctions.none
 ###################################################################################
@@ -43,7 +43,7 @@ MySettings.Robot.HEIGHT = 0.1
 MySettings.Robot.RADIUS = 0.175
 MySettings.Robot.DISTANCE_BETWEEN_WHEELS = 0.175 * 2 * 0.8
 MySettings.Robot.MAX_SPEED = 0.8
-MySettings.Robot.MAX_PHEROMONE_SECRETION = 0.005
+MySettings.Robot.MAX_PHEROMONE_SECRETION = 0.001
 MySettings.Robot.MASS = 10
 
 MySettings.Robot.COLOR = (1, 1, 0, 1)
@@ -127,7 +127,7 @@ MySettings.Loss.REGULARIZATION_COEFFICIENT = 0
 # Simulation settings
 ###################################################################################
 MySettings.Simulation.TIME_STEP = 0.01
-MySettings.Simulation.TIME_LENGTH = 90
+MySettings.Simulation.TIME_LENGTH = 60
 
 MySettings.Simulation.WORLD_WIDTH = 10.0
 MySettings.Simulation.WORLD_HEIGHT = 10.0
@@ -150,7 +150,7 @@ MySettings.Pheromone.NZ = 7
 MySettings.Pheromone.WIDTH_NUM = int(MySettings.Simulation.WORLD_WIDTH / MySettings.Pheromone.CELL_SIZE)
 MySettings.Pheromone.HEIGHT_NUM = int(MySettings.Simulation.WORLD_HEIGHT / MySettings.Pheromone.CELL_SIZE)
 
-MySettings.Pheromone.ITERATIONS_PER_STEP = 1
+MySettings.Pheromone.ITERATIONS_PER_STEP = 3
 
 MySettings.Pheromone.TEMPERATURE = 300
 MySettings.Pheromone.MATERIAL = ETHANOL
