@@ -34,6 +34,9 @@ from src.interpretation.clustering.kmeans_clustering import (
     visualize_elbow_curve,
     get_cluster_statistics,
     save_clustering_result,
+    analyze_temporal_continuity,
+    visualize_temporal_continuity,
+    visualize_feature_distributions,
 )
 from src.interpretation.data_collection.io_sample_definition import ShapleyDataset
 
@@ -204,6 +207,77 @@ def main():
 
         print(f"\nSaved cluster statistics to: {stats_path}")
 
+        # Analyze temporal continuity
+        print(f"\n{'=' * 60}")
+        print("Analyzing Temporal Continuity")
+        print(f"{'=' * 60}")
+
+        continuity_analysis = analyze_temporal_continuity(result, dataset)
+
+        # Determine cluster type based on continuity
+        situation_based_count = 0
+        time_period_count = 0
+
+        print("\nTemporal Continuity per Cluster:")
+        print(f"{'Cluster':>8} {'Size':>8} {'Consecutive':>12} {'Ratio':>8} {'Type':>15}")
+        print('-' * 60)
+
+        for cluster_id in sorted(continuity_analysis.keys()):
+            c = continuity_analysis[cluster_id]
+            ratio = c['continuity_ratio']
+
+            if ratio > 0.7:
+                cluster_type = "Time-period"
+                time_period_count += 1
+            elif ratio < 0.3:
+                cluster_type = "Situation-based"
+                situation_based_count += 1
+            else:
+                cluster_type = "Mixed"
+
+            print(f"{cluster_id:>8} {c['size']:>8} {c['consecutive_pairs']:>12} "
+                  f"{ratio:>7.1%} {cluster_type:>15}")
+
+        print(f"\n{'=' * 60}")
+        print("Cluster Type Summary:")
+        print(f"  Situation-based clusters (<30% continuity): {situation_based_count}")
+        print(f"  Mixed clusters (30-70% continuity): {result.n_clusters - situation_based_count - time_period_count}")
+        print(f"  Time-period clusters (>70% continuity): {time_period_count}")
+
+        if time_period_count > result.n_clusters / 2:
+            print(f"\n⚠ WARNING: {time_period_count}/{result.n_clusters} clusters are time-period based!")
+            print("  This suggests clusters represent temporal segments rather than situations.")
+            print("  Consider alternative approaches (e.g., behavioral segmentation).")
+        elif situation_based_count > result.n_clusters / 2:
+            print(f"\n✓ Good: {situation_based_count}/{result.n_clusters} clusters are situation-based!")
+            print("  Clusters appear to represent distinct behavioral situations.")
+        else:
+            print(f"\n⚠ Mixed: Clusters show both temporal and situational characteristics.")
+            print("  Interpretation should be done carefully.")
+
+        # Save temporal continuity analysis
+        continuity_path = output_dir / 'temporal_continuity.txt'
+        with open(continuity_path, 'w') as f:
+            f.write("Temporal Continuity Analysis\n")
+            f.write("=" * 60 + "\n\n")
+            f.write(f"{'Cluster':>8} {'Size':>8} {'Consecutive':>12} {'Total Pairs':>12} {'Ratio':>8}\n")
+            f.write('-' * 60 + '\n')
+            for cluster_id in sorted(continuity_analysis.keys()):
+                c = continuity_analysis[cluster_id]
+                f.write(f"{cluster_id:>8} {c['size']:>8} {c['consecutive_pairs']:>12} "
+                       f"{c['total_pairs']:>12} {c['continuity_ratio']:>7.1%}\n")
+
+        print(f"\nSaved temporal continuity analysis to: {continuity_path.name}")
+
+        # Visualize temporal continuity
+        continuity_viz_path = output_dir / 'temporal_continuity.png'
+        visualize_temporal_continuity(continuity_analysis, save_path=continuity_viz_path)
+
+        # Visualize feature distributions
+        print("\nGenerating feature distribution visualizations...")
+        feature_dist_path = output_dir / 'feature_distributions.png'
+        visualize_feature_distributions(result, save_path=feature_dist_path)
+
         # Visualize clusters
         viz_path = output_dir / 'clusters_2d.png'
         visualize_clusters(result, save_path=viz_path)
@@ -217,7 +291,10 @@ def main():
         print(f"{'=' * 60}")
         print(f"\nResults saved to: {output_dir}")
         print(f"  Statistics: {stats_path.name}")
+        print(f"  Temporal Continuity: {continuity_path.name}")
         print(f"  2D Visualization: {viz_path.name}")
+        print(f"  Temporal Continuity Plot: {continuity_viz_path.name}")
+        print(f"  Feature Distributions: {feature_dist_path.name}")
         print(f"  Clustering result: {result_path.name}")
 
 

@@ -352,3 +352,164 @@ def load_clustering_result(input_path: Path) -> KMeansResult:
         result = pickle.load(f)
     print(f"Loaded clustering result from: {input_path}")
     return result
+
+
+def analyze_temporal_continuity(result: KMeansResult, dataset: ShapleyDataset) -> dict:
+    """
+    Analyze temporal continuity within clusters to determine if clusters
+    represent situations or time-periods.
+
+    High temporal continuity (>70%) suggests clusters represent time-periods (bad).
+    Low temporal continuity (<30%) suggests clusters represent situations (good).
+
+    Args:
+        result: KMeansResult from cluster_sensor_states()
+        dataset: Original ShapleyDataset used for clustering
+
+    Returns:
+        Dictionary with temporal continuity analysis for each cluster
+    """
+    # Group samples by robot_index and cluster
+    cluster_analysis = {}
+
+    for cluster_id in range(result.n_clusters):
+        # Get samples in this cluster
+        cluster_mask = (result.labels == cluster_id)
+        cluster_indices = np.where(cluster_mask)[0]
+        cluster_samples = [dataset.samples[i] for i in cluster_indices]
+
+        # Group by robot
+        robot_groups = {}
+        for sample in cluster_samples:
+            robot_idx = sample.robot_index
+            if robot_idx not in robot_groups:
+                robot_groups[robot_idx] = []
+            robot_groups[robot_idx].append(sample)
+
+        # Count consecutive timesteps within this cluster
+        total_samples = len(cluster_samples)
+        consecutive_count = 0
+
+        for robot_idx, samples in robot_groups.items():
+            # Sort by timestep
+            samples_sorted = sorted(samples, key=lambda s: s.timestep)
+
+            # Count consecutive pairs
+            for i in range(len(samples_sorted) - 1):
+                timestep_diff = samples_sorted[i + 1].timestep - samples_sorted[i].timestep
+                if timestep_diff <= 1:
+                    consecutive_count += 1
+
+        # Calculate continuity ratio
+        if total_samples > 1:
+            continuity_ratio = consecutive_count / (total_samples - 1)
+        else:
+            continuity_ratio = 0.0
+
+        cluster_analysis[cluster_id] = {
+            'size': total_samples,
+            'consecutive_pairs': consecutive_count,
+            'total_pairs': total_samples - 1,
+            'continuity_ratio': continuity_ratio,
+        }
+
+    return cluster_analysis
+
+
+def visualize_temporal_continuity(
+    continuity_analysis: dict,
+    save_path: Optional[Path] = None,
+    figsize: tuple[int, int] = (10, 6)
+):
+    """
+    Visualize temporal continuity ratios for each cluster.
+
+    Args:
+        continuity_analysis: Output from analyze_temporal_continuity()
+        save_path: Path to save figure (None to display)
+        figsize: Figure size
+    """
+    cluster_ids = sorted(continuity_analysis.keys())
+    ratios = [continuity_analysis[cid]['continuity_ratio'] for cid in cluster_ids]
+    sizes = [continuity_analysis[cid]['size'] for cid in cluster_ids]
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize)
+
+    # Bar plot of continuity ratios
+    colors = ['red' if r > 0.7 else 'orange' if r > 0.3 else 'green' for r in ratios]
+    ax1.bar(cluster_ids, ratios, color=colors, alpha=0.7, edgecolor='black')
+    ax1.axhline(y=0.7, color='red', linestyle='--', linewidth=1, label='Time-period threshold (70%)')
+    ax1.axhline(y=0.3, color='green', linestyle='--', linewidth=1, label='Situation threshold (30%)')
+    ax1.set_xlabel('Cluster ID')
+    ax1.set_ylabel('Temporal Continuity Ratio')
+    ax1.set_title('Temporal Continuity per Cluster')
+    ax1.legend()
+    ax1.grid(axis='y', alpha=0.3)
+    ax1.set_ylim(0, 1.0)
+
+    # Scatter plot: size vs continuity
+    ax2.scatter(sizes, ratios, s=100, alpha=0.6, edgecolors='black')
+    for i, cid in enumerate(cluster_ids):
+        ax2.annotate(f'C{cid}', (sizes[i], ratios[i]),
+                    xytext=(5, 5), textcoords='offset points', fontsize=9)
+    ax2.axhline(y=0.7, color='red', linestyle='--', linewidth=1, alpha=0.5)
+    ax2.axhline(y=0.3, color='green', linestyle='--', linewidth=1, alpha=0.5)
+    ax2.set_xlabel('Cluster Size (samples)')
+    ax2.set_ylabel('Temporal Continuity Ratio')
+    ax2.set_title('Cluster Size vs Temporal Continuity')
+    ax2.grid(alpha=0.3)
+    ax2.set_ylim(0, 1.0)
+
+    plt.tight_layout()
+
+    if save_path:
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        print(f"Saved temporal continuity visualization to: {save_path}")
+    else:
+        plt.show()
+
+    plt.close()
+
+
+def visualize_feature_distributions(
+    result: KMeansResult,
+    save_path: Optional[Path] = None,
+    figsize: tuple[int, int] = (14, 10)
+):
+    """
+    Visualize feature distributions for each cluster to identify
+    if clusters represent distinct situations.
+
+    Args:
+        result: KMeansResult from cluster_sensor_states()
+        save_path: Path to save figure (None to display)
+        figsize: Figure size
+    """
+    fig, axes = plt.subplots(2, 3, figsize=figsize)
+    axes = axes.flatten()
+
+    for feat_idx, feature_name in enumerate(result.feature_names):
+        ax = axes[feat_idx]
+
+        # Plot distribution for each cluster
+        for cluster_id in range(result.n_clusters):
+            mask = result.labels == cluster_id
+            feature_values = result.features[mask, feat_idx]
+            ax.hist(feature_values, bins=30, alpha=0.5, label=f'C{cluster_id}', density=True)
+
+        ax.set_xlabel(feature_name)
+        ax.set_ylabel('Density')
+        ax.set_title(f'{feature_name} Distribution')
+        ax.grid(alpha=0.3)
+        if feat_idx == 0:
+            ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=8)
+
+    plt.tight_layout()
+
+    if save_path:
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        print(f"Saved feature distributions to: {save_path}")
+    else:
+        plt.show()
+
+    plt.close()
