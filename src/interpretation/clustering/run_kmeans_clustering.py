@@ -4,13 +4,23 @@ CLI runner for K-means clustering analysis.
 
 Usage examples:
     # Basic clustering with k=10
-    python src/interpretation/clustering/run_kmeans_clustering.py
-
-    # Cluster with k=20
-    python src/interpretation/clustering/run_kmeans_clustering.py --n-clusters 20
+    PYTHONPATH=. uv run --extra cpu src/interpretation/clustering/run_kmeans_clustering.py \
+        --data-path results/20251027-024639_7bb53c8b/shapley_data/samples.pkl \
+        --n-clusters 10
 
     # Find optimal k
-    python src/interpretation/clustering/run_kmeans_clustering.py --find-optimal --k-min 2 --k-max 30
+    PYTHONPATH=. uv run --extra cpu src/interpretation/clustering/run_kmeans_clustering.py \
+        --data-path results/20251027-024639_7bb53c8b/shapley_data/samples.pkl \
+        --find-optimal --k-min 2 --k-max 30
+
+Parameters:
+    --data-path: Path to Shapley dataset pickle file (required)
+    --n-clusters: Number of clusters (default: 10)
+    --find-optimal: Find optimal k using elbow method and quality metrics
+    --k-min: Minimum k for optimal k search (default: 2)
+    --k-max: Maximum k for optimal k search (default: 20)
+    --output-dir: Output directory (default: same directory as data-path)
+    --random-state: Random seed for reproducibility (default: 42)
 """
 
 import argparse
@@ -28,19 +38,30 @@ from src.interpretation.clustering.kmeans_clustering import (
 from src.interpretation.data_collection.io_sample_definition import ShapleyDataset
 
 
+def load_dataset(data_path: Path) -> ShapleyDataset:
+    """Load Shapley dataset from pickle file."""
+    with open(data_path, 'rb') as f:
+        dataset = pickle.load(f)
+    print(f"Loaded dataset from: {data_path}")
+    print(f"  Total samples: {len(dataset.samples)}")
+    print(f"  Experiment: {dataset.experiment_id}")
+    print(f"  Generation: {dataset.generation}")
+    return dataset
+
+
 def main():
     parser = argparse.ArgumentParser(description='K-means clustering for Shapley input samples')
     parser.add_argument(
-        '--input',
-        type=Path,
-        default=Path('results/shapley_samples.pkl'),
-        help='Path to input Shapley dataset (default: results/shapley_samples.pkl)'
+        '--data-path',
+        type=str,
+        required=True,
+        help='Path to Shapley dataset pickle file (samples.pkl)'
     )
     parser.add_argument(
         '--output-dir',
-        type=Path,
-        default=Path('results/kmeans_clustering'),
-        help='Directory to save clustering results (default: results/kmeans_clustering)'
+        type=str,
+        default=None,
+        help='Output directory (default: same as data-path directory)'
     )
     parser.add_argument(
         '--n-clusters',
@@ -75,18 +96,19 @@ def main():
     args = parser.parse_args()
 
     # Load dataset
-    print(f"Loading dataset from: {args.input}")
-    with open(args.input, 'rb') as f:
-        dataset = pickle.load(f)
+    data_path = Path(args.data_path)
+    if not data_path.exists():
+        raise FileNotFoundError(f"Data file not found: {data_path}")
 
-    if not isinstance(dataset, ShapleyDataset):
-        raise TypeError(f"Expected ShapleyDataset, got {type(dataset)}")
+    dataset = load_dataset(data_path)
 
-    print(f"\nDataset loaded: {len(dataset)} samples")
-    print(dataset.get_summary())
+    # Set output directory
+    if args.output_dir is None:
+        output_dir = data_path.parent / "kmeans_clustering"
+    else:
+        output_dir = Path(args.output_dir)
 
-    # Create output directory
-    args.output_dir.mkdir(parents=True, exist_ok=True)
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     if args.find_optimal:
         print(f"\n{'=' * 60}")
@@ -100,7 +122,7 @@ def main():
         )
 
         # Save metrics
-        metrics_path = args.output_dir / 'optimal_k_metrics.pkl'
+        metrics_path = output_dir / 'optimal_k_metrics.pkl'
         with open(metrics_path, 'wb') as f:
             pickle.dump(k_metrics, f)
         print(f"\nSaved metrics to: {metrics_path}")
@@ -115,8 +137,15 @@ def main():
                   f"{m['davies_bouldin']:>16.4f} {m['calinski_harabasz']:>18.2f}")
 
         # Visualize elbow curve
-        elbow_path = args.output_dir / 'elbow_curve.png'
+        elbow_path = output_dir / 'elbow_curve.png'
         visualize_elbow_curve(k_metrics, save_path=elbow_path)
+
+        print(f"\n{'=' * 60}")
+        print("Optimal k search complete!")
+        print(f"{'=' * 60}")
+        print(f"\nResults saved to: {output_dir}")
+        print(f"  Metrics: {metrics_path.name}")
+        print(f"  Elbow curve: {elbow_path.name}")
 
     else:
         print(f"\n{'=' * 60}")
@@ -149,7 +178,7 @@ def main():
         stats = get_cluster_statistics(result)
 
         # Save statistics to file
-        stats_path = args.output_dir / 'cluster_stats.txt'
+        stats_path = output_dir / 'cluster_stats.txt'
         with open(stats_path, 'w') as f:
             f.write(f"K-means Clustering Results (k={result.n_clusters})\n")
             f.write(f"{'=' * 60}\n\n")
@@ -176,14 +205,20 @@ def main():
         print(f"\nSaved cluster statistics to: {stats_path}")
 
         # Visualize clusters
-        viz_path = args.output_dir / 'clusters_2d.png'
+        viz_path = output_dir / 'clusters_2d.png'
         visualize_clusters(result, save_path=viz_path)
 
         # Save clustering result
-        result_path = args.output_dir / 'clustering_result.pkl'
+        result_path = output_dir / 'clustering_result.pkl'
         save_clustering_result(result, result_path)
 
-        print(f"\nAll results saved to: {args.output_dir}")
+        print(f"\n{'=' * 60}")
+        print("Clustering analysis complete!")
+        print(f"{'=' * 60}")
+        print(f"\nResults saved to: {output_dir}")
+        print(f"  Statistics: {stats_path.name}")
+        print(f"  2D Visualization: {viz_path.name}")
+        print(f"  Clustering result: {result_path.name}")
 
 
 if __name__ == '__main__':
