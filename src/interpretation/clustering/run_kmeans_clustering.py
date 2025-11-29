@@ -37,6 +37,10 @@ from src.interpretation.clustering.kmeans_clustering import (
     analyze_temporal_continuity,
     visualize_temporal_continuity,
     visualize_feature_distributions,
+    analyze_cluster_distances,
+    visualize_cluster_distance_matrix,
+    analyze_temporal_statistics,
+    visualize_temporal_statistics,
 )
 from src.interpretation.data_collection.io_sample_definition import ShapleyDataset
 
@@ -273,6 +277,98 @@ def main():
         continuity_viz_path = output_dir / 'temporal_continuity.png'
         visualize_temporal_continuity(continuity_analysis, save_path=continuity_viz_path)
 
+        # Analyze cluster distances
+        print(f"\n{'=' * 60}")
+        print("Analyzing Cluster Distances")
+        print(f"{'=' * 60}")
+
+        distance_analysis = analyze_cluster_distances(result)
+
+        print(f"\nInter-cluster Distance Statistics:")
+        print(f"  Min distance: {distance_analysis['min_distance']:.4f}")
+        print(f"  Max distance: {distance_analysis['max_distance']:.4f}")
+        print(f"  Mean distance: {distance_analysis['mean_distance']:.4f}")
+        print(f"  Std distance: {distance_analysis['std_distance']:.4f}")
+
+        print(f"\nNearest Cluster for Each Cluster:")
+        for cluster_id in sorted(distance_analysis['nearest_clusters'].keys()):
+            nearest_info = distance_analysis['nearest_clusters'][cluster_id]
+            print(f"  Cluster {cluster_id} → Cluster {nearest_info['nearest_cluster']} "
+                  f"(distance: {nearest_info['distance']:.4f})")
+
+        # Save distance matrix
+        distance_matrix_path = output_dir / 'cluster_distances.txt'
+        with open(distance_matrix_path, 'w') as f:
+            f.write("Cluster Distance Matrix\n")
+            f.write("=" * 60 + "\n\n")
+
+            # Write distance matrix
+            f.write("Distance Matrix:\n")
+            n = result.n_clusters
+            header = "     " + "".join([f"  C{i:2d}  " for i in range(n)])
+            f.write(header + "\n")
+            for i in range(n):
+                row = f"C{i:2d}  "
+                for j in range(n):
+                    if i == j:
+                        row += "  -    "
+                    else:
+                        row += f"{distance_analysis['distance_matrix'][i, j]:6.2f} "
+                f.write(row + "\n")
+
+            f.write(f"\nStatistics:\n")
+            f.write(f"  Min distance: {distance_analysis['min_distance']:.4f}\n")
+            f.write(f"  Max distance: {distance_analysis['max_distance']:.4f}\n")
+            f.write(f"  Mean distance: {distance_analysis['mean_distance']:.4f}\n")
+            f.write(f"  Std distance: {distance_analysis['std_distance']:.4f}\n")
+
+        print(f"\nSaved cluster distance matrix to: {distance_matrix_path.name}")
+
+        # Visualize distance matrix
+        distance_viz_path = output_dir / 'cluster_distance_matrix.png'
+        visualize_cluster_distance_matrix(distance_analysis, save_path=distance_viz_path)
+
+        # Analyze temporal statistics
+        print(f"\n{'=' * 60}")
+        print("Analyzing Temporal Statistics")
+        print(f"{'=' * 60}")
+
+        temporal_stats = analyze_temporal_statistics(result, dataset)
+
+        print(f"\nTemporal Statistics per Cluster:")
+        print(f"{'Cluster':>8} {'Mean':>10} {'Std':>10} {'Min':>10} {'Max':>10}")
+        print('-' * 60)
+        for cluster_id in sorted(temporal_stats.keys()):
+            ts = temporal_stats[cluster_id]
+            print(f"{cluster_id:>8} {ts['timestep_mean']:>10.1f} {ts['timestep_std']:>10.1f} "
+                  f"{ts['timestep_min']:>10} {ts['timestep_max']:>10}")
+
+        # Save temporal statistics
+        temporal_stats_path = output_dir / 'temporal_statistics.txt'
+        with open(temporal_stats_path, 'w') as f:
+            f.write("Temporal Statistics per Cluster\n")
+            f.write("=" * 60 + "\n\n")
+            f.write(f"{'Cluster':>8} {'Mean':>12} {'Std':>12} {'Min':>12} {'Max':>12}\n")
+            f.write('-' * 60 + '\n')
+            for cluster_id in sorted(temporal_stats.keys()):
+                ts = temporal_stats[cluster_id]
+                f.write(f"{cluster_id:>8} {ts['timestep_mean']:>12.2f} {ts['timestep_std']:>12.2f} "
+                       f"{ts['timestep_min']:>12} {ts['timestep_max']:>12}\n")
+
+            f.write(f"\nTime (seconds) Statistics:\n")
+            f.write(f"{'Cluster':>8} {'Mean':>12} {'Std':>12} {'Min':>12} {'Max':>12}\n")
+            f.write('-' * 60 + '\n')
+            for cluster_id in sorted(temporal_stats.keys()):
+                ts = temporal_stats[cluster_id]
+                f.write(f"{cluster_id:>8} {ts['time_seconds_mean']:>12.2f} {ts['time_seconds_std']:>12.2f} "
+                       f"{ts['time_seconds_min']:>12.2f} {ts['time_seconds_max']:>12.2f}\n")
+
+        print(f"\nSaved temporal statistics to: {temporal_stats_path.name}")
+
+        # Visualize temporal statistics
+        temporal_viz_path = output_dir / 'temporal_statistics.png'
+        visualize_temporal_statistics(temporal_stats, save_path=temporal_viz_path)
+
         # Visualize feature distributions
         print("\nGenerating feature distribution visualizations...")
         feature_dist_path = output_dir / 'feature_distributions.png'
@@ -292,8 +388,12 @@ def main():
         print(f"\nResults saved to: {output_dir}")
         print(f"  Statistics: {stats_path.name}")
         print(f"  Temporal Continuity: {continuity_path.name}")
+        print(f"  Cluster Distances: {distance_matrix_path.name}")
+        print(f"  Temporal Statistics: {temporal_stats_path.name}")
         print(f"  2D Visualization: {viz_path.name}")
         print(f"  Temporal Continuity Plot: {continuity_viz_path.name}")
+        print(f"  Distance Matrix Heatmap: {distance_viz_path.name}")
+        print(f"  Temporal Statistics Plot: {temporal_viz_path.name}")
         print(f"  Feature Distributions: {feature_dist_path.name}")
         print(f"  Clustering result: {result_path.name}")
 

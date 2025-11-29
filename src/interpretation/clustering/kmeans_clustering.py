@@ -513,3 +513,201 @@ def visualize_feature_distributions(
         plt.show()
 
     plt.close()
+
+
+def analyze_cluster_distances(result: KMeansResult) -> dict:
+    """
+    Calculate pairwise distances between cluster centroids.
+
+    Args:
+        result: KMeansResult from cluster_sensor_states()
+
+    Returns:
+        Dictionary with distance matrix and statistics
+    """
+    n_clusters = result.n_clusters
+
+    # Calculate pairwise distances between centroids
+    distance_matrix = np.zeros((n_clusters, n_clusters))
+
+    for i in range(n_clusters):
+        for j in range(n_clusters):
+            if i != j:
+                distance_matrix[i, j] = np.linalg.norm(
+                    result.cluster_centers[i] - result.cluster_centers[j]
+                )
+
+    # Find nearest cluster for each cluster
+    nearest_clusters = {}
+    for i in range(n_clusters):
+        distances_from_i = distance_matrix[i].copy()
+        distances_from_i[i] = np.inf  # Exclude self
+        nearest_idx = np.argmin(distances_from_i)
+        nearest_clusters[i] = {
+            'nearest_cluster': int(nearest_idx),
+            'distance': float(distances_from_i[nearest_idx])
+        }
+
+    # Calculate inter-cluster distance statistics (excluding diagonal)
+    off_diagonal_distances = distance_matrix[np.triu_indices(n_clusters, k=1)]
+
+    return {
+        'distance_matrix': distance_matrix,
+        'nearest_clusters': nearest_clusters,
+        'min_distance': float(np.min(off_diagonal_distances)),
+        'max_distance': float(np.max(off_diagonal_distances)),
+        'mean_distance': float(np.mean(off_diagonal_distances)),
+        'std_distance': float(np.std(off_diagonal_distances)),
+    }
+
+
+def analyze_temporal_statistics(result: KMeansResult, dataset: ShapleyDataset) -> dict:
+    """
+    Analyze temporal statistics for each cluster to check if clusters
+    represent temporal segments.
+
+    Args:
+        result: KMeansResult from cluster_sensor_states()
+        dataset: Original ShapleyDataset used for clustering
+
+    Returns:
+        Dictionary with temporal statistics per cluster
+    """
+    temporal_stats = {}
+
+    for cluster_id in range(result.n_clusters):
+        # Get samples in this cluster
+        cluster_mask = (result.labels == cluster_id)
+        cluster_indices = np.where(cluster_mask)[0]
+        cluster_samples = [dataset.samples[i] for i in cluster_indices]
+
+        # Extract timesteps
+        timesteps = np.array([s.timestep for s in cluster_samples])
+        time_seconds = np.array([s.time_seconds for s in cluster_samples])
+
+        temporal_stats[cluster_id] = {
+            'timestep_mean': float(np.mean(timesteps)),
+            'timestep_std': float(np.std(timesteps)),
+            'timestep_min': int(np.min(timesteps)),
+            'timestep_max': int(np.max(timesteps)),
+            'time_seconds_mean': float(np.mean(time_seconds)),
+            'time_seconds_std': float(np.std(time_seconds)),
+            'time_seconds_min': float(np.min(time_seconds)),
+            'time_seconds_max': float(np.max(time_seconds)),
+        }
+
+    return temporal_stats
+
+
+def visualize_cluster_distance_matrix(
+    distance_analysis: dict,
+    save_path: Optional[Path] = None,
+    figsize: tuple[int, int] = (10, 8)
+):
+    """
+    Visualize cluster centroid distance matrix as heatmap.
+
+    Args:
+        distance_analysis: Output from analyze_cluster_distances()
+        save_path: Path to save figure (None to display)
+        figsize: Figure size
+    """
+    distance_matrix = distance_analysis['distance_matrix']
+    n_clusters = distance_matrix.shape[0]
+
+    fig, ax = plt.subplots(figsize=figsize)
+
+    # Create heatmap
+    im = ax.imshow(distance_matrix, cmap='viridis', aspect='auto')
+
+    # Set ticks
+    ax.set_xticks(np.arange(n_clusters))
+    ax.set_yticks(np.arange(n_clusters))
+    ax.set_xticklabels([f'C{i}' for i in range(n_clusters)])
+    ax.set_yticklabels([f'C{i}' for i in range(n_clusters)])
+
+    # Rotate x labels
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
+
+    # Add colorbar
+    cbar = plt.colorbar(im, ax=ax)
+    cbar.set_label('Euclidean Distance', rotation=270, labelpad=20)
+
+    # Add text annotations
+    for i in range(n_clusters):
+        for j in range(n_clusters):
+            if i != j:
+                text = ax.text(j, i, f'{distance_matrix[i, j]:.2f}',
+                             ha="center", va="center", color="white", fontsize=8)
+
+    ax.set_title('Cluster Centroid Distance Matrix')
+    ax.set_xlabel('Cluster ID')
+    ax.set_ylabel('Cluster ID')
+
+    plt.tight_layout()
+
+    if save_path:
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        print(f"Saved cluster distance matrix to: {save_path}")
+    else:
+        plt.show()
+
+    plt.close()
+
+
+def visualize_temporal_statistics(
+    temporal_stats: dict,
+    save_path: Optional[Path] = None,
+    figsize: tuple[int, int] = (12, 5)
+):
+    """
+    Visualize temporal statistics for each cluster.
+
+    Args:
+        temporal_stats: Output from analyze_temporal_statistics()
+        save_path: Path to save figure (None to display)
+        figsize: Figure size
+    """
+    cluster_ids = sorted(temporal_stats.keys())
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize)
+
+    # Plot 1: Mean timestep with error bars
+    means = [temporal_stats[cid]['timestep_mean'] for cid in cluster_ids]
+    stds = [temporal_stats[cid]['timestep_std'] for cid in cluster_ids]
+    mins = [temporal_stats[cid]['timestep_min'] for cid in cluster_ids]
+    maxs = [temporal_stats[cid]['timestep_max'] for cid in cluster_ids]
+
+    ax1.errorbar(cluster_ids, means, yerr=stds, fmt='o-', capsize=5,
+                markersize=8, linewidth=2, label='Mean ± Std')
+    ax1.scatter(cluster_ids, mins, marker='v', s=50, c='blue', alpha=0.6, label='Min')
+    ax1.scatter(cluster_ids, maxs, marker='^', s=50, c='red', alpha=0.6, label='Max')
+    ax1.set_xlabel('Cluster ID')
+    ax1.set_ylabel('Timestep')
+    ax1.set_title('Temporal Distribution of Clusters')
+    ax1.legend()
+    ax1.grid(alpha=0.3)
+
+    # Plot 2: Timestep ranges as horizontal bars
+    for i, cid in enumerate(cluster_ids):
+        min_t = temporal_stats[cid]['timestep_min']
+        max_t = temporal_stats[cid]['timestep_max']
+        ax2.barh(i, max_t - min_t, left=min_t, height=0.6,
+                label=f'C{cid}', alpha=0.7)
+
+    ax2.set_yticks(range(len(cluster_ids)))
+    ax2.set_yticklabels([f'C{cid}' for cid in cluster_ids])
+    ax2.set_xlabel('Timestep')
+    ax2.set_ylabel('Cluster ID')
+    ax2.set_title('Temporal Ranges of Clusters')
+    ax2.grid(axis='x', alpha=0.3)
+
+    plt.tight_layout()
+
+    if save_path:
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        print(f"Saved temporal statistics visualization to: {save_path}")
+    else:
+        plt.show()
+
+    plt.close()
