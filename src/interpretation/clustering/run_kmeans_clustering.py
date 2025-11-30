@@ -13,6 +13,16 @@ Usage examples:
         --data-path results/20251027-024639_7bb53c8b/shapley_data/samples.pkl \
         --find-optimal --k-min 2 --k-max 30
 
+    # Clustering with animation video
+    PYTHONPATH=. uv run --extra cpu src/interpretation/clustering/run_kmeans_clustering.py \
+        --data-path results/20251027-024639_7bb53c8b/shapley_data/samples.pkl \
+        --n-clusters 9 --create-video
+
+    # Clustering with animation video with stats panel
+    PYTHONPATH=. uv run --extra cpu src/interpretation/clustering/run_kmeans_clustering.py \
+        --data-path results/20251027-024639_7bb53c8b/shapley_data/samples.pkl \
+        --n-clusters 9 --create-video --video-with-stats
+
 Parameters:
     --data-path: Path to Shapley dataset pickle file (required)
     --n-clusters: Number of clusters (default: 10)
@@ -21,6 +31,9 @@ Parameters:
     --k-max: Maximum k for optimal k search (default: 20)
     --output-dir: Output directory (default: same directory as data-path)
     --random-state: Random seed for reproducibility (default: 42)
+    --create-video: Generate cluster animation video (mp4)
+    --video-fps: Video frames per second (default: 30)
+    --video-with-stats: Generate video with statistics panel on the right
 """
 
 import argparse
@@ -45,6 +58,10 @@ from src.interpretation.clustering.kmeans_clustering import (
     visualize_original_sensor_distributions,
     visualize_cluster_timeline,
     export_cluster_timeline_data,
+)
+from src.interpretation.clustering.cluster_animation import (
+    create_cluster_animation,
+    create_cluster_animation_with_stats,
 )
 from src.interpretation.data_collection.io_sample_definition import ShapleyDataset
 
@@ -102,6 +119,22 @@ def main():
         type=int,
         default=42,
         help='Random seed for reproducibility (default: 42)'
+    )
+    parser.add_argument(
+        '--create-video',
+        action='store_true',
+        help='Generate cluster animation video (mp4)'
+    )
+    parser.add_argument(
+        '--video-fps',
+        type=int,
+        default=30,
+        help='Video frames per second (default: 30)'
+    )
+    parser.add_argument(
+        '--video-with-stats',
+        action='store_true',
+        help='Generate video with statistics panel on the right'
     )
 
     args = parser.parse_args()
@@ -449,6 +482,23 @@ def main():
         timeline_csv_path = output_dir / 'cluster_timeline.csv'
         export_cluster_timeline_data(result, dataset, output_path=timeline_csv_path)
 
+        # Generate cluster animation video
+        if args.create_video:
+            print(f"\n{'=' * 60}")
+            print("Generating Cluster Animation Video")
+            print(f"{'=' * 60}")
+
+            if args.video_with_stats:
+                video_path = output_dir / 'cluster_animation_with_stats.mp4'
+                create_cluster_animation_with_stats(
+                    result, dataset, video_path, fps=args.video_fps
+                )
+            else:
+                video_path = output_dir / 'cluster_animation.mp4'
+                create_cluster_animation(
+                    result, dataset, video_path, fps=args.video_fps
+                )
+
         # Visualize feature distributions
         print("\nGenerating feature distribution visualizations...")
         feature_dist_path = output_dir / 'feature_distributions.png'
@@ -472,6 +522,8 @@ def main():
         print(f"  Temporal Statistics: {temporal_stats_path.name}")
         print(f"  Original Sensor Stats: {original_stats_path.name}")
         print(f"  Cluster Timeline CSV: {timeline_csv_path.name}")
+        if args.create_video:
+            print(f"  Cluster Animation: {video_path.name}")
         print(f"  2D Visualization: {viz_path.name}")
         print(f"  Temporal Continuity Plot: {continuity_viz_path.name}")
         print(f"  Distance Matrix Heatmap: {distance_viz_path.name}")
