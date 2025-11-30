@@ -1,17 +1,41 @@
 """
-K-means Clustering Analysis for Shapley Input Samples
+K-means Clustering Analysis for Robot Sensor Data
 
 K-means-based clustering of robot sensor states (excluding pheromone features)
-for situation-dependent Shapley value analysis.
+for behavioral pattern analysis.
 
 K-means requires specifying the number of clusters (k) in advance and partitions
 data by minimizing within-cluster variance.
 
 Usage:
-    from src.interpretation.clustering.kmeans_clustering import cluster_sensor_states
+    # Find optimal number of clusters
+    PYTHONPATH=. uv run --extra cpu src/interpretation/clustering/kmeans_clustering.py \\
+        --data-path results/analysis/debug_data.pkl \\
+        --find-optimal-k \\
+        --k-range 2-20 \\
+        --output-dir results/clustering
 
-    dataset = load_dataset("path/to/samples.pkl")
-    result = cluster_sensor_states(dataset, n_clusters=10)
+    # Run clustering with known k
+    PYTHONPATH=. uv run --extra cpu src/interpretation/clustering/kmeans_clustering.py \\
+        --data-path results/analysis/debug_data.pkl \\
+        --n-clusters 9 \\
+        --output-dir results/clustering
+
+    # With video generation
+    PYTHONPATH=. uv run --extra cpu src/interpretation/clustering/kmeans_clustering.py \\
+        --data-path results/analysis/debug_data.pkl \\
+        --n-clusters 9 \\
+        --create-video \\
+        --video-with-stats \\
+        --output-dir results/clustering
+
+    # With filtering
+    PYTHONPATH=. uv run --extra cpu src/interpretation/clustering/kmeans_clustering.py \\
+        --data-path results/analysis/debug_data.pkl \\
+        --n-clusters 9 \\
+        --pheromone-threshold 0.1 \\
+        --sample-interval 2 \\
+        --output-dir results/clustering
 """
 
 import numpy as np
@@ -1026,8 +1050,19 @@ if __name__ == '__main__':
     parser.add_argument(
         '--n-clusters',
         type=int,
-        required=True,
-        help='Number of clusters for K-means'
+        default=None,
+        help='Number of clusters for K-means (required unless --find-optimal-k is used)'
+    )
+    parser.add_argument(
+        '--find-optimal-k',
+        action='store_true',
+        help='Find optimal number of clusters instead of clustering'
+    )
+    parser.add_argument(
+        '--k-range',
+        type=str,
+        default='2-20',
+        help='Range of k values to test for optimal k (format: "min-max", default: 2-20)'
     )
     parser.add_argument(
         '--experiment-id',
@@ -1106,6 +1141,56 @@ if __name__ == '__main__':
         output_dir = Path(args.output_dir)
 
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Find optimal k if requested
+    if args.find_optimal_k:
+        print(f"\n{'=' * 60}")
+        print("Finding Optimal Number of Clusters")
+        print(f"{'=' * 60}")
+
+        # Parse k range
+        k_min, k_max = map(int, args.k_range.split('-'))
+        k_range = range(k_min, k_max + 1)
+        print(f"Testing k from {k_min} to {k_max}")
+        print(f"{'=' * 60}\n")
+
+        k_metrics = find_optimal_k(dataset, k_range=k_range)
+
+        # Save metrics
+        metrics_path = output_dir / "optimal_k_metrics.txt"
+        with open(metrics_path, 'w') as f:
+            f.write("Optimal K Search Results\n")
+            f.write("========================\n\n")
+            for k in sorted(k_metrics.keys()):
+                f.write(f"k={k}:\n")
+                f.write(f"  Inertia: {k_metrics[k]['inertia']:.4f}\n")
+                f.write(f"  Silhouette: {k_metrics[k]['silhouette']:.4f}\n")
+                f.write(f"  Davies-Bouldin: {k_metrics[k]['davies_bouldin']:.4f}\n")
+                f.write(f"  Calinski-Harabasz: {k_metrics[k]['calinski_harabasz']:.4f}\n\n")
+
+        print(f"\nSaved metrics to: {metrics_path}")
+
+        # Visualize elbow curve
+        elbow_path = output_dir / "elbow_curve.png"
+        visualize_elbow_curve(k_metrics, save_path=elbow_path)
+
+        print(f"\n{'=' * 60}")
+        print("Optimal K Search Complete!")
+        print(f"{'=' * 60}")
+        print(f"Results saved to: {output_dir}")
+        print(f"  Metrics: {metrics_path.name}")
+        print(f"  Elbow curve: {elbow_path.name}")
+        print("\nRecommendations:")
+        print("  - Check elbow_curve.png for visual analysis")
+        print("  - Look for the 'elbow' in the inertia plot")
+        print("  - Higher silhouette score is better (closer to 1)")
+        print("  - Lower Davies-Bouldin index is better")
+        print("  - Higher Calinski-Harabasz index is better")
+        exit(0)
+
+    # Validate n_clusters
+    if args.n_clusters is None:
+        raise ValueError("--n-clusters is required unless --find-optimal-k is used")
 
     print(f"\n{'=' * 60}")
     print("K-means Clustering Configuration")
