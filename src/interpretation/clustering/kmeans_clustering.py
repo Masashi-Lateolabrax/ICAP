@@ -26,7 +26,7 @@ from sklearn.decomposition import PCA
 from sklearn.metrics import silhouette_score, davies_bouldin_score, calinski_harabasz_score
 import matplotlib.pyplot as plt
 
-from src.interpretation.data_collection.io_sample_definition import ShapleyDataset
+from src.interpretation.clustering.utils import RobotSensorSample
 
 
 @dataclass
@@ -49,23 +49,23 @@ class KMeansResult:
         return dict(zip(unique, counts))
 
 
-def extract_sensor_features(dataset: ShapleyDataset, normalize: bool = True) -> tuple[np.ndarray, list[str]]:
+def extract_sensor_features(dataset: list[RobotSensorSample], normalize: bool = True) -> tuple[np.ndarray, list[str]]:
     """
     Extract 6D sensor features (excluding pheromone).
 
     Args:
-        dataset: ShapleyDataset containing samples
+        dataset: List of RobotSensorSample containing samples
         normalize: Apply standardization (zero mean, unit variance)
 
     Returns:
         features: (n_samples, 6) array
         feature_names: List of 6 feature names
     """
-    if len(dataset.samples) == 0:
+    if len(dataset) == 0:
         raise ValueError("Dataset is empty")
 
     features_list = []
-    for sample in dataset.samples:
+    for sample in dataset:
         features_list.append([
             sample.robot_sensor[0],      # robot_sensor_x
             sample.robot_sensor[1],      # robot_sensor_y
@@ -91,7 +91,7 @@ def extract_sensor_features(dataset: ShapleyDataset, normalize: bool = True) -> 
 
 
 def cluster_sensor_states(
-    dataset: ShapleyDataset,
+    dataset: list[RobotSensorSample],
     n_clusters: int = 10,
     random_state: int = 42,
     max_iter: int = 300,
@@ -101,7 +101,7 @@ def cluster_sensor_states(
     Cluster sensor states using K-means.
 
     Args:
-        dataset: ShapleyDataset containing samples
+        dataset: List of RobotSensorSample containing samples
         n_clusters: Number of clusters to form
         random_state: Random seed for reproducibility
         max_iter: Maximum number of iterations
@@ -141,7 +141,7 @@ def cluster_sensor_states(
 
 
 def find_optimal_k(
-    dataset: ShapleyDataset,
+    dataset: list[RobotSensorSample],
     k_range: range = range(2, 21),
     random_state: int = 42
 ) -> dict[int, dict[str, float]]:
@@ -149,7 +149,7 @@ def find_optimal_k(
     Find optimal number of clusters using elbow method and quality metrics.
 
     Args:
-        dataset: ShapleyDataset containing samples
+        dataset: List of RobotSensorSample containing samples
         k_range: Range of k values to test
         random_state: Random seed for reproducibility
 
@@ -354,7 +354,7 @@ def load_clustering_result(input_path: Path) -> KMeansResult:
     return result
 
 
-def analyze_temporal_continuity(result: KMeansResult, dataset: ShapleyDataset) -> dict:
+def analyze_temporal_continuity(result: KMeansResult, dataset: list[RobotSensorSample]) -> dict:
     """
     Analyze temporal continuity within clusters to determine if clusters
     represent situations or time-periods.
@@ -364,7 +364,7 @@ def analyze_temporal_continuity(result: KMeansResult, dataset: ShapleyDataset) -
 
     Args:
         result: KMeansResult from cluster_sensor_states()
-        dataset: Original ShapleyDataset used for clustering
+        dataset: Original list of RobotSensorSample used for clustering
 
     Returns:
         Dictionary with temporal continuity analysis for each cluster
@@ -376,7 +376,7 @@ def analyze_temporal_continuity(result: KMeansResult, dataset: ShapleyDataset) -
         # Get samples in this cluster
         cluster_mask = (result.labels == cluster_id)
         cluster_indices = np.where(cluster_mask)[0]
-        cluster_samples = [dataset.samples[i] for i in cluster_indices]
+        cluster_samples = [dataset[i] for i in cluster_indices]
 
         # Group by robot
         robot_groups = {}
@@ -561,14 +561,14 @@ def analyze_cluster_distances(result: KMeansResult) -> dict:
     }
 
 
-def analyze_temporal_statistics(result: KMeansResult, dataset: ShapleyDataset) -> dict:
+def analyze_temporal_statistics(result: KMeansResult, dataset: list[RobotSensorSample]) -> dict:
     """
     Analyze temporal statistics for each cluster to check if clusters
     represent temporal segments.
 
     Args:
         result: KMeansResult from cluster_sensor_states()
-        dataset: Original ShapleyDataset used for clustering
+        dataset: Original list of RobotSensorSample used for clustering
 
     Returns:
         Dictionary with temporal statistics per cluster
@@ -579,7 +579,7 @@ def analyze_temporal_statistics(result: KMeansResult, dataset: ShapleyDataset) -
         # Get samples in this cluster
         cluster_mask = (result.labels == cluster_id)
         cluster_indices = np.where(cluster_mask)[0]
-        cluster_samples = [dataset.samples[i] for i in cluster_indices]
+        cluster_samples = [dataset[i] for i in cluster_indices]
 
         # Extract timesteps
         timesteps = np.array([s.timestep for s in cluster_samples])
@@ -713,13 +713,13 @@ def visualize_temporal_statistics(
     plt.close()
 
 
-def analyze_original_sensor_values(result: KMeansResult, dataset: ShapleyDataset) -> dict:
+def analyze_original_sensor_values(result: KMeansResult, dataset: list[RobotSensorSample]) -> dict:
     """
     Analyze original (non-standardized) sensor values for each cluster.
 
     Args:
         result: KMeansResult from cluster_sensor_states()
-        dataset: Original ShapleyDataset used for clustering
+        dataset: Original list of RobotSensorSample used for clustering
 
     Returns:
         Dictionary with original sensor statistics:
@@ -761,7 +761,7 @@ def analyze_original_sensor_values(result: KMeansResult, dataset: ShapleyDataset
         return stats
 
     # Global statistics
-    all_values = extract_values(dataset.samples)
+    all_values = extract_values(dataset)
     analysis = {
         'global': compute_stats(all_values)
     }
@@ -770,7 +770,7 @@ def analyze_original_sensor_values(result: KMeansResult, dataset: ShapleyDataset
     for cluster_id in range(result.n_clusters):
         cluster_mask = (result.labels == cluster_id)
         cluster_indices = np.where(cluster_mask)[0]
-        cluster_samples = [dataset.samples[i] for i in cluster_indices]
+        cluster_samples = [dataset[i] for i in cluster_indices]
 
         cluster_values = extract_values(cluster_samples)
         analysis[cluster_id] = compute_stats(cluster_values)
@@ -861,7 +861,7 @@ def visualize_original_sensor_distributions(
 
 def visualize_cluster_timeline(
     result: KMeansResult,
-    dataset: ShapleyDataset,
+    dataset: list[RobotSensorSample],
     save_path: Optional[Path] = None,
     figsize: tuple[int, int] = (16, 10)
 ):
@@ -873,13 +873,13 @@ def visualize_cluster_timeline(
 
     Args:
         result: KMeansResult from cluster_sensor_states()
-        dataset: Original ShapleyDataset used for clustering
+        dataset: Original list of RobotSensorSample used for clustering
         save_path: Path to save figure (None to display)
         figsize: Figure size
     """
     # Extract data for each sample
     data = []
-    for idx, sample in enumerate(dataset.samples):
+    for idx, sample in enumerate(dataset):
         data.append({
             'robot_index': sample.robot_index,
             'timestep': sample.timestep,
@@ -968,7 +968,7 @@ def visualize_cluster_timeline(
 
 def export_cluster_timeline_data(
     result: KMeansResult,
-    dataset: ShapleyDataset,
+    dataset: list[RobotSensorSample],
     output_path: Path
 ):
     """
@@ -976,7 +976,7 @@ def export_cluster_timeline_data(
 
     Args:
         result: KMeansResult from cluster_sensor_states()
-        dataset: Original ShapleyDataset used for clustering
+        dataset: Original list of RobotSensorSample used for clustering
         output_path: Path to save CSV file
     """
     import csv
@@ -987,7 +987,7 @@ def export_cluster_timeline_data(
         writer = csv.writer(f)
         writer.writerow(['sample_index', 'robot_index', 'timestep', 'time_seconds', 'cluster_id'])
 
-        for idx, sample in enumerate(dataset.samples):
+        for idx, sample in enumerate(dataset):
             writer.writerow([
                 idx,
                 sample.robot_index,
@@ -1078,13 +1078,13 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    # Load DebugData and convert to ShapleyDataset
+    # Load DebugData and convert to samples list
     data_path = Path(args.data_path)
     if not data_path.exists():
         raise FileNotFoundError(f"Data file not found: {data_path}")
 
     print(f"\n{'=' * 60}")
-    print("Loading and Converting DebugData to ShapleyDataset")
+    print("Loading and Converting DebugData to Sensor Samples")
     print(f"{'=' * 60}")
 
     debug_data = DebugData.load(data_path)
@@ -1097,9 +1097,7 @@ if __name__ == '__main__':
     )
 
     print(f"Conversion complete!")
-    print(f"  Total samples: {len(dataset.samples)}")
-    print(f"  Experiment: {dataset.experiment_id}")
-    print(f"  Generation: {dataset.generation}")
+    print(f"  Total samples: {len(dataset)}")
 
     # Set output directory
     if args.output_dir is None:

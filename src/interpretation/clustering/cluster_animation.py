@@ -35,7 +35,7 @@ import numpy as np
 import cv2
 
 from src.interpretation.clustering.kmeans_clustering import KMeansResult
-from src.interpretation.data_collection.io_sample_definition import ShapleyDataset
+from src.interpretation.clustering.utils import RobotSensorSample
 
 
 # Default rendering settings (can be overridden)
@@ -93,7 +93,7 @@ def get_cluster_color(cluster_id: int, n_clusters: int) -> tuple[int, int, int]:
 
 def create_cluster_animation(
     result: KMeansResult,
-    dataset: ShapleyDataset,
+    dataset: list[RobotSensorSample],
     output_path: Path,
     width: int = DEFAULT_WIDTH,
     height: int = DEFAULT_HEIGHT,
@@ -108,7 +108,7 @@ def create_cluster_animation(
 
     Args:
         result: KMeansResult from cluster_sensor_states()
-        dataset: Original ShapleyDataset used for clustering
+        dataset: Original list of RobotSensorSample used for clustering
         output_path: Path to save video file (mp4)
         width: Video width in pixels
         height: Video height in pixels
@@ -146,7 +146,7 @@ def create_cluster_animation(
     # Organize data by timestep
     print("Organizing data by timestep...")
     timestep_data = {}
-    for idx, sample in enumerate(dataset.samples):
+    for idx, sample in enumerate(dataset):
         ts = sample.timestep
         if ts not in timestep_data:
             timestep_data[ts] = []
@@ -256,7 +256,7 @@ def create_cluster_animation(
 
 def create_cluster_animation_with_stats(
     result: KMeansResult,
-    dataset: ShapleyDataset,
+    dataset: list[RobotSensorSample],
     output_path: Path,
     width: int = 1200,
     height: int = 800,
@@ -272,7 +272,7 @@ def create_cluster_animation_with_stats(
 
     Args:
         result: KMeansResult from cluster_sensor_states()
-        dataset: Original ShapleyDataset used for clustering
+        dataset: Original list of RobotSensorSample used for clustering
         output_path: Path to save video file (mp4)
         width: Total video width (simulation + stats panel)
         height: Video height
@@ -312,7 +312,7 @@ def create_cluster_animation_with_stats(
     # Organize data by timestep
     print("Organizing data by timestep...")
     timestep_data = {}
-    for idx, sample in enumerate(dataset.samples):
+    for idx, sample in enumerate(dataset):
         ts = sample.timestep
         if ts not in timestep_data:
             timestep_data[ts] = []
@@ -391,7 +391,7 @@ def create_cluster_animation_with_stats(
 
         y_offset += 30
         cv2.putText(
-            buffer, f"Total: {len(dataset.samples)} samples",
+            buffer, f"Total: {len(dataset)} samples",
             (stats_x, y_offset),
             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1
         )
@@ -443,7 +443,7 @@ def create_cluster_animation_with_stats(
 
         for cid in range(result.n_clusters):
             size = cluster_sizes[cid]
-            percentage = 100 * size / len(dataset.samples)
+            percentage = 100 * size / len(dataset)
             color = get_cluster_color(cid, result.n_clusters)
 
             # Draw color box
@@ -499,7 +499,7 @@ if __name__ == '__main__':
         '--dataset',
         type=str,
         required=True,
-        help='Path to ShapleyDataset pickle file used for clustering'
+        help='Path to RobotSensorSample list pickle file used for clustering'
     )
     parser.add_argument(
         '--output',
@@ -581,7 +581,7 @@ if __name__ == '__main__':
     print("Generating Cluster Animation")
     print(f"{'=' * 60}")
     print(f"Clusters: {result.n_clusters}")
-    print(f"Samples: {len(dataset.samples)}")
+    print(f"Samples: {len(dataset)}")
     print(f"Output: {output_path}")
     print(f"FPS: {args.fps}")
     print(f"With stats: {args.with_stats}")

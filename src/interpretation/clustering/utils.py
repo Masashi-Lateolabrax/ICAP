@@ -4,16 +4,46 @@ Utility functions for clustering analysis.
 This module provides common utility functions used across clustering modules.
 """
 
+from dataclasses import dataclass
 from typing import Optional
 import numpy as np
 import pickle
 from pathlib import Path
 
 from src.analysis_mod.structure.debug_data import DebugData
-from src.interpretation.data_collection.io_sample_definition import (
-    ShapleyInputSample,
-    ShapleyDataset,
-)
+
+
+@dataclass
+class RobotSensorSample:
+    """Single sample of robot sensor data for clustering analysis.
+
+    This captures robot sensor inputs at a specific timestep for analyzing
+    behavioral patterns through clustering.
+    """
+    # Time information
+    timestep: int
+    time_seconds: float
+
+    # Robot identification
+    robot_index: int
+
+    # Full input vector (9 dimensions)
+    full_input: np.ndarray  # Shape: (9,)
+
+    # Decomposed sensor inputs
+    robot_sensor: np.ndarray       # Shape: (2,) - PreprocessedOmniSensor for robots
+    food_sensor: np.ndarray        # Shape: (2,) - PreprocessedOmniSensor for food
+    direction_sensor: np.ndarray   # Shape: (2,) - DirectionSensor to nest
+    pheromone_magnitude: float     # Scalar - normalized pheromone concentration
+    pheromone_grad_forward: float  # Scalar - gradient in forward direction
+    pheromone_grad_side: float     # Scalar - gradient in sideways direction
+
+    # Network output for context
+    network_output: np.ndarray     # Shape: (3,) - [right_wheel, left_wheel, pheromone_secretion]
+
+    # Additional context
+    robot_position: np.ndarray     # Shape: (2,) - (x, y)
+    robot_direction: np.ndarray    # Shape: (2,) - unit vector
 
 
 def convert_debug_data_to_dataset(
@@ -22,19 +52,19 @@ def convert_debug_data_to_dataset(
     generation: int = 0,
     timestep_offset: int = 0,
     time_step: float = 0.01
-) -> ShapleyDataset:
+) -> list[RobotSensorSample]:
     """
-    Convert DebugData list to ShapleyDataset for clustering analysis.
+    Convert DebugData list to list of RobotSensorSample for clustering analysis.
 
     Args:
         debug_data: List of DebugData from analysis run
-        experiment_id: Experiment identifier (default: "debug_analysis")
-        generation: Generation number (default: 0)
+        experiment_id: Experiment identifier (not used, kept for compatibility)
+        generation: Generation number (not used, kept for compatibility)
         timestep_offset: Starting timestep number (default: 0)
         time_step: Simulation time step in seconds (default: 0.01)
 
     Returns:
-        ShapleyDataset ready for clustering
+        List of RobotSensorSample ready for clustering
 
     Note:
         DebugData.robot_inputs format (9 dimensions per robot):
@@ -72,7 +102,7 @@ def convert_debug_data_to_dataset(
             robot_direction = frame.robot_directions[robot_idx][:2]  # unit vector
 
             # Create sample
-            sample = ShapleyInputSample(
+            sample = RobotSensorSample(
                 timestep=timestep,
                 time_seconds=time_seconds,
                 robot_index=robot_idx,
@@ -90,14 +120,7 @@ def convert_debug_data_to_dataset(
 
             samples.append(sample)
 
-    # Create dataset
-    dataset = ShapleyDataset(
-        experiment_id=experiment_id,
-        generation=generation,
-        samples=samples,
-    )
-
-    return dataset
+    return samples
 
 
 def convert_debug_data_to_dataset_filtered(
@@ -108,21 +131,21 @@ def convert_debug_data_to_dataset_filtered(
     time_step: float = 0.01,
     pheromone_threshold: float = 0.0,
     sample_interval: int = 1
-) -> ShapleyDataset:
+) -> list[RobotSensorSample]:
     """
-    Convert DebugData to ShapleyDataset with filtering options.
+    Convert DebugData to list of RobotSensorSample with filtering options.
 
     Args:
         debug_data: List of DebugData from analysis run
-        experiment_id: Experiment identifier
-        generation: Generation number
+        experiment_id: Experiment identifier (not used, kept for compatibility)
+        generation: Generation number (not used, kept for compatibility)
         timestep_offset: Starting timestep number
-        time_step: Simulation time step in seconds
+        time_step: Simulation time step in seconds (not used, kept for compatibility)
         pheromone_threshold: Only include samples with pheromone >= threshold
         sample_interval: Only include every Nth timestep (1 = all, 2 = every other, etc.)
 
     Returns:
-        ShapleyDataset with filtered samples
+        List of RobotSensorSample with filtered samples
     """
     samples = []
 
@@ -173,13 +196,7 @@ def convert_debug_data_to_dataset_filtered(
 
             samples.append(sample)
 
-    dataset = ShapleyDataset(
-        experiment_id=experiment_id,
-        generation=generation,
-        samples=samples,
-    )
-
-    return dataset
+    return samples
 
 
 def save_debug_data_as_dataset(
@@ -190,17 +207,17 @@ def save_debug_data_as_dataset(
     **kwargs
 ):
     """
-    Convert DebugData and save as ShapleyDataset pickle file.
+    Convert DebugData and save as list of RobotSensorSample pickle file.
 
     Args:
         debug_data: List of DebugData from analysis run
         output_path: Path to save pickle file
-        experiment_id: Experiment identifier
-        generation: Generation number
+        experiment_id: Experiment identifier (not used, kept for compatibility)
+        generation: Generation number (not used, kept for compatibility)
         **kwargs: Additional arguments passed to convert_debug_data_to_dataset_filtered
     """
-    # Convert to dataset (use filtered version for flexibility)
-    dataset = convert_debug_data_to_dataset_filtered(
+    # Convert to samples list
+    samples = convert_debug_data_to_dataset_filtered(
         debug_data,
         experiment_id=experiment_id,
         generation=generation,
@@ -212,9 +229,7 @@ def save_debug_data_as_dataset(
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     with open(output_path, 'wb') as f:
-        pickle.dump(dataset, f)
+        pickle.dump(samples, f)
 
     print(f"Saved dataset to: {output_path}")
-    print(f"  Total samples: {len(dataset.samples)}")
-    print(f"  Experiment: {dataset.experiment_id}")
-    print(f"  Generation: {dataset.generation}")
+    print(f"  Total samples: {len(samples)}")
