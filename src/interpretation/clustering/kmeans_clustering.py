@@ -1113,6 +1113,10 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    # Validate arguments
+    if not args.find_optimal_k and args.n_clusters is None:
+        parser.error("--n-clusters is required unless --find-optimal-k is used")
+
     # Load DebugData and convert to samples list
     data_path = Path(args.data_path)
     if not data_path.exists():
