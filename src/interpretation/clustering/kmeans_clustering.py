@@ -997,3 +997,208 @@ def export_cluster_timeline_data(
             ])
 
     print(f"Saved cluster timeline data to: {output_path}")
+
+
+# ==============================================================================
+# CLI Interface
+# ==============================================================================
+
+if __name__ == '__main__':
+    import argparse
+    from pathlib import Path
+    from src.analysis_mod.structure.debug_data import DebugData
+    from src.interpretation.clustering.utils import convert_debug_data_to_dataset_filtered
+    from src.interpretation.clustering.cluster_animation import (
+        create_cluster_animation,
+        create_cluster_animation_with_stats,
+    )
+
+    parser = argparse.ArgumentParser(
+        description='Run K-means clustering on sensor states from DebugData'
+    )
+
+    parser.add_argument(
+        '--data-path',
+        type=str,
+        required=True,
+        help='Path to DebugData pickle file'
+    )
+    parser.add_argument(
+        '--n-clusters',
+        type=int,
+        required=True,
+        help='Number of clusters for K-means'
+    )
+    parser.add_argument(
+        '--experiment-id',
+        type=str,
+        default='debug_analysis',
+        help='Experiment identifier (default: debug_analysis)'
+    )
+    parser.add_argument(
+        '--generation',
+        type=int,
+        default=0,
+        help='Generation number (default: 0)'
+    )
+    parser.add_argument(
+        '--pheromone-threshold',
+        type=float,
+        default=0.0,
+        help='Only include samples with pheromone >= threshold (default: 0.0)'
+    )
+    parser.add_argument(
+        '--sample-interval',
+        type=int,
+        default=1,
+        help='Only include every Nth timestep (default: 1 = all frames)'
+    )
+    parser.add_argument(
+        '--output-dir',
+        type=str,
+        default=None,
+        help='Output directory (default: same as data-path directory)'
+    )
+    parser.add_argument(
+        '--create-video',
+        action='store_true',
+        help='Create cluster animation video'
+    )
+    parser.add_argument(
+        '--video-fps',
+        type=int,
+        default=30,
+        help='Video frame rate (default: 30)'
+    )
+    parser.add_argument(
+        '--video-with-stats',
+        action='store_true',
+        help='Create video with statistics panel'
+    )
+
+    args = parser.parse_args()
+
+    # Load DebugData and convert to ShapleyDataset
+    data_path = Path(args.data_path)
+    if not data_path.exists():
+        raise FileNotFoundError(f"Data file not found: {data_path}")
+
+    print(f"\n{'=' * 60}")
+    print("Loading and Converting DebugData to ShapleyDataset")
+    print(f"{'=' * 60}")
+
+    debug_data = DebugData.load(data_path)
+    dataset = convert_debug_data_to_dataset_filtered(
+        debug_data,
+        experiment_id=args.experiment_id,
+        generation=args.generation,
+        pheromone_threshold=args.pheromone_threshold,
+        sample_interval=args.sample_interval
+    )
+
+    print(f"Conversion complete!")
+    print(f"  Total samples: {len(dataset.samples)}")
+    print(f"  Experiment: {dataset.experiment_id}")
+    print(f"  Generation: {dataset.generation}")
+
+    # Set output directory
+    if args.output_dir is None:
+        output_dir = data_path.parent / "clustering"
+    else:
+        output_dir = Path(args.output_dir)
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    print(f"\n{'=' * 60}")
+    print("K-means Clustering Configuration")
+    print(f"{'=' * 60}")
+    print(f"Number of clusters: {args.n_clusters}")
+    print(f"Features: 6D sensor states (robot, food, direction)")
+    print(f"Output directory: {output_dir}")
+    print(f"{'=' * 60}")
+
+    # Perform clustering
+    print("\nRunning K-means clustering...")
+    result = cluster_sensor_states(dataset, n_clusters=args.n_clusters)
+
+    print(f"\nClustering complete!")
+    print(f"  Inertia: {result.inertia:.4f}")
+    print(f"  Silhouette score: {result.silhouette:.4f}")
+
+    # Print cluster sizes
+    cluster_sizes = result.get_cluster_sizes()
+    print("\nCluster sizes:")
+    for cluster_id, size in sorted(cluster_sizes.items()):
+        print(f"  Cluster {cluster_id}: {size} samples ({100*size/len(result.labels):.1f}%)")
+
+    # Get cluster statistics
+    print("\nComputing cluster statistics...")
+    stats = get_cluster_statistics(result)
+
+    # Save statistics
+    stats_path = output_dir / "cluster_stats.txt"
+    with open(stats_path, 'w') as f:
+        f.write(f"K-means Clustering Results\n")
+        f.write(f"==========================\n")
+        f.write(f"Number of clusters: {args.n_clusters}\n")
+        f.write(f"Inertia: {result.inertia:.4f}\n")
+        f.write(f"Silhouette score: {result.silhouette:.4f}\n\n")
+
+        for cluster_id, cluster_stats in stats.items():
+            f.write(f"\nCluster {cluster_id}:\n")
+            f.write(f"  Size: {cluster_stats['size']}\n")
+            f.write(f"  Silhouette: {cluster_stats['silhouette']:.4f}\n")
+            f.write(f"  Feature means:\n")
+            for feature_name, mean_val in cluster_stats['feature_means'].items():
+                f.write(f"    {feature_name}: {mean_val:.4f}\n")
+
+    print(f"Saved statistics to: {stats_path}")
+
+    # Visualize clusters
+    print("\nGenerating visualizations...")
+    viz_2d_path = output_dir / "clusters_2d.png"
+    visualize_clusters(result, save_path=viz_2d_path)
+
+    # Analyze and visualize original sensor distributions
+    sensor_dist_path = output_dir / "sensor_distributions.png"
+    original_stats = analyze_original_sensor_values(result, dataset)
+    visualize_original_sensor_distributions(original_stats, save_path=sensor_dist_path)
+
+    # Visualize cluster timeline
+    timeline_path = output_dir / "cluster_timeline.png"
+    visualize_cluster_timeline(result, dataset, save_path=timeline_path)
+
+    # Export cluster timeline data
+    timeline_csv_path = output_dir / "cluster_timeline.csv"
+    export_cluster_timeline_data(result, dataset, timeline_csv_path)
+
+    # Save clustering results
+    results_path = output_dir / "clustering_result.pkl"
+    save_clustering_result(result, results_path)
+
+    # Create video if requested
+    video_path = None
+    if args.create_video:
+        print(f"\n{'=' * 60}")
+        print("Generating Cluster Animation Video")
+        print(f"{'=' * 60}")
+
+        if args.video_with_stats:
+            video_path = output_dir / 'cluster_animation_with_stats.mp4'
+            create_cluster_animation_with_stats(result, dataset, video_path, fps=args.video_fps)
+        else:
+            video_path = output_dir / 'cluster_animation.mp4'
+            create_cluster_animation(result, dataset, video_path, fps=args.video_fps)
+
+    print(f"\n{'=' * 60}")
+    print("Clustering analysis complete!")
+    print(f"{'=' * 60}")
+    print(f"\nResults saved to: {output_dir}")
+    print(f"  Statistics: {stats_path.name}")
+    print(f"  2D Visualization: {viz_2d_path.name}")
+    print(f"  Sensor Distributions: {sensor_dist_path.name}")
+    print(f"  Cluster Timeline: {timeline_path.name}")
+    print(f"  Timeline CSV: {timeline_csv_path.name}")
+    print(f"  Clustering result: {results_path.name}")
+    if video_path is not None:
+        print(f"  Video: {video_path.name}")
