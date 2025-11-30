@@ -711,3 +711,149 @@ def visualize_temporal_statistics(
         plt.show()
 
     plt.close()
+
+
+def analyze_original_sensor_values(result: KMeansResult, dataset: ShapleyDataset) -> dict:
+    """
+    Analyze original (non-standardized) sensor values for each cluster.
+
+    Args:
+        result: KMeansResult from cluster_sensor_states()
+        dataset: Original ShapleyDataset used for clustering
+
+    Returns:
+        Dictionary with original sensor statistics:
+        - 'global': Statistics for all data
+        - cluster_id: Statistics for each cluster
+          Each contains: mean, std, min, max, median for all 6 features
+    """
+    feature_names = [
+        'robot_sensor[0]',
+        'robot_sensor[1]',
+        'food_sensor[0]',
+        'food_sensor[1]',
+        'direction_sensor[0]',
+        'direction_sensor[1]'
+    ]
+
+    # Extract all original values
+    def extract_values(samples):
+        return {
+            'robot_sensor[0]': np.array([s.robot_sensor[0] for s in samples]),
+            'robot_sensor[1]': np.array([s.robot_sensor[1] for s in samples]),
+            'food_sensor[0]': np.array([s.food_sensor[0] for s in samples]),
+            'food_sensor[1]': np.array([s.food_sensor[1] for s in samples]),
+            'direction_sensor[0]': np.array([s.direction_sensor[0] for s in samples]),
+            'direction_sensor[1]': np.array([s.direction_sensor[1] for s in samples]),
+        }
+
+    def compute_stats(values_dict):
+        stats = {}
+        for feature_name in feature_names:
+            values = values_dict[feature_name]
+            stats[feature_name] = {
+                'mean': float(np.mean(values)),
+                'std': float(np.std(values)),
+                'min': float(np.min(values)),
+                'max': float(np.max(values)),
+                'median': float(np.median(values)),
+            }
+        return stats
+
+    # Global statistics
+    all_values = extract_values(dataset.samples)
+    analysis = {
+        'global': compute_stats(all_values)
+    }
+
+    # Per-cluster statistics
+    for cluster_id in range(result.n_clusters):
+        cluster_mask = (result.labels == cluster_id)
+        cluster_indices = np.where(cluster_mask)[0]
+        cluster_samples = [dataset.samples[i] for i in cluster_indices]
+
+        cluster_values = extract_values(cluster_samples)
+        analysis[cluster_id] = compute_stats(cluster_values)
+
+    return analysis
+
+
+def visualize_original_sensor_distributions(
+    original_stats: dict,
+    save_path: Optional[Path] = None,
+    figsize: tuple[int, int] = (14, 10)
+):
+    """
+    Visualize original sensor value distributions across clusters.
+
+    Args:
+        original_stats: Output from analyze_original_sensor_values()
+        save_path: Path to save figure (None to display)
+        figsize: Figure size
+    """
+    feature_names = [
+        'robot_sensor[0]',
+        'robot_sensor[1]',
+        'food_sensor[0]',
+        'food_sensor[1]',
+        'direction_sensor[0]',
+        'direction_sensor[1]'
+    ]
+
+    # Get cluster IDs (excluding 'global')
+    cluster_ids = sorted([k for k in original_stats.keys() if k != 'global'])
+
+    fig, axes = plt.subplots(2, 3, figsize=figsize)
+    axes = axes.flatten()
+
+    for feat_idx, feature_name in enumerate(feature_names):
+        ax = axes[feat_idx]
+
+        # Prepare data for box plot
+        data = []
+        labels = []
+        for cluster_id in cluster_ids:
+            stats = original_stats[cluster_id][feature_name]
+            # Create synthetic data points for box plot representation
+            # Using mean, std, min, max, median
+            data.append([
+                stats['min'],
+                stats['mean'] - stats['std'],
+                stats['median'],
+                stats['mean'] + stats['std'],
+                stats['max']
+            ])
+            labels.append(f'C{cluster_id}')
+
+        # Plot box-like representation
+        positions = range(len(cluster_ids))
+        for i, (cluster_id, cluster_data) in enumerate(zip(cluster_ids, data)):
+            stats = original_stats[cluster_id][feature_name]
+            # Plot as error bar
+            ax.errorbar(i, stats['mean'], yerr=stats['std'],
+                       fmt='o', capsize=5, markersize=6, alpha=0.7)
+            # Plot min/max range
+            ax.plot([i, i], [stats['min'], stats['max']], 'k-', alpha=0.3, linewidth=1)
+
+        # Add global mean as reference line
+        global_mean = original_stats['global'][feature_name]['mean']
+        ax.axhline(y=global_mean, color='red', linestyle='--', linewidth=1,
+                  alpha=0.5, label='Global mean')
+
+        ax.set_xticks(positions)
+        ax.set_xticklabels(labels, rotation=45, ha='right')
+        ax.set_ylabel('Value')
+        ax.set_title(feature_name)
+        ax.grid(alpha=0.3, axis='y')
+        if feat_idx == 0:
+            ax.legend(fontsize=8)
+
+    plt.tight_layout()
+
+    if save_path:
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        print(f"Saved original sensor distributions to: {save_path}")
+    else:
+        plt.show()
+
+    plt.close()
