@@ -1145,7 +1145,6 @@ if __name__ == '__main__':
         for cluster_id, cluster_stats in stats.items():
             f.write(f"\nCluster {cluster_id}:\n")
             f.write(f"  Size: {cluster_stats['size']}\n")
-            f.write(f"  Silhouette: {cluster_stats['silhouette']:.4f}\n")
             f.write(f"  Feature means:\n")
             for feature_name, mean_val in cluster_stats['feature_means'].items():
                 f.write(f"    {feature_name}: {mean_val:.4f}\n")
