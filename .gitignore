@@ -3,6 +3,8 @@
 /.run
 /data/
 /.serena
+/docs/
+/results/
 
 /report.md
 /poetry.toml
