@@ -5,55 +5,26 @@ This module creates videos visualizing how robots transition between clusters
 during the simulation, similar to input_anime.py but colored by cluster ID.
 
 Usage:
+    # Basic animation
+    PYTHONPATH=. uv run --extra cpu src/interpretation/clustering/cluster_animation.py \\
+        --clustering-result results/clustering/clustering_result.pkl \\
+        --dataset results/clustering/dataset.pkl \\
+        --output cluster_animation.mp4
 
-    CLI (Command Line):
-        # Basic animation
-        PYTHONPATH=. uv run --extra cpu src/interpretation/clustering/cluster_animation.py \\
-            --clustering-result results/clustering/clustering_result.pkl \\
-            --dataset results/clustering/dataset.pkl \\
-            --output cluster_animation.mp4
+    # With statistics panel
+    PYTHONPATH=. uv run --extra cpu src/interpretation/clustering/cluster_animation.py \\
+        --clustering-result results/clustering/clustering_result.pkl \\
+        --dataset results/clustering/dataset.pkl \\
+        --output cluster_animation.mp4 \\
+        --with-stats --fps 60
 
-        # With statistics panel
-        PYTHONPATH=. uv run --extra cpu src/interpretation/clustering/cluster_animation.py \\
-            --clustering-result results/clustering/clustering_result.pkl \\
-            --dataset results/clustering/dataset.pkl \\
-            --output cluster_animation.mp4 \\
-            --with-stats --fps 60
-
-        # Custom video settings
-        PYTHONPATH=. uv run --extra cpu src/interpretation/clustering/cluster_animation.py \\
-            --clustering-result results/clustering/clustering_result.pkl \\
-            --dataset results/clustering/dataset.pkl \\
-            --output cluster_animation.mp4 \\
-            --width 1920 --height 1080 --fps 60 \\
-            --no-arrows --no-cluster-info
-
-    Python API:
-        from src.analysis_mod.structure.debug_data import DebugData
-        from src.interpretation.clustering.kmeans_clustering import cluster_sensor_states
-        from src.interpretation.clustering.utils import convert_debug_data_to_dataset_filtered
-        from src.interpretation.clustering.cluster_animation import create_cluster_animation
-
-        # Load debug data
-        debug_data = DebugData.load("results/analysis/debug_data.pkl")
-
-        # Convert to dataset
-        dataset = convert_debug_data_to_dataset_filtered(debug_data)
-
-        # Perform clustering
-        result = cluster_sensor_states(dataset, n_clusters=9)
-
-        # Create animation
-        create_cluster_animation(result, dataset, "cluster_animation.mp4")
-
-        # Or with statistics panel
-        from src.interpretation.clustering.cluster_animation import create_cluster_animation_with_stats
-        create_cluster_animation_with_stats(
-            result,
-            dataset,
-            "cluster_animation_with_stats.mp4",
-            fps=30
-        )
+    # Custom video settings
+    PYTHONPATH=. uv run --extra cpu src/interpretation/clustering/cluster_animation.py \\
+        --clustering-result results/clustering/clustering_result.pkl \\
+        --dataset results/clustering/dataset.pkl \\
+        --output cluster_animation.mp4 \\
+        --width 1920 --height 1080 --fps 60 \\
+        --no-arrows --no-cluster-info
 """
 
 import time
