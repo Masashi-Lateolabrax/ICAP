@@ -380,18 +380,18 @@ def main():
 
         # Print global statistics
         print(f"\nGlobal Statistics (all data):")
-        for feature_name in ['robot_sensor[0]', 'robot_sensor[1]', 'food_sensor[0]',
-                            'food_sensor[1]', 'direction_sensor[0]', 'direction_sensor[1]']:
+        for feature_name in ['robot_sensor[magnitude]', 'robot_sensor[angle]', 'food_sensor[magnitude]',
+                            'food_sensor[angle]', 'direction_sensor[magnitude]', 'direction_sensor[angle]']:
             stats = original_stats['global'][feature_name]
-            print(f"  {feature_name:20s}: mean={stats['mean']:6.3f}, std={stats['std']:6.3f}, "
+            print(f"  {feature_name:30s}: mean={stats['mean']:6.3f}, std={stats['std']:6.3f}, "
                   f"min={stats['min']:6.3f}, max={stats['max']:6.3f}")
 
-        # Print key insights for direction_sensor[0]
-        print(f"\nKey Insight - direction_sensor[0] (distance to nest):")
-        print(f"{'Cluster':>8} {'Mean':>8} {'Std':>8} {'Min':>8} {'Max':>8} {'Interpretation':>20}")
-        print('-' * 70)
+        # Print key insights for direction_sensor[magnitude]
+        print(f"\nKey Insight - direction_sensor[magnitude] (distance to nest):")
+        print(f"{'Cluster':>8} {'Mean':>8} {'Std':>8} {'Min':>8} {'Max':>8} {'Interpretation':>25}")
+        print('-' * 80)
         for cluster_id in sorted([k for k in original_stats.keys() if k != 'global']):
-            stats = original_stats[cluster_id]['direction_sensor[0]']
+            stats = original_stats[cluster_id]['direction_sensor[magnitude]']
             if stats['max'] < 1.0:
                 interpretation = "Inside nest"
             elif stats['min'] >= 1.0:
@@ -399,7 +399,7 @@ def main():
             else:
                 interpretation = "Mixed (crosses boundary)"
             print(f"{cluster_id:>8} {stats['mean']:>8.3f} {stats['std']:>8.3f} "
-                  f"{stats['min']:>8.3f} {stats['max']:>8.3f} {interpretation:>20}")
+                  f"{stats['min']:>8.3f} {stats['max']:>8.3f} {interpretation:>25}")
 
         # Save original sensor statistics
         original_stats_path = output_dir / 'original_sensor_stats.txt'
@@ -409,11 +409,11 @@ def main():
 
             # Global statistics
             f.write("Global Statistics (all data):\n")
-            f.write('-' * 60 + '\n')
-            for feature_name in ['robot_sensor[0]', 'robot_sensor[1]', 'food_sensor[0]',
-                                'food_sensor[1]', 'direction_sensor[0]', 'direction_sensor[1]']:
+            f.write('-' * 80 + '\n')
+            for feature_name in ['robot_sensor[magnitude]', 'robot_sensor[angle]', 'food_sensor[magnitude]',
+                                'food_sensor[angle]', 'direction_sensor[magnitude]', 'direction_sensor[angle]']:
                 stats = original_stats['global'][feature_name]
-                f.write(f"{feature_name:20s}: mean={stats['mean']:7.4f}, std={stats['std']:7.4f}, "
+                f.write(f"{feature_name:30s}: mean={stats['mean']:7.4f}, std={stats['std']:7.4f}, "
                        f"min={stats['min']:7.4f}, max={stats['max']:7.4f}, median={stats['median']:7.4f}\n")
             f.write('\n')
 
@@ -421,11 +421,11 @@ def main():
             for cluster_id in sorted([k for k in original_stats.keys() if k != 'global']):
                 cluster_size = result.get_cluster_sizes()[cluster_id]
                 f.write(f"Cluster {cluster_id} (n={cluster_size}):\n")
-                f.write('-' * 60 + '\n')
-                for feature_name in ['robot_sensor[0]', 'robot_sensor[1]', 'food_sensor[0]',
-                                    'food_sensor[1]', 'direction_sensor[0]', 'direction_sensor[1]']:
+                f.write('-' * 80 + '\n')
+                for feature_name in ['robot_sensor[magnitude]', 'robot_sensor[angle]', 'food_sensor[magnitude]',
+                                    'food_sensor[angle]', 'direction_sensor[magnitude]', 'direction_sensor[angle]']:
                     stats = original_stats[cluster_id][feature_name]
-                    f.write(f"  {feature_name:20s}: mean={stats['mean']:7.4f}, std={stats['std']:7.4f}, "
+                    f.write(f"  {feature_name:30s}: mean={stats['mean']:7.4f}, std={stats['std']:7.4f}, "
                            f"min={stats['min']:7.4f}, max={stats['max']:7.4f}, median={stats['median']:7.4f}\n")
                 f.write('\n')
 

@@ -76,9 +76,9 @@ def extract_sensor_features(dataset: ShapleyDataset, normalize: bool = True) -> 
         ])
 
     feature_names = [
-        'robot_sensor_x', 'robot_sensor_y',
-        'food_sensor_x', 'food_sensor_y',
-        'direction_sensor_x', 'direction_sensor_y'
+        'robot_sensor[magnitude]', 'robot_sensor[angle]',
+        'food_sensor[magnitude]', 'food_sensor[angle]',
+        'direction_sensor[magnitude]', 'direction_sensor[angle]'
     ]
 
     features = np.array(features_list)
@@ -728,23 +728,23 @@ def analyze_original_sensor_values(result: KMeansResult, dataset: ShapleyDataset
           Each contains: mean, std, min, max, median for all 6 features
     """
     feature_names = [
-        'robot_sensor[0]',
-        'robot_sensor[1]',
-        'food_sensor[0]',
-        'food_sensor[1]',
-        'direction_sensor[0]',
-        'direction_sensor[1]'
+        'robot_sensor[magnitude]',
+        'robot_sensor[angle]',
+        'food_sensor[magnitude]',
+        'food_sensor[angle]',
+        'direction_sensor[magnitude]',
+        'direction_sensor[angle]'
     ]
 
     # Extract all original values
     def extract_values(samples):
         return {
-            'robot_sensor[0]': np.array([s.robot_sensor[0] for s in samples]),
-            'robot_sensor[1]': np.array([s.robot_sensor[1] for s in samples]),
-            'food_sensor[0]': np.array([s.food_sensor[0] for s in samples]),
-            'food_sensor[1]': np.array([s.food_sensor[1] for s in samples]),
-            'direction_sensor[0]': np.array([s.direction_sensor[0] for s in samples]),
-            'direction_sensor[1]': np.array([s.direction_sensor[1] for s in samples]),
+            'robot_sensor[magnitude]': np.array([s.robot_sensor[0] for s in samples]),
+            'robot_sensor[angle]': np.array([s.robot_sensor[1] for s in samples]),
+            'food_sensor[magnitude]': np.array([s.food_sensor[0] for s in samples]),
+            'food_sensor[angle]': np.array([s.food_sensor[1] for s in samples]),
+            'direction_sensor[magnitude]': np.array([s.direction_sensor[0] for s in samples]),
+            'direction_sensor[angle]': np.array([s.direction_sensor[1] for s in samples]),
         }
 
     def compute_stats(values_dict):
@@ -792,12 +792,12 @@ def visualize_original_sensor_distributions(
         figsize: Figure size
     """
     feature_names = [
-        'robot_sensor[0]',
-        'robot_sensor[1]',
-        'food_sensor[0]',
-        'food_sensor[1]',
-        'direction_sensor[0]',
-        'direction_sensor[1]'
+        'robot_sensor[magnitude]',
+        'robot_sensor[angle]',
+        'food_sensor[magnitude]',
+        'food_sensor[angle]',
+        'direction_sensor[magnitude]',
+        'direction_sensor[angle]'
     ]
 
     # Get cluster IDs (excluding 'global')
