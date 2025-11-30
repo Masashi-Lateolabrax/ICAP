@@ -1,25 +1,13 @@
 """
-Convert DebugData from analysis to ShapleyDataset for clustering.
+Utility functions for clustering analysis.
 
-This module provides conversion utilities to transform debug data collected
-during analysis runs into the ShapleyDataset format used for clustering.
-
-Usage:
-    from src.analysis_mod.for_individual.run import record
-    from src.interpretation.clustering.convert_debug_data import convert_debug_data_to_dataset
-
-    # Run analysis and collect debug data
-    debug_data = record(settings, simulator, "output.mp4")
-
-    # Convert to clustering format
-    dataset = convert_debug_data_to_dataset(debug_data, experiment_id="test", generation=0)
-
-    # Run clustering
-    result = cluster_sensor_states(dataset, n_clusters=9)
+This module provides common utility functions used across clustering modules.
 """
 
 from typing import Optional
 import numpy as np
+import pickle
+from pathlib import Path
 
 from src.analysis_mod.structure.debug_data import DebugData
 from src.interpretation.data_collection.io_sample_definition import (
@@ -211,9 +199,6 @@ def save_debug_data_as_dataset(
         generation: Generation number
         **kwargs: Additional arguments passed to convert_debug_data_to_dataset_filtered
     """
-    import pickle
-    from pathlib import Path
-
     # Convert to dataset (use filtered version for flexibility)
     dataset = convert_debug_data_to_dataset_filtered(
         debug_data,

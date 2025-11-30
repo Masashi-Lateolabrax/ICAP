@@ -36,7 +36,7 @@ import argparse
 import pickle
 from pathlib import Path
 
-from src.interpretation.clustering.convert_debug_data import (
+from src.interpretation.clustering.utils import (
     convert_debug_data_to_dataset_filtered,
 )
 
