@@ -5,10 +5,55 @@ This module creates videos visualizing how robots transition between clusters
 during the simulation, similar to input_anime.py but colored by cluster ID.
 
 Usage:
-    from src.interpretation.clustering.cluster_animation import create_cluster_animation
 
-    result = cluster_sensor_states(dataset, n_clusters=9)
-    create_cluster_animation(result, dataset, "cluster_animation.mp4")
+    CLI (Command Line):
+        # Basic animation
+        PYTHONPATH=. uv run --extra cpu src/interpretation/clustering/cluster_animation.py \\
+            --clustering-result results/clustering/clustering_result.pkl \\
+            --dataset results/clustering/dataset.pkl \\
+            --output cluster_animation.mp4
+
+        # With statistics panel
+        PYTHONPATH=. uv run --extra cpu src/interpretation/clustering/cluster_animation.py \\
+            --clustering-result results/clustering/clustering_result.pkl \\
+            --dataset results/clustering/dataset.pkl \\
+            --output cluster_animation.mp4 \\
+            --with-stats --fps 60
+
+        # Custom video settings
+        PYTHONPATH=. uv run --extra cpu src/interpretation/clustering/cluster_animation.py \\
+            --clustering-result results/clustering/clustering_result.pkl \\
+            --dataset results/clustering/dataset.pkl \\
+            --output cluster_animation.mp4 \\
+            --width 1920 --height 1080 --fps 60 \\
+            --no-arrows --no-cluster-info
+
+    Python API:
+        from src.analysis_mod.structure.debug_data import DebugData
+        from src.interpretation.clustering.kmeans_clustering import cluster_sensor_states
+        from src.interpretation.clustering.utils import convert_debug_data_to_dataset_filtered
+        from src.interpretation.clustering.cluster_animation import create_cluster_animation
+
+        # Load debug data
+        debug_data = DebugData.load("results/analysis/debug_data.pkl")
+
+        # Convert to dataset
+        dataset = convert_debug_data_to_dataset_filtered(debug_data)
+
+        # Perform clustering
+        result = cluster_sensor_states(dataset, n_clusters=9)
+
+        # Create animation
+        create_cluster_animation(result, dataset, "cluster_animation.mp4")
+
+        # Or with statistics panel
+        from src.interpretation.clustering.cluster_animation import create_cluster_animation_with_stats
+        create_cluster_animation_with_stats(
+            result,
+            dataset,
+            "cluster_animation_with_stats.mp4",
+            fps=30
+        )
 """
 
 import time
@@ -458,3 +503,145 @@ def create_cluster_animation_with_stats(
 
     writer.release()
     print(f"Saved cluster animation with stats to: {output_path}")
+
+
+# ==============================================================================
+# CLI Interface
+# ==============================================================================
+
+if __name__ == '__main__':
+    import argparse
+    import pickle
+    from pathlib import Path
+
+    parser = argparse.ArgumentParser(
+        description='Generate cluster animation video from clustering results'
+    )
+
+    parser.add_argument(
+        '--clustering-result',
+        type=str,
+        required=True,
+        help='Path to clustering result pickle file (clustering_result.pkl)'
+    )
+    parser.add_argument(
+        '--dataset',
+        type=str,
+        required=True,
+        help='Path to ShapleyDataset pickle file used for clustering'
+    )
+    parser.add_argument(
+        '--output',
+        type=str,
+        required=True,
+        help='Output video path (mp4)'
+    )
+    parser.add_argument(
+        '--with-stats',
+        action='store_true',
+        help='Create video with statistics panel'
+    )
+    parser.add_argument(
+        '--fps',
+        type=int,
+        default=DEFAULT_FPS,
+        help=f'Frame rate (default: {DEFAULT_FPS})'
+    )
+    parser.add_argument(
+        '--width',
+        type=int,
+        default=DEFAULT_WIDTH,
+        help=f'Video width (default: {DEFAULT_WIDTH})'
+    )
+    parser.add_argument(
+        '--height',
+        type=int,
+        default=DEFAULT_HEIGHT,
+        help=f'Video height (default: {DEFAULT_HEIGHT})'
+    )
+    parser.add_argument(
+        '--world-width',
+        type=float,
+        default=DEFAULT_WORLD_WIDTH,
+        help=f'Simulation world width (default: {DEFAULT_WORLD_WIDTH})'
+    )
+    parser.add_argument(
+        '--world-height',
+        type=float,
+        default=DEFAULT_WORLD_HEIGHT,
+        help=f'Simulation world height (default: {DEFAULT_WORLD_HEIGHT})'
+    )
+    parser.add_argument(
+        '--no-arrows',
+        action='store_true',
+        help='Hide direction arrows'
+    )
+    parser.add_argument(
+        '--no-cluster-info',
+        action='store_true',
+        help='Hide cluster distribution info'
+    )
+
+    args = parser.parse_args()
+
+    # Load clustering result
+    result_path = Path(args.clustering_result)
+    if not result_path.exists():
+        raise FileNotFoundError(f"Clustering result not found: {result_path}")
+
+    print(f"Loading clustering result from: {result_path}")
+    with open(result_path, 'rb') as f:
+        result = pickle.load(f)
+
+    # Load dataset
+    dataset_path = Path(args.dataset)
+    if not dataset_path.exists():
+        raise FileNotFoundError(f"Dataset not found: {dataset_path}")
+
+    print(f"Loading dataset from: {dataset_path}")
+    with open(dataset_path, 'rb') as f:
+        dataset = pickle.load(f)
+
+    # Generate animation
+    output_path = Path(args.output)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    print(f"\n{'=' * 60}")
+    print("Generating Cluster Animation")
+    print(f"{'=' * 60}")
+    print(f"Clusters: {result.n_clusters}")
+    print(f"Samples: {len(dataset.samples)}")
+    print(f"Output: {output_path}")
+    print(f"FPS: {args.fps}")
+    print(f"With stats: {args.with_stats}")
+    print(f"{'=' * 60}\n")
+
+    if args.with_stats:
+        create_cluster_animation_with_stats(
+            result,
+            dataset,
+            output_path,
+            width=args.width,
+            height=args.height,
+            fps=args.fps,
+            world_width=args.world_width,
+            world_height=args.world_height
+        )
+    else:
+        create_cluster_animation(
+            result,
+            dataset,
+            output_path,
+            width=args.width,
+            height=args.height,
+            fps=args.fps,
+            world_width=args.world_width,
+            world_height=args.world_height,
+            show_arrows=not args.no_arrows,
+            show_cluster_info=not args.no_cluster_info
+        )
+
+    print(f"\n{'=' * 60}")
+    print("Animation generation complete!")
+    print(f"{'=' * 60}")
+    print(f"Saved to: {output_path}")
