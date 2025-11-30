@@ -857,3 +857,143 @@ def visualize_original_sensor_distributions(
         plt.show()
 
     plt.close()
+
+
+def visualize_cluster_timeline(
+    result: KMeansResult,
+    dataset: ShapleyDataset,
+    save_path: Optional[Path] = None,
+    figsize: tuple[int, int] = (16, 10)
+):
+    """
+    Visualize which cluster each robot belongs to over time.
+
+    Creates a timeline plot showing cluster membership for each robot
+    throughout the simulation.
+
+    Args:
+        result: KMeansResult from cluster_sensor_states()
+        dataset: Original ShapleyDataset used for clustering
+        save_path: Path to save figure (None to display)
+        figsize: Figure size
+    """
+    # Extract data for each sample
+    data = []
+    for idx, sample in enumerate(dataset.samples):
+        data.append({
+            'robot_index': sample.robot_index,
+            'timestep': sample.timestep,
+            'time_seconds': sample.time_seconds,
+            'cluster': result.labels[idx]
+        })
+
+    # Get unique robot indices
+    robot_indices = sorted(set(d['robot_index'] for d in data))
+    n_robots = len(robot_indices)
+
+    # Create color map for clusters
+    n_clusters = result.n_clusters
+    colors = plt.cm.tab20(np.linspace(0, 1, n_clusters))
+
+    # Create figure with two subplots
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=figsize, height_ratios=[3, 1])
+
+    # Plot 1: Timeline for each robot
+    for robot_idx in robot_indices:
+        robot_data = [d for d in data if d['robot_index'] == robot_idx]
+        robot_data_sorted = sorted(robot_data, key=lambda x: x['timestep'])
+
+        timesteps = [d['timestep'] for d in robot_data_sorted]
+        clusters = [d['cluster'] for d in robot_data_sorted]
+
+        # Plot as scatter points colored by cluster
+        for cluster_id in range(n_clusters):
+            cluster_mask = np.array(clusters) == cluster_id
+            if np.any(cluster_mask):
+                ax1.scatter(
+                    np.array(timesteps)[cluster_mask],
+                    [robot_idx] * np.sum(cluster_mask),
+                    c=[colors[cluster_id]],
+                    marker='s',
+                    s=10,
+                    alpha=0.8,
+                    label=f'C{cluster_id}' if robot_idx == robot_indices[0] else None
+                )
+
+    ax1.set_xlabel('Timestep')
+    ax1.set_ylabel('Robot Index')
+    ax1.set_title('Cluster Membership Timeline per Robot')
+    ax1.set_yticks(robot_indices)
+    ax1.grid(alpha=0.3, axis='x')
+    ax1.legend(bbox_to_anchor=(1.02, 1), loc='upper left', ncol=1, fontsize=8)
+
+    # Plot 2: Cluster distribution over time (stacked area)
+    # Group by timestep and count cluster membership
+    timesteps_unique = sorted(set(d['timestep'] for d in data))
+    cluster_counts = {cid: [] for cid in range(n_clusters)}
+
+    for ts in timesteps_unique:
+        ts_data = [d for d in data if d['timestep'] == ts]
+        ts_clusters = [d['cluster'] for d in ts_data]
+
+        for cid in range(n_clusters):
+            count = sum(1 for c in ts_clusters if c == cid)
+            cluster_counts[cid].append(count)
+
+    # Create stacked area plot
+    ax2.stackplot(
+        timesteps_unique,
+        *[cluster_counts[cid] for cid in range(n_clusters)],
+        colors=colors,
+        labels=[f'C{cid}' for cid in range(n_clusters)],
+        alpha=0.8
+    )
+
+    ax2.set_xlabel('Timestep')
+    ax2.set_ylabel('Number of Robots')
+    ax2.set_title('Cluster Distribution Over Time')
+    ax2.grid(alpha=0.3, axis='both')
+    ax2.set_ylim(0, n_robots)
+
+    plt.tight_layout()
+
+    if save_path:
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        print(f"Saved cluster timeline visualization to: {save_path}")
+    else:
+        plt.show()
+
+    plt.close()
+
+
+def export_cluster_timeline_data(
+    result: KMeansResult,
+    dataset: ShapleyDataset,
+    output_path: Path
+):
+    """
+    Export cluster membership timeline data to CSV file.
+
+    Args:
+        result: KMeansResult from cluster_sensor_states()
+        dataset: Original ShapleyDataset used for clustering
+        output_path: Path to save CSV file
+    """
+    import csv
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(output_path, 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(['sample_index', 'robot_index', 'timestep', 'time_seconds', 'cluster_id'])
+
+        for idx, sample in enumerate(dataset.samples):
+            writer.writerow([
+                idx,
+                sample.robot_index,
+                sample.timestep,
+                sample.time_seconds,
+                result.labels[idx]
+            ])
+
+    print(f"Saved cluster timeline data to: {output_path}")

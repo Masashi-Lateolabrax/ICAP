@@ -43,6 +43,8 @@ from src.interpretation.clustering.kmeans_clustering import (
     visualize_temporal_statistics,
     analyze_original_sensor_values,
     visualize_original_sensor_distributions,
+    visualize_cluster_timeline,
+    export_cluster_timeline_data,
 )
 from src.interpretation.data_collection.io_sample_definition import ShapleyDataset
 
@@ -435,6 +437,18 @@ def main():
         original_viz_path = output_dir / 'original_sensor_distributions.png'
         visualize_original_sensor_distributions(original_stats, save_path=original_viz_path)
 
+        # Visualize cluster timeline
+        print(f"\n{'=' * 60}")
+        print("Generating Cluster Timeline")
+        print(f"{'=' * 60}")
+
+        timeline_viz_path = output_dir / 'cluster_timeline.png'
+        visualize_cluster_timeline(result, dataset, save_path=timeline_viz_path)
+
+        # Export cluster timeline data to CSV
+        timeline_csv_path = output_dir / 'cluster_timeline.csv'
+        export_cluster_timeline_data(result, dataset, output_path=timeline_csv_path)
+
         # Visualize feature distributions
         print("\nGenerating feature distribution visualizations...")
         feature_dist_path = output_dir / 'feature_distributions.png'
@@ -457,11 +471,13 @@ def main():
         print(f"  Cluster Distances: {distance_matrix_path.name}")
         print(f"  Temporal Statistics: {temporal_stats_path.name}")
         print(f"  Original Sensor Stats: {original_stats_path.name}")
+        print(f"  Cluster Timeline CSV: {timeline_csv_path.name}")
         print(f"  2D Visualization: {viz_path.name}")
         print(f"  Temporal Continuity Plot: {continuity_viz_path.name}")
         print(f"  Distance Matrix Heatmap: {distance_viz_path.name}")
         print(f"  Temporal Statistics Plot: {temporal_viz_path.name}")
         print(f"  Original Sensor Distributions: {original_viz_path.name}")
+        print(f"  Cluster Timeline Plot: {timeline_viz_path.name}")
         print(f"  Feature Distributions: {feature_dist_path.name}")
         print(f"  Clustering result: {result_path.name}")
 
