@@ -2,34 +2,42 @@
 """
 CLI runner for K-means clustering analysis.
 
-Usage examples:
-    # Basic clustering with k=10
-    PYTHONPATH=. uv run --extra cpu src/interpretation/clustering/run_kmeans_clustering.py \
-        --data-path results/20251027-024639_7bb53c8b/shapley_data/samples.pkl \
-        --n-clusters 10
+This tool accepts DebugData pickle files and performs clustering analysis
+on robot sensor states.
 
-    # Find optimal k
+Usage examples:
+    # Basic clustering with k=9
     PYTHONPATH=. uv run --extra cpu src/interpretation/clustering/run_kmeans_clustering.py \
-        --data-path results/20251027-024639_7bb53c8b/shapley_data/samples.pkl \
-        --find-optimal --k-min 2 --k-max 30
+        --data-path results/analysis/debug_data.pkl \
+        --n-clusters 9
 
     # Clustering with animation video
     PYTHONPATH=. uv run --extra cpu src/interpretation/clustering/run_kmeans_clustering.py \
-        --data-path results/20251027-024639_7bb53c8b/shapley_data/samples.pkl \
+        --data-path results/analysis/debug_data.pkl \
         --n-clusters 9 --create-video
 
-    # Clustering with animation video with stats panel
+    # With filtering and stats panel video
     PYTHONPATH=. uv run --extra cpu src/interpretation/clustering/run_kmeans_clustering.py \
-        --data-path results/20251027-024639_7bb53c8b/shapley_data/samples.pkl \
+        --data-path results/analysis/debug_data.pkl \
+        --pheromone-threshold 0.1 --sample-interval 5 \
         --n-clusters 9 --create-video --video-with-stats
 
+    # Find optimal k
+    PYTHONPATH=. uv run --extra cpu src/interpretation/clustering/run_kmeans_clustering.py \
+        --data-path results/analysis/debug_data.pkl \
+        --find-optimal --k-min 2 --k-max 30
+
 Parameters:
-    --data-path: Path to Shapley dataset pickle file (required)
+    --data-path: Path to DebugData pickle file (required)
+    --experiment-id: Experiment ID for converted data (default: debug_analysis)
+    --generation: Generation number for converted data (default: 0)
+    --pheromone-threshold: Filter by pheromone threshold (default: 0.0)
+    --sample-interval: Sample every Nth frame (default: 1 = all frames)
     --n-clusters: Number of clusters (default: 10)
     --find-optimal: Find optimal k using elbow method and quality metrics
     --k-min: Minimum k for optimal k search (default: 2)
     --k-max: Maximum k for optimal k search (default: 20)
-    --output-dir: Output directory (default: same directory as data-path)
+    --output-dir: Output directory (default: same directory as input file)
     --random-state: Random seed for reproducibility (default: 42)
     --create-video: Generate cluster animation video (mp4)
     --video-fps: Video frames per second (default: 30)
@@ -63,18 +71,19 @@ from src.interpretation.clustering.cluster_animation import (
     create_cluster_animation,
     create_cluster_animation_with_stats,
 )
+from src.interpretation.clustering.utils import (
+    convert_debug_data_to_dataset_filtered,
+)
 from src.interpretation.data_collection.io_sample_definition import ShapleyDataset
 
 
-def load_dataset(data_path: Path) -> ShapleyDataset:
-    """Load Shapley dataset from pickle file."""
-    with open(data_path, 'rb') as f:
-        dataset = pickle.load(f)
-    print(f"Loaded dataset from: {data_path}")
-    print(f"  Total samples: {len(dataset.samples)}")
-    print(f"  Experiment: {dataset.experiment_id}")
-    print(f"  Generation: {dataset.generation}")
-    return dataset
+def load_debug_data(debug_data_path: Path) -> list:
+    """Load DebugData from pickle file."""
+    with open(debug_data_path, 'rb') as f:
+        debug_data = pickle.load(f)
+    print(f"Loaded debug data from: {debug_data_path}")
+    print(f"  Total frames: {len(debug_data)}")
+    return debug_data
 
 
 def main():
@@ -83,7 +92,31 @@ def main():
         '--data-path',
         type=str,
         required=True,
-        help='Path to Shapley dataset pickle file (samples.pkl)'
+        help='Path to pickle file (ShapleyDataset or DebugData)'
+    )
+    parser.add_argument(
+        '--experiment-id',
+        type=str,
+        default='debug_analysis',
+        help='Experiment ID when using DebugData (default: debug_analysis)'
+    )
+    parser.add_argument(
+        '--generation',
+        type=int,
+        default=0,
+        help='Generation number when using DebugData (default: 0)'
+    )
+    parser.add_argument(
+        '--pheromone-threshold',
+        type=float,
+        default=0.0,
+        help='Pheromone threshold for filtering DebugData (default: 0.0)'
+    )
+    parser.add_argument(
+        '--sample-interval',
+        type=int,
+        default=1,
+        help='Sample every Nth frame from DebugData (default: 1 = all frames)'
     )
     parser.add_argument(
         '--output-dir',
@@ -139,12 +172,28 @@ def main():
 
     args = parser.parse_args()
 
-    # Load dataset
+    # Load DebugData and convert to ShapleyDataset
     data_path = Path(args.data_path)
     if not data_path.exists():
         raise FileNotFoundError(f"Data file not found: {data_path}")
 
-    dataset = load_dataset(data_path)
+    print(f"\n{'=' * 60}")
+    print("Loading and Converting DebugData to ShapleyDataset")
+    print(f"{'=' * 60}")
+
+    debug_data = load_debug_data(data_path)
+    dataset = convert_debug_data_to_dataset_filtered(
+        debug_data,
+        experiment_id=args.experiment_id,
+        generation=args.generation,
+        pheromone_threshold=args.pheromone_threshold,
+        sample_interval=args.sample_interval
+    )
+
+    print(f"Conversion complete!")
+    print(f"  Total samples: {len(dataset.samples)}")
+    print(f"  Experiment: {dataset.experiment_id}")
+    print(f"  Generation: {dataset.generation}")
 
     # Set output directory
     if args.output_dir is None:
