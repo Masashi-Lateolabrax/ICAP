@@ -178,7 +178,7 @@ def convert_debug_data_to_dataset_filtered(
             robot_position = frame.robot_positions[robot_idx][:2]
             robot_direction = frame.robot_directions[robot_idx][:2]
 
-            sample = ShapleyInputSample(
+            sample = RobotSensorSample(
                 timestep=timestep,
                 time_seconds=time_seconds,
                 robot_index=robot_idx,
