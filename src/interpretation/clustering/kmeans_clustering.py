@@ -1282,10 +1282,21 @@ if __name__ == '__main__':
         print("Generating Cluster Animation Video")
         print(f"{'=' * 60}")
 
+        # Build cluster_map from clustering result
+        print("Building cluster assignment map...")
+        cluster_map = {}  # (timestep, robot_index) -> cluster_id
+        filtered_idx = 0
+        for sample in full_dataset:
+            if sample.pheromone_magnitude >= args.pheromone_threshold:
+                key = (sample.timestep, sample.robot_index)
+                cluster_map[key] = result.labels[filtered_idx]
+                filtered_idx += 1
+        print(f"  Cluster assignments: {len(cluster_map)}")
+
         if args.video_with_stats:
             video_path = output_dir / 'cluster_animation_with_stats.mp4'
             create_cluster_animation_with_stats(
-                result, full_dataset, args.pheromone_threshold, debug_data, video_path,
+                result, cluster_map, debug_data, video_path,
                 fps=args.video_fps,
                 world_width=MySettings.Simulation.WORLD_WIDTH,
                 world_height=MySettings.Simulation.WORLD_HEIGHT
@@ -1293,7 +1304,7 @@ if __name__ == '__main__':
         else:
             video_path = output_dir / 'cluster_animation.mp4'
             create_cluster_animation(
-                result, full_dataset, args.pheromone_threshold, debug_data, video_path,
+                result, cluster_map, debug_data, video_path,
                 fps=args.video_fps,
                 world_width=MySettings.Simulation.WORLD_WIDTH,
                 world_height=MySettings.Simulation.WORLD_HEIGHT

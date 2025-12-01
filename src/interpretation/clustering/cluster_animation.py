@@ -94,8 +94,7 @@ def get_cluster_color(cluster_id: int, n_clusters: int) -> tuple[int, int, int]:
 
 def create_cluster_animation(
     result: KMeansResult,
-    full_dataset: list[RobotSensorSample],
-    pheromone_threshold: float,
+    cluster_map: dict[tuple[int, int], int],
     debug_data: list[DebugData],
     output_path: Path,
     width: int = DEFAULT_WIDTH,
@@ -111,9 +110,8 @@ def create_cluster_animation(
 
     Args:
         result: KMeansResult from cluster_sensor_states()
-        full_dataset: All RobotSensorSample including below threshold
-        pheromone_threshold: Threshold used for clustering
-        debug_data: List of DebugData containing food positions
+        cluster_map: Mapping from (timestep, robot_index) to cluster_id
+        debug_data: List of DebugData containing positions and food
         output_path: Path to save video file (mp4)
         width: Video width in pixels
         height: Video height in pixels
@@ -153,16 +151,6 @@ def create_cluster_animation(
 
         pixel_pos = np.clip(pixel_pos, [margin, margin], [width - margin - 1, height - margin - 1])
         return int(pixel_pos[0]), int(pixel_pos[1])
-
-    # Build cluster assignment map from samples above threshold
-    print("Building cluster assignment map...")
-    cluster_map = {}  # (timestep, robot_index) -> cluster_id
-    filtered_idx = 0
-    for sample in full_dataset:
-        if sample.pheromone_magnitude >= pheromone_threshold:
-            key = (sample.timestep, sample.robot_index)
-            cluster_map[key] = result.labels[filtered_idx]
-            filtered_idx += 1
 
     # Get number of robots from first frame
     num_robots = len(debug_data[0].robot_positions) if debug_data else 0
@@ -299,8 +287,7 @@ def create_cluster_animation(
 
 def create_cluster_animation_with_stats(
     result: KMeansResult,
-    full_dataset: list[RobotSensorSample],
-    pheromone_threshold: float,
+    cluster_map: dict[tuple[int, int], int],
     debug_data: list[DebugData],
     output_path: Path,
     width: int = 1200,
@@ -317,7 +304,8 @@ def create_cluster_animation_with_stats(
 
     Args:
         result: KMeansResult from cluster_sensor_states()
-        full_dataset: All RobotSensorSample including below threshold
+        cluster_map: Mapping from (timestep, robot_index) to cluster_id
+        debug_data: List of DebugData containing positions and food
         pheromone_threshold: Threshold used for clustering
         output_path: Path to save video file (mp4)
         width: Total video width (simulation + stats panel)
@@ -360,16 +348,6 @@ def create_cluster_animation_with_stats(
 
         pixel_pos = np.clip(pixel_pos, [margin, margin], [sim_width - margin - 1, height - margin - 1])
         return int(pixel_pos[0]), int(pixel_pos[1])
-
-    # Build cluster assignment map from samples above threshold
-    print("Building cluster assignment map...")
-    cluster_map = {}  # (timestep, robot_index) -> cluster_id
-    filtered_idx = 0
-    for sample in full_dataset:
-        if sample.pheromone_magnitude >= pheromone_threshold:
-            key = (sample.timestep, sample.robot_index)
-            cluster_map[key] = result.labels[filtered_idx]
-            filtered_idx += 1
 
     # Get number of robots from first frame
     num_robots = len(debug_data[0].robot_positions) if debug_data else 0
