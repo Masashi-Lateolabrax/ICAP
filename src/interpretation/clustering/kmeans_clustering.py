@@ -51,6 +51,7 @@ from sklearn.metrics import silhouette_score, davies_bouldin_score, calinski_har
 import matplotlib.pyplot as plt
 
 from src.interpretation.clustering.utils import RobotSensorSample
+from src.settings import MySettings
 
 
 @dataclass
@@ -1284,12 +1285,18 @@ if __name__ == '__main__':
         if args.video_with_stats:
             video_path = output_dir / 'cluster_animation_with_stats.mp4'
             create_cluster_animation_with_stats(
-                result, full_dataset, args.pheromone_threshold, video_path, fps=args.video_fps
+                result, full_dataset, args.pheromone_threshold, video_path,
+                fps=args.video_fps,
+                world_width=MySettings.Simulation.WORLD_WIDTH,
+                world_height=MySettings.Simulation.WORLD_HEIGHT
             )
         else:
             video_path = output_dir / 'cluster_animation.mp4'
             create_cluster_animation(
-                result, full_dataset, args.pheromone_threshold, video_path, fps=args.video_fps
+                result, full_dataset, args.pheromone_threshold, video_path,
+                fps=args.video_fps,
+                world_width=MySettings.Simulation.WORLD_WIDTH,
+                world_height=MySettings.Simulation.WORLD_HEIGHT
             )
 
     print(f"\n{'=' * 60}")
