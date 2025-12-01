@@ -36,6 +36,7 @@ import cv2
 
 from src.interpretation.clustering.kmeans_clustering import KMeansResult
 from src.interpretation.clustering.utils import RobotSensorSample
+from src.analysis_mod.structure.debug_data import DebugData
 
 
 # Default rendering settings (can be overridden)
@@ -95,6 +96,7 @@ def create_cluster_animation(
     result: KMeansResult,
     full_dataset: list[RobotSensorSample],
     pheromone_threshold: float,
+    debug_data: list[DebugData],
     output_path: Path,
     width: int = DEFAULT_WIDTH,
     height: int = DEFAULT_HEIGHT,
@@ -111,6 +113,7 @@ def create_cluster_animation(
         result: KMeansResult from cluster_sensor_states()
         full_dataset: All RobotSensorSample including below threshold
         pheromone_threshold: Threshold used for clustering
+        debug_data: List of DebugData containing food positions
         output_path: Path to save video file (mp4)
         width: Video width in pixels
         height: Video height in pixels
@@ -167,18 +170,23 @@ def create_cluster_animation(
     for sample in full_dataset:
         ts = sample.timestep
         if ts not in timestep_data:
-            timestep_data[ts] = []
+            timestep_data[ts] = {'robots': [], 'food': []}
 
         # Check if this sample has a cluster assignment
         key = (ts, sample.robot_index)
         cluster_id = cluster_map.get(key, None)  # None if below threshold
 
-        timestep_data[ts].append({
+        timestep_data[ts]['robots'].append({
             'robot_index': sample.robot_index,
             'position': sample.robot_position,
             'direction': sample.robot_direction,
             'cluster': cluster_id  # None for below threshold
         })
+
+    # Add food positions from debug_data
+    for frame_idx, frame in enumerate(debug_data):
+        if frame_idx in timestep_data:
+            timestep_data[frame_idx]['food'] = frame.food_positions
 
     # Sort timesteps
     timesteps = sorted(timestep_data.keys())
@@ -213,13 +221,19 @@ def create_cluster_animation(
 
         # Count cluster distribution at this timestep (only clustered robots)
         cluster_counts = {}
-        for data in frame_data:
+        for data in frame_data['robots']:
             cid = data['cluster']
             if cid is not None:  # Only count robots above threshold
                 cluster_counts[cid] = cluster_counts.get(cid, 0) + 1
 
+        # Draw food items
+        for food_pos in frame_data['food']:
+            food_pixel_pos = world_to_pixel(food_pos)
+            # Draw food as yellow circle
+            cv2.circle(buffer, food_pixel_pos, 6, (0, 255, 255), -1)  # Yellow (BGR)
+
         # Draw robots
-        for data in frame_data:
+        for data in frame_data['robots']:
             pos = world_to_pixel(data['position'])
             cluster_id = data['cluster']
 
@@ -303,6 +317,7 @@ def create_cluster_animation_with_stats(
     result: KMeansResult,
     full_dataset: list[RobotSensorSample],
     pheromone_threshold: float,
+    debug_data: list[DebugData],
     output_path: Path,
     width: int = 1200,
     height: int = 800,
@@ -378,18 +393,23 @@ def create_cluster_animation_with_stats(
     for sample in full_dataset:
         ts = sample.timestep
         if ts not in timestep_data:
-            timestep_data[ts] = []
+            timestep_data[ts] = {'robots': [], 'food': []}
 
         # Check if this sample has a cluster assignment
         key = (ts, sample.robot_index)
         cluster_id = cluster_map.get(key, None)  # None if below threshold
 
-        timestep_data[ts].append({
+        timestep_data[ts]['robots'].append({
             'robot_index': sample.robot_index,
             'position': sample.robot_position,
             'direction': sample.robot_direction,
             'cluster': cluster_id  # None for below threshold
         })
+
+    # Add food positions from debug_data
+    for frame_idx, frame in enumerate(debug_data):
+        if frame_idx in timestep_data:
+            timestep_data[frame_idx]['food'] = frame.food_positions
 
     # Get cluster sizes (total)
     cluster_sizes = result.get_cluster_sizes()
@@ -436,14 +456,20 @@ def create_cluster_animation_with_stats(
 
         # Count cluster distribution at this timestep (only clustered robots)
         cluster_counts = {}
-        for data in frame_data:
+        for data in frame_data['robots']:
             cid = data['cluster']
             if cid is not None:  # Only count robots above threshold
                 cluster_counts[cid] = cluster_counts.get(cid, 0) + 1
 
         # === LEFT PANEL: Simulation ===
+        # Draw food items
+        for food_pos in frame_data['food']:
+            food_pixel_pos = world_to_pixel(food_pos)
+            # Draw food as yellow circle
+            cv2.circle(buffer, food_pixel_pos, 6, (0, 255, 255), -1)  # Yellow (BGR)
+
         # Draw robots
-        for data in frame_data:
+        for data in frame_data['robots']:
             pos = world_to_pixel(data['position'])
             cluster_id = data['cluster']
 
