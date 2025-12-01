@@ -1,10 +1,10 @@
-"""Visualize SOM U-Matrix.
+"""Visualize SOM U-Matrix
 
 This script loads a trained SOM model and visualizes its U-Matrix (distance map).
 
 Usage:
-    PYTHONPATH=. uv run --extra cpu src/som_visualize_umatrix.py \
-        --data-dir results/20251027-024639_7bb53c8b/shapley_data_subset_10000
+    PYTHONPATH=. uv run --extra cpu src/interpretation/som/som_visualize_umatrix.py \\
+        --output-dir results/som
 """
 
 import argparse
@@ -44,8 +44,8 @@ def visualize_umatrix(som: MiniSom, output_dir: Path):
 
 def main():
     parser = argparse.ArgumentParser(description="Visualize SOM U-Matrix")
-    parser.add_argument('--data-dir', type=str, required=True,
-                       help='Directory containing SOM model')
+    parser.add_argument('--output-dir', type=str, required=True,
+                       help='Output directory containing SOM model (som_model.pkl)')
 
     args = parser.parse_args()
 
@@ -53,13 +53,13 @@ def main():
         print("ERROR: minisom is not installed.")
         return
 
-    data_dir = Path(args.data_dir)
+    output_dir = Path(args.output_dir)
 
     # Load SOM model from previous training
-    som_model_path = data_dir / "som_model.pkl"
+    som_model_path = output_dir / "som_model.pkl"
     if not som_model_path.exists():
         print(f"ERROR: SOM model not found at {som_model_path}")
-        print("Please run src/som_train.py first to train the SOM.")
+        print("Please run src/interpretation/som/som_train.py first to train the SOM.")
         return
 
     print(f"Loading SOM model from: {som_model_path}")
@@ -69,7 +69,7 @@ def main():
     print("SOM model loaded")
 
     # Visualize U-Matrix
-    visualize_umatrix(som, data_dir)
+    visualize_umatrix(som, output_dir)
 
 
 if __name__ == '__main__':

@@ -1,16 +1,27 @@
-"""Train Self-Organizing Map (SOM) for Shapley data.
+"""SOM Training for Robot Sensor Data
 
-This script trains SOM to organize samples based on non-pheromone sensors.
+Self-Organizing Map training to organize sensor states based on non-pheromone sensors
+for behavioral pattern analysis.
 
-Features used for SOM (excluding pheromone):
+Features used (6D, excluding pheromone):
     - robot_sensor (2D): Other robots
     - food_sensor (2D): Food items
     - direction_sensor (2D): Direction to nest
 
 Usage:
-    PYTHONPATH=. uv run --extra cpu src/som_train.py \
-        --data-file results/20251027-024639_7bb53c8b/shapley_data_subset_10000/samples_dict.pkl \
-        --grid-size 10
+    # Basic training
+    PYTHONPATH=. uv run --extra cpu src/interpretation/som/som_train.py \\
+        --data-path results/analysis/debug_data.pkl \\
+        --grid-size 10 \\
+        --output-dir results/som
+
+    # With filtering
+    PYTHONPATH=. uv run --extra cpu src/interpretation/som/som_train.py \\
+        --data-path results/analysis/debug_data.pkl \\
+        --grid-size 10 \\
+        --pheromone-threshold 0.1 \\
+        --sample-interval 2 \\
+        --output-dir results/som
 """
 
 import argparse
@@ -19,7 +30,8 @@ from pathlib import Path
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 
-from src.interpretation.data_collection.io_sample_definition import ShapleyDataset
+from src.analysis_mod.structure.debug_data import DebugData
+from src.interpretation.clustering.utils import RobotSensorSample, convert_debug_data_to_dataset_filtered
 
 try:
     from minisom import MiniSom
@@ -30,40 +42,7 @@ except ImportError:
     print("WARNING: minisom not installed. Install with: uv pip install minisom")
 
 
-def load_dataset(data_path: Path) -> ShapleyDataset:
-    """Load Shapley dataset from file.
-
-    Args:
-        data_path: Path to .pkl file (either samples_dict.pkl or samples.pkl)
-
-    Returns:
-        ShapleyDataset object
-
-    Raises:
-        FileNotFoundError: If file doesn't exist
-        ValueError: If file format is invalid
-    """
-    if not data_path.exists():
-        raise FileNotFoundError(f"File not found: {data_path}")
-
-    print(f"Loading dataset from: {data_path}")
-
-    with open(data_path, 'rb') as f:
-        data = pickle.load(f)
-
-    # Handle both dict format and direct ShapleyDataset format
-    if isinstance(data, dict):
-        dataset = ShapleyDataset.from_dict(data)
-    elif isinstance(data, ShapleyDataset):
-        dataset = data
-    else:
-        raise ValueError(f"Invalid data format: expected dict or ShapleyDataset, got {type(data)}")
-
-    print(f"Loaded {len(dataset)} samples")
-    return dataset
-
-
-def extract_features(dataset: ShapleyDataset) -> np.ndarray:
+def extract_features(dataset: list[RobotSensorSample]) -> np.ndarray:
     """Extract features for SOM.
 
     Returns:
@@ -72,7 +51,7 @@ def extract_features(dataset: ShapleyDataset) -> np.ndarray:
     N = len(dataset)
     som_features = np.zeros((N, 6))
 
-    for i, sample in enumerate(dataset.samples):
+    for i, sample in enumerate(dataset):
         # Non-pheromone sensors for SOM
         som_features[i, 0:2] = sample.robot_sensor
         som_features[i, 2:4] = sample.food_sensor
@@ -138,13 +117,21 @@ def main():
     import sys
     print("START: som_train.py", file=sys.stderr, flush=True)
 
-    parser = argparse.ArgumentParser(description="SOM analysis for Shapley data")
-    parser.add_argument('--data-file', type=str, required=True,
-                        help='Path to .pkl file containing Shapley data')
+    parser = argparse.ArgumentParser(description="SOM training for robot sensor data")
+    parser.add_argument('--data-path', type=str, required=True,
+                        help='Path to DebugData pickle file')
     parser.add_argument('--grid-size', type=int, default=10,
                         help='SOM grid size (grid-size x grid-size, default: 10)')
+    parser.add_argument('--experiment-id', type=str, default='debug_analysis',
+                        help='Experiment identifier (default: debug_analysis)')
+    parser.add_argument('--generation', type=int, default=0,
+                        help='Generation number (default: 0)')
+    parser.add_argument('--pheromone-threshold', type=float, default=0.0,
+                        help='Only include samples with pheromone >= threshold (default: 0.0)')
+    parser.add_argument('--sample-interval', type=int, default=1,
+                        help='Only include every Nth timestep (default: 1 = all frames)')
     parser.add_argument('--output-dir', type=str, default=None,
-                        help='Output directory (default: same as data file directory)')
+                        help='Output directory (default: same as data-path directory)')
 
     args = parser.parse_args()
     print(f"ARGS: {args}", file=sys.stderr, flush=True)
@@ -161,14 +148,24 @@ def main():
         return
 
     # Setup paths
-    data_path = Path(args.data_file)
+    data_path = Path(args.data_path)
     output_dir = Path(args.output_dir) if args.output_dir else data_path.parent
     output_dir.mkdir(parents=True, exist_ok=True)
     print(f"OUTPUT_DIR: {output_dir}", file=sys.stderr, flush=True)
 
-    # Load dataset
-    print("Loading dataset...", file=sys.stderr, flush=True)
-    dataset = load_dataset(data_path)
+    # Load DebugData and convert to samples list
+    print("Loading DebugData...", file=sys.stderr, flush=True)
+    debug_data = DebugData.load(data_path)
+
+    print("Converting to sensor samples...", file=sys.stderr, flush=True)
+    dataset = convert_debug_data_to_dataset_filtered(
+        debug_data,
+        experiment_id=args.experiment_id,
+        generation=args.generation,
+        pheromone_threshold=args.pheromone_threshold,
+        sample_interval=args.sample_interval
+    )
+    print(f"Total samples: {len(dataset)}", file=sys.stderr, flush=True)
 
     # Extract features
     print("Extracting features...", file=sys.stderr, flush=True)
