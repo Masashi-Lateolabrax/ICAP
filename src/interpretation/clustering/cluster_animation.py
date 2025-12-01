@@ -461,7 +461,7 @@ def create_cluster_animation_with_stats(
 
         y_offset += 30
         cv2.putText(
-            buffer, f"Total: {len(full_dataset)} samples",
+            buffer, f"Total: {len(cluster_map)} samples",
             (stats_x, y_offset),
             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1
         )
