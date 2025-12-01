@@ -1127,6 +1127,8 @@ if __name__ == '__main__':
     print(f"{'=' * 60}")
 
     debug_data = DebugData.load(data_path)
+
+    # Create filtered dataset for clustering (only pheromone >= threshold)
     dataset = convert_debug_data_to_dataset_filtered(
         debug_data,
         experiment_id=args.experiment_id,
@@ -1135,8 +1137,18 @@ if __name__ == '__main__':
         sample_interval=args.sample_interval
     )
 
+    # Create full dataset for animation (includes all robots, no pheromone filter)
+    full_dataset = convert_debug_data_to_dataset_filtered(
+        debug_data,
+        experiment_id=args.experiment_id,
+        generation=args.generation,
+        pheromone_threshold=0.0,  # No pheromone filter - include all
+        sample_interval=args.sample_interval
+    )
+
     print(f"Conversion complete!")
-    print(f"  Total samples: {len(dataset)}")
+    print(f"  Filtered samples (for clustering): {len(dataset)}")
+    print(f"  Total samples (for animation): {len(full_dataset)}")
 
     # Set output directory
     if args.output_dir is None:
@@ -1272,12 +1284,12 @@ if __name__ == '__main__':
         if args.video_with_stats:
             video_path = output_dir / 'cluster_animation_with_stats.mp4'
             create_cluster_animation_with_stats(
-                result, dataset, args.pheromone_threshold, video_path, fps=args.video_fps
+                result, full_dataset, args.pheromone_threshold, video_path, fps=args.video_fps
             )
         else:
             video_path = output_dir / 'cluster_animation.mp4'
             create_cluster_animation(
-                result, dataset, args.pheromone_threshold, video_path, fps=args.video_fps
+                result, full_dataset, args.pheromone_threshold, video_path, fps=args.video_fps
             )
 
     print(f"\n{'=' * 60}")
