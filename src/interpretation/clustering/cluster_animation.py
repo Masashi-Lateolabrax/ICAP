@@ -130,17 +130,22 @@ def create_cluster_animation(
         (width, height)
     )
 
+    # Add margin for world boundary
+    margin = 40  # pixels
+    render_width = width - 2 * margin
+    render_height = height - 2 * margin
+
     def world_to_pixel(world_pos: np.ndarray) -> tuple[int, int]:
-        """Convert world coordinates to pixel coordinates."""
+        """Convert world coordinates to pixel coordinates with margin."""
         world_half = np.array([world_width, world_height]) / 2.0
         world_size = np.array([world_width, world_height])
-        render_size = np.array([width, height])
+        render_size = np.array([render_width, render_height])
 
         normalized = (world_pos[:2] + world_half) / world_size
-        pixel_pos = normalized * render_size
-        pixel_pos[1] = render_size[1] - pixel_pos[1]  # Flip Y
+        pixel_pos = normalized * render_size + np.array([margin, margin])
+        pixel_pos[1] = height - pixel_pos[1] + margin  # Flip Y
 
-        pixel_pos = np.clip(pixel_pos, 0, render_size - 1)
+        pixel_pos = np.clip(pixel_pos, [margin, margin], [width - margin - 1, height - margin - 1])
         return int(pixel_pos[0]), int(pixel_pos[1])
 
     # Organize data by timestep
@@ -168,7 +173,24 @@ def create_cluster_animation(
     print(f"Generating animation with {len(timesteps)} frames...")
 
     for frame_idx, ts in enumerate(timesteps):
-        buffer.fill(255)  # White background
+        buffer.fill(240)  # Light gray background for margin area
+
+        # Draw world boundary rectangle
+        cv2.rectangle(
+            buffer,
+            (margin, margin),
+            (width - margin, height - margin),
+            (255, 255, 255),  # White
+            -1  # Filled
+        )
+        # Draw world boundary border
+        cv2.rectangle(
+            buffer,
+            (margin, margin),
+            (width - margin, height - margin),
+            (0, 0, 0),  # Black border
+            2  # Border thickness
+        )
 
         frame_data = timestep_data[ts]
 
@@ -296,17 +318,22 @@ def create_cluster_animation_with_stats(
         (width, height)
     )
 
+    # Add margin for world boundary
+    margin = 40  # pixels
+    render_width = sim_width - 2 * margin
+    render_height = height - 2 * margin
+
     def world_to_pixel(world_pos: np.ndarray) -> tuple[int, int]:
-        """Convert world coordinates to pixel coordinates."""
+        """Convert world coordinates to pixel coordinates with margin."""
         world_half = np.array([world_width, world_height]) / 2.0
         world_size = np.array([world_width, world_height])
-        render_size = np.array([sim_width, height])
+        render_size = np.array([render_width, render_height])
 
         normalized = (world_pos[:2] + world_half) / world_size
-        pixel_pos = normalized * render_size
-        pixel_pos[1] = render_size[1] - pixel_pos[1]  # Flip Y
+        pixel_pos = normalized * render_size + np.array([margin, margin])
+        pixel_pos[1] = height - pixel_pos[1] + margin  # Flip Y
 
-        pixel_pos = np.clip(pixel_pos, 0, render_size - 1)
+        pixel_pos = np.clip(pixel_pos, [margin, margin], [sim_width - margin - 1, height - margin - 1])
         return int(pixel_pos[0]), int(pixel_pos[1])
 
     # Organize data by timestep
@@ -337,7 +364,33 @@ def create_cluster_animation_with_stats(
     print(f"Generating animation with stats panel ({len(timesteps)} frames)...")
 
     for frame_idx, ts in enumerate(timesteps):
-        buffer.fill(255)  # White background
+        buffer.fill(240)  # Light gray background for margin area
+
+        # Draw world boundary rectangle in simulation area
+        cv2.rectangle(
+            buffer,
+            (margin, margin),
+            (sim_width - margin, height - margin),
+            (255, 255, 255),  # White
+            -1  # Filled
+        )
+        # Draw world boundary border
+        cv2.rectangle(
+            buffer,
+            (margin, margin),
+            (sim_width - margin, height - margin),
+            (0, 0, 0),  # Black border
+            2  # Border thickness
+        )
+
+        # Fill stats panel with white
+        cv2.rectangle(
+            buffer,
+            (sim_width, 0),
+            (width, height),
+            (255, 255, 255),
+            -1
+        )
 
         frame_data = timestep_data[ts]
 
