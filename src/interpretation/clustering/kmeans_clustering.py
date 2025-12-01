@@ -1271,10 +1271,14 @@ if __name__ == '__main__':
 
         if args.video_with_stats:
             video_path = output_dir / 'cluster_animation_with_stats.mp4'
-            create_cluster_animation_with_stats(result, dataset, video_path, fps=args.video_fps)
+            create_cluster_animation_with_stats(
+                result, dataset, args.pheromone_threshold, video_path, fps=args.video_fps
+            )
         else:
             video_path = output_dir / 'cluster_animation.mp4'
-            create_cluster_animation(result, dataset, video_path, fps=args.video_fps)
+            create_cluster_animation(
+                result, dataset, args.pheromone_threshold, video_path, fps=args.video_fps
+            )
 
     print(f"\n{'=' * 60}")
     print("Clustering analysis complete!")

@@ -93,7 +93,8 @@ def get_cluster_color(cluster_id: int, n_clusters: int) -> tuple[int, int, int]:
 
 def create_cluster_animation(
     result: KMeansResult,
-    dataset: list[RobotSensorSample],
+    full_dataset: list[RobotSensorSample],
+    pheromone_threshold: float,
     output_path: Path,
     width: int = DEFAULT_WIDTH,
     height: int = DEFAULT_HEIGHT,
@@ -108,7 +109,8 @@ def create_cluster_animation(
 
     Args:
         result: KMeansResult from cluster_sensor_states()
-        dataset: Original list of RobotSensorSample used for clustering
+        full_dataset: All RobotSensorSample including below threshold
+        pheromone_threshold: Threshold used for clustering
         output_path: Path to save video file (mp4)
         width: Video width in pixels
         height: Video height in pixels
@@ -148,19 +150,33 @@ def create_cluster_animation(
         pixel_pos = np.clip(pixel_pos, [margin, margin], [width - margin - 1, height - margin - 1])
         return int(pixel_pos[0]), int(pixel_pos[1])
 
-    # Organize data by timestep
+    # Build cluster assignment map from samples above threshold
+    print("Building cluster assignment map...")
+    cluster_map = {}  # (timestep, robot_index) -> cluster_id
+    filtered_idx = 0
+    for sample in full_dataset:
+        if sample.pheromone_magnitude >= pheromone_threshold:
+            key = (sample.timestep, sample.robot_index)
+            cluster_map[key] = result.labels[filtered_idx]
+            filtered_idx += 1
+
+    # Organize all data by timestep
     print("Organizing data by timestep...")
     timestep_data = {}
-    for idx, sample in enumerate(dataset):
+    for sample in full_dataset:
         ts = sample.timestep
         if ts not in timestep_data:
             timestep_data[ts] = []
+
+        # Check if this sample has a cluster assignment
+        key = (ts, sample.robot_index)
+        cluster_id = cluster_map.get(key, None)  # None if below threshold
+
         timestep_data[ts].append({
-            'sample_idx': idx,
             'robot_index': sample.robot_index,
             'position': sample.robot_position,
             'direction': sample.robot_direction,
-            'cluster': result.labels[idx]
+            'cluster': cluster_id  # None for below threshold
         })
 
     # Sort timesteps
@@ -194,17 +210,23 @@ def create_cluster_animation(
 
         frame_data = timestep_data[ts]
 
-        # Count cluster distribution at this timestep
+        # Count cluster distribution at this timestep (only clustered robots)
         cluster_counts = {}
         for data in frame_data:
             cid = data['cluster']
-            cluster_counts[cid] = cluster_counts.get(cid, 0) + 1
+            if cid is not None:  # Only count robots above threshold
+                cluster_counts[cid] = cluster_counts.get(cid, 0) + 1
 
         # Draw robots
         for data in frame_data:
             pos = world_to_pixel(data['position'])
             cluster_id = data['cluster']
-            color = get_cluster_color(cluster_id, result.n_clusters)
+
+            # Choose color: cluster color if above threshold, black otherwise
+            if cluster_id is not None:
+                color = get_cluster_color(cluster_id, result.n_clusters)
+            else:
+                color = (0, 0, 0)  # Black for below threshold
 
             # Draw robot as filled circle
             cv2.circle(buffer, pos, 8, color, -1)
@@ -278,7 +300,8 @@ def create_cluster_animation(
 
 def create_cluster_animation_with_stats(
     result: KMeansResult,
-    dataset: list[RobotSensorSample],
+    full_dataset: list[RobotSensorSample],
+    pheromone_threshold: float,
     output_path: Path,
     width: int = 1200,
     height: int = 800,
@@ -294,7 +317,8 @@ def create_cluster_animation_with_stats(
 
     Args:
         result: KMeansResult from cluster_sensor_states()
-        dataset: Original list of RobotSensorSample used for clustering
+        full_dataset: All RobotSensorSample including below threshold
+        pheromone_threshold: Threshold used for clustering
         output_path: Path to save video file (mp4)
         width: Total video width (simulation + stats panel)
         height: Video height
@@ -336,19 +360,33 @@ def create_cluster_animation_with_stats(
         pixel_pos = np.clip(pixel_pos, [margin, margin], [sim_width - margin - 1, height - margin - 1])
         return int(pixel_pos[0]), int(pixel_pos[1])
 
-    # Organize data by timestep
+    # Build cluster assignment map from samples above threshold
+    print("Building cluster assignment map...")
+    cluster_map = {}  # (timestep, robot_index) -> cluster_id
+    filtered_idx = 0
+    for sample in full_dataset:
+        if sample.pheromone_magnitude >= pheromone_threshold:
+            key = (sample.timestep, sample.robot_index)
+            cluster_map[key] = result.labels[filtered_idx]
+            filtered_idx += 1
+
+    # Organize all data by timestep
     print("Organizing data by timestep...")
     timestep_data = {}
-    for idx, sample in enumerate(dataset):
+    for sample in full_dataset:
         ts = sample.timestep
         if ts not in timestep_data:
             timestep_data[ts] = []
+
+        # Check if this sample has a cluster assignment
+        key = (ts, sample.robot_index)
+        cluster_id = cluster_map.get(key, None)  # None if below threshold
+
         timestep_data[ts].append({
-            'sample_idx': idx,
             'robot_index': sample.robot_index,
             'position': sample.robot_position,
             'direction': sample.robot_direction,
-            'cluster': result.labels[idx]
+            'cluster': cluster_id  # None for below threshold
         })
 
     # Get cluster sizes (total)
@@ -394,18 +432,24 @@ def create_cluster_animation_with_stats(
 
         frame_data = timestep_data[ts]
 
-        # Count cluster distribution at this timestep
+        # Count cluster distribution at this timestep (only clustered robots)
         cluster_counts = {}
         for data in frame_data:
             cid = data['cluster']
-            cluster_counts[cid] = cluster_counts.get(cid, 0) + 1
+            if cid is not None:  # Only count robots above threshold
+                cluster_counts[cid] = cluster_counts.get(cid, 0) + 1
 
         # === LEFT PANEL: Simulation ===
         # Draw robots
         for data in frame_data:
             pos = world_to_pixel(data['position'])
             cluster_id = data['cluster']
-            color = get_cluster_color(cluster_id, result.n_clusters)
+
+            # Choose color: cluster color if above threshold, black otherwise
+            if cluster_id is not None:
+                color = get_cluster_color(cluster_id, result.n_clusters)
+            else:
+                color = (0, 0, 0)  # Black for below threshold
 
             # Draw robot as filled circle
             cv2.circle(buffer, pos, 8, color, -1)
