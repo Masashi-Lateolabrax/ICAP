@@ -488,7 +488,7 @@ def create_cluster_animation_with_stats(
 
         y_offset += 30
         cv2.putText(
-            buffer, f"Total: {len(dataset)} samples",
+            buffer, f"Total: {len(full_dataset)} samples",
             (stats_x, y_offset),
             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1
         )
@@ -538,9 +538,12 @@ def create_cluster_animation_with_stats(
         )
         y_offset += 25
 
+        # Calculate total clustered samples
+        total_clustered = sum(cluster_sizes.values())
+
         for cid in range(result.n_clusters):
             size = cluster_sizes[cid]
-            percentage = 100 * size / len(dataset)
+            percentage = 100 * size / total_clustered
             color = get_cluster_color(cid, result.n_clusters)
 
             # Draw color box
