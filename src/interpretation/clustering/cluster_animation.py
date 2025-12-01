@@ -144,8 +144,9 @@ def create_cluster_animation(
         render_size = np.array([render_width, render_height])
 
         normalized = (world_pos[:2] + world_half) / world_size
-        pixel_pos = normalized * render_size + np.array([margin, margin])
-        pixel_pos[1] = height - pixel_pos[1] + margin  # Flip Y
+        pixel_pos = normalized * render_size
+        pixel_pos[1] = render_height - pixel_pos[1]  # Flip Y within render area
+        pixel_pos += np.array([margin, margin])  # Add margin offset
 
         pixel_pos = np.clip(pixel_pos, [margin, margin], [width - margin - 1, height - margin - 1])
         return int(pixel_pos[0]), int(pixel_pos[1])
@@ -354,8 +355,9 @@ def create_cluster_animation_with_stats(
         render_size = np.array([render_width, render_height])
 
         normalized = (world_pos[:2] + world_half) / world_size
-        pixel_pos = normalized * render_size + np.array([margin, margin])
-        pixel_pos[1] = height - pixel_pos[1] + margin  # Flip Y
+        pixel_pos = normalized * render_size
+        pixel_pos[1] = render_height - pixel_pos[1]  # Flip Y within render area
+        pixel_pos += np.array([margin, margin])  # Add margin offset
 
         pixel_pos = np.clip(pixel_pos, [margin, margin], [sim_width - margin - 1, height - margin - 1])
         return int(pixel_pos[0]), int(pixel_pos[1])
