@@ -37,12 +37,14 @@ import cv2
 from src.interpretation.clustering.kmeans_clustering import KMeansResult
 from src.interpretation.clustering.utils import RobotSensorSample
 from src.analysis_mod.structure.debug_data import DebugData
+from src.settings import MySettings
 
 
 # Default rendering settings (can be overridden)
 DEFAULT_WIDTH = 800
 DEFAULT_HEIGHT = 800
-DEFAULT_FPS = 30
+# FPS for real-time playback: 1 frame per simulation timestep
+DEFAULT_FPS = int(1.0 / MySettings.Simulation.TIME_STEP)
 DEFAULT_WORLD_WIDTH = 3.0
 DEFAULT_WORLD_HEIGHT = 3.0
 
@@ -115,7 +117,7 @@ def create_cluster_animation(
         output_path: Path to save video file (mp4)
         width: Video width in pixels
         height: Video height in pixels
-        fps: Frames per second
+        fps: Frames per second (default: 100 for real-time with timestep=0.01s)
         world_width: Simulation world width
         world_height: Simulation world height
         show_arrows: Whether to show direction arrows
@@ -155,8 +157,7 @@ def create_cluster_animation(
     # Get number of robots from first frame
     num_robots = len(debug_data[0].robot_positions) if debug_data else 0
 
-    # Generate timesteps based on sample_interval (if used)
-    # We use debug_data indices as timesteps
+    # All timesteps
     timesteps = list(range(len(debug_data)))
 
     # Create frames
