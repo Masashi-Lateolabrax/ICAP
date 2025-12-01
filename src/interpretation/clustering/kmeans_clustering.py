@@ -1101,12 +1101,6 @@ if __name__ == '__main__':
         help='Create cluster animation video'
     )
     parser.add_argument(
-        '--video-fps',
-        type=int,
-        default=30,
-        help='Video frame rate (default: 30)'
-    )
-    parser.add_argument(
         '--video-with-stats',
         action='store_true',
         help='Create video with statistics panel'
@@ -1297,7 +1291,6 @@ if __name__ == '__main__':
             video_path = output_dir / 'cluster_animation_with_stats.mp4'
             create_cluster_animation_with_stats(
                 result, cluster_map, debug_data, video_path,
-                fps=args.video_fps,
                 world_width=MySettings.Simulation.WORLD_WIDTH,
                 world_height=MySettings.Simulation.WORLD_HEIGHT
             )
@@ -1305,7 +1298,6 @@ if __name__ == '__main__':
             video_path = output_dir / 'cluster_animation.mp4'
             create_cluster_animation(
                 result, cluster_map, debug_data, video_path,
-                fps=args.video_fps,
                 world_width=MySettings.Simulation.WORLD_WIDTH,
                 world_height=MySettings.Simulation.WORLD_HEIGHT
             )
