@@ -6,12 +6,19 @@ This script:
 3. Calculates Shapley values independently for each cluster
 4. Compares pheromone importance across different behavioral situations
 
+IMPORTANT:
+    --pheromone-threshold MUST match the threshold used when creating clustering_result.pkl.
+    If the thresholds don't match, sample counts will differ and the script will fail with
+    "Sample count mismatch" error. Check the clustering script parameters used to generate
+    clustering_result.pkl before running this script.
+
 Usage:
     PYTHONPATH=. uv run --extra cpu src/interpretation/shapley/cluster_shapley_analysis.py \
         --clustering-result results/.../clustering/clustering_result.pkl \
         --debug-data results/.../debug_data.pkl \
         --optimization-log results/20251027-024639_7bb53c8b/optimization_log.pkl \
         --generation 499 \
+        --pheromone-threshold 0.1 \
         --n-shapley-samples 1000 \
         --output-dir results/cluster_shapley_analysis
 """
