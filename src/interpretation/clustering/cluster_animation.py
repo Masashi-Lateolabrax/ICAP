@@ -7,21 +7,24 @@ during the simulation, similar to input_anime.py but colored by cluster ID.
 Usage:
     # Basic animation
     PYTHONPATH=. uv run --extra cpu src/interpretation/clustering/cluster_animation.py \\
-        --clustering-result results/clustering/clustering_result.pkl \\
-        --dataset results/clustering/dataset.pkl \\
+        --kmeans-model results/clustering/kmeans_model.joblib \\
+        --clustering-metadata results/clustering/clustering_metadata.pkl \\
+        --debug-data results/debug_data.pkl \\
         --output cluster_animation.mp4
 
     # With statistics panel
     PYTHONPATH=. uv run --extra cpu src/interpretation/clustering/cluster_animation.py \\
-        --clustering-result results/clustering/clustering_result.pkl \\
-        --dataset results/clustering/dataset.pkl \\
+        --kmeans-model results/clustering/kmeans_model.joblib \\
+        --clustering-metadata results/clustering/clustering_metadata.pkl \\
+        --debug-data results/debug_data.pkl \\
         --output cluster_animation.mp4 \\
         --with-stats --fps 60
 
     # Custom video settings
     PYTHONPATH=. uv run --extra cpu src/interpretation/clustering/cluster_animation.py \\
-        --clustering-result results/clustering/clustering_result.pkl \\
-        --dataset results/clustering/dataset.pkl \\
+        --kmeans-model results/clustering/kmeans_model.joblib \\
+        --clustering-metadata results/clustering/clustering_metadata.pkl \\
+        --debug-data results/debug_data.pkl \\
         --output cluster_animation.mp4 \\
         --width 1920 --height 1080 --fps 60 \\
         --no-arrows --no-cluster-info
@@ -29,13 +32,11 @@ Usage:
 
 import time
 from pathlib import Path
-from typing import Optional
 
 import numpy as np
 import cv2
 
-from src.interpretation.clustering.kmeans_clustering import KMeansResult
-from src.interpretation.clustering.utils import RobotSensorSample
+from src.interpretation.clustering.kmeans_clustering import ClusteringMetadata
 from src.analysis_mod.structure.debug_data import DebugData
 from src.settings import MySettings
 
@@ -95,7 +96,7 @@ def get_cluster_color(cluster_id: int, n_clusters: int) -> tuple[int, int, int]:
 
 
 def create_cluster_animation(
-    result: KMeansResult,
+    metadata: ClusteringMetadata,
     cluster_map: dict[tuple[int, int], int],
     debug_data: list[DebugData],
     output_path: Path,
@@ -111,7 +112,7 @@ def create_cluster_animation(
     Create animation showing cluster membership over time.
 
     Args:
-        result: KMeansResult from cluster_sensor_states()
+        metadata: ClusteringMetadata from cluster_sensor_states()
         cluster_map: Mapping from (timestep, robot_index) to cluster_id
         debug_data: List of DebugData containing positions and food
         output_path: Path to save video file (mp4)
@@ -214,7 +215,7 @@ def create_cluster_animation(
 
             # Choose color: cluster color if above threshold, black otherwise
             if cluster_id is not None:
-                color = get_cluster_color(cluster_id, result.n_clusters)
+                color = get_cluster_color(cluster_id, metadata.n_clusters)
             else:
                 color = (0, 0, 0)  # Black for below threshold
 
@@ -254,7 +255,7 @@ def create_cluster_animation(
             y_offset += 25
             for cid in sorted(cluster_counts.keys()):
                 count = cluster_counts[cid]
-                color = get_cluster_color(cid, result.n_clusters)
+                color = get_cluster_color(cid, metadata.n_clusters)
 
                 # Draw color box
                 cv2.rectangle(
@@ -287,7 +288,7 @@ def create_cluster_animation(
 
 
 def create_cluster_animation_with_stats(
-    result: KMeansResult,
+    metadata: ClusteringMetadata,
     cluster_map: dict[tuple[int, int], int],
     debug_data: list[DebugData],
     output_path: Path,
@@ -304,7 +305,7 @@ def create_cluster_animation_with_stats(
     (centroids, sizes, etc.) on the right panel.
 
     Args:
-        result: KMeansResult from cluster_sensor_states()
+        metadata: ClusteringMetadata from cluster_sensor_states()
         cluster_map: Mapping from (timestep, robot_index) to cluster_id
         debug_data: List of DebugData containing positions and food
         pheromone_threshold: Threshold used for clustering
@@ -354,7 +355,7 @@ def create_cluster_animation_with_stats(
     num_robots = len(debug_data[0].robot_positions) if debug_data else 0
 
     # Get cluster sizes (total)
-    cluster_sizes = result.get_cluster_sizes()
+    cluster_sizes = metadata.get_cluster_sizes()
 
     # Generate timesteps based on debug_data
     timesteps = list(range(len(debug_data)))
@@ -423,7 +424,7 @@ def create_cluster_animation_with_stats(
 
             # Choose color: cluster color if above threshold, black otherwise
             if cluster_id is not None:
-                color = get_cluster_color(cluster_id, result.n_clusters)
+                color = get_cluster_color(cluster_id, metadata.n_clusters)
             else:
                 color = (0, 0, 0)  # Black for below threshold
 
@@ -479,9 +480,9 @@ def create_cluster_animation_with_stats(
         )
         y_offset += 25
 
-        for cid in range(result.n_clusters):
+        for cid in range(metadata.n_clusters):
             count = cluster_counts.get(cid, 0)
-            color = get_cluster_color(cid, result.n_clusters)
+            color = get_cluster_color(cid, metadata.n_clusters)
 
             # Draw color box
             cv2.rectangle(
@@ -515,10 +516,10 @@ def create_cluster_animation_with_stats(
         # Calculate total clustered samples
         total_clustered = sum(cluster_sizes.values())
 
-        for cid in range(result.n_clusters):
+        for cid in range(metadata.n_clusters):
             size = cluster_sizes[cid]
             percentage = 100 * size / total_clustered
-            color = get_cluster_color(cid, result.n_clusters)
+            color = get_cluster_color(cid, metadata.n_clusters)
 
             # Draw color box
             cv2.rectangle(
@@ -556,7 +557,6 @@ def create_cluster_animation_with_stats(
 
 if __name__ == '__main__':
     import argparse
-    import pickle
     from pathlib import Path
 
     parser = argparse.ArgumentParser(
@@ -564,16 +564,22 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
-        '--clustering-result',
+        '--kmeans-model',
         type=str,
         required=True,
-        help='Path to clustering result pickle file (clustering_result.pkl)'
+        help='Path to KMeans model file (kmeans_model.joblib)'
     )
     parser.add_argument(
-        '--dataset',
+        '--clustering-metadata',
         type=str,
         required=True,
-        help='Path to RobotSensorSample list pickle file used for clustering'
+        help='Path to clustering metadata file (clustering_metadata.pkl)'
+    )
+    parser.add_argument(
+        '--debug-data',
+        type=str,
+        required=True,
+        help='Path to debug_data.pkl file (contains robot positions for animation)'
     )
     parser.add_argument(
         '--output',
@@ -629,23 +635,49 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    # Load clustering result
-    result_path = Path(args.clustering_result)
-    if not result_path.exists():
-        raise FileNotFoundError(f"Clustering result not found: {result_path}")
+    # Load KMeans model and metadata
+    from src.interpretation.clustering.kmeans_clustering import (
+        load_kmeans_model,
+        load_clustering_metadata
+    )
 
-    print(f"Loading clustering result from: {result_path}")
-    with open(result_path, 'rb') as f:
-        result = pickle.load(f)
+    kmeans_model_path = Path(args.kmeans_model)
+    metadata_path = Path(args.clustering_metadata)
 
-    # Load dataset
-    dataset_path = Path(args.dataset)
-    if not dataset_path.exists():
-        raise FileNotFoundError(f"Dataset not found: {dataset_path}")
+    print(f"Loading KMeans model from: {kmeans_model_path}")
+    kmeans_model = load_kmeans_model(kmeans_model_path)
 
-    print(f"Loading dataset from: {dataset_path}")
-    with open(dataset_path, 'rb') as f:
-        dataset = pickle.load(f)
+    print(f"Loading clustering metadata from: {metadata_path}")
+    metadata = load_clustering_metadata(metadata_path)
+
+    # Load debug data
+    debug_data_path = Path(args.debug_data)
+    if not debug_data_path.exists():
+        raise FileNotFoundError(f"Debug data not found: {debug_data_path}")
+
+    print(f"Loading debug data from: {debug_data_path}")
+    debug_data = DebugData.load(debug_data_path)
+
+    # Build cluster_map from metadata labels
+    # Note: cluster_map maps (timestep, robot_index) -> cluster_id
+    # Since metadata.labels is ordered by the original dataset,
+    # we need to reconstruct the mapping based on the dataset structure
+    print("Building cluster assignment map from metadata labels...")
+    cluster_map = {}  # (timestep, robot_index) -> cluster_id
+
+    # The metadata.labels are in the same order as the original dataset was created
+    # We need to know the structure to map it back
+    # This is a limitation - ideally metadata should include timestep/robot info
+    # For now, assume labels are ordered by (timestep, robot_index) sequentially
+    label_idx = 0
+    for frame_idx, frame in enumerate(debug_data):
+        n_robots = frame.robot_inputs.shape[0]
+        for robot_idx in range(n_robots):
+            if label_idx < len(metadata.labels):
+                key = (frame_idx, robot_idx)
+                cluster_map[key] = metadata.labels[label_idx]
+                label_idx += 1
+    print(f"  Cluster assignments: {len(cluster_map)}")
 
     # Generate animation
     output_path = Path(args.output)
@@ -654,8 +686,8 @@ if __name__ == '__main__':
     print(f"\n{'=' * 60}")
     print("Generating Cluster Animation")
     print(f"{'=' * 60}")
-    print(f"Clusters: {result.n_clusters}")
-    print(f"Samples: {len(dataset)}")
+    print(f"Clusters: {metadata.n_clusters}")
+    print(f"Frames: {len(debug_data)}")
     print(f"Output: {output_path}")
     print(f"FPS: {args.fps}")
     print(f"With stats: {args.with_stats}")
@@ -663,8 +695,9 @@ if __name__ == '__main__':
 
     if args.with_stats:
         create_cluster_animation_with_stats(
-            result,
-            dataset,
+            metadata,
+            cluster_map,
+            debug_data,
             output_path,
             width=args.width,
             height=args.height,
@@ -674,8 +707,9 @@ if __name__ == '__main__':
         )
     else:
         create_cluster_animation(
-            result,
-            dataset,
+            metadata,
+            cluster_map,
+            debug_data,
             output_path,
             width=args.width,
             height=args.height,
