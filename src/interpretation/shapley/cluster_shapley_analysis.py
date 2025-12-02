@@ -6,11 +6,12 @@ This script:
 3. Calculates Shapley values independently for each cluster
 4. Compares pheromone importance across different behavioral situations
 
-IMPORTANT:
-    --pheromone-threshold MUST match the threshold used when creating clustering_result.pkl.
-    If the thresholds don't match, sample counts will differ and the script will fail with
-    "Sample count mismatch" error. Check the clustering script parameters used to generate
-    clustering_result.pkl before running this script.
+NOTE:
+    This script assigns cluster labels dynamically using K-means cluster centers, so you
+    don't need to match the pheromone threshold used during clustering. The script will:
+    1. Load all samples (or filter by --pheromone-threshold if specified)
+    2. Assign each sample to the nearest cluster center
+    3. Calculate Shapley values per cluster
 
 Usage:
     PYTHONPATH=. uv run --extra cpu src/interpretation/shapley/cluster_shapley_analysis.py \
@@ -37,7 +38,11 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 
 from src.analysis_mod.structure.debug_data import DebugData
-from src.interpretation.clustering.utils import RobotSensorSample, convert_debug_data_to_dataset_filtered
+from src.interpretation.clustering.utils import (
+    RobotSensorSample,
+    convert_debug_data_to_dataset,
+    convert_debug_data_to_dataset_filtered
+)
 from src.interpretation.clustering.kmeans_clustering import (
     KMeansResult,
     get_cluster_statistics,
@@ -407,8 +412,8 @@ def main():
     parser.add_argument(
         '--pheromone-threshold',
         type=float,
-        default=0.1,
-        help='Minimum pheromone magnitude to include sample (default: 0.1)'
+        default=0.0,
+        help='Minimum pheromone magnitude to include sample (default: 0.0 = no filtering)'
     )
     parser.add_argument(
         '--output-dir',
@@ -465,23 +470,46 @@ def main():
     debug_data = DebugData.load(debug_data_path)
     print(f"  Loaded debug data with {len(debug_data.frames)} frames")
 
-    # Convert to sensor samples
+    # Convert to sensor samples (with optional pheromone filtering)
     print("\nConverting to sensor samples...")
-    dataset = convert_debug_data_to_dataset_filtered(
-        debug_data,
-        experiment_id=experiment_id,
-        generation=args.generation,
-        pheromone_threshold=args.pheromone_threshold,
-        sample_interval=1
-    )
-    print(f"  Converted {len(dataset)} samples (pheromone >= {args.pheromone_threshold})")
-
-    # Verify sample count matches clustering result
-    if len(dataset) != len(clustering_result.labels):
-        raise ValueError(
-            f"Sample count mismatch: dataset has {len(dataset)} samples, "
-            f"but clustering result has {len(clustering_result.labels)} labels"
+    if args.pheromone_threshold > 0.0:
+        dataset = convert_debug_data_to_dataset_filtered(
+            debug_data,
+            experiment_id=experiment_id,
+            generation=args.generation,
+            pheromone_threshold=args.pheromone_threshold,
+            sample_interval=1
         )
+        print(f"  Converted {len(dataset)} samples (pheromone >= {args.pheromone_threshold})")
+    else:
+        dataset = convert_debug_data_to_dataset(
+            debug_data,
+            experiment_id=experiment_id,
+            generation=args.generation,
+            timestep_offset=0,
+            time_step=0.01
+        )
+        print(f"  Converted {len(dataset)} samples (no pheromone filtering)")
+
+    # Assign cluster labels to all samples using cluster centers
+    print(f"\nAssigning samples to clusters using K-means centroids...")
+    from src.interpretation.clustering.kmeans_clustering import extract_sensor_features
+
+    # Extract normalized features from all samples
+    sample_features, _ = extract_sensor_features(dataset, normalize=True)
+
+    # Calculate distance to each cluster center and assign to nearest
+    # cluster_centers are already normalized
+    distances = np.linalg.norm(
+        sample_features[:, np.newaxis, :] - clustering_result.cluster_centers[np.newaxis, :, :],
+        axis=2
+    )
+    assigned_labels = np.argmin(distances, axis=1)
+
+    print(f"  Assigned {len(dataset)} samples to {clustering_result.n_clusters} clusters")
+
+    # Use assigned labels instead of clustering_result.labels
+    cluster_labels = assigned_labels
 
     # Get cluster statistics
     cluster_stats = get_cluster_statistics(clustering_result)
@@ -504,8 +532,8 @@ def main():
     for cluster_id in range(clustering_result.n_clusters):
         print(f"\nCluster {cluster_id}:")
 
-        # Extract samples for this cluster
-        cluster_mask = clustering_result.labels == cluster_id
+        # Extract samples for this cluster using assigned labels
+        cluster_mask = cluster_labels == cluster_id
         cluster_samples = [s for s, m in zip(dataset, cluster_mask) if m]
         print(f"  Total samples in cluster: {len(cluster_samples)}")
 
