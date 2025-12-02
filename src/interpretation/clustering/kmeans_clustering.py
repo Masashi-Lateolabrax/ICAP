@@ -9,32 +9,32 @@ data by minimizing within-cluster variance.
 
 Usage:
     # Find optimal number of clusters
-    PYTHONPATH=. uv run --extra cpu src/interpretation/clustering/kmeans_clustering.py \\
-        --data-path results/analysis/debug_data.pkl \\
-        --find-optimal-k \\
-        --k-range 2-20 \\
+    PYTHONPATH=. uv run --extra cpu src/interpretation/clustering/kmeans_clustering.py \
+        --data-path results/analysis/debug_data.pkl \
+        --find-optimal-k \
+        --k-range 2-20 \
         --output-dir results/clustering
 
     # Run clustering with known k
-    PYTHONPATH=. uv run --extra cpu src/interpretation/clustering/kmeans_clustering.py \\
-        --data-path results/analysis/debug_data.pkl \\
-        --n-clusters 9 \\
+    PYTHONPATH=. uv run --extra cpu src/interpretation/clustering/kmeans_clustering.py \
+        --data-path results/analysis/debug_data.pkl \
+        --n-clusters 9 \
         --output-dir results/clustering
 
     # With video generation
-    PYTHONPATH=. uv run --extra cpu src/interpretation/clustering/kmeans_clustering.py \\
-        --data-path results/analysis/debug_data.pkl \\
-        --n-clusters 9 \\
-        --create-video \\
-        --video-with-stats \\
+    PYTHONPATH=. uv run --extra cpu src/interpretation/clustering/kmeans_clustering.py \
+        --data-path results/analysis/debug_data.pkl \
+        --n-clusters 9 \
+        --create-video \
+        --video-with-stats \
         --output-dir results/clustering
 
     # With filtering
-    PYTHONPATH=. uv run --extra cpu src/interpretation/clustering/kmeans_clustering.py \\
-        --data-path results/analysis/debug_data.pkl \\
-        --n-clusters 9 \\
-        --pheromone-threshold 0.1 \\
-        --sample-interval 2 \\
+    PYTHONPATH=. uv run --extra cpu src/interpretation/clustering/kmeans_clustering.py \
+        --data-path results/analysis/debug_data.pkl \
+        --n-clusters 9 \
+        --pheromone-threshold 0.1 \
+        --sample-interval 2 \
         --output-dir results/clustering
 """
 
@@ -1387,12 +1387,10 @@ if __name__ == '__main__':
         # Build cluster_map from clustering result
         print("Building cluster assignment map...")
         cluster_map = {}  # (timestep, robot_index) -> cluster_id
-        filtered_idx = 0
-        for sample in full_dataset:
-            if sample.pheromone_magnitude >= args.pheromone_threshold:
-                key = (sample.timestep, sample.robot_index)
-                cluster_map[key] = metadata.labels[filtered_idx]
-                filtered_idx += 1
+        # Use the filtered dataset that was actually clustered
+        for idx, sample in enumerate(dataset):
+            key = (sample.timestep, sample.robot_index)
+            cluster_map[key] = metadata.labels[idx]
         print(f"  Cluster assignments: {len(cluster_map)}")
 
         if args.video_with_stats:
