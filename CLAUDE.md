@@ -148,6 +148,11 @@ If you encounter `PIL._imagingtk` errors with uv's standalone Python:
 - Not understanding distributed optimization requirements
 - **Type Consistency Errors**: Always verify function signatures match usage patterns - check both parameter types and return types before implementation
 - **Array Shape Assumptions**: Never assume array shapes without explicit validation - always check sensor outputs and data structure consistency
+- **Documentation Format Errors**: When writing Usage examples in docstrings, ALWAYS reference existing similar files in the codebase for correct formatting
+  - Check command format: `uv run --extra cpu` vs `python -m`
+  - Check path conventions: `results/` vs `output/` vs `data/`
+  - Check line continuation: backslash `\` with no trailing spaces
+  - Example: Always check `src/interpretation/clustering/kmeans_clustering.py` for clustering-related scripts
 
 ### Key Principles
 - Ask "why" three times before changing code
