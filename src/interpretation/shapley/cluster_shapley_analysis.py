@@ -36,9 +36,8 @@ from src.interpretation.clustering.kmeans_clustering import (
     get_cluster_statistics,
     load_clustering_result
 )
-from src.interpretation.data_collection.io_sample_definition import ShapleyInputSample
 from framework.types import IndividualRecorder
-from config.controller import Controller
+from src.config.controller import Controller
 
 
 @dataclass
@@ -135,7 +134,10 @@ class ShapleyCalculator:
             all_inputs.append(full_input)
 
         all_inputs = np.array(all_inputs)
+
+        # Baseline: sensor features use mean, pheromone features use zero
         baseline = np.mean(all_inputs, axis=0)
+        baseline[6:9] = 0.0  # Set pheromone features (magnitude, grad_forward, grad_side) to zero
 
         # Get feature group names
         feature_names = FeatureGroupMasker.get_group_names()
