@@ -318,8 +318,6 @@ def visualize_cluster_shapley_comparison(
 
 
 def save_results(cluster_shapley_results: dict[int, ShapleyValues],
-                cluster_stats: dict,
-                clustering_result: KMeansResult,
                 output_dir: Path,
                 experiment_id: str,
                 generation: int):
@@ -329,13 +327,6 @@ def save_results(cluster_shapley_results: dict[int, ShapleyValues],
     # Save as pickle
     results = {
         'cluster_shapley_values': {cid: sv.to_dict() for cid, sv in cluster_shapley_results.items()},
-        'cluster_statistics': cluster_stats,
-        'clustering_metrics': {
-            'n_clusters': clustering_result.n_clusters,
-            'silhouette': clustering_result.silhouette,
-            'davies_bouldin': clustering_result.davies_bouldin,
-            'inertia': clustering_result.inertia,
-        },
         'metadata': {
             'experiment_id': experiment_id,
             'generation': generation,
@@ -355,14 +346,12 @@ def save_results(cluster_shapley_results: dict[int, ShapleyValues],
         f.write("=" * 70 + "\n\n")
         f.write(f"Experiment: {experiment_id}\n")
         f.write(f"Generation: {generation}\n")
-        f.write(f"Number of clusters: {clustering_result.n_clusters}\n")
         f.write(f"Calculation time: {results['metadata']['calculation_timestamp']}\n\n")
 
         for cluster_id in sorted(cluster_shapley_results.keys()):
             sv = cluster_shapley_results[cluster_id]
-            stats = cluster_stats[cluster_id]
 
-            f.write(f"\nCluster {cluster_id} (n={stats['size']} samples)\n")
+            f.write(f"\nCluster {cluster_id}\n")
             f.write("-" * 70 + "\n")
             f.write("Shapley Values:\n")
             for name, value in sv.to_dict().items():
@@ -548,8 +537,6 @@ def main():
     print(f"\nSaving results...")
     save_results(
         cluster_shapley_results,
-        cluster_stats,
-        clustering_result,
         output_dir,
         experiment_id,
         args.generation
