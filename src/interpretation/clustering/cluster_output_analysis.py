@@ -182,7 +182,7 @@ def visualize_output_comparison(
     figsize: tuple[int, int] = (14, 10)
 ):
     """
-    Compare output statistics across clusters using bar plots.
+    Compare output statistics across clusters using box plots.
 
     Args:
         cluster_stats: Output from analyze_cluster_outputs()
@@ -193,44 +193,51 @@ def visualize_output_comparison(
 
     fig, axes = plt.subplots(2, 2, figsize=figsize)
 
-    # Right wheel mean
+    # Right wheel box plot
     ax = axes[0, 0]
-    means = [cluster_stats[cid].right_wheel_mean for cid in cluster_ids]
-    stds = [cluster_stats[cid].right_wheel_std for cid in cluster_ids]
-    ax.bar(cluster_ids, means, yerr=stds, alpha=0.7, color='blue', capsize=5)
+    right_wheel_data = [cluster_stats[cid].right_wheel_outputs for cid in cluster_ids]
+    bp = ax.boxplot(right_wheel_data, positions=cluster_ids, widths=0.6, patch_artist=True)
+    for patch in bp['boxes']:
+        patch.set_facecolor('lightblue')
     ax.set_xlabel('Cluster ID')
     ax.set_ylabel('Right Wheel Speed')
     ax.set_title('Right Wheel Speed by Cluster')
-    ax.grid(alpha=0.3)
+    ax.set_xticks(cluster_ids)
+    ax.grid(alpha=0.3, axis='y')
 
-    # Left wheel mean
+    # Left wheel box plot
     ax = axes[0, 1]
-    means = [cluster_stats[cid].left_wheel_mean for cid in cluster_ids]
-    stds = [cluster_stats[cid].left_wheel_std for cid in cluster_ids]
-    ax.bar(cluster_ids, means, yerr=stds, alpha=0.7, color='green', capsize=5)
+    left_wheel_data = [cluster_stats[cid].left_wheel_outputs for cid in cluster_ids]
+    bp = ax.boxplot(left_wheel_data, positions=cluster_ids, widths=0.6, patch_artist=True)
+    for patch in bp['boxes']:
+        patch.set_facecolor('lightgreen')
     ax.set_xlabel('Cluster ID')
     ax.set_ylabel('Left Wheel Speed')
     ax.set_title('Left Wheel Speed by Cluster')
-    ax.grid(alpha=0.3)
+    ax.set_xticks(cluster_ids)
+    ax.grid(alpha=0.3, axis='y')
 
-    # Pheromone secretion mean
+    # Pheromone secretion box plot
     ax = axes[1, 0]
-    means = [cluster_stats[cid].pheromone_secretion_mean for cid in cluster_ids]
-    stds = [cluster_stats[cid].pheromone_secretion_std for cid in cluster_ids]
-    ax.bar(cluster_ids, means, yerr=stds, alpha=0.7, color='orange', capsize=5)
+    pheromone_data = [cluster_stats[cid].pheromone_outputs for cid in cluster_ids]
+    bp = ax.boxplot(pheromone_data, positions=cluster_ids, widths=0.6, patch_artist=True)
+    for patch in bp['boxes']:
+        patch.set_facecolor('lightyellow')
     ax.set_xlabel('Cluster ID')
     ax.set_ylabel('Pheromone Secretion')
     ax.set_title('Pheromone Secretion by Cluster')
-    ax.grid(alpha=0.3)
+    ax.set_xticks(cluster_ids)
+    ax.grid(alpha=0.3, axis='y')
 
-    # Sample counts
+    # Sample counts (keep as bar plot)
     ax = axes[1, 1]
     counts = [cluster_stats[cid].n_samples for cid in cluster_ids]
-    ax.bar(cluster_ids, counts, alpha=0.7, color='purple')
+    ax.bar(cluster_ids, counts, alpha=0.7, color='purple', width=0.6)
     ax.set_xlabel('Cluster ID')
     ax.set_ylabel('Number of Samples')
     ax.set_title('Cluster Sample Counts')
-    ax.grid(alpha=0.3)
+    ax.set_xticks(cluster_ids)
+    ax.grid(alpha=0.3, axis='y')
 
     plt.tight_layout()
 
