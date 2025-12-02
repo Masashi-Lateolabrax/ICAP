@@ -156,6 +156,9 @@ If you encounter `PIL._imagingtk` errors with uv's standalone Python:
 - Admit mistakes and pivot when necessary
 - Respect the distributed client-server architecture
 - Maintain physics simulation accuracy
+- **CRITICAL**: NEVER modify, delete, or commit files unrelated to the current task
+- **CRITICAL**: Always verify `git status` before committing to ensure only relevant files are included
+- **CRITICAL**: If accidentally staged unrelated files, use `git restore --staged <file>` to unstage them
 
 ## Task Description & Method
 

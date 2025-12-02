@@ -242,7 +242,7 @@ def visualize_cluster_shapley_comparison(
     shapley_percentage = 100 * shapley_matrix / shapley_matrix.sum(axis=0, keepdims=True)
 
     # Create figure with 3 subplots
-    fig = plt.figure(figsize=(18, 6))
+    plt.figure(figsize=(18, 6))
 
     # Plot 1: Stacked bar chart (percentage)
     ax1 = plt.subplot(1, 3, 1)
