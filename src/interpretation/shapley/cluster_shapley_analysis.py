@@ -223,7 +223,6 @@ def load_model(optimization_log_path: Path, generation: int) -> nn.Module:
 
 def visualize_cluster_shapley_comparison(
     cluster_shapley_results: dict[int, ShapleyValues],
-    cluster_stats: dict,
     output_path: Path
 ):
     """Visualize Shapley values comparison across clusters."""
@@ -535,7 +534,6 @@ def main():
     viz_path = output_dir / "cluster_shapley_comparison.png"
     visualize_cluster_shapley_comparison(
         cluster_shapley_results,
-        cluster_stats,
         viz_path
     )
 
