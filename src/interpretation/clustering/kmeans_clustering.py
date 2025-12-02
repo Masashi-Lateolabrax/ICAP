@@ -43,6 +43,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 import pickle
+import joblib
 
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
@@ -54,15 +55,48 @@ from src.interpretation.clustering.utils import RobotSensorSample
 from src.settings import MySettings
 
 
+# Default clustering parameters
+DEFAULT_N_CLUSTERS = 10
+DEFAULT_RANDOM_STATE = 42
+DEFAULT_MAX_ITER = 300
+DEFAULT_N_INIT = 10
+DEFAULT_K_RANGE_MIN = 2
+DEFAULT_K_RANGE_MAX = 20
+
+# Visualization parameters
+DEFAULT_FIGURE_SIZE_ELBOW = (14, 10)
+DEFAULT_FIGURE_SIZE_CLUSTERS = (10, 8)
+DEFAULT_FIGURE_SIZE_FEATURES = (14, 10)
+DEFAULT_FIGURE_SIZE_TIMELINE = (16, 10)
+DEFAULT_DPI = 300
+DEFAULT_ALPHA = 0.3
+DEFAULT_MARKER_SIZE_SAMPLE = 30
+DEFAULT_MARKER_SIZE_CENTROID = 200
+DEFAULT_LINE_WIDTH_BORDER = 2
+DEFAULT_ZORDER_CENTROID = 10
+
+# Output file names
+KMEANS_MODEL_FILENAME = "kmeans_model.joblib"  # joblib format
+CLUSTERING_METADATA_FILENAME = "clustering_metadata.pkl"  # pickle format
+CLUSTER_STATS_FILENAME = "cluster_stats.txt"
+CLUSTERS_2D_FILENAME = "clusters_2d.png"
+SENSOR_DISTRIBUTIONS_FILENAME = "sensor_distributions.png"
+CLUSTER_TIMELINE_FILENAME = "cluster_timeline.png"
+CLUSTER_TIMELINE_CSV_FILENAME = "cluster_timeline.csv"
+CLUSTER_ANIMATION_FILENAME = "cluster_animation.mp4"
+CLUSTER_ANIMATION_WITH_STATS_FILENAME = "cluster_animation_with_stats.mp4"
+OPTIMAL_K_METRICS_FILENAME = "optimal_k_metrics.txt"
+ELBOW_CURVE_FILENAME = "elbow_curve.png"
+
+
 @dataclass
-class KMeansResult:
-    """Results from K-means clustering."""
+class ClusteringMetadata:
+    """Metadata for clustering results (separate from KMeans model)."""
 
     n_clusters: int              # Number of clusters specified
     labels: np.ndarray           # Cluster labels for each sample (0 to n_clusters-1)
     features: np.ndarray         # Normalized feature matrix (n_samples, 6)
     feature_names: list[str]     # Feature names
-    cluster_centers: np.ndarray  # Cluster centroids (n_clusters, 6)
     inertia: float               # Sum of squared distances to closest cluster center
     silhouette: float            # Silhouette coefficient (-1 to 1, higher is better)
     davies_bouldin: float        # Davies-Bouldin index (lower is better)
@@ -117,11 +151,11 @@ def extract_sensor_features(dataset: list[RobotSensorSample], normalize: bool = 
 
 def cluster_sensor_states(
     dataset: list[RobotSensorSample],
-    n_clusters: int = 10,
-    random_state: int = 42,
-    max_iter: int = 300,
-    n_init: int = 10
-) -> KMeansResult:
+    n_clusters: int = DEFAULT_N_CLUSTERS,
+    random_state: int = DEFAULT_RANDOM_STATE,
+    max_iter: int = DEFAULT_MAX_ITER,
+    n_init: int = DEFAULT_N_INIT
+) -> tuple[KMeans, ClusteringMetadata]:
     """
     Cluster sensor states using K-means.
 
@@ -133,7 +167,7 @@ def cluster_sensor_states(
         n_init: Number of times to run k-means with different centroid seeds
 
     Returns:
-        KMeansResult with cluster labels and quality metrics
+        Tuple of (fitted KMeans model, ClusteringMetadata)
     """
     # Extract features
     features, feature_names = extract_sensor_features(dataset, normalize=True)
@@ -152,23 +186,25 @@ def cluster_sensor_states(
     davies_bouldin = davies_bouldin_score(features, labels)
     calinski_harabasz = calinski_harabasz_score(features, labels)
 
-    return KMeansResult(
+    # Create metadata
+    metadata = ClusteringMetadata(
         n_clusters=n_clusters,
         labels=labels,
         features=features,
         feature_names=feature_names,
-        cluster_centers=kmeans.cluster_centers_,
         inertia=kmeans.inertia_,
         silhouette=silhouette,
         davies_bouldin=davies_bouldin,
         calinski_harabasz=calinski_harabasz,
     )
 
+    return kmeans, metadata
+
 
 def find_optimal_k(
     dataset: list[RobotSensorSample],
-    k_range: range = range(2, 21),
-    random_state: int = 42
+    k_range: range = range(DEFAULT_K_RANGE_MIN, DEFAULT_K_RANGE_MAX + 1),
+    random_state: int = DEFAULT_RANDOM_STATE
 ) -> dict[int, dict[str, float]]:
     """
     Find optimal number of clusters using elbow method and quality metrics.
@@ -186,7 +222,7 @@ def find_optimal_k(
     results = {}
     for k in k_range:
         print(f"Testing k={k}...")
-        kmeans = KMeans(n_clusters=k, random_state=random_state, n_init=10)
+        kmeans = KMeans(n_clusters=k, random_state=random_state, n_init=DEFAULT_N_INIT)
         labels = kmeans.fit_predict(features)
 
         results[k] = {
@@ -202,7 +238,7 @@ def find_optimal_k(
 def visualize_elbow_curve(
     k_metrics: dict[int, dict[str, float]],
     save_path: Optional[Path] = None,
-    figsize: tuple[int, int] = (14, 10)
+    figsize: tuple[int, int] = DEFAULT_FIGURE_SIZE_ELBOW
 ):
     """
     Visualize elbow curve and quality metrics for different k values.
@@ -222,7 +258,7 @@ def visualize_elbow_curve(
     ax.set_xlabel('Number of clusters (k)')
     ax.set_ylabel('Inertia (Within-cluster sum of squares)')
     ax.set_title('Elbow Method')
-    ax.grid(alpha=0.3)
+    ax.grid(alpha=DEFAULT_ALPHA)
 
     # Silhouette Score (higher is better)
     ax = axes[0, 1]
@@ -231,7 +267,7 @@ def visualize_elbow_curve(
     ax.set_xlabel('Number of clusters (k)')
     ax.set_ylabel('Silhouette Score')
     ax.set_title('Silhouette Score (higher is better)')
-    ax.grid(alpha=0.3)
+    ax.grid(alpha=DEFAULT_ALPHA)
 
     # Davies-Bouldin Index (lower is better)
     ax = axes[1, 0]
@@ -240,7 +276,7 @@ def visualize_elbow_curve(
     ax.set_xlabel('Number of clusters (k)')
     ax.set_ylabel('Davies-Bouldin Index')
     ax.set_title('Davies-Bouldin Index (lower is better)')
-    ax.grid(alpha=0.3)
+    ax.grid(alpha=DEFAULT_ALPHA)
 
     # Calinski-Harabasz Index (higher is better)
     ax = axes[1, 1]
@@ -249,12 +285,12 @@ def visualize_elbow_curve(
     ax.set_xlabel('Number of clusters (k)')
     ax.set_ylabel('Calinski-Harabasz Index')
     ax.set_title('Calinski-Harabasz Index (higher is better)')
-    ax.grid(alpha=0.3)
+    ax.grid(alpha=DEFAULT_ALPHA)
 
     plt.tight_layout()
 
     if save_path:
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.savefig(save_path, dpi=DEFAULT_DPI, bbox_inches='tight')
         print(f"Saved elbow curve to: {save_path}")
     else:
         plt.show()
@@ -263,40 +299,42 @@ def visualize_elbow_curve(
 
 
 def visualize_clusters(
-    result: KMeansResult,
+    kmeans_model: KMeans,
+    metadata: ClusteringMetadata,
     save_path: Optional[Path] = None,
-    figsize: tuple[int, int] = (10, 8),
+    figsize: tuple[int, int] = DEFAULT_FIGURE_SIZE_CLUSTERS,
 ):
     """
     Visualize clusters in 2D using PCA.
 
     Args:
-        result: KMeansResult from cluster_sensor_states()
+        kmeans_model: Fitted KMeans model
+        metadata: ClusteringMetadata from cluster_sensor_states()
         save_path: Path to save figure (None to display)
         figsize: Figure size
     """
     # Apply PCA for 2D visualization
     pca = PCA(n_components=2)
-    features_2d = pca.fit_transform(result.features)
-    centers_2d = pca.transform(result.cluster_centers)
+    features_2d = pca.fit_transform(metadata.features)
+    centers_2d = pca.transform(kmeans_model.cluster_centers_)
 
     # Create plot
     plt.figure(figsize=figsize)
 
     # Plot each cluster
-    unique_labels = np.unique(result.labels)
+    unique_labels = np.unique(metadata.labels)
     colors = plt.cm.tab20(np.linspace(0, 1, len(unique_labels)))
 
     for label, color in zip(unique_labels, colors):
-        mask = result.labels == label
+        mask = metadata.labels == label
         plt.scatter(
             features_2d[mask, 0],
             features_2d[mask, 1],
             c=[color],
             marker='o',
             label=f'Cluster {label}',
-            alpha=0.6,
-            s=30,
+            alpha=DEFAULT_ALPHA * 2,  # 0.6
+            s=DEFAULT_MARKER_SIZE_SAMPLE,
         )
 
     # Plot cluster centers
@@ -305,22 +343,22 @@ def visualize_clusters(
         centers_2d[:, 1],
         c='black',
         marker='X',
-        s=200,
+        s=DEFAULT_MARKER_SIZE_CENTROID,
         edgecolors='white',
-        linewidths=2,
+        linewidths=DEFAULT_LINE_WIDTH_BORDER,
         label='Centroids',
-        zorder=10
+        zorder=DEFAULT_ZORDER_CENTROID
     )
 
     plt.xlabel(f'PC1 ({pca.explained_variance_ratio_[0]:.1%} variance)')
     plt.ylabel(f'PC2 ({pca.explained_variance_ratio_[1]:.1%} variance)')
-    plt.title(f'K-means Clustering Results (k={result.n_clusters})\n'
-              f'Silhouette: {result.silhouette:.3f}, Davies-Bouldin: {result.davies_bouldin:.3f}')
+    plt.title(f'K-means Clustering Results (k={metadata.n_clusters})\n'
+              f'Silhouette: {metadata.silhouette:.3f}, Davies-Bouldin: {metadata.davies_bouldin:.3f}')
     plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
     plt.grid(alpha=0.3)
 
     if save_path:
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.savefig(save_path, dpi=DEFAULT_DPI, bbox_inches='tight')
         print(f"Saved visualization to: {save_path}")
     else:
         plt.show()
@@ -328,58 +366,127 @@ def visualize_clusters(
     plt.close()
 
 
-def get_cluster_statistics(result: KMeansResult) -> dict:
+def get_cluster_statistics(kmeans_model: KMeans, metadata: ClusteringMetadata) -> dict:
     """
     Get statistics for each cluster.
 
     Args:
-        result: KMeansResult from cluster_sensor_states()
+        kmeans_model: Fitted KMeans model
+        metadata: ClusteringMetadata from cluster_sensor_states()
 
     Returns:
         Dictionary with cluster statistics
     """
     stats = {}
 
-    for cluster_id in range(result.n_clusters):
-        mask = result.labels == cluster_id
-        cluster_features = result.features[mask]
+    for cluster_id in range(metadata.n_clusters):
+        mask = metadata.labels == cluster_id
+        cluster_features = metadata.features[mask]
 
         stats[cluster_id] = {
             'size': int(np.sum(mask)),
             'centroid': {
-                name: float(result.cluster_centers[cluster_id, idx])
-                for idx, name in enumerate(result.feature_names)
+                name: float(kmeans_model.cluster_centers_[cluster_id, idx])
+                for idx, name in enumerate(metadata.feature_names)
             },
             'feature_means': {
                 name: float(np.mean(cluster_features[:, idx]))
-                for idx, name in enumerate(result.feature_names)
+                for idx, name in enumerate(metadata.feature_names)
             },
             'feature_stds': {
                 name: float(np.std(cluster_features[:, idx]))
-                for idx, name in enumerate(result.feature_names)
+                for idx, name in enumerate(metadata.feature_names)
             },
         }
 
     return stats
 
 
-def save_clustering_result(result: KMeansResult, output_path: Path):
-    """Save clustering result to disk."""
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(output_path, 'wb') as f:
-        pickle.dump(result, f)
-    print(f"Saved clustering result to: {output_path}")
+def save_clustering_artifacts(
+    kmeans_model: KMeans,
+    metadata: ClusteringMetadata,
+    output_dir: Path
+):
+    """Save KMeans model and metadata separately (recommended approach).
+
+    Args:
+        kmeans_model: Fitted KMeans model
+        metadata: ClusteringMetadata object
+        output_dir: Directory to save artifacts
+
+    Saves:
+        - kmeans_model.joblib: KMeans model (joblib format for sklearn models)
+        - clustering_metadata.pkl: ClusteringMetadata object (pickle format)
+    """
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Save KMeans model using joblib (recommended for sklearn models)
+    model_path = output_dir / KMEANS_MODEL_FILENAME
+    joblib.dump(kmeans_model, model_path)
+    print(f"Saved KMeans model to: {model_path}")
+
+    # Save metadata using pickle
+    metadata_path = output_dir / CLUSTERING_METADATA_FILENAME
+    with open(metadata_path, 'wb') as f:
+        pickle.dump(metadata, f)
+    print(f"Saved clustering metadata to: {metadata_path}")
 
 
-def load_clustering_result(input_path: Path) -> KMeansResult:
-    """Load clustering result from disk."""
-    with open(input_path, 'rb') as f:
-        result = pickle.load(f)
-    print(f"Loaded clustering result from: {input_path}")
-    return result
+def load_kmeans_model(model_path: Path) -> KMeans:
+    """Load KMeans model from disk.
+
+    Args:
+        model_path: Path to kmeans_model.joblib
+
+    Returns:
+        Fitted KMeans model
+
+    Raises:
+        FileNotFoundError: If model file doesn't exist
+        ValueError: If file is not a valid KMeans model (e.g., old format)
+    """
+    if not model_path.exists():
+        raise FileNotFoundError(
+            f"KMeans model file not found: {model_path}\n"
+            f"Expected format: joblib-serialized sklearn KMeans model (.joblib)"
+        )
+
+    try:
+        model = joblib.load(model_path)
+    except Exception as e:
+        raise ValueError(
+            f"Failed to load KMeans model from {model_path}\n"
+            f"This might be an old format file (clustering_result.pkl).\n"
+            f"Expected: joblib-serialized KMeans model\n"
+            f"Error: {e}"
+        )
+
+    if not isinstance(model, KMeans):
+        raise ValueError(
+            f"Loaded object is not a KMeans model: {type(model)}\n"
+            f"File: {model_path}"
+        )
+
+    print(f"Loaded KMeans model from: {model_path}")
+    return model
 
 
-def analyze_temporal_continuity(result: KMeansResult, dataset: list[RobotSensorSample]) -> dict:
+def load_clustering_metadata(metadata_path: Path) -> ClusteringMetadata:
+    """Load clustering metadata from disk.
+
+    Args:
+        metadata_path: Path to clustering_metadata.pkl
+
+    Returns:
+        ClusteringMetadata object
+    """
+    with open(metadata_path, 'rb') as f:
+        metadata = pickle.load(f)
+    print(f"Loaded clustering metadata from: {metadata_path}")
+    return metadata
+
+
+def analyze_temporal_continuity(metadata: ClusteringMetadata, dataset: list[RobotSensorSample]) -> dict:
     """
     Analyze temporal continuity within clusters to determine if clusters
     represent situations or time-periods.
@@ -388,7 +495,7 @@ def analyze_temporal_continuity(result: KMeansResult, dataset: list[RobotSensorS
     Low temporal continuity (<30%) suggests clusters represent situations (good).
 
     Args:
-        result: KMeansResult from cluster_sensor_states()
+        metadata: ClusteringMetadata from cluster_sensor_states()
         dataset: Original list of RobotSensorSample used for clustering
 
     Returns:
@@ -397,9 +504,9 @@ def analyze_temporal_continuity(result: KMeansResult, dataset: list[RobotSensorS
     # Group samples by robot_index and cluster
     cluster_analysis = {}
 
-    for cluster_id in range(result.n_clusters):
+    for cluster_id in range(metadata.n_clusters):
         # Get samples in this cluster
-        cluster_mask = (result.labels == cluster_id)
+        cluster_mask = (metadata.labels == cluster_id)
         cluster_indices = np.where(cluster_mask)[0]
         cluster_samples = [dataset[i] for i in cluster_indices]
 
@@ -488,7 +595,7 @@ def visualize_temporal_continuity(
     plt.tight_layout()
 
     if save_path:
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.savefig(save_path, dpi=DEFAULT_DPI, bbox_inches='tight')
         print(f"Saved temporal continuity visualization to: {save_path}")
     else:
         plt.show()
@@ -497,42 +604,42 @@ def visualize_temporal_continuity(
 
 
 def visualize_feature_distributions(
-    result: KMeansResult,
+    metadata: ClusteringMetadata,
     save_path: Optional[Path] = None,
-    figsize: tuple[int, int] = (14, 10)
+    figsize: tuple[int, int] = DEFAULT_FIGURE_SIZE_FEATURES
 ):
     """
     Visualize feature distributions for each cluster to identify
     if clusters represent distinct situations.
 
     Args:
-        result: KMeansResult from cluster_sensor_states()
+        metadata: ClusteringMetadata from cluster_sensor_states()
         save_path: Path to save figure (None to display)
         figsize: Figure size
     """
     fig, axes = plt.subplots(2, 3, figsize=figsize)
     axes = axes.flatten()
 
-    for feat_idx, feature_name in enumerate(result.feature_names):
+    for feat_idx, feature_name in enumerate(metadata.feature_names):
         ax = axes[feat_idx]
 
         # Plot distribution for each cluster
-        for cluster_id in range(result.n_clusters):
-            mask = result.labels == cluster_id
-            feature_values = result.features[mask, feat_idx]
+        for cluster_id in range(metadata.n_clusters):
+            mask = metadata.labels == cluster_id
+            feature_values = metadata.features[mask, feat_idx]
             ax.hist(feature_values, bins=30, alpha=0.5, label=f'C{cluster_id}', density=True)
 
         ax.set_xlabel(feature_name)
         ax.set_ylabel('Density')
         ax.set_title(f'{feature_name} Distribution')
-        ax.grid(alpha=0.3)
+        ax.grid(alpha=DEFAULT_ALPHA)
         if feat_idx == 0:
             ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=8)
 
     plt.tight_layout()
 
     if save_path:
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.savefig(save_path, dpi=DEFAULT_DPI, bbox_inches='tight')
         print(f"Saved feature distributions to: {save_path}")
     else:
         plt.show()
@@ -540,17 +647,18 @@ def visualize_feature_distributions(
     plt.close()
 
 
-def analyze_cluster_distances(result: KMeansResult) -> dict:
+def analyze_cluster_distances(kmeans_model: KMeans, metadata: ClusteringMetadata) -> dict:
     """
     Calculate pairwise distances between cluster centroids.
 
     Args:
-        result: KMeansResult from cluster_sensor_states()
+        kmeans_model: Fitted KMeans model
+        metadata: ClusteringMetadata from cluster_sensor_states()
 
     Returns:
         Dictionary with distance matrix and statistics
     """
-    n_clusters = result.n_clusters
+    n_clusters = metadata.n_clusters
 
     # Calculate pairwise distances between centroids
     distance_matrix = np.zeros((n_clusters, n_clusters))
@@ -559,7 +667,7 @@ def analyze_cluster_distances(result: KMeansResult) -> dict:
         for j in range(n_clusters):
             if i != j:
                 distance_matrix[i, j] = np.linalg.norm(
-                    result.cluster_centers[i] - result.cluster_centers[j]
+                    kmeans_model.cluster_centers_[i] - kmeans_model.cluster_centers_[j]
                 )
 
     # Find nearest cluster for each cluster
@@ -586,13 +694,13 @@ def analyze_cluster_distances(result: KMeansResult) -> dict:
     }
 
 
-def analyze_temporal_statistics(result: KMeansResult, dataset: list[RobotSensorSample]) -> dict:
+def analyze_temporal_statistics(metadata: ClusteringMetadata, dataset: list[RobotSensorSample]) -> dict:
     """
     Analyze temporal statistics for each cluster to check if clusters
     represent temporal segments.
 
     Args:
-        result: KMeansResult from cluster_sensor_states()
+        metadata: ClusteringMetadata from cluster_sensor_states()
         dataset: Original list of RobotSensorSample used for clustering
 
     Returns:
@@ -600,9 +708,9 @@ def analyze_temporal_statistics(result: KMeansResult, dataset: list[RobotSensorS
     """
     temporal_stats = {}
 
-    for cluster_id in range(result.n_clusters):
+    for cluster_id in range(metadata.n_clusters):
         # Get samples in this cluster
-        cluster_mask = (result.labels == cluster_id)
+        cluster_mask = (metadata.labels == cluster_id)
         cluster_indices = np.where(cluster_mask)[0]
         cluster_samples = [dataset[i] for i in cluster_indices]
 
@@ -672,7 +780,7 @@ def visualize_cluster_distance_matrix(
     plt.tight_layout()
 
     if save_path:
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.savefig(save_path, dpi=DEFAULT_DPI, bbox_inches='tight')
         print(f"Saved cluster distance matrix to: {save_path}")
     else:
         plt.show()
@@ -730,7 +838,7 @@ def visualize_temporal_statistics(
     plt.tight_layout()
 
     if save_path:
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.savefig(save_path, dpi=DEFAULT_DPI, bbox_inches='tight')
         print(f"Saved temporal statistics visualization to: {save_path}")
     else:
         plt.show()
@@ -738,12 +846,12 @@ def visualize_temporal_statistics(
     plt.close()
 
 
-def analyze_original_sensor_values(result: KMeansResult, dataset: list[RobotSensorSample]) -> dict:
+def analyze_original_sensor_values(metadata: ClusteringMetadata, dataset: list[RobotSensorSample]) -> dict:
     """
     Analyze original (non-standardized) sensor values for each cluster.
 
     Args:
-        result: KMeansResult from cluster_sensor_states()
+        metadata: ClusteringMetadata from cluster_sensor_states()
         dataset: Original list of RobotSensorSample used for clustering
 
     Returns:
@@ -792,8 +900,8 @@ def analyze_original_sensor_values(result: KMeansResult, dataset: list[RobotSens
     }
 
     # Per-cluster statistics
-    for cluster_id in range(result.n_clusters):
-        cluster_mask = (result.labels == cluster_id)
+    for cluster_id in range(metadata.n_clusters):
+        cluster_mask = (metadata.labels == cluster_id)
         cluster_indices = np.where(cluster_mask)[0]
         cluster_samples = [dataset[i] for i in cluster_indices]
 
@@ -876,7 +984,7 @@ def visualize_original_sensor_distributions(
     plt.tight_layout()
 
     if save_path:
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.savefig(save_path, dpi=DEFAULT_DPI, bbox_inches='tight')
         print(f"Saved original sensor distributions to: {save_path}")
     else:
         plt.show()
@@ -885,10 +993,10 @@ def visualize_original_sensor_distributions(
 
 
 def visualize_cluster_timeline(
-    result: KMeansResult,
+    metadata: ClusteringMetadata,
     dataset: list[RobotSensorSample],
     save_path: Optional[Path] = None,
-    figsize: tuple[int, int] = (16, 10)
+    figsize: tuple[int, int] = DEFAULT_FIGURE_SIZE_TIMELINE
 ):
     """
     Visualize which cluster each robot belongs to over time.
@@ -897,7 +1005,7 @@ def visualize_cluster_timeline(
     throughout the simulation.
 
     Args:
-        result: KMeansResult from cluster_sensor_states()
+        metadata: ClusteringMetadata from cluster_sensor_states()
         dataset: Original list of RobotSensorSample used for clustering
         save_path: Path to save figure (None to display)
         figsize: Figure size
@@ -909,7 +1017,7 @@ def visualize_cluster_timeline(
             'robot_index': sample.robot_index,
             'timestep': sample.timestep,
             'time_seconds': sample.time_seconds,
-            'cluster': result.labels[idx]
+            'cluster': metadata.labels[idx]
         })
 
     # Get unique robot indices
@@ -917,7 +1025,7 @@ def visualize_cluster_timeline(
     n_robots = len(robot_indices)
 
     # Create color map for clusters
-    n_clusters = result.n_clusters
+    n_clusters = metadata.n_clusters
     colors = plt.cm.tab20(np.linspace(0, 1, n_clusters))
 
     # Create figure with two subplots
@@ -983,7 +1091,7 @@ def visualize_cluster_timeline(
     plt.tight_layout()
 
     if save_path:
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.savefig(save_path, dpi=DEFAULT_DPI, bbox_inches='tight')
         print(f"Saved cluster timeline visualization to: {save_path}")
     else:
         plt.show()
@@ -992,7 +1100,7 @@ def visualize_cluster_timeline(
 
 
 def export_cluster_timeline_data(
-    result: KMeansResult,
+    metadata: ClusteringMetadata,
     dataset: list[RobotSensorSample],
     output_path: Path
 ):
@@ -1000,7 +1108,7 @@ def export_cluster_timeline_data(
     Export cluster membership timeline data to CSV file.
 
     Args:
-        result: KMeansResult from cluster_sensor_states()
+        metadata: ClusteringMetadata from cluster_sensor_states()
         dataset: Original list of RobotSensorSample used for clustering
         output_path: Path to save CSV file
     """
@@ -1018,7 +1126,7 @@ def export_cluster_timeline_data(
                 sample.robot_index,
                 sample.timestep,
                 sample.time_seconds,
-                result.labels[idx]
+                metadata.labels[idx]
             ])
 
     print(f"Saved cluster timeline data to: {output_path}")
@@ -1168,7 +1276,7 @@ if __name__ == '__main__':
         k_metrics = find_optimal_k(dataset, k_range=k_range)
 
         # Save metrics
-        metrics_path = output_dir / "optimal_k_metrics.txt"
+        metrics_path = output_dir / OPTIMAL_K_METRICS_FILENAME
         with open(metrics_path, 'w') as f:
             f.write("Optimal K Search Results\n")
             f.write("========================\n\n")
@@ -1182,7 +1290,7 @@ if __name__ == '__main__':
         print(f"\nSaved metrics to: {metrics_path}")
 
         # Visualize elbow curve
-        elbow_path = output_dir / "elbow_curve.png"
+        elbow_path = output_dir / ELBOW_CURVE_FILENAME
         visualize_elbow_curve(k_metrics, save_path=elbow_path)
 
         print(f"\n{'=' * 60}")
@@ -1213,30 +1321,31 @@ if __name__ == '__main__':
 
     # Perform clustering
     print("\nRunning K-means clustering...")
-    result = cluster_sensor_states(dataset, n_clusters=args.n_clusters)
+    kmeans_model, metadata = cluster_sensor_states(dataset, n_clusters=args.n_clusters)
 
     print(f"\nClustering complete!")
-    print(f"  Inertia: {result.inertia:.4f}")
-    print(f"  Silhouette score: {result.silhouette:.4f}")
+    print(f"  Inertia: {metadata.inertia:.4f}")
+    print(f"  Silhouette score: {metadata.silhouette:.4f}")
 
     # Print cluster sizes
-    cluster_sizes = result.get_cluster_sizes()
+    unique, counts = np.unique(metadata.labels, return_counts=True)
+    cluster_sizes = dict(zip(unique, counts))
     print("\nCluster sizes:")
     for cluster_id, size in sorted(cluster_sizes.items()):
-        print(f"  Cluster {cluster_id}: {size} samples ({100*size/len(result.labels):.1f}%)")
+        print(f"  Cluster {cluster_id}: {size} samples ({100*size/len(metadata.labels):.1f}%)")
 
     # Get cluster statistics
     print("\nComputing cluster statistics...")
-    stats = get_cluster_statistics(result)
+    stats = get_cluster_statistics(kmeans_model, metadata)
 
     # Save statistics
-    stats_path = output_dir / "cluster_stats.txt"
+    stats_path = output_dir / CLUSTER_STATS_FILENAME
     with open(stats_path, 'w') as f:
         f.write(f"K-means Clustering Results\n")
         f.write(f"==========================\n")
         f.write(f"Number of clusters: {args.n_clusters}\n")
-        f.write(f"Inertia: {result.inertia:.4f}\n")
-        f.write(f"Silhouette score: {result.silhouette:.4f}\n\n")
+        f.write(f"Inertia: {metadata.inertia:.4f}\n")
+        f.write(f"Silhouette score: {metadata.silhouette:.4f}\n\n")
 
         for cluster_id, cluster_stats in stats.items():
             f.write(f"\nCluster {cluster_id}:\n")
@@ -1249,25 +1358,24 @@ if __name__ == '__main__':
 
     # Visualize clusters
     print("\nGenerating visualizations...")
-    viz_2d_path = output_dir / "clusters_2d.png"
-    visualize_clusters(result, save_path=viz_2d_path)
+    viz_2d_path = output_dir / CLUSTERS_2D_FILENAME
+    visualize_clusters(kmeans_model, metadata, save_path=viz_2d_path)
 
     # Analyze and visualize original sensor distributions
-    sensor_dist_path = output_dir / "sensor_distributions.png"
-    original_stats = analyze_original_sensor_values(result, dataset)
+    sensor_dist_path = output_dir / SENSOR_DISTRIBUTIONS_FILENAME
+    original_stats = analyze_original_sensor_values(metadata, dataset)
     visualize_original_sensor_distributions(original_stats, save_path=sensor_dist_path)
 
     # Visualize cluster timeline
-    timeline_path = output_dir / "cluster_timeline.png"
-    visualize_cluster_timeline(result, dataset, save_path=timeline_path)
+    timeline_path = output_dir / CLUSTER_TIMELINE_FILENAME
+    visualize_cluster_timeline(metadata, dataset, save_path=timeline_path)
 
     # Export cluster timeline data
-    timeline_csv_path = output_dir / "cluster_timeline.csv"
-    export_cluster_timeline_data(result, dataset, timeline_csv_path)
+    timeline_csv_path = output_dir / CLUSTER_TIMELINE_CSV_FILENAME
+    export_cluster_timeline_data(metadata, dataset, timeline_csv_path)
 
     # Save clustering results
-    results_path = output_dir / "clustering_result.pkl"
-    save_clustering_result(result, results_path)
+    save_clustering_artifacts(kmeans_model, metadata, output_dir)
 
     # Create video if requested
     video_path = None
@@ -1283,21 +1391,21 @@ if __name__ == '__main__':
         for sample in full_dataset:
             if sample.pheromone_magnitude >= args.pheromone_threshold:
                 key = (sample.timestep, sample.robot_index)
-                cluster_map[key] = result.labels[filtered_idx]
+                cluster_map[key] = metadata.labels[filtered_idx]
                 filtered_idx += 1
         print(f"  Cluster assignments: {len(cluster_map)}")
 
         if args.video_with_stats:
-            video_path = output_dir / 'cluster_animation_with_stats.mp4'
+            video_path = output_dir / CLUSTER_ANIMATION_WITH_STATS_FILENAME
             create_cluster_animation_with_stats(
-                result, cluster_map, debug_data, video_path,
+                metadata, cluster_map, debug_data, video_path,
                 world_width=MySettings.Simulation.WORLD_WIDTH,
                 world_height=MySettings.Simulation.WORLD_HEIGHT
             )
         else:
-            video_path = output_dir / 'cluster_animation.mp4'
+            video_path = output_dir / CLUSTER_ANIMATION_FILENAME
             create_cluster_animation(
-                result, cluster_map, debug_data, video_path,
+                metadata, cluster_map, debug_data, video_path,
                 world_width=MySettings.Simulation.WORLD_WIDTH,
                 world_height=MySettings.Simulation.WORLD_HEIGHT
             )
@@ -1306,11 +1414,12 @@ if __name__ == '__main__':
     print("Clustering analysis complete!")
     print(f"{'=' * 60}")
     print(f"\nResults saved to: {output_dir}")
-    print(f"  Statistics: {stats_path.name}")
-    print(f"  2D Visualization: {viz_2d_path.name}")
-    print(f"  Sensor Distributions: {sensor_dist_path.name}")
-    print(f"  Cluster Timeline: {timeline_path.name}")
-    print(f"  Timeline CSV: {timeline_csv_path.name}")
-    print(f"  Clustering result: {results_path.name}")
+    print(f"  Statistics: {CLUSTER_STATS_FILENAME}")
+    print(f"  2D Visualization: {CLUSTERS_2D_FILENAME}")
+    print(f"  Sensor Distributions: {SENSOR_DISTRIBUTIONS_FILENAME}")
+    print(f"  Cluster Timeline: {CLUSTER_TIMELINE_FILENAME}")
+    print(f"  Timeline CSV: {CLUSTER_TIMELINE_CSV_FILENAME}")
+    print(f"  KMeans model: {KMEANS_MODEL_FILENAME}")
+    print(f"  Clustering metadata: {CLUSTERING_METADATA_FILENAME}")
     if video_path is not None:
         print(f"  Video: {video_path.name}")
