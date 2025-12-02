@@ -101,6 +101,7 @@ class ClusteringMetadata:
     silhouette: float            # Silhouette coefficient (-1 to 1, higher is better)
     davies_bouldin: float        # Davies-Bouldin index (lower is better)
     calinski_harabasz: float     # Calinski-Harabasz index (higher is better)
+    pheromone_threshold: float   # Pheromone threshold used for clustering
 
     def get_cluster_sizes(self) -> dict[int, int]:
         """Get number of samples in each cluster."""
@@ -153,7 +154,8 @@ def cluster_sensor_states(
     n_clusters: int = DEFAULT_N_CLUSTERS,
     random_state: int = DEFAULT_RANDOM_STATE,
     max_iter: int = DEFAULT_MAX_ITER,
-    n_init: int = DEFAULT_N_INIT
+    n_init: int = DEFAULT_N_INIT,
+    pheromone_threshold: float = 0.0
 ) -> tuple[KMeans, ClusteringMetadata, StandardScaler]:
     """
     Cluster sensor states using K-means.
@@ -164,6 +166,7 @@ def cluster_sensor_states(
         random_state: Random seed for reproducibility
         max_iter: Maximum number of iterations
         n_init: Number of times to run k-means with different centroid seeds
+        pheromone_threshold: Pheromone threshold used for filtering dataset
 
     Returns:
         Tuple of (fitted KMeans model, ClusteringMetadata, fitted StandardScaler)
@@ -195,6 +198,7 @@ def cluster_sensor_states(
         silhouette=silhouette,
         davies_bouldin=davies_bouldin,
         calinski_harabasz=calinski_harabasz,
+        pheromone_threshold=pheromone_threshold,
     )
 
     return kmeans, metadata, scaler
@@ -1256,18 +1260,8 @@ if __name__ == '__main__':
         sample_interval=args.sample_interval
     )
 
-    # Create full dataset for animation (includes all robots, no pheromone filter)
-    full_dataset = convert_debug_data_to_dataset_filtered(
-        debug_data,
-        experiment_id=args.experiment_id,
-        generation=args.generation,
-        pheromone_threshold=0.0,  # No pheromone filter - include all
-        sample_interval=args.sample_interval
-    )
-
     print(f"Conversion complete!")
     print(f"  Filtered samples (for clustering): {len(dataset)}")
-    print(f"  Total samples (for animation): {len(full_dataset)}")
 
     # Set output directory
     if args.output_dir is None:
@@ -1337,7 +1331,11 @@ if __name__ == '__main__':
 
     # Perform clustering
     print("\nRunning K-means clustering...")
-    kmeans_model, metadata, scaler = cluster_sensor_states(dataset, n_clusters=args.n_clusters)
+    kmeans_model, metadata, scaler = cluster_sensor_states(
+        dataset,
+        n_clusters=args.n_clusters,
+        pheromone_threshold=args.pheromone_threshold
+    )
 
     print(f"\nClustering complete!")
     print(f"  Inertia: {metadata.inertia:.4f}")

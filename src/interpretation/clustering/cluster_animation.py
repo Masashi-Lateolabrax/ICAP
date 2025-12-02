@@ -46,7 +46,13 @@ from src.settings import MySettings
 from sklearn.preprocessing import StandardScaler
 
 
-def predict_cluster(kmeans_model, scaler: StandardScaler, frame: DebugData, robot_idx: int) -> int:
+def predict_cluster(
+    kmeans_model,
+    scaler: StandardScaler,
+    frame: DebugData,
+    robot_idx: int,
+    pheromone_threshold: float | None = None
+) -> int | None:
     """
     Predict cluster ID for a single robot using normalized features.
 
@@ -55,10 +61,19 @@ def predict_cluster(kmeans_model, scaler: StandardScaler, frame: DebugData, robo
         scaler: Fitted StandardScaler from training
         frame: DebugData frame
         robot_idx: Robot index
+        pheromone_threshold: Optional pheromone threshold. If provided, returns None for robots below threshold.
 
     Returns:
-        Cluster ID (int)
+        int: Cluster ID
+        None: If pheromone_threshold is specified and robot is below threshold
     """
+    # Check pheromone threshold if specified
+    if pheromone_threshold is not None:
+        pheromone_magnitude = float(frame.robot_inputs[robot_idx, 6])
+        if pheromone_magnitude < pheromone_threshold:
+            return None
+
+    # Predict cluster
     features = frame.robot_inputs[robot_idx, :6].reshape(1, -1)
     features_normalized = scaler.transform(features)
     return int(kmeans_model.predict(features_normalized)[0])
@@ -218,8 +233,9 @@ def create_cluster_animation(
         # Count cluster distribution at this timestep
         cluster_counts = {}
         for robot_idx in range(num_robots):
-            cluster_id = predict_cluster(kmeans_model, scaler, frame, robot_idx)
-            cluster_counts[cluster_id] = cluster_counts.get(cluster_id, 0) + 1
+            cluster_id = predict_cluster(kmeans_model, scaler, frame, robot_idx, metadata.pheromone_threshold)
+            if cluster_id is not None:  # Only count robots above threshold
+                cluster_counts[cluster_id] = cluster_counts.get(cluster_id, 0) + 1
 
         # Draw food items
         for food_pos in frame.food_positions:
@@ -233,8 +249,13 @@ def create_cluster_animation(
             direction = frame.robot_directions[robot_idx]
 
             # Get cluster assignment by predicting from current sensor state
-            cluster_id = predict_cluster(kmeans_model, scaler, frame, robot_idx)
-            color = get_cluster_color(cluster_id, metadata.n_clusters)
+            cluster_id = predict_cluster(kmeans_model, scaler, frame, robot_idx, metadata.pheromone_threshold)
+
+            # Choose color: cluster color if above threshold, black if below
+            if cluster_id is not None:
+                color = get_cluster_color(cluster_id, metadata.n_clusters)
+            else:
+                color = (0, 0, 0)  # Black for robots below threshold
 
             # Draw robot as filled circle
             cv2.circle(buffer, pos, 8, color, -1)
@@ -419,8 +440,9 @@ def create_cluster_animation_with_stats(
         # Count cluster distribution at this timestep
         cluster_counts = {}
         for robot_idx in range(num_robots):
-            cluster_id = predict_cluster(kmeans_model, scaler, frame, robot_idx)
-            cluster_counts[cluster_id] = cluster_counts.get(cluster_id, 0) + 1
+            cluster_id = predict_cluster(kmeans_model, scaler, frame, robot_idx, metadata.pheromone_threshold)
+            if cluster_id is not None:  # Only count robots above threshold
+                cluster_counts[cluster_id] = cluster_counts.get(cluster_id, 0) + 1
 
         # === LEFT PANEL: Simulation ===
         # Draw food items
@@ -435,8 +457,13 @@ def create_cluster_animation_with_stats(
             direction = frame.robot_directions[robot_idx]
 
             # Get cluster assignment by predicting from current sensor state
-            cluster_id = predict_cluster(kmeans_model, scaler, frame, robot_idx)
-            color = get_cluster_color(cluster_id, metadata.n_clusters)
+            cluster_id = predict_cluster(kmeans_model, scaler, frame, robot_idx, metadata.pheromone_threshold)
+
+            # Choose color: cluster color if above threshold, black if below
+            if cluster_id is not None:
+                color = get_cluster_color(cluster_id, metadata.n_clusters)
+            else:
+                color = (0, 0, 0)  # Black for robots below threshold
 
             # Draw robot as filled circle
             cv2.circle(buffer, pos, 8, color, -1)
