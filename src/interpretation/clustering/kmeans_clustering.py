@@ -846,7 +846,7 @@ def visualize_temporal_statistics(
     plt.close()
 
 
-def analyze_original_sensor_values(metadata: ClusteringMetadata, dataset: list[RobotSensorSample]) -> dict:
+def analyze_original_sensor_values(metadata: ClusteringMetadata, dataset: list[RobotSensorSample]) -> dict[str | int, dict]:
     """
     Analyze original (non-standardized) sensor values for each cluster.
 
