@@ -36,9 +36,32 @@ from pathlib import Path
 import numpy as np
 import cv2
 
-from src.interpretation.clustering.kmeans_clustering import ClusteringMetadata
+from src.interpretation.clustering.kmeans_clustering import (
+    ClusteringMetadata,
+    load_kmeans_model,
+    load_clustering_metadata,
+)
 from src.analysis_mod.structure.debug_data import DebugData
 from src.settings import MySettings
+from sklearn.preprocessing import StandardScaler
+
+
+def predict_cluster(kmeans_model, scaler: StandardScaler, frame: DebugData, robot_idx: int) -> int:
+    """
+    Predict cluster ID for a single robot using normalized features.
+
+    Args:
+        kmeans_model: Trained KMeans model
+        scaler: Fitted StandardScaler from training
+        frame: DebugData frame
+        robot_idx: Robot index
+
+    Returns:
+        Cluster ID (int)
+    """
+    features = frame.robot_inputs[robot_idx, :6].reshape(1, -1)
+    features_normalized = scaler.transform(features)
+    return int(kmeans_model.predict(features_normalized)[0])
 
 
 # Default rendering settings (can be overridden)
@@ -96,8 +119,9 @@ def get_cluster_color(cluster_id: int, n_clusters: int) -> tuple[int, int, int]:
 
 
 def create_cluster_animation(
+    kmeans_model,  # sklearn.cluster.KMeans
+    scaler: StandardScaler,
     metadata: ClusteringMetadata,
-    cluster_map: dict[tuple[int, int], int],
     debug_data: list[DebugData],
     output_path: Path,
     width: int = DEFAULT_WIDTH,
@@ -112,8 +136,9 @@ def create_cluster_animation(
     Create animation showing cluster membership over time.
 
     Args:
+        kmeans_model: Trained KMeans model for predicting cluster assignments
+        scaler: Fitted StandardScaler for feature normalization
         metadata: ClusteringMetadata from cluster_sensor_states()
-        cluster_map: Mapping from (timestep, robot_index) to cluster_id
         debug_data: List of DebugData containing positions and food
         output_path: Path to save video file (mp4)
         width: Video width in pixels
@@ -190,13 +215,11 @@ def create_cluster_animation(
         # Get data from debug_data
         frame = debug_data[ts]
 
-        # Count cluster distribution at this timestep (only clustered robots)
+        # Count cluster distribution at this timestep
         cluster_counts = {}
         for robot_idx in range(num_robots):
-            key = (ts, robot_idx)
-            cluster_id = cluster_map.get(key, None)
-            if cluster_id is not None:  # Only count robots above threshold
-                cluster_counts[cluster_id] = cluster_counts.get(cluster_id, 0) + 1
+            cluster_id = predict_cluster(kmeans_model, scaler, frame, robot_idx)
+            cluster_counts[cluster_id] = cluster_counts.get(cluster_id, 0) + 1
 
         # Draw food items
         for food_pos in frame.food_positions:
@@ -209,15 +232,9 @@ def create_cluster_animation(
             pos = world_to_pixel(frame.robot_positions[robot_idx])
             direction = frame.robot_directions[robot_idx]
 
-            # Get cluster assignment from cluster_map
-            key = (ts, robot_idx)
-            cluster_id = cluster_map.get(key, None)
-
-            # Choose color: cluster color if above threshold, black otherwise
-            if cluster_id is not None:
-                color = get_cluster_color(cluster_id, metadata.n_clusters)
-            else:
-                color = (0, 0, 0)  # Black for below threshold
+            # Get cluster assignment by predicting from current sensor state
+            cluster_id = predict_cluster(kmeans_model, scaler, frame, robot_idx)
+            color = get_cluster_color(cluster_id, metadata.n_clusters)
 
             # Draw robot as filled circle
             cv2.circle(buffer, pos, 8, color, -1)
@@ -288,8 +305,9 @@ def create_cluster_animation(
 
 
 def create_cluster_animation_with_stats(
+    kmeans_model,  # sklearn.cluster.KMeans
+    scaler: StandardScaler,
     metadata: ClusteringMetadata,
-    cluster_map: dict[tuple[int, int], int],
     debug_data: list[DebugData],
     output_path: Path,
     width: int = 1200,
@@ -305,10 +323,10 @@ def create_cluster_animation_with_stats(
     (centroids, sizes, etc.) on the right panel.
 
     Args:
+        kmeans_model: Trained KMeans model for predicting cluster assignments
+        scaler: Fitted StandardScaler for feature normalization
         metadata: ClusteringMetadata from cluster_sensor_states()
-        cluster_map: Mapping from (timestep, robot_index) to cluster_id
         debug_data: List of DebugData containing positions and food
-        pheromone_threshold: Threshold used for clustering
         output_path: Path to save video file (mp4)
         width: Total video width (simulation + stats panel)
         height: Video height
@@ -398,13 +416,11 @@ def create_cluster_animation_with_stats(
         # Get data from debug_data
         frame = debug_data[ts]
 
-        # Count cluster distribution at this timestep (only clustered robots)
+        # Count cluster distribution at this timestep
         cluster_counts = {}
         for robot_idx in range(num_robots):
-            key = (ts, robot_idx)
-            cluster_id = cluster_map.get(key, None)
-            if cluster_id is not None:  # Only count robots above threshold
-                cluster_counts[cluster_id] = cluster_counts.get(cluster_id, 0) + 1
+            cluster_id = predict_cluster(kmeans_model, scaler, frame, robot_idx)
+            cluster_counts[cluster_id] = cluster_counts.get(cluster_id, 0) + 1
 
         # === LEFT PANEL: Simulation ===
         # Draw food items
@@ -418,15 +434,9 @@ def create_cluster_animation_with_stats(
             pos = world_to_pixel(frame.robot_positions[robot_idx])
             direction = frame.robot_directions[robot_idx]
 
-            # Get cluster assignment from cluster_map
-            key = (ts, robot_idx)
-            cluster_id = cluster_map.get(key, None)
-
-            # Choose color: cluster color if above threshold, black otherwise
-            if cluster_id is not None:
-                color = get_cluster_color(cluster_id, metadata.n_clusters)
-            else:
-                color = (0, 0, 0)  # Black for below threshold
+            # Get cluster assignment by predicting from current sensor state
+            cluster_id = predict_cluster(kmeans_model, scaler, frame, robot_idx)
+            color = get_cluster_color(cluster_id, metadata.n_clusters)
 
             # Draw robot as filled circle
             cv2.circle(buffer, pos, 8, color, -1)
@@ -463,7 +473,7 @@ def create_cluster_animation_with_stats(
 
         y_offset += 30
         cv2.putText(
-            buffer, f"Total: {len(cluster_map)} samples",
+            buffer, f"Total: {len(metadata.labels)} samples",
             (stats_x, y_offset),
             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1
         )
@@ -636,16 +646,11 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Load KMeans model and metadata
-    from src.interpretation.clustering.kmeans_clustering import (
-        load_kmeans_model,
-        load_clustering_metadata
-    )
-
     kmeans_model_path = Path(args.kmeans_model)
     metadata_path = Path(args.clustering_metadata)
 
-    print(f"Loading KMeans model from: {kmeans_model_path}")
-    kmeans_model = load_kmeans_model(kmeans_model_path)
+    print(f"Loading KMeans model and scaler from: {kmeans_model_path}")
+    kmeans_model, scaler = load_kmeans_model(kmeans_model_path)
 
     print(f"Loading clustering metadata from: {metadata_path}")
     metadata = load_clustering_metadata(metadata_path)
@@ -657,27 +662,6 @@ if __name__ == '__main__':
 
     print(f"Loading debug data from: {debug_data_path}")
     debug_data = DebugData.load(debug_data_path)
-
-    # Build cluster_map from metadata labels
-    # Note: cluster_map maps (timestep, robot_index) -> cluster_id
-    # Since metadata.labels is ordered by the original dataset,
-    # we need to reconstruct the mapping based on the dataset structure
-    print("Building cluster assignment map from metadata labels...")
-    cluster_map = {}  # (timestep, robot_index) -> cluster_id
-
-    # The metadata.labels are in the same order as the original dataset was created
-    # We need to know the structure to map it back
-    # This is a limitation - ideally metadata should include timestep/robot info
-    # For now, assume labels are ordered by (timestep, robot_index) sequentially
-    label_idx = 0
-    for frame_idx, frame in enumerate(debug_data):
-        n_robots = frame.robot_inputs.shape[0]
-        for robot_idx in range(n_robots):
-            if label_idx < len(metadata.labels):
-                key = (frame_idx, robot_idx)
-                cluster_map[key] = metadata.labels[label_idx]
-                label_idx += 1
-    print(f"  Cluster assignments: {len(cluster_map)}")
 
     # Generate animation
     output_path = Path(args.output)
@@ -695,8 +679,9 @@ if __name__ == '__main__':
 
     if args.with_stats:
         create_cluster_animation_with_stats(
+            kmeans_model,
+            scaler,
             metadata,
-            cluster_map,
             debug_data,
             output_path,
             width=args.width,
@@ -707,8 +692,9 @@ if __name__ == '__main__':
         )
     else:
         create_cluster_animation(
+            kmeans_model,
+            scaler,
             metadata,
-            cluster_map,
             debug_data,
             output_path,
             width=args.width,

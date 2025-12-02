@@ -76,7 +76,7 @@ DEFAULT_LINE_WIDTH_BORDER = 2
 DEFAULT_ZORDER_CENTROID = 10
 
 # Output file names
-KMEANS_MODEL_FILENAME = "kmeans_model.joblib"  # joblib format
+KMEANS_MODEL_FILENAME = "kmeans_model.joblib"  # joblib format: (KMeans, StandardScaler) tuple
 CLUSTERING_METADATA_FILENAME = "clustering_metadata.pkl"  # pickle format
 CLUSTER_STATS_FILENAME = "cluster_stats.txt"
 CLUSTERS_2D_FILENAME = "clusters_2d.png"
@@ -108,17 +108,17 @@ class ClusteringMetadata:
         return dict(zip(unique, counts))
 
 
-def extract_sensor_features(dataset: list[RobotSensorSample], normalize: bool = True) -> tuple[np.ndarray, list[str]]:
+def extract_sensor_features(dataset: list[RobotSensorSample]) -> tuple[np.ndarray, list[str], StandardScaler]:
     """
-    Extract 6D sensor features (excluding pheromone).
+    Extract and normalize 6D sensor features (excluding pheromone).
 
     Args:
         dataset: List of RobotSensorSample containing samples
-        normalize: Apply standardization (zero mean, unit variance)
 
     Returns:
-        features: (n_samples, 6) array
+        features: (n_samples, 6) normalized array
         feature_names: List of 6 feature names
+        scaler: Fitted StandardScaler for transforming new samples
     """
     if len(dataset) == 0:
         raise ValueError("Dataset is empty")
@@ -142,11 +142,10 @@ def extract_sensor_features(dataset: list[RobotSensorSample], normalize: bool = 
 
     features = np.array(features_list)
 
-    if normalize:
-        scaler = StandardScaler()
-        features = scaler.fit_transform(features)
+    scaler = StandardScaler()
+    features_normalized = scaler.fit_transform(features)
 
-    return features, feature_names
+    return features_normalized, feature_names, scaler
 
 
 def cluster_sensor_states(
@@ -155,7 +154,7 @@ def cluster_sensor_states(
     random_state: int = DEFAULT_RANDOM_STATE,
     max_iter: int = DEFAULT_MAX_ITER,
     n_init: int = DEFAULT_N_INIT
-) -> tuple[KMeans, ClusteringMetadata]:
+) -> tuple[KMeans, ClusteringMetadata, StandardScaler]:
     """
     Cluster sensor states using K-means.
 
@@ -167,10 +166,10 @@ def cluster_sensor_states(
         n_init: Number of times to run k-means with different centroid seeds
 
     Returns:
-        Tuple of (fitted KMeans model, ClusteringMetadata)
+        Tuple of (fitted KMeans model, ClusteringMetadata, fitted StandardScaler)
     """
-    # Extract features
-    features, feature_names = extract_sensor_features(dataset, normalize=True)
+    # Extract and normalize features
+    features, feature_names, scaler = extract_sensor_features(dataset)
 
     # Run K-means
     kmeans = KMeans(
@@ -198,7 +197,7 @@ def cluster_sensor_states(
         calinski_harabasz=calinski_harabasz,
     )
 
-    return kmeans, metadata
+    return kmeans, metadata, scaler
 
 
 def find_optimal_k(
@@ -217,7 +216,7 @@ def find_optimal_k(
     Returns:
         Dictionary mapping k to metrics (inertia, silhouette, davies_bouldin, calinski_harabasz)
     """
-    features, _ = extract_sensor_features(dataset, normalize=True)
+    features, _, _ = extract_sensor_features(dataset)
 
     results = {}
     for k in k_range:
@@ -405,25 +404,27 @@ def get_cluster_statistics(kmeans_model: KMeans, metadata: ClusteringMetadata) -
 def save_clustering_artifacts(
     kmeans_model: KMeans,
     metadata: ClusteringMetadata,
+    scaler: StandardScaler,
     output_dir: Path
 ):
-    """Save KMeans model and metadata separately (recommended approach).
+    """Save KMeans model, scaler, and metadata separately.
 
     Args:
         kmeans_model: Fitted KMeans model
         metadata: ClusteringMetadata object
+        scaler: Fitted StandardScaler for feature normalization
         output_dir: Directory to save artifacts
 
     Saves:
-        - kmeans_model.joblib: KMeans model (joblib format for sklearn models)
+        - kmeans_model.joblib: (KMeans model, StandardScaler) tuple (joblib format)
         - clustering_metadata.pkl: ClusteringMetadata object (pickle format)
     """
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Save KMeans model using joblib (recommended for sklearn models)
+    # Save KMeans model and scaler together using joblib
     model_path = output_dir / KMEANS_MODEL_FILENAME
-    joblib.dump(kmeans_model, model_path)
-    print(f"Saved KMeans model to: {model_path}")
+    joblib.dump((kmeans_model, scaler), model_path)
+    print(f"Saved KMeans model and scaler to: {model_path}")
 
     # Save metadata using pickle
     metadata_path = output_dir / CLUSTERING_METADATA_FILENAME
@@ -432,43 +433,58 @@ def save_clustering_artifacts(
     print(f"Saved clustering metadata to: {metadata_path}")
 
 
-def load_kmeans_model(model_path: Path) -> KMeans:
-    """Load KMeans model from disk.
+def load_kmeans_model(model_path: Path) -> tuple[KMeans, StandardScaler]:
+    """Load KMeans model and scaler from disk.
 
     Args:
         model_path: Path to kmeans_model.joblib
 
     Returns:
-        Fitted KMeans model
+        Tuple of (fitted KMeans model, fitted StandardScaler)
 
     Raises:
         FileNotFoundError: If model file doesn't exist
-        ValueError: If file is not a valid KMeans model (e.g., old format)
+        ValueError: If file is not valid format
     """
     if not model_path.exists():
         raise FileNotFoundError(
             f"KMeans model file not found: {model_path}\n"
-            f"Expected format: joblib-serialized sklearn KMeans model (.joblib)"
+            f"Expected format: joblib-serialized (KMeans, StandardScaler) tuple (.joblib)"
         )
 
     try:
-        model = joblib.load(model_path)
+        loaded = joblib.load(model_path)
     except Exception as e:
         raise ValueError(
-            f"Failed to load KMeans model from {model_path}\n"
-            f"This might be an old format file (clustering_result.pkl).\n"
-            f"Expected: joblib-serialized KMeans model\n"
+            f"Failed to load from {model_path}\n"
+            f"Expected: joblib-serialized (KMeans, StandardScaler) tuple\n"
             f"Error: {e}"
         )
 
-    if not isinstance(model, KMeans):
+    # Check if it's a tuple (new format)
+    if isinstance(loaded, tuple) and len(loaded) == 2:
+        model, scaler = loaded
+        if not isinstance(model, KMeans):
+            raise ValueError(f"First element is not KMeans: {type(model)}")
+        if not isinstance(scaler, StandardScaler):
+            raise ValueError(f"Second element is not StandardScaler: {type(scaler)}")
+        print(f"Loaded KMeans model and scaler from: {model_path}")
+        return model, scaler
+
+    # Old format: just KMeans model
+    elif isinstance(loaded, KMeans):
         raise ValueError(
-            f"Loaded object is not a KMeans model: {type(model)}\n"
+            f"Old format detected (KMeans only, no StandardScaler)\n"
+            f"Please re-run clustering to generate new format files.\n"
             f"File: {model_path}"
         )
 
-    print(f"Loaded KMeans model from: {model_path}")
-    return model
+    else:
+        raise ValueError(
+            f"Unexpected format: {type(loaded)}\n"
+            f"Expected: (KMeans, StandardScaler) tuple\n"
+            f"File: {model_path}"
+        )
 
 
 def load_clustering_metadata(metadata_path: Path) -> ClusteringMetadata:
@@ -1321,7 +1337,7 @@ if __name__ == '__main__':
 
     # Perform clustering
     print("\nRunning K-means clustering...")
-    kmeans_model, metadata = cluster_sensor_states(dataset, n_clusters=args.n_clusters)
+    kmeans_model, metadata, scaler = cluster_sensor_states(dataset, n_clusters=args.n_clusters)
 
     print(f"\nClustering complete!")
     print(f"  Inertia: {metadata.inertia:.4f}")
@@ -1375,7 +1391,7 @@ if __name__ == '__main__':
     export_cluster_timeline_data(metadata, dataset, timeline_csv_path)
 
     # Save clustering results
-    save_clustering_artifacts(kmeans_model, metadata, output_dir)
+    save_clustering_artifacts(kmeans_model, metadata, scaler, output_dir)
 
     # Create video if requested
     video_path = None
@@ -1384,26 +1400,18 @@ if __name__ == '__main__':
         print("Generating Cluster Animation Video")
         print(f"{'=' * 60}")
 
-        # Build cluster_map from clustering result
-        print("Building cluster assignment map...")
-        cluster_map = {}  # (timestep, robot_index) -> cluster_id
-        # Use the filtered dataset that was actually clustered
-        for idx, sample in enumerate(dataset):
-            key = (sample.timestep, sample.robot_index)
-            cluster_map[key] = metadata.labels[idx]
-        print(f"  Cluster assignments: {len(cluster_map)}")
-
+        # Use the scaler from clustering (already fitted on the dataset)
         if args.video_with_stats:
             video_path = output_dir / CLUSTER_ANIMATION_WITH_STATS_FILENAME
             create_cluster_animation_with_stats(
-                metadata, cluster_map, debug_data, video_path,
+                kmeans_model, scaler, metadata, debug_data, video_path,
                 world_width=MySettings.Simulation.WORLD_WIDTH,
                 world_height=MySettings.Simulation.WORLD_HEIGHT
             )
         else:
             video_path = output_dir / CLUSTER_ANIMATION_FILENAME
             create_cluster_animation(
-                metadata, cluster_map, debug_data, video_path,
+                kmeans_model, scaler, metadata, debug_data, video_path,
                 world_width=MySettings.Simulation.WORLD_WIDTH,
                 world_height=MySettings.Simulation.WORLD_HEIGHT
             )
