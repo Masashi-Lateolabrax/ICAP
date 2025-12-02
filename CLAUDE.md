@@ -186,6 +186,22 @@ The system uses CMA-ES (Covariance Matrix Adaptation Evolution Strategy) for neu
 
 ## Development Guidelines
 
+### Git Commit Messages
+**CRITICAL**: ALL commit messages MUST be in English only. NO Japanese text allowed.
+
+Format:
+```
+<prefix>: <Short description in English>
+
+<Detailed description in English>
+- Bullet points in English
+- More details in English
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
+
 ### Git Commit Prefixes
 | Prefix | Description                          |
 |--------|--------------------------------------|
@@ -193,6 +209,8 @@ The system uses CMA-ES (Covariance Matrix Adaptation Evolution Strategy) for neu
 | `exp`  | Experimental setup                   |
 | `mod`  | Interface modifications              |
 | `doc`  | Documentation changes                |
+| `fix`  | Bug fixes                            |
+| `refactor` | Code refactoring                 |
 
 ### Branch Strategy
 | Branch     | Purpose             | Source    | Merge Target       |
