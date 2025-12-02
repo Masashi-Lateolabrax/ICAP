@@ -176,80 +176,6 @@ def visualize_output_distributions(
     plt.close()
 
 
-def visualize_output_comparison(
-    cluster_stats: dict[int, ClusterOutputStats],
-    save_path: Optional[Path] = None,
-    figsize: tuple[int, int] = (14, 10)
-):
-    """
-    Compare output statistics across clusters using box plots.
-
-    Args:
-        cluster_stats: Output from analyze_cluster_outputs()
-        save_path: Path to save figure (None to display)
-        figsize: Figure size
-    """
-    cluster_ids = sorted(cluster_stats.keys())
-
-    fig, axes = plt.subplots(2, 2, figsize=figsize)
-
-    # Right wheel box plot
-    ax = axes[0, 0]
-    right_wheel_data = [cluster_stats[cid].right_wheel_outputs for cid in cluster_ids]
-    bp = ax.boxplot(right_wheel_data, positions=cluster_ids, widths=0.6, patch_artist=True)
-    for patch in bp['boxes']:
-        patch.set_facecolor('lightblue')
-    ax.set_xlabel('Cluster ID')
-    ax.set_ylabel('Right Wheel Speed')
-    ax.set_title('Right Wheel Speed by Cluster')
-    ax.set_xticks(cluster_ids)
-    ax.grid(alpha=0.3, axis='y')
-
-    # Left wheel box plot
-    ax = axes[0, 1]
-    left_wheel_data = [cluster_stats[cid].left_wheel_outputs for cid in cluster_ids]
-    bp = ax.boxplot(left_wheel_data, positions=cluster_ids, widths=0.6, patch_artist=True)
-    for patch in bp['boxes']:
-        patch.set_facecolor('lightgreen')
-    ax.set_xlabel('Cluster ID')
-    ax.set_ylabel('Left Wheel Speed')
-    ax.set_title('Left Wheel Speed by Cluster')
-    ax.set_xticks(cluster_ids)
-    ax.grid(alpha=0.3, axis='y')
-
-    # Pheromone secretion box plot
-    ax = axes[1, 0]
-    pheromone_data = [cluster_stats[cid].pheromone_outputs for cid in cluster_ids]
-    bp = ax.boxplot(pheromone_data, positions=cluster_ids, widths=0.6, patch_artist=True)
-    for patch in bp['boxes']:
-        patch.set_facecolor('lightyellow')
-    ax.set_xlabel('Cluster ID')
-    ax.set_ylabel('Pheromone Secretion')
-    ax.set_title('Pheromone Secretion by Cluster')
-    ax.set_xticks(cluster_ids)
-    ax.grid(alpha=0.3, axis='y')
-
-    # Sample counts (keep as bar plot)
-    ax = axes[1, 1]
-    counts = [cluster_stats[cid].n_samples for cid in cluster_ids]
-    ax.bar(cluster_ids, counts, alpha=0.7, color='purple', width=0.6)
-    ax.set_xlabel('Cluster ID')
-    ax.set_ylabel('Number of Samples')
-    ax.set_title('Cluster Sample Counts')
-    ax.set_xticks(cluster_ids)
-    ax.grid(alpha=0.3, axis='y')
-
-    plt.tight_layout()
-
-    if save_path:
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
-        print(f"Saved output comparison to: {save_path}")
-    else:
-        plt.show()
-
-    plt.close()
-
-
 def visualize_wheel_scatter(
     cluster_stats: dict[int, ClusterOutputStats],
     save_path: Optional[Path] = None,
@@ -481,10 +407,6 @@ if __name__ == '__main__':
     dist_path = output_dir / "output_distributions.png"
     visualize_output_distributions(cluster_stats, save_path=dist_path)
 
-    # Comparison bar plots
-    comp_path = output_dir / "output_comparison.png"
-    visualize_output_comparison(cluster_stats, save_path=comp_path)
-
     # Wheel scatter plot
     scatter_path = output_dir / "wheel_scatter.png"
     visualize_wheel_scatter(cluster_stats, save_path=scatter_path)
@@ -498,6 +420,5 @@ if __name__ == '__main__':
     print("=" * 80)
     print(f"\nResults saved to: {output_dir}")
     print(f"  Distribution histograms: {dist_path.name}")
-    print(f"  Comparison bar plots: {comp_path.name}")
     print(f"  Wheel scatter plot: {scatter_path.name}")
     print(f"  Statistics report: {report_path.name}")
