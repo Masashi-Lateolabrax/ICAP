@@ -48,11 +48,12 @@ class TransitionDataset:
 
 
 class TransitionCollector:
-    def __init__(self, settings, individual, kmeans, scaler):
+    def __init__(self, settings, individual, kmeans, scaler, pheromone_threshold: float = 0.0):
         self.simulator = Simulator(settings, individual, render=False)
         self.simulator_baseline = Simulator(settings, individual, render=False)
         self.kmeans = kmeans
         self.scaler = scaler
+        self.pheromone_threshold = pheromone_threshold
 
     def step(self):
         """Execute step and collect transition data if transitions occur.
@@ -72,8 +73,9 @@ class TransitionCollector:
         # Backup current state
         backup = SimulatorState(self.simulator)
 
-        # Execute actual step and check for transitions
-        transitions = simulation.step(self.simulator, self.kmeans, self.scaler)  # (n_robots,)
+        # Execute actual step and check for transitions (with pheromone filter)
+        transitions = simulation.step(self.simulator, self.kmeans, self.scaler,
+                                     self.pheromone_threshold)  # (n_robots,)
 
         if transitions.any():
             # At least one transition occurred! Get actual next input
@@ -171,6 +173,8 @@ def main():
                         help='Generation to analyze')
     parser.add_argument('--max-steps', type=int, default=6000,
                         help='Maximum simulation steps (default: 6000)')
+    parser.add_argument('--pheromone-threshold', type=float, default=0.0,
+                        help='Minimum pheromone value to collect transitions (default: 0.0)')
     parser.add_argument('--output-path', type=Path, required=True,
                         help='Path to save transition dataset (pkl)')
 
@@ -184,7 +188,9 @@ def main():
     settings = MySettings()
 
     # Create collector
-    collector = TransitionCollector(settings, individual, kmeans, scaler)
+    print(f"Pheromone threshold: {args.pheromone_threshold}")
+    collector = TransitionCollector(settings, individual, kmeans, scaler,
+                                   pheromone_threshold=args.pheromone_threshold)
 
     # Collect transitions
     print(f"\nCollecting transition data for {args.max_steps} steps...")

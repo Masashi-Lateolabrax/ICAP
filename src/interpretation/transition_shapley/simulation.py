@@ -37,17 +37,22 @@ def predict_cluster(kmeans, scaler, sensor_features: np.ndarray) -> np.ndarray:
     return kmeans.predict(features_scaled)
 
 
-def step(simulator: Simulator, kmeans, scaler):
+def step(simulator: Simulator, kmeans, scaler, pheromone_threshold: float = 0.0):
     """Execute one step and detect cluster transitions for all robots.
 
     Args:
         simulator: Simulator instance
         kmeans: Trained KMeans model
         scaler: Trained StandardScaler
+        pheromone_threshold: Minimum pheromone value to consider transitions (default: 0.0)
 
     Returns:
         (n_robots,) bool array: True if cluster transition occurred for each robot
+                                 AND pheromone >= threshold
     """
+    # Get current pheromone values
+    current_pheromone = simulator.input_ndarray[:, 6]  # (n_robots,)
+
     # Get current clusters
     current_features = extract_sensor_features(simulator)  # (n_robots, 6)
     current_clusters = predict_cluster(kmeans, scaler, current_features)  # (n_robots,)
@@ -59,8 +64,11 @@ def step(simulator: Simulator, kmeans, scaler):
     next_features = extract_sensor_features(simulator)  # (n_robots, 6)
     next_clusters = predict_cluster(kmeans, scaler, next_features)  # (n_robots,)
 
-    # Check for transitions
-    return current_clusters != next_clusters  # (n_robots,)
+    # Check for transitions with pheromone filter
+    transitions = current_clusters != next_clusters  # (n_robots,)
+    above_threshold = current_pheromone >= pheromone_threshold  # (n_robots,)
+
+    return transitions & above_threshold  # (n_robots,)
 
 
 def step_baseline(simulator: Simulator) -> np.ndarray:
