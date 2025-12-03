@@ -3,6 +3,8 @@ Simulation utilities for Shapley value analysis of cluster transitions.
 """
 
 import numpy as np
+import torch
+import mujoco
 
 from src.config import Simulator
 
@@ -61,3 +63,58 @@ def step(simulator: Simulator, kmeans, scaler, robot_idx: int) -> bool:
 
     # Check for transition
     return current_cluster != next_cluster
+
+
+def step_baseline(simulator: Simulator) -> np.ndarray:
+    """Execute one step with baseline (pheromone=0) and return next input.
+
+    This function executes Simulator.step() but with pheromone input zeroed out.
+    Unlike the normal step(), this returns the next step's input features.
+
+    Args:
+        simulator: Simulator instance
+
+    Returns:
+        (n_robots, 9) array: Next step's input features
+    """
+
+    # Use pre-allocated arrays to avoid memory allocation overhead
+    for i, robot in enumerate(simulator.robot_values):
+        simulator._robot_positions[i] = robot.xpos
+        simulator._robot_v_direction[i] = robot.xdirection
+        simulator._robot_h_direction[i, 0] = robot.xdirection[1]
+        simulator._robot_h_direction[i, 1] = -robot.xdirection[0]
+
+    if simulator.timer.tick():
+        with torch.no_grad():
+            input_ = simulator.create_input_for_controller()
+            # Zero out pheromone features for baseline
+            input_[:, 6:9] = 0.0
+
+            output = simulator.controller.forward(input_)
+            simulator.output_ndarray = output.numpy()
+
+    for i, robot in enumerate(simulator.robot_values):
+        robot.act(
+            right_wheel=simulator.output_ndarray[i, 0],
+            left_wheel=simulator.output_ndarray[i, 1]
+        )
+
+    if simulator._pheromone_field is not None:
+        simulator.add_pheromone(
+            simulator._robot_positions,
+            simulator.output_ndarray[:, 2] * simulator.settings.Robot.MAX_PHEROMONE_SECRETION
+        )
+        simulator._pheromone_field.add_liquid_by_cell(simulator._pheromone_cells)
+        simulator._pheromone_field.step()
+
+        max_pheromone = simulator._pheromone_field.get_max_value()
+        simulator._max_pheromone = max(simulator._max_pheromone, max_pheromone)
+
+    for food in simulator.food_values:
+        if np.linalg.norm(food.xpos - simulator.nest_site.xpos[0:2]) <= simulator.settings.Nest.RADIUS:
+            simulator._respawn_food(food)
+
+    mujoco.mj_step(simulator.model, simulator.data)
+
+    return simulator.create_input_for_controller().numpy()
