@@ -86,7 +86,6 @@ def step_baseline(simulator: Simulator) -> np.ndarray:
     if simulator.timer.tick():
         with torch.no_grad():
             input_ = simulator.create_input_for_controller()  # (n_robots, 9)
-            # Zero out pheromone features for baseline
             input_[:, 6:9] = 0.0  # (n_robots, 3) <- 0
 
             output = simulator.controller.forward(input_)  # (n_robots, 3)
@@ -105,13 +104,6 @@ def step_baseline(simulator: Simulator) -> np.ndarray:
         )
         simulator._pheromone_field.add_liquid_by_cell(simulator._pheromone_cells)
         simulator._pheromone_field.step()
-
-        max_pheromone = simulator._pheromone_field.get_max_value()  # scalar
-        simulator._max_pheromone = max(simulator._max_pheromone, max_pheromone)
-
-    for food in simulator.food_values:
-        if np.linalg.norm(food.xpos - simulator.nest_site.xpos[0:2]) <= simulator.settings.Nest.RADIUS:
-            simulator._respawn_food(food)
 
     mujoco.mj_step(simulator.model, simulator.data)
 
