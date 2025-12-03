@@ -3,6 +3,7 @@ import pickle
 import hashlib
 
 import numpy as np
+import torch
 
 from framework.prelude import *
 
@@ -23,11 +24,19 @@ class SimulatorForDebugging(analysis_mod.SimulatorForDebugInterface):
         self.simulator.step()
 
         self.time += self.timestep
+
+        # ベースライン出力を計算（フェロモン=0）
+        baseline_input = self.simulator.input_tensor.clone()
+        baseline_input[:, 6:9] = 0.0  # 全ロボットのフェロモン特徴量（3次元）をゼロに
+        with torch.no_grad():
+            baseline_output = self.simulator.controller.forward(baseline_input)
+
         self._debug_data.append(analysis_mod.DebugData(
             time=self.time,
             robot_positions=[np.copy(r.xpos) for r in self.simulator.robot_values],
             robot_inputs=self.simulator.input_ndarray.copy(),
             robot_outputs=self.simulator.output_ndarray.copy(),
+            baseline_outputs=baseline_output.numpy(),
             robot_directions=[np.copy(r.xdirection) for r in self.simulator.robot_values],
             food_positions=[np.copy(f.xpos) for f in self.simulator.food_values],
             food_directions=[np.copy(f.direction) for f in self.simulator.food_values],
