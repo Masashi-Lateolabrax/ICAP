@@ -7,6 +7,7 @@ Usage:
         --optimization-log results/optimization_log.pkl \
         --generation 499 \
         --max-steps 6000 \
+        --pheromone-threshold 0.1 \
         --output-path results/transition_shapley/transition_dataset.pkl
 """
 
