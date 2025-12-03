@@ -17,10 +17,7 @@ class SimulatorState:
 
     def __init__(self, simulator: Simulator):
         """Create state snapshot from simulator."""
-        data_copy = mujoco.MjData(simulator.model)
-        mujoco.mj_copyData(data_copy, simulator.model, simulator.data)
-
-        self.data = data_copy
+        self.data = copy.deepcopy(simulator.data)
         self.timer_time = simulator.timer.time
         self.pheromone_field = copy.deepcopy(
             simulator._pheromone_field) if simulator._pheromone_field is not None else None
@@ -29,7 +26,7 @@ class SimulatorState:
 
     def restore(self, simulator: Simulator):
         """Restore simulator to this saved state."""
-        mujoco.mj_copyData(simulator.data, simulator.model, self.data)
+        simulator.data = copy.deepcopy(self.data)
         simulator.timer.time = self.timer_time
         simulator._pheromone_field = copy.deepcopy(self.pheromone_field) if self.pheromone_field is not None else None
         simulator.dummy_foods = copy.deepcopy(self.dummy_foods)
