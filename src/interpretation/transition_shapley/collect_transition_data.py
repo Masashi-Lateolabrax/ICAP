@@ -149,17 +149,16 @@ def load_kmeans_model(model_path: Path):
 
 def load_individual_from_log(log_path: Path, generation: int) -> Individual:
     """Load Individual from optimization log."""
-    with open(log_path, 'rb') as f:
-        optimization_log = pickle.load(f)
+    from framework.types.utils import IndividualRecorder
 
-    for entry in optimization_log:
-        if entry['generation'] == generation:
-            individual = entry['best_individual']
-            print(f"Loaded Individual from generation {generation}")
-            print(f"  Fitness: {individual.get_fitness()}")
-            return individual
+    recorder = IndividualRecorder.load(str(log_path))
+    rec = recorder[generation]
+    individual = rec.best_individual
 
-    raise ValueError(f"Generation {generation} not found in optimization log")
+    print(f"Loaded Individual from generation {generation}")
+    print(f"  Fitness: {individual.get_fitness()}")
+
+    return individual
 
 
 def main():
