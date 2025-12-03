@@ -6,7 +6,7 @@ Usage:
         --kmeans-model results/clustering/kmeans_model.joblib \
         --optimization-log results/optimization_log.pkl \
         --generation 499 \
-        --max-steps 6000 \
+        --time-length 60.0 \
         --pheromone-threshold 0.1 \
         --output-path results/transition_shapley/transition_dataset.pkl
 """
@@ -172,8 +172,8 @@ def main():
                         help='Path to optimization log (pkl)')
     parser.add_argument('--generation', type=int, required=True,
                         help='Generation to analyze')
-    parser.add_argument('--max-steps', type=int, default=6000,
-                        help='Maximum simulation steps (default: 6000)')
+    parser.add_argument('--time-length', type=float, default=60.0,
+                        help='Simulation time length in seconds (default: 60.0)')
     parser.add_argument('--pheromone-threshold', type=float, default=0.0,
                         help='Minimum pheromone value to collect transitions (default: 0.0)')
     parser.add_argument('--output-path', type=Path, required=True,
@@ -188,21 +188,25 @@ def main():
     # Create settings
     settings = MySettings()
 
+    # Convert time to steps
+    max_steps = int(args.time_length / settings.Simulation.TIME_STEP)
+    print(f"Time length: {args.time_length}s = {max_steps} steps")
+
     # Create collector
     print(f"Pheromone threshold: {args.pheromone_threshold}")
     collector = TransitionCollector(settings, individual, kmeans, scaler,
                                    pheromone_threshold=args.pheromone_threshold)
 
     # Collect transitions
-    print(f"\nCollecting transition data for {args.max_steps} steps...")
-    moments = collect_transitions(collector, args.max_steps)
+    print(f"\nCollecting transition data for {max_steps} steps...")
+    moments = collect_transitions(collector, max_steps)
 
     # Create dataset
     dataset = TransitionDataset(
         moments=moments,
         n_robots=settings.Robot.NUM,
         n_clusters=kmeans.n_clusters,
-        total_steps=args.max_steps
+        total_steps=max_steps
     )
 
     # Save dataset
