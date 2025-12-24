@@ -282,3 +282,150 @@ def load_clustering_result(input_path: Path) -> ClusteringResult:
         result = pickle.load(f)
     print(f"Loaded clustering result from: {input_path}")
     return result
+
+
+# ==============================================================================
+# CLI Interface
+# ==============================================================================
+
+if __name__ == '__main__':
+    import argparse
+    from pathlib import Path
+    from src.interpretation.data_collection.io_sample_definition import ShapleyDataset
+
+    def load_dataset(data_path: Path) -> ShapleyDataset:
+        """Load Shapley dataset from pickle file."""
+        with open(data_path, 'rb') as f:
+            dataset = pickle.load(f)
+        print(f"Loaded dataset from: {data_path}")
+        print(f"  Total samples: {len(dataset.samples)}")
+        print(f"  Experiment: {dataset.experiment_id}")
+        print(f"  Generation: {dataset.generation}")
+        return dataset
+
+    parser = argparse.ArgumentParser(
+        description="Run OPTICS clustering on sensor states"
+    )
+
+    parser.add_argument(
+        "--data-path",
+        type=str,
+        required=True,
+        help="Path to Shapley dataset pickle file (samples.pkl)"
+    )
+    parser.add_argument(
+        "--min-samples",
+        type=int,
+        default=5,
+        help="Minimum samples in neighborhood (default: 5)"
+    )
+    parser.add_argument(
+        "--xi",
+        type=float,
+        default=0.05,
+        help="Cluster extraction steepness threshold (default: 0.05)"
+    )
+    parser.add_argument(
+        "--min-cluster-size",
+        type=float,
+        default=None,
+        help="Minimum cluster size as fraction (default: None, uses min_samples)"
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=str,
+        default=None,
+        help="Output directory (default: same as data-path directory)"
+    )
+
+    args = parser.parse_args()
+
+    # Load dataset
+    data_path = Path(args.data_path)
+    if not data_path.exists():
+        raise FileNotFoundError(f"Data file not found: {data_path}")
+
+    dataset = load_dataset(data_path)
+
+    # Set output directory
+    if args.output_dir is None:
+        output_dir = data_path.parent / "clustering"
+    else:
+        output_dir = Path(args.output_dir)
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    print("\n" + "=" * 60)
+    print("OPTICS Clustering Configuration")
+    print("=" * 60)
+    print(f"Minimum samples: {args.min_samples}")
+    print(f"Xi (steepness): {args.xi}")
+    print(f"Minimum cluster size: {args.min_cluster_size if args.min_cluster_size is not None else 'None (uses min_samples)'}")
+    print(f"Features: 6D sensor states (robot, food, direction)")
+    print(f"Output directory: {output_dir}")
+    print("=" * 60)
+
+    # Perform clustering
+    print("\nRunning OPTICS clustering...")
+    result = cluster_sensor_states(
+        dataset,
+        min_samples=args.min_samples,
+        xi=args.xi,
+        min_cluster_size=args.min_cluster_size
+    )
+
+    print(f"\nClustering complete!")
+    print(f"  Found {result.n_clusters} clusters")
+
+    # Print cluster sizes
+    cluster_sizes = result.get_cluster_sizes()
+    print("\nCluster sizes:")
+    for cluster_id, size in sorted(cluster_sizes.items()):
+        if cluster_id == -1:
+            print(f"  Noise: {size} samples ({100*size/len(result.labels):.1f}%)")
+        else:
+            print(f"  Cluster {cluster_id}: {size} samples ({100*size/len(result.labels):.1f}%)")
+
+    # Get cluster statistics
+    print("\nComputing cluster statistics...")
+    stats = get_cluster_statistics(result)
+
+    # Save statistics
+    stats_path = output_dir / "cluster_stats.txt"
+    with open(stats_path, 'w') as f:
+        f.write(f"OPTICS Clustering Results\n")
+        f.write(f"========================\n")
+        f.write(f"Minimum samples: {args.min_samples}\n")
+        f.write(f"Xi (steepness): {args.xi}\n")
+        f.write(f"Minimum cluster size: {args.min_cluster_size}\n")
+        f.write(f"Number of clusters: {result.n_clusters}\n\n")
+
+        for cluster_id, cluster_stats in stats.items():
+            f.write(f"\nCluster {cluster_id}:\n")
+            f.write(f"  Size: {cluster_stats['size']}\n")
+            f.write(f"  Feature means:\n")
+            for feature_name, mean_val in cluster_stats['feature_means'].items():
+                f.write(f"    {feature_name}: {mean_val:.4f}\n")
+
+    print(f"Saved statistics to: {stats_path}")
+
+    # Visualize clusters
+    print("\nGenerating visualizations...")
+    viz_path = output_dir / "clusters_2d.png"
+    visualize_clusters(result, save_path=viz_path)
+
+    reachability_path = output_dir / "reachability_plot.png"
+    visualize_reachability_plot(result, save_path=reachability_path)
+
+    # Save clustering results
+    results_path = output_dir / "clustering_result.pkl"
+    save_clustering_result(result, results_path)
+
+    print("\n" + "=" * 60)
+    print("Clustering analysis complete!")
+    print("=" * 60)
+    print(f"\nResults saved to: {output_dir}")
+    print(f"  Statistics: {stats_path.name}")
+    print(f"  2D Visualization: {viz_path.name}")
+    print(f"  Reachability Plot: {reachability_path.name}")
+    print(f"  Clustering result: {results_path.name}")

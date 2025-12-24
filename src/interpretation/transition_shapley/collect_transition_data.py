@@ -6,9 +6,14 @@ Usage:
         --kmeans-model results/clustering/kmeans_model.joblib \
         --optimization-log results/optimization_log.pkl \
         --generation 499 \
+        --seed 100 \
         --time-length 60.0 \
         --pheromone-threshold 0.1 \
         --output-path results/transition_shapley/transition_dataset.pkl
+
+Note:
+    - If --seed is specified, it overrides Individual.generation for RNG initialization
+    - This ensures reproducible simulations matching specific debug_data
 """
 
 import argparse
@@ -172,6 +177,8 @@ def main():
                         help='Path to optimization log (pkl)')
     parser.add_argument('--generation', type=int, required=True,
                         help='Generation to analyze')
+    parser.add_argument('--seed', type=int, default=None,
+                        help='Random seed for simulation (default: use generation as seed)')
     parser.add_argument('--time-length', type=float, default=60.0,
                         help='Simulation time length in seconds (default: 60.0)')
     parser.add_argument('--pheromone-threshold', type=float, default=0.0,
@@ -184,6 +191,13 @@ def main():
     # Load models and data
     kmeans, scaler = load_kmeans_model(args.kmeans_model)
     individual = load_individual_from_log(args.optimization_log, args.generation)
+
+    # Override generation with seed if specified (for deterministic simulation)
+    if args.seed is not None:
+        print(f"Overriding Individual.generation ({individual.generation}) with seed: {args.seed}")
+        individual._generation = args.seed  # Direct access to internal field
+    else:
+        print(f"Using Individual.generation as seed: {individual.generation}")
 
     # Create settings
     settings = MySettings()

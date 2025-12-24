@@ -1,21 +1,22 @@
 """Calculate Shapley values for each cluster to understand situation-dependent feature importance.
 
 This script:
-1. Loads existing clustering_result.pkl (K=3 clustering)
-2. Loads debug_data.pkl and matches samples to clusters
+1. Loads KMeans model and clustering metadata (K=3 clustering)
+2. Loads debug_data.pkl and assigns samples to clusters
 3. Calculates Shapley values independently for each cluster
 4. Compares pheromone importance across different behavioral situations
 
 NOTE:
-    This script assigns cluster labels dynamically using K-means cluster centers, so you
+    This script assigns cluster labels dynamically using the trained KMeans model, so you
     don't need to match the pheromone threshold used during clustering. The script will:
     1. Load all samples (or filter by --pheromone-threshold if specified)
-    2. Assign each sample to the nearest cluster center
+    2. Assign each sample to clusters using KMeans.predict()
     3. Calculate Shapley values per cluster
 
 Usage:
     PYTHONPATH=. uv run --extra cpu src/interpretation/shapley/cluster_shapley_analysis.py \
-        --clustering-result results/.../clustering/clustering_result.pkl \
+        --kmeans-model results/.../clustering/kmeans_model.pkl \
+        --clustering-metadata results/.../clustering/clustering_metadata.pkl \
         --debug-data results/.../debug_data.pkl \
         --optimization-log results/20251027-024639_7bb53c8b/optimization_log.pkl \
         --generation 499 \
@@ -44,9 +45,9 @@ from src.interpretation.clustering.utils import (
     convert_debug_data_to_dataset_filtered
 )
 from src.interpretation.clustering.kmeans_clustering import (
-    KMeansResult,
-    get_cluster_statistics,
-    load_clustering_result
+    ClusteringMetadata,
+    load_kmeans_model,
+    load_clustering_metadata
 )
 from framework.types import IndividualRecorder
 from src.config.controller import Controller
@@ -380,10 +381,16 @@ def main():
         description="Calculate Shapley values for each cluster"
     )
     parser.add_argument(
-        '--clustering-result',
+        '--kmeans-model',
         type=str,
         required=True,
-        help='Path to clustering_result.pkl (K=3)'
+        help='Path to kmeans_model.pkl'
+    )
+    parser.add_argument(
+        '--clustering-metadata',
+        type=str,
+        required=True,
+        help='Path to clustering_metadata.pkl'
     )
     parser.add_argument(
         '--debug-data',
@@ -432,7 +439,8 @@ def main():
     args = parser.parse_args()
 
     # Setup paths
-    clustering_result_path = Path(args.clustering_result)
+    kmeans_model_path = Path(args.kmeans_model)
+    clustering_metadata_path = Path(args.clustering_metadata)
     debug_data_path = Path(args.debug_data)
     optimization_log_path = Path(args.optimization_log)
 
@@ -449,7 +457,8 @@ def main():
     print(f"\n{'=' * 70}")
     print("Cluster-based Shapley Value Analysis")
     print(f"{'=' * 70}")
-    print(f"Clustering result: {clustering_result_path}")
+    print(f"KMeans model: {kmeans_model_path}")
+    print(f"Clustering metadata: {clustering_metadata_path}")
     print(f"Debug data: {debug_data_path}")
     print(f"Optimization log: {optimization_log_path}")
     print(f"Generation: {args.generation}")
@@ -458,12 +467,13 @@ def main():
     print(f"Output directory: {output_dir}")
     print(f"{'=' * 70}\n")
 
-    # Load clustering result
-    print("Loading clustering result...")
-    clustering_result = load_clustering_result(clustering_result_path)
-    print(f"  Loaded K={clustering_result.n_clusters} clustering")
-    print(f"    Silhouette score: {clustering_result.silhouette:.4f}")
-    print(f"    Davies-Bouldin index: {clustering_result.davies_bouldin:.4f}")
+    # Load KMeans model and metadata
+    print("Loading KMeans model and metadata...")
+    kmeans_model = load_kmeans_model(kmeans_model_path)
+    metadata = load_clustering_metadata(clustering_metadata_path)
+    print(f"  Loaded K={metadata.n_clusters} clustering")
+    print(f"    Silhouette score: {metadata.silhouette:.4f}")
+    print(f"    Davies-Bouldin index: {metadata.davies_bouldin:.4f}")
 
     # Load debug data
     print("\nLoading debug data...")
@@ -491,31 +501,22 @@ def main():
         )
         print(f"  Converted {len(dataset)} samples (no pheromone filtering)")
 
-    # Assign cluster labels to all samples using cluster centers
-    print(f"\nAssigning samples to clusters using K-means centroids...")
+    # Assign cluster labels to all samples using KMeans model
+    print(f"\nAssigning samples to clusters using K-means model...")
     from src.interpretation.clustering.kmeans_clustering import extract_sensor_features
 
     # Extract normalized features from all samples
     sample_features, _ = extract_sensor_features(dataset, normalize=True)
 
-    # Calculate distance to each cluster center and assign to nearest
-    # cluster_centers are already normalized
-    distances = np.linalg.norm(
-        sample_features[:, np.newaxis, :] - clustering_result.cluster_centers[np.newaxis, :, :],
-        axis=2
-    )
-    assigned_labels = np.argmin(distances, axis=1)
+    # Use the fitted KMeans model directly for prediction
+    cluster_labels = kmeans_model.predict(sample_features)
+    print(f"  Assigned {len(dataset)} samples to {metadata.n_clusters} clusters")
 
-    print(f"  Assigned {len(dataset)} samples to {clustering_result.n_clusters} clusters")
-
-    # Use assigned labels instead of clustering_result.labels
-    cluster_labels = assigned_labels
-
-    # Get cluster statistics
-    cluster_stats = get_cluster_statistics(clustering_result)
+    # Print cluster sizes
     print(f"\n  Cluster sizes:")
-    for cluster_id, stats in cluster_stats.items():
-        print(f"    Cluster {cluster_id}: {stats['size']} samples")
+    for cluster_id in range(metadata.n_clusters):
+        count = np.sum(cluster_labels == cluster_id)
+        print(f"    Cluster {cluster_id}: {count} samples")
 
     # Load model
     print(f"\nLoading neural network model...")
@@ -529,7 +530,7 @@ def main():
     calculator = ShapleyCalculator(model, device=args.device)
     cluster_shapley_results = {}
 
-    for cluster_id in range(clustering_result.n_clusters):
+    for cluster_id in range(metadata.n_clusters):
         print(f"\nCluster {cluster_id}:")
 
         # Extract samples for this cluster using assigned labels
